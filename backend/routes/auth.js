@@ -8,6 +8,14 @@ const { getGscAccessToken } = require('../utils/gsc')
 const router = express.Router()
 const PORT = process.env.PORT || 4000
 
+function getBackendUrl(req) {
+  if (process.env.BACKEND_URL) return process.env.BACKEND_URL
+  const proto = req.get('x-forwarded-proto') || req.protocol || 'http'
+  const host = req.get('x-forwarded-host') || req.get('host')
+  if (host) return `${proto}://${host}`
+  return `http://localhost:${PORT}`
+}
+
 router.post('/google', async (req, res) => {
   try {
     const { token } = req.body
@@ -34,7 +42,7 @@ router.get('/me', auth, async (req, res) => {
 // GSC OAuth
 router.get('/gsc', auth, (req, res) => {
   const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64url')
-  const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`
+  const backendUrl = getBackendUrl(req)
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
     redirect_uri: `${backendUrl}/api/auth/gsc/callback`,
@@ -50,7 +58,7 @@ router.get('/gsc', auth, (req, res) => {
 router.get('/gsc/callback', async (req, res) => {
   try {
     const { code, state } = req.query
-    const backendUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`
+    const backendUrl = getBackendUrl(req)
     const { userId } = JSON.parse(Buffer.from(state, 'base64url').toString())
     const { data } = await axios.post('https://oauth2.googleapis.com/token', {
       code,
