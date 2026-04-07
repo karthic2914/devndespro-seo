@@ -14,6 +14,7 @@ import Integrations from './pages/Integrations'
 import EmailReports from './pages/EmailReports'
 import RankNo1 from './pages/RankNo1'
 import Layout from './components/Layout'
+import Users from './pages/Users'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -40,6 +41,8 @@ export default function App() {
           <Route path="integrations" element={<Integrations />} />
           <Route path="email-reports" element={<EmailReports />} />
           <Route path="rank" element={<RankNo1 />} />
+          <Route path="users" element={<Users />} />
+
         </Route>
       </Routes>
     </BrowserRouter>

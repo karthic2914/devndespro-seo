@@ -159,6 +159,15 @@ async function initDB() {
       END IF;
     EXCEPTION WHEN duplicate_object THEN NULL;
     END $$;
+    CREATE TABLE IF NOT EXISTS invited_users (
+      id SERIAL PRIMARY KEY,
+      email TEXT UNIQUE NOT NULL,
+      token TEXT,
+      status TEXT DEFAULT 'pending',
+      invited_by INTEGER REFERENCES users(id),
+      invited_at TIMESTAMPTZ DEFAULT NOW(),
+      accepted_at TIMESTAMPTZ
+    );
   `)
   console.log('DB initialized')
 }

@@ -1,21 +1,50 @@
 /**
  * Sidebar — left navigation for site dashboard
- * Usage:
- *   <Sidebar siteId={siteId} activePath="keywords" site={site} user={user} onSignOut={logout} />
  */
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Logo, ProgressBar, T } from '../UI'
 
 const NAV_ITEMS = [
-  { path: '',           label: 'Overview',      icon: '▦',  end: true },
-  { path: 'keywords',  label: 'Keywords',      icon: '🔑' },
-  { path: 'backlinks', label: 'Backlinks',     icon: '🔗' },
-  { path: 'audit',     label: 'Site Audit',    icon: '🔍' },
-  { path: 'actions',   label: 'Action Plan',   icon: '✅' },
-  { path: 'ai',        label: 'AI Assistant',  icon: '🤖' },
-  { path: 'competitors', label: 'Competitors', icon: '⚔️' },
-  { path: 'rank',        label: 'Rank #1',       icon: '🏆' },
+  { path: '',            label: 'Overview',     icon: '▦',  end: true },
+  { path: 'keywords',   label: 'Keywords',     icon: '🔑' },
+  { path: 'backlinks',  label: 'Backlinks',    icon: '🔗' },
+  { path: 'audit',      label: 'Site Audit',   icon: '🔍' },
+  { path: 'actions',    label: 'Action Plan',  icon: '✅' },
+  { path: 'ai',         label: 'AI Assistant', icon: '🤖' },
+  { path: 'competitors',label: 'Competitors',  icon: '⚔️' },
+  { path: 'rank',       label: 'Rank #1',      icon: '🏆' },
 ]
+
+const ADMIN_EMAIL = 'karthic2914@gmail.com'
+
+function NavItem({ to, icon, label, end }) {
+  return (
+    <NavLink
+      to={to}
+      end={end}
+      style={({ isActive }) => ({
+        display: 'flex', alignItems: 'center', gap: 10,
+        padding: '9px 12px', borderRadius: 8,
+        color: isActive ? T.orange : T.text2,
+        background: isActive ? T.orangeDim : 'transparent',
+        fontSize: 13, fontWeight: isActive ? 600 : 400,
+        textDecoration: 'none', transition: 'all 0.15s',
+        borderLeft: `2px solid ${isActive ? T.orange : 'transparent'}`,
+      })}
+      onMouseEnter={e => {
+        if (!e.currentTarget.style.borderLeftColor.includes('26'))
+          e.currentTarget.style.background = T.surface2
+      }}
+      onMouseLeave={e => {
+        if (!e.currentTarget.style.borderLeftColor.includes('26'))
+          e.currentTarget.style.background = 'transparent'
+      }}
+    >
+      <span style={{ width: 20, textAlign: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
+      {label}
+    </NavLink>
+  )
+}
 
 export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, daGoal = 20 }) {
   const navigate = useNavigate()
@@ -39,25 +68,19 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, da
       {site && (
         <div style={{ padding: '10px 12px', borderBottom: `1px solid ${T.border}` }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Active Project</div>
-          <div style={{
-            background: T.surface2, borderRadius: 8, padding: '8px 10px',
-            border: `1px solid ${T.border}`,
-          }}>
+          <div style={{ background: T.surface2, borderRadius: 8, padding: '8px 10px', border: `1px solid ${T.border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
               <div style={{
                 width: 26, height: 26, background: T.orangeDim, borderRadius: 6,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: 12, color: T.orange, flexShrink: 0
+                fontWeight: 700, fontSize: 12, color: T.orange, flexShrink: 0,
               }}>{site.name?.[0]?.toUpperCase()}</div>
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
                 <div style={{ fontSize: 10, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.url}</div>
               </div>
             </div>
-            {/* DA progress */}
-            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>
-              DA {daScore} / {daGoal} goal
-            </div>
+            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>DA {daScore} / {daGoal} goal</div>
             <ProgressBar value={daScore} max={daGoal} height={4} />
           </div>
           <button
@@ -72,43 +95,30 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, da
             }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = T.orange; e.currentTarget.style.color = T.orange }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.text2 }}
-          >
-            ← All Projects
-          </button>
+          >← All Projects</button>
         </div>
       )}
 
       {/* Nav links */}
       <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {NAV_ITEMS.map(({ path, label, icon, end }) => (
-          <NavLink
+          <NavItem
             key={path}
             to={`/site/${siteId}${path ? '/' + path : ''}`}
+            icon={icon}
+            label={label}
             end={end}
-            style={({ isActive }) => ({
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '9px 12px', borderRadius: 8,
-              color: isActive ? T.orange : T.text2,
-              background: isActive ? T.orangeDim : 'transparent',
-              fontSize: 13, fontWeight: isActive ? 600 : 400,
-              textDecoration: 'none', transition: 'all 0.15s',
-              borderLeft: `2px solid ${isActive ? T.orange : 'transparent'}`,
-            })}
-            onMouseEnter={e => {
-              if (!e.currentTarget.style.borderLeftColor.includes('26')) {
-                e.currentTarget.style.background = T.surface2
-              }
-            }}
-            onMouseLeave={e => {
-              if (!e.currentTarget.style.borderLeftColor.includes('26')) {
-                e.currentTarget.style.background = 'transparent'
-              }
-            }}
-          >
-            <span style={{ width: 20, textAlign: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
-            {label}
-          </NavLink>
+          />
         ))}
+
+        {/* Admin-only */}
+        {user?.email === ADMIN_EMAIL && (
+          <NavItem
+            to={`/site/${siteId}/users`}
+            icon="👥"
+            label="Users"
+          />
+        )}
       </nav>
 
       {/* User footer */}
