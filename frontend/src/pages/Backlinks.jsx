@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faCircleQuestion, faSpider, faRotate, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faCircleQuestion, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import api from '../utils/api'
@@ -21,6 +21,9 @@ export default function Backlinks() {
   const [integrations, setIntegrations] = useState(null)
   const [loadingOpps, setLoadingOpps] = useState(false)
   const [opportunities, setOpportunities] = useState([])
+  const [csvText, setCsvText] = useState('')
+  const [importingCsv, setImportingCsv] = useState(false)
+  const [importResult, setImportResult] = useState(null)
 
   const load = () =>
     Promise.all([
@@ -118,12 +121,35 @@ export default function Backlinks() {
     }
   }
 
+  const importDetailedCsv = async () => {
+    if (!csvText.trim()) { toast.error('Paste CSV data first'); return }
+    setImportingCsv(true)
+    setImportResult(null)
+    try {
+      const { data } = await api.post(`/sites/${siteId}/backlinks/import-detailed-csv`, { csvText })
+      setImportResult(data)
+      toast.success(`Imported ${data.imported} backlinks`)
+      if (data.imported > 0) setCsvText('')
+      load()
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'CSV import failed')
+    }
+    setImportingCsv(false)
+  }
+
   const live     = backlinks.filter(b => b.status === 'Live').length
   const pending  = backlinks.filter(b => b.status === 'Pending').length
   const todo     = backlinks.filter(b => b.status === 'Todo').length
   const dofollow = backlinks.filter(b => (b.type || 'dofollow') === 'dofollow').length
   const ahrefsBacklinks = Number(integrations?.ahrefs?.latest?.backlinks || 0)
   const ahrefsRefDomains = Number(integrations?.ahrefs?.latest?.ref_domains || 0)
+  const bestPicks = [...backlinks]
+    .sort((a, b) => {
+      const sa = (Number(a.dr || 0) * 2) + ((a.type || 'dofollow') === 'dofollow' ? 20 : 0) + (a.status === 'Live' ? 10 : 0)
+      const sb = (Number(b.dr || 0) * 2) + ((b.type || 'dofollow') === 'dofollow' ? 20 : 0) + (b.status === 'Live' ? 10 : 0)
+      return sb - sa
+    })
+    .slice(0, 5)
 
   return (
     <div className="fade-in page-content">
@@ -148,6 +174,64 @@ export default function Backlinks() {
           </div>
         </Card>
       )}
+
+      {bestPicks.length > 0 && (
+        <Card style={{ marginBottom: 12 }}>
+          <SectionLabel style={{ marginBottom: 8 }}>
+            <FontAwesomeIcon icon={faStar} style={{ marginRight: 8, color: 'var(--orange)' }} />
+            Best backlinks to show customer
+          </SectionLabel>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {bestPicks.map((b) => (
+              <div key={`best-${b.id}`} style={{
+                border: '1px solid var(--dark4)', borderRadius: 8,
+                padding: '8px 10px', display: 'flex', justifyContent: 'space-between', gap: 8,
+              }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{b.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)' }}>{b.anchor || 'No anchor text'} • {b.type || 'dofollow'}</div>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'right' }}>
+                  <div>DR <strong>{b.dr || 0}</strong></div>
+                  <div>{b.status}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <Card style={{ marginBottom: 12 }}>
+        <div className="crawler-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FontAwesomeIcon icon={faCloudArrowUp} style={{ color: 'var(--orange)' }} />
+            <SectionLabel style={{ margin: 0 }}>Bulk import backlinks CSV</SectionLabel>
+          </div>
+          <OrangeBtn onClick={importDetailedCsv} disabled={importingCsv}>
+            {importingCsv
+              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importing…</>
+              : <>Import rows</>
+            }
+          </OrangeBtn>
+        </div>
+        <div className="crawler-body">
+          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+            Paste CSV with columns like Domain/Site, URL, Anchor Text, DR, Type, Status.
+          </div>
+          <textarea
+            className="crawler-seeds"
+            rows={5}
+            placeholder={'Domain,URL,Anchor Text,DR,Type,Status\nexample.com,https://example.com/post,Best seo agency,74,dofollow,Live'}
+            value={csvText}
+            onChange={e => setCsvText(e.target.value)}
+          />
+          {importResult && (
+            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text2)' }}>
+              Imported <strong>{importResult.imported}</strong>, skipped <strong>{importResult.skipped}</strong> from {importResult.totalRows} rows.
+            </div>
+          )}
+        </div>
+      </Card>
 
       <Card style={{ marginBottom: 12 }}>
         <div className="crawler-header" onClick={() => setOpportunities(p => p.length ? [] : p)}>

@@ -613,6 +613,39 @@ function parseSimpleCsv(csvText) {
   return row
 }
 
+function parseCsvLine(line) {
+  const out = []
+  let cur = ''
+  let q = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (ch === '"') {
+      if (q && line[i + 1] === '"') { cur += '"'; i++ }
+      else q = !q
+      continue
+    }
+    if (ch === ',' && !q) { out.push(cur.trim()); cur = ''; continue }
+    cur += ch
+  }
+  out.push(cur.trim())
+  return out
+}
+
+function parseCsvRows(csvText) {
+  const lines = String(csvText || '')
+    .split(/\r?\n/)
+    .map(x => x.trim())
+    .filter(Boolean)
+  if (lines.length < 2) return []
+  const headers = parseCsvLine(lines[0]).map(h => String(h || '').replace(/^"|"$/g, '').trim())
+  return lines.slice(1).map(line => {
+    const values = parseCsvLine(line).map(v => String(v || '').replace(/^"|"$/g, '').trim())
+    const row = {}
+    headers.forEach((h, i) => { row[h] = values[i] })
+    return row
+  })
+}
+
 async function ensureSiteIsVerifiedInGsc(userId, siteUrl) {
   const { rows: userRows } = await pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1', [userId])
   const refreshToken = userRows[0]?.gsc_refresh_token
@@ -1003,6 +1036,61 @@ app.put('/api/sites/:siteId/backlinks/:id', auth, verifySite, async (req, res) =
 app.delete('/api/sites/:siteId/backlinks/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM backlinks WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
+})
+
+app.post('/api/sites/:siteId/backlinks/import-detailed-csv', auth, verifySite, async (req, res) => {
+  const rows = parseCsvRows(req.body?.csvText)
+  if (!rows.length) return res.status(400).json({ error: 'Invalid CSV. Add a header row and at least one data row.' })
+
+  const pick = (row, names) => firstValueByKey(row, names) || ''
+  const normalizeType = (v) => String(v || '').toLowerCase().includes('no') ? 'nofollow' : 'dofollow'
+  const normalizeStatus = (v) => {
+    const s = String(v || '').toLowerCase().trim()
+    if (s === 'live') return 'Live'
+    if (s === 'pending') return 'Pending'
+    return 'Todo'
+  }
+
+  const { rows: existingRows } = await pool.query('SELECT url, name, anchor FROM backlinks WHERE site_id=$1', [req.siteId])
+  const seen = new Set(existingRows.map(r => `${String(r.url || '').toLowerCase()}|${String(r.name || '').toLowerCase()}|${String(r.anchor || '').toLowerCase()}`))
+
+  let imported = 0
+  let skipped = 0
+
+  for (const row of rows.slice(0, 3000)) {
+    const name = String(pick(row, ['domain', 'referring domain', 'site', 'name']) || '').trim()
+    const url = String(pick(row, ['url', 'source url', 'page', 'referring page']) || '').trim()
+    const anchor = String(pick(row, ['anchor', 'anchor text']) || '').trim()
+    const dr = Math.max(0, Math.min(100, toInt(pick(row, ['dr', 'domain rating']))))
+    const type = normalizeType(pick(row, ['type', 'link type', 'follow']))
+    const status = normalizeStatus(pick(row, ['status']))
+
+    const finalName = name || (() => {
+      try { return new URL(url).hostname.replace(/^www\./, '') } catch { return '' }
+    })()
+    const finalUrl = (() => {
+      if (!url) return ''
+      try {
+        const w = /^https?:\/\//i.test(url) ? url : `https://${url}`
+        return new URL(w).href
+      } catch { return '' }
+    })()
+
+    if (!finalName) { skipped++; continue }
+
+    const key = `${String(finalUrl).toLowerCase()}|${String(finalName).toLowerCase()}|${String(anchor).toLowerCase()}`
+    if (seen.has(key)) { skipped++; continue }
+    seen.add(key)
+
+    await pool.query(
+      `INSERT INTO backlinks (site_id, name, dr, status, anchor, url, type, source)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,'csv')`,
+      [req.siteId, finalName, dr, status, anchor, finalUrl, type]
+    )
+    imported++
+  }
+
+  res.json({ imported, skipped, totalRows: rows.length })
 })
 
 // Backlink Crawler
