@@ -1,18 +1,28 @@
 const express = require('express')
 const crypto = require('crypto')
-const nodemailer = require('nodemailer')
+const axios = require('axios')
 const { pool } = require('../clients')
 const { auth } = require('../middleware')
 
 const router = express.Router()
 
-function getTransport() {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-  })
+async function sendEmail({ to, subject, html }) {
+  await axios.post(
+    'https://api.zeptomail.com/v1.1/email',
+    {
+      from: { address: 'noreply@devndespro.com', name: 'DevNdesPro SEO' },
+      to: [{ email_address: { address: to } }],
+      subject,
+      htmlbody: html,
+    },
+    {
+      headers: {
+        'Authorization': process.env.ZEPTOMAIL_TOKEN,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  )
 }
 
 // List all invited users
@@ -87,9 +97,7 @@ router.post('/invite', auth, async (req, res) => {
     const frontend = process.env.FRONTEND_URL || 'http://localhost:5174'
     const inviteUrl = `${frontend}/accept-invite?token=${token}`
 
-    const transporter = getTransport()
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+    await sendEmail({
       to: normalizedEmail,
       subject: `You've been invited to access ${siteName} on DevNdesPro SEO`,
       html: `
@@ -116,7 +124,7 @@ router.post('/invite', auth, async (req, res) => {
 
     res.json({ ok: true, message: `Invitation sent to ${normalizedEmail}` })
   } catch (e) {
-    console.error('Invite error:', e)
+    console.error('Invite error:', e.response?.data || e.message)
     res.status(500).json({ error: 'Failed to send invitation' })
   }
 })
@@ -138,9 +146,7 @@ router.post('/resend/:id', auth, async (req, res) => {
     const inviteUrl = `${frontend}/accept-invite?token=${token}`
     const siteName = rows[0].site_name || 'your project'
 
-    const transporter = getTransport()
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM,
+    await sendEmail({
       to: rows[0].email,
       subject: `Your invitation to ${siteName} on DevNdesPro SEO (resent)`,
       html: `
@@ -157,7 +163,7 @@ router.post('/resend/:id', auth, async (req, res) => {
 
     res.json({ ok: true })
   } catch (e) {
-    console.error('Resend error:', e)
+    console.error('Resend error:', e.response?.data || e.message)
     res.status(500).json({ error: 'Failed to resend invitation' })
   }
 })
