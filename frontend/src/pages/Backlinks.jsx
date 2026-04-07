@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faCircleQuestion, faSpider, faRotate } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faCircleQuestion, faSpider, faRotate, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import api from '../utils/api'
@@ -18,10 +18,19 @@ export default function Backlinks() {
   const [seeds, setSeeds] = useState('')
   const [showCrawler, setShowCrawler] = useState(false)
   const [showAdd, setShowAdd] = useState(false)
+  const [integrations, setIntegrations] = useState(null)
+  const [loadingOpps, setLoadingOpps] = useState(false)
+  const [opportunities, setOpportunities] = useState([])
 
   const load = () =>
-    api.get(`/sites/${siteId}/backlinks`)
-      .then(r => setBacklinks(Array.isArray(r.data) ? r.data : []))
+    Promise.all([
+      api.get(`/sites/${siteId}/backlinks`).catch(() => ({ data: [] })),
+      api.get(`/sites/${siteId}/integrations`).catch(() => ({ data: null })),
+    ])
+      .then(([backlinksRes, integrationsRes]) => {
+        setBacklinks(Array.isArray(backlinksRes.data) ? backlinksRes.data : [])
+        setIntegrations(integrationsRes.data || null)
+      })
       .finally(() => setLoading(false))
 
   useEffect(() => { load() }, [siteId])
@@ -79,10 +88,42 @@ export default function Backlinks() {
     setCrawling(false)
   }
 
+  const loadAiOpportunities = async () => {
+    setLoadingOpps(true)
+    try {
+      const { data } = await api.post(`/sites/${siteId}/ai/link-opportunities`)
+      setOpportunities(Array.isArray(data) ? data : [])
+      if (!Array.isArray(data) || data.length === 0) toast('No new opportunities found right now.')
+    } catch {
+      toast.error('Failed to load backlink opportunities')
+    }
+    setLoadingOpps(false)
+  }
+
+  const addOpportunity = async (opp) => {
+    try {
+      await api.post(`/sites/${siteId}/backlinks`, {
+        name: String(opp.site || '').trim(),
+        dr: Number(opp.estimatedDR || 0),
+        status: 'Todo',
+        anchor: String(opp.strategy || '').trim(),
+        url: '',
+        type: 'dofollow',
+      })
+      setOpportunities(prev => prev.filter(x => x.site !== opp.site))
+      toast.success('Opportunity added to backlinks')
+      load()
+    } catch {
+      toast.error('Failed to save opportunity')
+    }
+  }
+
   const live     = backlinks.filter(b => b.status === 'Live').length
   const pending  = backlinks.filter(b => b.status === 'Pending').length
   const todo     = backlinks.filter(b => b.status === 'Todo').length
   const dofollow = backlinks.filter(b => (b.type || 'dofollow') === 'dofollow').length
+  const ahrefsBacklinks = Number(integrations?.ahrefs?.latest?.backlinks || 0)
+  const ahrefsRefDomains = Number(integrations?.ahrefs?.latest?.ref_domains || 0)
 
   return (
     <div className="fade-in page-content">
@@ -95,7 +136,54 @@ export default function Backlinks() {
         <MetricCard label="Live" value={live} accent="var(--blue)" />
         <MetricCard label="Pending" value={pending} accent="var(--amber)" />
         <MetricCard label="To do" value={todo} accent="var(--red)" />
+        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
+        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
       </div>
+
+      {(ahrefsBacklinks > backlinks.length || ahrefsRefDomains > 0) && (
+        <Card style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: 'var(--text2)', lineHeight: 1.7 }}>
+            This table shows <strong>{backlinks.length}</strong> tracked backlink records you added manually or discovered with the crawler.
+            {ahrefsBacklinks > 0 && <> Your imported Ahrefs summary estimates about <strong>{ahrefsBacklinks.toLocaleString()}</strong> total backlinks and <strong>{ahrefsRefDomains.toLocaleString()}</strong> referring domains.</>}
+          </div>
+        </Card>
+      )}
+
+      <Card style={{ marginBottom: 12 }}>
+        <div className="crawler-header" onClick={() => setOpportunities(p => p.length ? [] : p)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: 'var(--orange)' }} />
+            <SectionLabel style={{ margin: 0 }}>AI link opportunities</SectionLabel>
+          </div>
+          <OrangeBtn onClick={(e) => { e.stopPropagation(); loadAiOpportunities() }} disabled={loadingOpps}>
+            {loadingOpps
+              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding…</>
+              : <>Find opportunities</>
+            }
+          </OrangeBtn>
+        </div>
+        {opportunities.length > 0 && (
+          <div className="crawler-body">
+            {opportunities.slice(0, 8).map((opp, idx) => (
+              <div key={`${opp.site}-${idx}`} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
+                padding: idx === 0 ? '0 0 10px' : '10px 0', borderTop: idx === 0 ? 'none' : '1px solid var(--dark4)',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{opp.site}</div>
+                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
+                    {opp.type} • {opp.relevance} relevance • Estimated DR {opp.estimatedDR || 0}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>{opp.strategy}</div>
+                </div>
+                <OrangeBtn onClick={() => addOpportunity(opp)}>
+                  <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
+                </OrangeBtn>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Crawler */}
       <Card style={{ marginBottom: 12 }}>
