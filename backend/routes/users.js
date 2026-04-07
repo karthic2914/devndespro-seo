@@ -97,6 +97,7 @@ router.post('/invite', auth, async (req, res) => {
     const frontend = process.env.FRONTEND_URL || 'http://localhost:5174'
     const inviteUrl = `${frontend}/accept-invite?token=${token}`
 
+    // Send invite to user
     await sendEmail({
       to: normalizedEmail,
       subject: `You've been invited to access ${siteName} on DevNdesPro SEO`,
@@ -121,6 +122,19 @@ router.post('/invite', auth, async (req, res) => {
         </div>
       `,
     })
+
+    // Notify admin
+    await sendEmail({
+      to: 'karthic2914@gmail.com',
+      subject: `Invite sent to ${normalizedEmail} for ${siteName}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+          <h2 style="color:#E66A39;margin:0 0 16px">Invite Sent ✓</h2>
+          <p style="color:#555;margin:0 0 8px">You invited <strong>${normalizedEmail}</strong> to access <strong>${siteName}</strong>.</p>
+          <p style="color:#999;font-size:12px;margin:0">This is an automated notification from DevNdesPro SEO.</p>
+        </div>
+      `,
+    }).catch(e => console.error('Admin notify failed:', e.message))
 
     res.json({ ok: true, message: `Invitation sent to ${normalizedEmail}` })
   } catch (e) {
@@ -160,6 +174,19 @@ router.post('/resend/:id', auth, async (req, res) => {
         </div>
       `,
     })
+
+    // Notify admin
+    await sendEmail({
+      to: 'karthic2914@gmail.com',
+      subject: `Invite resent to ${rows[0].email} for ${siteName}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+          <h2 style="color:#E66A39;margin:0 0 16px">Invite Resent ✓</h2>
+          <p style="color:#555;margin:0 0 8px">You resent the invite to <strong>${rows[0].email}</strong> for <strong>${siteName}</strong>.</p>
+          <p style="color:#999;font-size:12px;margin:0">This is an automated notification from DevNdesPro SEO.</p>
+        </div>
+      `,
+    }).catch(e => console.error('Admin notify failed:', e.message))
 
     res.json({ ok: true })
   } catch (e) {
