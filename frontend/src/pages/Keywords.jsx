@@ -21,6 +21,8 @@ export default function Keywords() {
   const [checking, setChecking] = useState(false)
   const [scanRunning, setScanRunning] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
+  const [aiSource, setAiSource] = useState('')
   const [page1Data, setPage1Data] = useState(null)
   const [page1Map, setPage1Map] = useState({})
   const [scanReport, setScanReport] = useState(null)
@@ -56,11 +58,18 @@ export default function Keywords() {
 
   const generateAiSuggestions = async () => {
     setAiLoading(true)
+    setAiError('')
     try {
       const { data } = await api.post(`/sites/${siteId}/keywords/ai-suggest`, { limit: 12 })
       setAiSuggestions(Array.isArray(data.suggestions) ? data.suggestions : [])
+      setAiSource(data.source || 'ai')
+      if (!Array.isArray(data.suggestions) || data.suggestions.length === 0) {
+        setAiError('No keyword ideas were returned. Try again or add one keyword manually first.')
+      }
     } catch {
       setAiSuggestions([])
+      setAiSource('')
+      setAiError('Could not generate keyword ideas right now. Please try again.')
     }
     setAiLoading(false)
   }
@@ -135,6 +144,9 @@ export default function Keywords() {
           <div style={{ marginTop: 12, border: '1px solid var(--dark4)', borderRadius: 10, overflow: 'hidden' }}>
             <div style={{ padding: '8px 10px', background: 'var(--dark3)', fontSize: 11, color: 'var(--text2)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               AI Keyword Ideas to Improve SEO
+              <span style={{ marginLeft: 8, fontWeight: 500, textTransform: 'none', letterSpacing: 0, color: 'var(--muted)' }}>
+                ({aiSource === 'fallback' ? 'smart fallback' : 'AI'})
+              </span>
             </div>
             {aiSuggestions.slice(0, 8).map((s, idx) => (
               <div key={`${s.keyword}-${idx}`} style={{
@@ -153,6 +165,12 @@ export default function Keywords() {
                 </OrangeBtn>
               </div>
             ))}
+          </div>
+        )}
+
+        {aiError && (
+          <div style={{ marginTop: 10, fontSize: 12, color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 10px' }}>
+            {aiError}
           </div>
         )}
       </Card>

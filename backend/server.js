@@ -762,6 +762,51 @@ app.delete('/api/sites/:siteId/keywords/:id', auth, verifySite, async (req, res)
   res.json({ ok: true })
 })
 
+function buildHeuristicKeywordSuggestions({ siteName, siteUrl, existingSet, limit }) {
+  const host = extractDomain(siteUrl || '').split('.').slice(0, -1).join(' ').replace(/[-_]/g, ' ').trim()
+  const brand = String(siteName || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+
+  const seeds = [
+    ...Array.from(existingSet || []),
+    host,
+    brand,
+  ]
+    .map(s => String(s || '').trim())
+    .filter(Boolean)
+    .slice(0, 20)
+
+  const templates = [
+    { t: '%s services', intent: 'Commercial', difficulty: 'Easy', vol: 80, why: 'Clear service intent and easier to convert.' },
+    { t: 'best %s', intent: 'Commercial', difficulty: 'Medium', vol: 140, why: 'Comparison intent often brings qualified leads.' },
+    { t: '%s pricing', intent: 'Transactional', difficulty: 'Easy', vol: 60, why: 'Price-focused searches can convert quickly.' },
+    { t: '%s near me', intent: 'Transactional', difficulty: 'Easy', vol: 110, why: 'Local modifiers improve relevance and CTR.' },
+    { t: '%s consultant', intent: 'Commercial', difficulty: 'Medium', vol: 70, why: 'Matches buyers looking for expert help.' },
+    { t: 'how to choose %s', intent: 'Informational', difficulty: 'Easy', vol: 55, why: 'Top-of-funnel keyword for content authority.' },
+    { t: '%s for small business', intent: 'Commercial', difficulty: 'Medium', vol: 90, why: 'Niche targeting reduces competition.' },
+  ]
+
+  const out = []
+  const seen = new Set(Array.from(existingSet || []))
+  for (const seed of seeds) {
+    const base = seed.toLowerCase().replace(/\s+/g, ' ').trim()
+    if (!base || base.length < 3) continue
+    for (const tpl of templates) {
+      const kw = tpl.t.replace('%s', base).replace(/\s+/g, ' ').trim()
+      if (!kw || seen.has(kw)) continue
+      seen.add(kw)
+      out.push({
+        keyword: kw,
+        intent: tpl.intent,
+        difficulty: tpl.difficulty,
+        estimatedVolume: tpl.vol,
+        why: tpl.why,
+      })
+      if (out.length >= limit) return out
+    }
+  }
+  return out.slice(0, limit)
+}
+
 app.post('/api/sites/:siteId/keywords/ai-suggest', auth, verifySite, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 12), 3), 25)
@@ -806,36 +851,52 @@ Return ONLY valid JSON:
   ]
 }`
 
-    const r = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1400,
-      messages: [{ role: 'user', content: prompt }],
-    })
+    const existingSet = new Set(kR.rows.map(k => String(k.keyword || '').toLowerCase().trim()))
+    let cleaned = []
 
-    const text = r.content?.[0]?.text?.trim() || '{}'
-    const jsonStart = text.indexOf('{')
-    const jsonEnd = text.lastIndexOf('}')
-    let parsed = { suggestions: [] }
     try {
-      parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
-    } catch {
-      parsed = { suggestions: [] }
+      const r = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1400,
+        messages: [{ role: 'user', content: prompt }],
+      })
+
+      const text = r.content?.[0]?.text?.trim() || '{}'
+      const jsonStart = text.indexOf('{')
+      const jsonEnd = text.lastIndexOf('}')
+      let parsed = { suggestions: [] }
+      try {
+        parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
+      } catch {
+        parsed = { suggestions: [] }
+      }
+
+      cleaned = (Array.isArray(parsed.suggestions) ? parsed.suggestions : [])
+        .map(s => ({
+          keyword: String(s?.keyword || '').trim(),
+          intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'].includes(String(s?.intent || '')) ? s.intent : 'Informational',
+          difficulty: ['Easy', 'Medium', 'Hard'].includes(String(s?.difficulty || '')) ? s.difficulty : 'Medium',
+          estimatedVolume: Math.max(0, parseInt(s?.estimatedVolume || 0) || 0),
+          why: String(s?.why || '').trim(),
+        }))
+        .filter(s => s.keyword)
+        .filter(s => !existingSet.has(s.keyword.toLowerCase()))
+        .slice(0, limit)
+    } catch (e) {
+      console.error('AI keyword suggest upstream failed:', e.message)
     }
 
-    const existingSet = new Set(kR.rows.map(k => String(k.keyword || '').toLowerCase().trim()))
-    const cleaned = (Array.isArray(parsed.suggestions) ? parsed.suggestions : [])
-      .map(s => ({
-        keyword: String(s?.keyword || '').trim(),
-        intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'].includes(String(s?.intent || '')) ? s.intent : 'Informational',
-        difficulty: ['Easy', 'Medium', 'Hard'].includes(String(s?.difficulty || '')) ? s.difficulty : 'Medium',
-        estimatedVolume: Math.max(0, parseInt(s?.estimatedVolume || 0) || 0),
-        why: String(s?.why || '').trim(),
-      }))
-      .filter(s => s.keyword)
-      .filter(s => !existingSet.has(s.keyword.toLowerCase()))
-      .slice(0, limit)
+    if (cleaned.length === 0) {
+      cleaned = buildHeuristicKeywordSuggestions({
+        siteName: site.name,
+        siteUrl: site.url,
+        existingSet,
+        limit,
+      })
+      return res.json({ suggestions: cleaned, source: 'fallback' })
+    }
 
-    res.json({ suggestions: cleaned })
+    res.json({ suggestions: cleaned, source: 'ai' })
   } catch (e) {
     console.error('AI keyword suggest failed:', e)
     res.status(500).json({ error: 'AI keyword suggestion failed' })
