@@ -12,6 +12,7 @@ const aiRouter = require('./routes/ai')
 const integrationsRouter = require('./routes/integrations')
 const { siteRouter: alertsSiteRouter, globalRouter: alertsGlobalRouter } = require('./routes/alerts')
 const emailReportsRouter = require('./routes/emailReports')
+const usersRouter = require('./routes/users')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -29,6 +30,7 @@ app.use('/api/sites', integrationsRouter)
 app.use('/api/sites', alertsSiteRouter)
 app.use('/api/alerts', alertsGlobalRouter)
 app.use('/api/sites', emailReportsRouter)
+app.use('/api/users', usersRouter)
 
 initDB().then(() => {
   app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))

@@ -15,6 +15,7 @@ import EmailReports from './pages/EmailReports'
 import RankNo1 from './pages/RankNo1'
 import Layout from './components/Layout'
 import Users from './pages/Users'
+import AcceptInvite from './pages/AcceptInvite'
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
@@ -28,6 +29,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/accept-invite" element={<AcceptInvite />} />
         <Route path="/" element={<ProtectedRoute><Sites /></ProtectedRoute>} />
         <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Dashboard />} />
@@ -42,7 +44,6 @@ export default function App() {
           <Route path="email-reports" element={<EmailReports />} />
           <Route path="rank" element={<RankNo1 />} />
           <Route path="users" element={<Users />} />
-
         </Route>
       </Routes>
     </BrowserRouter>

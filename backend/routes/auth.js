@@ -25,17 +25,58 @@ router.post('/google', async (req, res) => {
   try {
     const { token } = req.body
     const { data: profile } = await axios.get(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`)
+    const email = profile.email
+
+    // Check ALLOWED_EMAILS (admin)
     const allowed = (process.env.ALLOWED_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean)
-    if (allowed.length > 0 && !allowed.includes(profile.email))
+    const isAdmin = allowed.length > 0 && allowed.includes(email)
+
+    // Check invited_users table
+    const { rows: inviteRows } = await pool.query(
+      `SELECT * FROM invited_users WHERE email=$1 AND status='accepted'`,
+      [email]
+    )
+    const isInvited = inviteRows.length > 0
+
+    if (!isAdmin && !isInvited) {
       return res.status(403).json({ error: 'Access denied. You are not authorized.' })
+    }
+
+    // Upsert user
     const { rows } = await pool.query(
       'INSERT INTO users (email, name, photo) VALUES ($1,$2,$3) ON CONFLICT (email) DO UPDATE SET name=$2, photo=$3 RETURNING *',
-      [profile.email, profile.name, profile.picture]
+      [email, profile.name, profile.picture]
     )
     const user = rows[0]
+
+    // If invited user — grant site_access for their assigned site
+    if (isInvited) {
+      for (const invite of inviteRows) {
+        if (invite.site_id) {
+          await pool.query(
+            'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+            [invite.site_id, user.id]
+          )
+        }
+      }
+    }
+
+    // If admin — ensure they have access to all their own sites
+    if (isAdmin) {
+      await pool.query(
+        `INSERT INTO site_access (site_id, user_id)
+         SELECT id, $1 FROM sites WHERE user_id=$1
+         ON CONFLICT DO NOTHING`,
+        [user.id]
+      )
+    }
+
     const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' })
     res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, photo: user.photo } })
-  } catch (e) { console.error(e); res.status(500).json({ error: 'Auth failed' }) }
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Auth failed' })
+  }
 })
 
 router.get('/me', auth, async (req, res) => {

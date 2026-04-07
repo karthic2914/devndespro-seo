@@ -12,15 +12,22 @@ const STATUS_VARIANT = { pending: 'warning', accepted: 'success', revoked: 'defa
 
 export default function Users() {
   const [users, setUsers] = useState([])
+  const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
+  const [siteId, setSiteId] = useState('')
   const [sending, setSending] = useState(false)
 
   const load = async () => {
     setLoading(true)
     try {
-      const r = await api.get('/users')
-      setUsers(Array.isArray(r.data) ? r.data : [])
+      const [ur, sr] = await Promise.all([
+        api.get('/users'),
+        api.get('/users/sites'),
+      ])
+      setUsers(Array.isArray(ur.data) ? ur.data : [])
+      setSites(Array.isArray(sr.data) ? sr.data : [])
+      if (sr.data?.length > 0 && !siteId) setSiteId(String(sr.data[0].id))
     } catch {
       setUsers([])
     }
@@ -34,9 +41,13 @@ export default function Users() {
       toast.error('Enter a valid email address')
       return
     }
+    if (!siteId) {
+      toast.error('Select a project')
+      return
+    }
     setSending(true)
     try {
-      const r = await api.post('/users/invite', { email: email.trim() })
+      const r = await api.post('/users/invite', { email: email.trim(), siteId: Number(siteId) })
       toast.success(r.data.message || 'Invitation sent!')
       setEmail('')
       await load()
@@ -74,7 +85,7 @@ export default function Users() {
     <div className="fade-in" style={{ padding: '1.25rem 1.5rem' }}>
       <PageHeader
         title="Team & Users"
-        subtitle="Invite people to access the SEO tool. They'll receive an email with a login link."
+        subtitle="Invite people to access a specific project. They'll receive an email with a login link."
       />
 
       {/* Invite form */}
@@ -83,22 +94,35 @@ export default function Users() {
           <FontAwesomeIcon icon={faUserPlus} style={{ color: T.orange }} />
           <strong style={{ fontSize: 14 }}>Invite a new user</strong>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 200px auto', gap: 8 }}>
           <input
             type="email"
             placeholder="email@example.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && invite()}
-            style={{ flex: 1 }}
           />
+          <select
+            value={siteId}
+            onChange={e => setSiteId(e.target.value)}
+            style={{
+              border: `1px solid ${T.border}`, borderRadius: 8,
+              padding: '8px 12px', fontSize: 13, color: T.text,
+              background: '#fff', cursor: 'pointer',
+            }}
+          >
+            {sites.length === 0 && <option value="">No projects</option>}
+            {sites.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
+          </select>
           <Button variant="primary" size="sm" onClick={invite} loading={sending} disabled={sending}>
             <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: 6 }} />
             Send Invite
           </Button>
         </div>
         <div style={{ fontSize: 12, color: T.muted, marginTop: 8 }}>
-          The user will receive an email with a link to accept and log in via Google.
+          The user will only see the selected project when they log in.
         </div>
       </Card>
 
@@ -135,43 +159,35 @@ export default function Users() {
           </div>
         ) : (
           <>
-            {/* Table header */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 140px 100px', padding: '8px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
-              {['Email', 'Status', 'Invited', 'Actions'].map(h => (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 100px 140px 100px', padding: '8px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
+              {['Email', 'Project', 'Status', 'Invited', 'Actions'].map(h => (
                 <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
               ))}
             </div>
 
             {users.map((u, i) => (
               <div key={u.id} style={{
-                display: 'grid', gridTemplateColumns: '1fr 100px 140px 100px',
+                display: 'grid', gridTemplateColumns: '1fr 120px 100px 140px 100px',
                 padding: '12px 20px', alignItems: 'center',
                 borderBottom: i < users.length - 1 ? `1px solid #F3F4F6` : 'none',
               }}>
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{u.email}</div>
+                <div style={{ fontSize: 12, color: T.text2 }}>{u.site_name || '—'}</div>
                 <div>
-                  <Badge variant={STATUS_VARIANT[u.status] || 'default'}>
-                    {u.status}
-                  </Badge>
+                  <Badge variant={STATUS_VARIANT[u.status] || 'default'}>{u.status}</Badge>
                 </div>
                 <div style={{ fontSize: 12, color: T.muted }}>
                   {u.invited_at ? new Date(u.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {u.status === 'pending' && (
-                    <button
-                      onClick={() => resend(u.id, u.email)}
-                      title="Resend invite"
-                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.blue, padding: '4px 6px', borderRadius: 4 }}
-                    >
+                    <button onClick={() => resend(u.id, u.email)} title="Resend invite"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.blue, padding: '4px 6px', borderRadius: 4 }}>
                       <FontAwesomeIcon icon={faRotateRight} />
                     </button>
                   )}
-                  <button
-                    onClick={() => revoke(u.id, u.email)}
-                    title="Remove user"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.red, padding: '4px 6px', borderRadius: 4 }}
-                  >
+                  <button onClick={() => revoke(u.id, u.email)} title="Remove user"
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.red, padding: '4px 6px', borderRadius: 4 }}>
                     <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>

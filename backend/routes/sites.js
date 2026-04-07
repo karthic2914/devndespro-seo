@@ -16,10 +16,10 @@ router.get('/', auth, async (req, res) => {
       COALESCE(k.keyword_count, 0) AS keyword_count,
       COALESCE(b.backlink_count, 0) AS backlink_count
     FROM sites s
+    INNER JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1
     LEFT JOIN seo_metrics m ON m.site_id = s.id
     LEFT JOIN (SELECT site_id, COUNT(*)::int AS keyword_count FROM keywords GROUP BY site_id) k ON k.site_id = s.id
     LEFT JOIN (SELECT site_id, COUNT(*)::int AS backlink_count FROM backlinks GROUP BY site_id) b ON b.site_id = s.id
-    WHERE s.user_id=$1
     ORDER BY s.created_at ASC`,
     [req.user.id]
   )

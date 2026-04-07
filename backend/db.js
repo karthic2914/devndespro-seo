@@ -168,6 +168,14 @@ async function initDB() {
       invited_at TIMESTAMPTZ DEFAULT NOW(),
       accepted_at TIMESTAMPTZ
     );
+    ALTER TABLE invited_users ADD COLUMN IF NOT EXISTS site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE;
+    
+    CREATE TABLE IF NOT EXISTS site_access (
+      id SERIAL PRIMARY KEY,
+      site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      UNIQUE(site_id, user_id)
+    );
   `)
   console.log('DB initialized')
 }
