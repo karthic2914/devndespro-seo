@@ -70,8 +70,9 @@ router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
   const axios = require('axios')
   const { getGscAccessToken } = require('../utils/gsc')
   try {
-    const { rows: u } = await pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1', [req.user.id])
-    if (!u[0]?.gsc_refresh_token) return res.json({ connected: false })
+    const { rows: u } = await pool.query('SELECT email, gsc_refresh_token FROM users WHERE id=$1', [req.user.id])
+    const accountEmail = u[0]?.email || null
+    if (!u[0]?.gsc_refresh_token) return res.json({ connected: false, accountEmail })
     const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
     const siteUrl = s[0].url
     const accessToken = await getGscAccessToken(u[0].gsc_refresh_token)
@@ -85,10 +86,38 @@ router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
       axios.post(base, { startDate, endDate, rowLimit: 1 }, { headers }),
       axios.post(base, { startDate, endDate, dimensions: ['date'], rowLimit: 28 }, { headers }),
     ])
-    res.json({ connected: true, queries: qr.data.rows || [], pages: pr.data.rows || [], daily: dr.data.rows || [], totals: tr.data.rows?.[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 } })
+    res.json({
+      connected: true,
+      accountEmail,
+      queries: qr.data.rows || [],
+      pages: pr.data.rows || [],
+      daily: dr.data.rows || [],
+      totals: tr.data.rows?.[0] || { clicks: 0, impressions: 0, ctr: 0, position: 0 },
+    })
   } catch (e) {
+    const status = Number(e.response?.status)
+    const apiMessage = String(e.response?.data?.error?.message || e.message || '')
+    const permissionIssue = status === 403 && /(permission|access|insufficient)/i.test(apiMessage)
+    const mismatchIssue = status === 404 || /not found/i.test(apiMessage)
+    const tokenIssue = status === 401 || /invalid_grant|invalid credentials/i.test(apiMessage)
+    let errorCode = 'gsc_fetch_failed'
+    let error = 'Failed to fetch GSC data. Please try reconnecting Google Search Console.'
+    let connected = true
+
+    if (permissionIssue) {
+      errorCode = 'property_access'
+      error = 'This Google account does not have access to this Search Console property.'
+    } else if (mismatchIssue) {
+      errorCode = 'site_mismatch'
+      error = 'The site URL does not match a property in this Google Search Console account.'
+    } else if (tokenIssue) {
+      errorCode = 'token_expired'
+      error = 'Google Search Console connection expired. Please reconnect.'
+      connected = false
+    }
+
     console.error('GSC fetch:', e.response?.data || e.message)
-    res.json({ connected: true, error: 'Failed to fetch — verify site URL matches GSC property exactly' })
+    res.json({ connected, errorCode, error })
   }
 })
 

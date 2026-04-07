@@ -120,6 +120,9 @@ export default function Dashboard() {
   const gscImpressions = toNum(gscData?.totals?.impressions, toNum(metrics.impressions, 0))
   const gscPositionRaw = Number(gscData?.totals?.position)
   const gscPosition = Number.isFinite(gscPositionRaw) ? gscPositionRaw.toFixed(1) : 'N/A'
+  const gscError = String(gscData?.error || '')
+  const gscErrorCode = String(gscData?.errorCode || '')
+  const gscAccountEmail = String(gscData?.accountEmail || '')
   const trackedKeywords = Array.isArray(keywords) ? keywords.length : 0
   const drValue = toNum(metrics.dr, 0)
   const backlinkCount = Array.isArray(backlinks) ? backlinks.length : 0
@@ -204,12 +207,38 @@ export default function Dashboard() {
               }>Weekly Traffic</SectionLabel>
               {hasTrafficData ? (
                 <BarChart data={weeklyTraffic} color={T.orange} height={140} />
+              ) : gscConnected && gscError ? (
+                <div style={{
+                  height: 140, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: T.surface2, borderRadius: 8, textAlign: 'center', padding: '0 16px',
+                }}>
+                  {gscAccountEmail && (
+                    <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
+                  )}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: T.text2 }}>
+                    {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
+                      ? 'This account cannot access this Search Console property'
+                      : gscError || 'Unable to load Search Console data'}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted }}>
+                    {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
+                      ? 'Use a Google account that owns this property or add this account as a verified owner in GSC'
+                      : 'Reconnect Google Search Console if the problem continues'}
+                  </div>
+                  <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
+                    {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
+                  </Button>
+                </div>
               ) : gscConnected ? (
                 <div style={{
                   height: 140, display: 'flex', flexDirection: 'column',
                   alignItems: 'center', justifyContent: 'center', gap: 6,
                   background: T.surface2, borderRadius: 8,
                 }}>
+                  {gscAccountEmail && (
+                    <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
+                  )}
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>
                     {gscClicks > 0
                       ? `${gscClicks} clicks · ${gscImpressions} impressions over 28 days`
