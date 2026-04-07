@@ -16,6 +16,11 @@ function getBackendUrl(req) {
   return `http://localhost:${PORT}`
 }
 
+function getGscRedirectUri(req) {
+  if (process.env.GSC_REDIRECT_URI) return process.env.GSC_REDIRECT_URI
+  return `${getBackendUrl(req)}/api/auth/gsc/callback`
+}
+
 router.post('/google', async (req, res) => {
   try {
     const { token } = req.body
@@ -42,10 +47,10 @@ router.get('/me', auth, async (req, res) => {
 // GSC OAuth
 router.get('/gsc', auth, (req, res) => {
   const state = Buffer.from(JSON.stringify({ userId: req.user.id })).toString('base64url')
-  const backendUrl = getBackendUrl(req)
+  const redirectUri = getGscRedirectUri(req)
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID,
-    redirect_uri: `${backendUrl}/api/auth/gsc/callback`,
+    redirect_uri: redirectUri,
     response_type: 'code',
     scope: 'https://www.googleapis.com/auth/webmasters.readonly',
     access_type: 'offline',
@@ -58,13 +63,13 @@ router.get('/gsc', auth, (req, res) => {
 router.get('/gsc/callback', async (req, res) => {
   try {
     const { code, state } = req.query
-    const backendUrl = getBackendUrl(req)
+    const redirectUri = getGscRedirectUri(req)
     const { userId } = JSON.parse(Buffer.from(state, 'base64url').toString())
     const { data } = await axios.post('https://oauth2.googleapis.com/token', {
       code,
       client_id: process.env.GOOGLE_CLIENT_ID,
       client_secret: process.env.GOOGLE_CLIENT_SECRET,
-      redirect_uri: `${backendUrl}/api/auth/gsc/callback`,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
     })
     await pool.query('UPDATE users SET gsc_refresh_token=$1 WHERE id=$2', [data.refresh_token, userId])
