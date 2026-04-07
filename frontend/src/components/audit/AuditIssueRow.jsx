@@ -5,7 +5,7 @@ import {
   faChevronDown, faChevronRight, faRobot, faWandMagicSparkles,
   faArrowTrendUp, faCheck, faRotateRight, faCopy
 } from '@fortawesome/free-solid-svg-icons'
-import { T } from '../components/UI'
+import { T } from '../UI'
 
 const IMPACT_POINTS = { High: '+12–18 pts', Medium: '+5–10 pts', Low: '+1–4 pts' }
 
