@@ -12,6 +12,7 @@ import SiteAudit from './pages/SiteAudit'
 import Alerts from './pages/Alerts'
 import Integrations from './pages/Integrations'
 import EmailReports from './pages/EmailReports'
+import RankNo1 from './pages/RankNo1'
 import Layout from './components/Layout'
 
 function ProtectedRoute({ children }) {
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="alerts" element={<Alerts />} />
           <Route path="integrations" element={<Integrations />} />
           <Route path="email-reports" element={<EmailReports />} />
+          <Route path="rank" element={<RankNo1 />} />
         </Route>
       </Routes>
     </BrowserRouter>

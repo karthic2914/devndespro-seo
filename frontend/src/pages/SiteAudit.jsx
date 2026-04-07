@@ -258,6 +258,7 @@ export default function SiteAudit() {
           <AuditIssueRow
             key={issue._idx}
             issue={issue}
+            siteId={siteId}
             siteUrl={siteUrl || auditData.url}
             expanded={expandedIdx === issue._idx}
             onToggle={() => setExpandedIdx(expandedIdx === issue._idx ? null : issue._idx)}

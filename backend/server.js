@@ -943,6 +943,154 @@ app.get('/api/sites/:siteId/audit/latest', auth, verifySite, async (req, res) =>
   res.json({ ...rows[0].results, score: rows[0].score, scannedAt: rows[0].created_at })
 })
 
+// ─── Audit AI Fix ─────────────────────────────────────────────────────────────
+app.post('/api/sites/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {
+  const { issue, siteUrl } = req.body
+  if (!issue || !siteUrl) return res.status(400).json({ error: 'issue and siteUrl required' })
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      system: `You are an expert SEO engineer. Given an SEO issue, provide:
+1. A 1-sentence plain-English explanation of WHY it matters for rankings
+2. The EXACT fix — specific code, copy, or action steps
+3. A "Before" and "After" example if applicable
+4. Estimated time to fix
+
+Respond in JSON only, no markdown:
+{
+  "why": "...",
+  "fix": "...",
+  "before": "...",
+  "after": "...",
+  "timeToFix": "...",
+  "priorityNote": "..."
+}`,
+      messages: [{
+        role: 'user',
+        content: `Site: ${siteUrl}\nIssue: ${issue.message}\nCategory: ${issue.category}\nImpact: ${issue.impact}\nStatus: ${issue.status}`
+      }]
+    })
+    const text = response.content?.[0]?.text || '{}'
+    try { res.json(JSON.parse(text)) } catch { res.json({ fix: text }) }
+  } catch (e) { console.error(e); res.status(500).json({ error: 'AI error' }) }
+})
+
+// ─── SERP Analysis — Rank #1 ─────────────────────────────────────────────────
+app.post('/api/sites/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
+  const { keyword } = req.body
+  if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0)
+    return res.status(400).json({ error: 'keyword required' })
+  const kw = keyword.trim().slice(0, 200)
+
+  const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
+  const site = s[0]
+
+  let serpResults = []
+
+  // Primary: ValueSERP (cheapest, commercial-ok) — set VALUESERP_KEY in env
+  // Fallback: SerpAPI — set SERPAPI_KEY in env
+  if (process.env.VALUESERP_KEY) {
+    try {
+      const { data } = await axios.get('https://api.valueserp.com/search', {
+        params: { api_key: process.env.VALUESERP_KEY, q: kw, num: 10, gl: 'us', hl: 'en', output: 'json' },
+        timeout: 15000,
+      })
+      serpResults = (data.organic_results || []).slice(0, 10).map((r, i) => ({
+        position: i + 1,
+        title: r.title || '',
+        url: r.link || '',
+        domain: (() => { try { return new URL(r.link).hostname.replace('www.', '') } catch { return r.link } })(),
+        snippet: r.snippet || '',
+      }))
+    } catch (e) { console.error('ValueSERP error:', e.message) }
+  } else if (process.env.SERPAPI_KEY) {
+    try {
+      const { data } = await axios.get('https://serpapi.com/search.json', {
+        params: { api_key: process.env.SERPAPI_KEY, q: kw, num: 10, gl: 'us', hl: 'en' },
+        timeout: 15000,
+      })
+      serpResults = (data.organic_results || []).slice(0, 10).map((r, i) => ({
+        position: i + 1,
+        title: r.title || '',
+        url: r.link || '',
+        domain: (() => { try { return new URL(r.link).hostname.replace('www.', '') } catch { return r.link } })(),
+        snippet: r.snippet || '',
+      }))
+    } catch (e) { console.error('SerpAPI error:', e.message) }
+  }
+
+  // Fallback: scrape Google
+  if (serpResults.length === 0) {
+    try {
+      const { data: html } = await axios.get('https://www.google.com/search', {
+        params: { q: kw, num: 10, hl: 'en', safe: 'active' },
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+          'Accept-Language': 'en-US,en;q=0.9',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        },
+        timeout: 12000,
+      })
+      const $ = cheerio.load(html)
+      // Try multiple known Google result selectors
+      $('div.g, div[jscontroller][jsaction][data-hveid], article').each((_, el) => {
+        if (serpResults.length >= 10) return false
+        const a = $(el).find('a[href^="http"]').first()
+        const href = a.attr('href')
+        const title = $(el).find('h3').first().text().trim()
+        const snippet = $(el).find('[data-sncf], .VwiC3b, [style*="-webkit-line-clamp"]').first().text().trim()
+        if (href && title && !href.includes('google.com') && !href.includes('youtube.com/results')) {
+          try {
+            const domain = new URL(href).hostname.replace('www.', '')
+            if (!serpResults.find(r => r.domain === domain)) {
+              serpResults.push({ position: serpResults.length + 1, title, url: href, domain, snippet: snippet.slice(0, 220) })
+            }
+          } catch {}
+        }
+      })
+    } catch (e) { console.error('Google scrape error:', e.message) }
+  }
+
+  // AI ranking plan
+  let plan = null
+  try {
+    const competitorList = serpResults.length
+      ? serpResults.map(r => `${r.position}. ${r.domain} — "${r.title}"`).join('\n')
+      : '(SERP data unavailable — generate plan based on keyword only)'
+    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on Google for: "${kw}"
+
+Their site: ${site.name} (${site.url})
+
+Current Google Page 1 results:
+${competitorList}
+
+Create a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:
+{
+  "difficulty": "Easy|Medium|Hard|Very Hard",
+  "timeEstimate": "e.g. 2–4 months",
+  "whyItMatters": "one sentence on why this keyword drives business value",
+  "contentAngle": "the specific content angle / unique spin to beat the #1 result",
+  "backlinkTarget": "rough number of backlinks needed",
+  "quickWin": "one action they can do this week",
+  "steps": [
+    { "step": 1, "title": "...", "description": "2–3 sentence action description", "timeframe": "e.g. Week 1", "priority": "High|Medium|Low" }
+  ]
+}`
+    const r = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514', max_tokens: 1800,
+      messages: [{ role: 'user', content: prompt }]
+    })
+    const text = r.content[0].text.trim()
+    const jsonStart = text.indexOf('{')
+    const jsonEnd = text.lastIndexOf('}')
+    try { plan = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) }
+    catch { plan = { quickWin: text, steps: [] } }
+  } catch (e) { console.error('AI plan error:', e) }
+
+  res.json({ keyword: kw, results: serpResults, plan })
+})
+
 // ─── AI Visibility Score ──────────────────────────────────────────────────────
 app.post('/api/sites/:siteId/ai/visibility', auth, verifySite, async (req, res) => {
   const { query: q } = req.body

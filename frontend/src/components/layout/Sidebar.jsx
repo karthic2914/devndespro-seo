@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { path: 'actions',   label: 'Action Plan',   icon: '✅' },
   { path: 'ai',        label: 'AI Assistant',  icon: '🤖' },
   { path: 'competitors', label: 'Competitors', icon: '⚔️' },
+  { path: 'rank',        label: 'Rank #1',       icon: '🏆' },
 ]
 
 export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, daGoal = 20 }) {

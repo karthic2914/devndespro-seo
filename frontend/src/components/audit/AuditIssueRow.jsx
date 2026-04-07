@@ -6,6 +6,7 @@ import {
   faArrowTrendUp, faCheck, faRotateRight, faCopy
 } from '@fortawesome/free-solid-svg-icons'
 import { T } from '../UI'
+import api from '../../utils/api'
 
 const IMPACT_POINTS = { High: '+12–18 pts', Medium: '+5–10 pts', Low: '+1–4 pts' }
 
@@ -15,40 +16,12 @@ function issueIcon(status) {
   return                           { icon: faTriangleExclamation, color: T.amber }
 }
 
-async function fetchAIFix(issue, siteUrl) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: `You are an expert SEO engineer. Given an SEO issue, provide:
-1. A 1-sentence plain-English explanation of WHY it matters for rankings
-2. The EXACT fix — specific code, copy, or action steps
-3. A "Before" and "After" example if applicable
-4. Estimated time to fix
-
-Respond in JSON only, no markdown:
-{
-  "why": "...",
-  "fix": "...",
-  "before": "...",
-  "after": "...",
-  "timeToFix": "...",
-  "priorityNote": "..."
-}`,
-      messages: [{
-        role: 'user',
-        content: `Site: ${siteUrl}\nIssue: ${issue.message}\nCategory: ${issue.category}\nImpact: ${issue.impact}\nStatus: ${issue.status}`
-      }]
-    })
-  })
-  const data = await res.json()
-  const text = data.content?.[0]?.text || '{}'
-  try { return JSON.parse(text) } catch { return { fix: text } }
+async function fetchAIFix(issue, siteUrl, siteId) {
+  const { data } = await api.post(`/sites/${siteId}/audit/ai-fix`, { issue, siteUrl })
+  return data
 }
 
-export default function AuditIssueRow({ issue, siteUrl, expanded, onToggle }) {
+export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onToggle }) {
   const [aiFix, setAiFix] = useState(null)
   const [loadingFix, setLoadingFix] = useState(false)
   const [marked, setMarked] = useState(false)
@@ -59,7 +32,7 @@ export default function AuditIssueRow({ issue, siteUrl, expanded, onToggle }) {
     if (aiFix) return
     setLoadingFix(true)
     try {
-      const result = await fetchAIFix(issue, siteUrl)
+      const result = await fetchAIFix(issue, siteUrl, siteId)
       setAiFix(result)
     } catch (e) {
       setAiFix({ fix: 'Could not generate fix. Please try again.' })
