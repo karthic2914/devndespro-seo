@@ -96,26 +96,43 @@ export default function Layout() {
 
         {/* Nav links */}
         <nav className="sidebar__nav">
-          {NAV.map(({ to, label, icon, end }) => (
-            <NavLink
-              key={to}
-              to={`/site/${siteId}${to ? '/' + to : ''}`}
-              end={end}
-              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            >
-              <span className="nav-item__icon">
-                <FontAwesomeIcon icon={icon} />
-                {to === 'alerts' && unreadAlerts > 0 && (
-                  <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
+          {/* Nav links */}
+          <nav className="sidebar__nav">
+            {NAV.map(({ to, label, icon, end }) => (
+              <NavLink
+                key={to}
+                to={`/site/${siteId}${to ? '/' + to : ''}`}
+                end={end}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              >
+                <span className="nav-item__icon">
+                  <FontAwesomeIcon icon={icon} />
+                  {to === 'alerts' && unreadAlerts > 0 && (
+                    <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
+                  )}
+                </span>
+                {!collapsed && label}
+                {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
+                  <span className="nav-count">{unreadAlerts}</span>
                 )}
-              </span>
-              {!collapsed && label}
-              {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
-                <span className="nav-count">{unreadAlerts}</span>
-              )}
-              {collapsed && <span className="nav-tooltip">{label}</span>}
-            </NavLink>
-          ))}
+                {collapsed && <span className="nav-tooltip">{label}</span>}
+              </NavLink>
+            ))}
+
+            {/* Admin-only: Users */}
+            {user?.email === 'karthic2914@gmail.com' && (
+              <NavLink
+                to={`/site/${siteId}/users`}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              >
+                <span className="nav-item__icon">
+                  <FontAwesomeIcon icon={faUserGroup} />
+                </span>
+                {!collapsed && 'Users'}
+                {collapsed && <span className="nav-tooltip">Users</span>}
+              </NavLink>
+            )}
+          </nav>
         </nav>
 
         {/* User footer */}
