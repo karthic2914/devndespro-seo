@@ -17,6 +17,7 @@ import {
   faBell,
   faPlug,
   faEnvelope,
+  faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, ProgressBar } from '../components/UI'
 import api from '../utils/api'
