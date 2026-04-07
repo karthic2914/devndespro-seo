@@ -130,12 +130,17 @@ export default function Dashboard() {
     ? backlinks.filter(b => String(b.type || '').toLowerCase() === 'dofollow').length
     : 0
   const dofollowPct = backlinkCount > 0 ? Math.round((dofollowCount / backlinkCount) * 100) : 0
-  const weeklyTraffic = (gscData?.daily || [])
+  const rawDaily = Array.isArray(gscData?.daily) ? gscData.daily : []
+  const weeklyTraffic = rawDaily
     .slice(-7)
     .map(d => ({
       label: new Date(d.keys?.[0] || d.date || Date.now()).toLocaleDateString('en-GB', { weekday: 'short' }),
       value: toNum(d.clicks, 0),
     }))
+    .filter(d => d.value > 0)
+
+  const gscConnected = gscData?.connected === true
+  const hasTrafficData = weeklyTraffic.length > 0
 
   return (
     <div style={{ flex: 1 }}>
@@ -192,8 +197,40 @@ export default function Dashboard() {
 
             {/* Traffic chart */}
             <Card padding="1.25rem">
-              <SectionLabel action={<Badge variant="info">Last 7 days</Badge>}>Weekly Traffic</SectionLabel>
-              <BarChart data={weeklyTraffic} color={T.orange} height={140} />
+              <SectionLabel action={
+                <Badge variant={hasTrafficData ? 'info' : 'warning'}>
+                  {hasTrafficData ? 'Last 7 days' : 'Last 28 days'}
+                </Badge>
+              }>Weekly Traffic</SectionLabel>
+              {hasTrafficData ? (
+                <BarChart data={weeklyTraffic} color={T.orange} height={140} />
+              ) : gscConnected ? (
+                <div style={{
+                  height: 140, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: T.surface2, borderRadius: 8,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>
+                    {gscClicks > 0
+                      ? `${gscClicks} clicks · ${gscImpressions} impressions over 28 days`
+                      : 'No traffic recorded in the last 28 days'}
+                  </div>
+                  <div style={{ fontSize: 11, color: T.muted }}>
+                    Google anonymises daily data for low-traffic sites — check back as traffic grows
+                  </div>
+                </div>
+              ) : (
+                <div style={{
+                  height: 140, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: T.surface2, borderRadius: 8,
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>Connect Google Search Console to see traffic</div>
+                  <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
+                    {gscConnecting ? 'Connecting…' : 'Connect GSC'}
+                  </Button>
+                </div>
+              )}
             </Card>
 
             {/* Keyword rankings table */}
