@@ -109,8 +109,8 @@ export default function Backlinks() {
         {showCrawler && (
           <div className="crawler-body">
             <p className="crawler-desc">
-              Queries <strong>Common Crawl</strong> (8B+ pages), <strong>Bing search</strong>, and any
-              <strong> seed URLs</strong> you paste — verifies and saves pages that link to your site.
+              By default it queries <strong>Common Crawl</strong> (8B+ pages) and <strong>Bing search</strong>.
+              Add <strong>seed URLs</strong> below for a third optional source — then it verifies and saves pages that link to your site.
             </p>
             <label className="crawler-label">Seed URLs <span>(optional — one per line)</span></label>
             <textarea className="crawler-seeds" rows={4}

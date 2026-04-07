@@ -44,6 +44,271 @@ const verifySite = async (req, res, next) => {
   next()
 }
 
+const SUPPORTED_ENGINES = ['google', 'bing', 'duckduckgo']
+
+function normalizeEngine(engine) {
+  const value = String(engine || 'google').toLowerCase().trim()
+  return SUPPORTED_ENGINES.includes(value) ? value : 'google'
+}
+
+function extractDomain(url) {
+  try {
+    const normalized = String(url || '').startsWith('http') ? String(url) : `https://${String(url || '')}`
+    return new URL(normalized).hostname.toLowerCase().replace(/^www\./, '')
+  } catch {
+    return String(url || '').toLowerCase().replace(/^www\./, '')
+  }
+}
+
+function mapOrganicResults(items = []) {
+  return items.slice(0, 10).map((r, i) => {
+    const url = r.link || r.url || ''
+    return {
+      position: i + 1,
+      title: r.title || '',
+      url,
+      domain: extractDomain(url),
+      snippet: r.snippet || '',
+    }
+  }).filter(r => r.url)
+}
+
+async function scrapeEngineResults(keyword, engine) {
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  }
+  let results = []
+
+  if (engine === 'google') {
+    const { data: html } = await axios.get('https://www.google.com/search', {
+      params: { q: keyword, num: 10, hl: 'en', safe: 'active' },
+      headers,
+      timeout: 12000,
+    })
+    const $ = cheerio.load(html)
+    $('div.g, div[jscontroller][jsaction][data-hveid], article').each((_, el) => {
+      if (results.length >= 10) return false
+      const a = $(el).find('a[href^="http"]').first()
+      const href = a.attr('href')
+      const title = $(el).find('h3').first().text().trim()
+      const snippet = $(el).find('[data-sncf], .VwiC3b, [style*="-webkit-line-clamp"]').first().text().trim()
+      if (href && title && !href.includes('google.com') && !href.includes('youtube.com/results')) {
+        const domain = extractDomain(href)
+        if (!results.find(r => r.domain === domain)) {
+          results.push({ position: results.length + 1, title, url: href, domain, snippet: snippet.slice(0, 220) })
+        }
+      }
+    })
+  }
+
+  if (engine === 'bing') {
+    const { data: html } = await axios.get('https://www.bing.com/search', {
+      params: { q: keyword, count: 10, setlang: 'en-US' },
+      headers,
+      timeout: 12000,
+    })
+    const $ = cheerio.load(html)
+    $('li.b_algo').each((i, el) => {
+      const a = $(el).find('h2 a').first()
+      const href = a.attr('href')
+      const title = a.text().trim()
+      const snippet = $(el).find('.b_caption p').first().text().trim()
+      if (href && href.startsWith('http') && title) {
+        results.push({ position: i + 1, title, url: href, domain: extractDomain(href), snippet })
+      }
+    })
+  }
+
+  if (engine === 'duckduckgo') {
+    const { data: html } = await axios.get('https://duckduckgo.com/html/', {
+      params: { q: keyword },
+      headers,
+      timeout: 12000,
+    })
+    const $ = cheerio.load(html)
+    $('.result').each((i, el) => {
+      const a = $(el).find('a.result__a, h2 a').first()
+      const href = a.attr('href')
+      const title = a.text().trim()
+      const snippet = $(el).find('.result__snippet').first().text().trim()
+      if (href && href.startsWith('http') && title) {
+        results.push({ position: i + 1, title, url: href, domain: extractDomain(href), snippet })
+      }
+    })
+  }
+
+  return results.slice(0, 10)
+}
+
+async function fetchSerpResults(keyword, engine) {
+  const normalizedEngine = normalizeEngine(engine)
+  // Primary for all engines: SerpAPI if available
+  if (process.env.SERPAPI_KEY) {
+    try {
+      const { data } = await axios.get('https://serpapi.com/search.json', {
+        params: { api_key: process.env.SERPAPI_KEY, q: keyword, num: 10, gl: 'us', hl: 'en', engine: normalizedEngine },
+        timeout: 15000,
+      })
+      const rows = mapOrganicResults(data.organic_results || [])
+      if (rows.length) return rows
+    } catch (e) { console.error('SerpAPI error:', e.message) }
+  }
+
+  // Secondary for Google only: ValueSERP
+  if (normalizedEngine === 'google' && process.env.VALUESERP_KEY) {
+    try {
+      const { data } = await axios.get('https://api.valueserp.com/search', {
+        params: { api_key: process.env.VALUESERP_KEY, q: keyword, num: 10, gl: 'us', hl: 'en', output: 'json' },
+        timeout: 15000,
+      })
+      const rows = mapOrganicResults(data.organic_results || [])
+      if (rows.length) return rows
+    } catch (e) { console.error('ValueSERP error:', e.message) }
+  }
+
+  // Final fallback: lightweight HTML scraping
+  try { return await scrapeEngineResults(keyword, normalizedEngine) }
+  catch (e) { console.error(`${normalizedEngine} scrape error:`, e.message); return [] }
+}
+
+function isDomainMatch(resultDomain, targetDomain) {
+  const rd = String(resultDomain || '').toLowerCase().replace(/^www\./, '')
+  const td = String(targetDomain || '').toLowerCase().replace(/^www\./, '')
+  return rd === td || rd.endsWith(`.${td}`) || td.endsWith(`.${rd}`)
+}
+
+function engineLabel(engine) {
+  if (engine === 'duckduckgo') return 'DuckDuckGo'
+  return String(engine || 'google').charAt(0).toUpperCase() + String(engine || 'google').slice(1)
+}
+
+async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, keywordLimit = 30) {
+  const normalizedEngines = (Array.isArray(engines) ? engines : SUPPORTED_ENGINES).map(normalizeEngine)
+  const limit = Math.min(Math.max(parseInt(keywordLimit || 30), 1), 80)
+
+  const { rows: siteRows } = await pool.query('SELECT id, name, url FROM sites WHERE id=$1 LIMIT 1', [siteId])
+  const site = siteRows[0]
+  if (!site) return { checked: 0, alertsCreated: 0, report: null }
+  const targetDomain = extractDomain(site.url)
+
+  const { rows: keywords } = await pool.query(
+    'SELECT id, keyword, rank_state FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
+    [siteId, limit]
+  )
+
+  let checked = 0
+  let alertsCreated = 0
+  const transitions = []
+  const engineStats = {}
+  normalizedEngines.forEach((engine) => {
+    engineStats[engine] = {
+      engine,
+      label: engineLabel(engine),
+      checked: 0,
+      inFirstPageCount: 0,
+      enteredCount: 0,
+      droppedCount: 0,
+      positions: [],
+    }
+  })
+
+  const keywordSummaries = []
+
+  for (const kw of keywords) {
+    const state = (kw.rank_state && typeof kw.rank_state === 'object') ? kw.rank_state : {}
+    const nextState = { ...state }
+
+    for (const engine of normalizedEngines) {
+      const results = await fetchSerpResults(kw.keyword, engine)
+      const hit = results.find(r => isDomainMatch(r.domain, targetDomain))
+      const currentPos = hit ? hit.position : null
+
+      const prevPosRaw = state?.[engine]?.position
+      const prevPos = Number.isFinite(Number(prevPosRaw)) ? Number(prevPosRaw) : null
+      const wasInFirstPage = !!prevPos && prevPos <= 10
+      const nowInFirstPage = !!currentPos && currentPos <= 10
+
+      engineStats[engine].checked += 1
+      if (nowInFirstPage) engineStats[engine].inFirstPageCount += 1
+      if (currentPos) engineStats[engine].positions.push(currentPos)
+
+      if (prevPos !== null && wasInFirstPage !== nowInFirstPage) {
+        const msg = nowInFirstPage
+          ? `${kw.keyword} entered page 1 on ${engineLabel(engine)} at #${currentPos}.`
+          : `${kw.keyword} dropped out of page 1 on ${engineLabel(engine)} (was #${prevPos}).`
+
+        await pool.query(
+          'INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)',
+          [siteId, 'rank-change', msg, nowInFirstPage ? 'info' : 'warning']
+        )
+        alertsCreated += 1
+        transitions.push({
+          keyword: kw.keyword,
+          engine,
+          action: nowInFirstPage ? 'entered' : 'dropped',
+          prevPosition: prevPos,
+          currentPosition: currentPos,
+        })
+        if (nowInFirstPage) engineStats[engine].enteredCount += 1
+        else engineStats[engine].droppedCount += 1
+      }
+
+      nextState[engine] = {
+        position: currentPos,
+        checked_at: new Date().toISOString(),
+      }
+      checked += 1
+    }
+
+    const currentByEngine = {}
+    normalizedEngines.forEach((engine) => {
+      const pRaw = nextState?.[engine]?.position
+      const pos = Number.isFinite(Number(pRaw)) ? Number(pRaw) : null
+      currentByEngine[engine] = {
+        position: pos,
+        inFirstPage: !!pos && pos <= 10,
+      }
+    })
+    keywordSummaries.push({ id: kw.id, keyword: kw.keyword, current: currentByEngine })
+
+    await pool.query('UPDATE keywords SET rank_state=$1 WHERE id=$2 AND site_id=$3', [nextState, kw.id, siteId])
+  }
+
+  const enginesSummary = normalizedEngines.map((engine) => {
+    const s = engineStats[engine]
+    const avgPos = s.positions.length
+      ? Number((s.positions.reduce((sum, n) => sum + n, 0) / s.positions.length).toFixed(1))
+      : null
+    return {
+      engine,
+      label: s.label,
+      checked: s.checked,
+      inFirstPageCount: s.inFirstPageCount,
+      enteredCount: s.enteredCount,
+      droppedCount: s.droppedCount,
+      avgPosition: avgPos,
+    }
+  })
+
+  const report = {
+    generatedAt: new Date().toISOString(),
+    siteId: site.id,
+    siteName: site.name,
+    siteUrl: site.url,
+    siteDomain: targetDomain,
+    checkedKeywords: keywords.length,
+    checked,
+    alertsCreated,
+    transitions,
+    engines: enginesSummary,
+    keywordSummaries,
+  }
+
+  return { checked, alertsCreated, report }
+}
+
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
@@ -162,6 +427,7 @@ async function initDB() {
     ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
     ALTER TABLE keywords ADD COLUMN IF NOT EXISTS site_id INTEGER;
+    ALTER TABLE keywords ADD COLUMN IF NOT EXISTS rank_state JSONB DEFAULT '{}'::jsonb;
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE actions ADD COLUMN IF NOT EXISTS site_id INTEGER;
@@ -494,6 +760,86 @@ app.put('/api/sites/:siteId/keywords/:id', auth, verifySite, async (req, res) =>
 app.delete('/api/sites/:siteId/keywords/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM keywords WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
+})
+
+app.post('/api/sites/:siteId/keywords/first-page-status', auth, verifySite, async (req, res) => {
+  const engine = normalizeEngine(req.body?.engine)
+  const limit = Math.min(Math.max(parseInt(req.body?.limit || 20), 1), 50)
+
+  const { rows: siteRows } = await pool.query('SELECT url FROM sites WHERE id=$1 LIMIT 1', [req.siteId])
+  if (!siteRows[0]) return res.status(404).json({ error: 'Site not found' })
+  const targetDomain = extractDomain(siteRows[0].url)
+
+  const { rows: keywords } = await pool.query(
+    'SELECT id, keyword FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
+    [req.siteId, limit]
+  )
+
+  const details = []
+  for (const k of keywords) {
+    const results = await fetchSerpResults(k.keyword, engine)
+    const hit = results.find(r => isDomainMatch(r.domain, targetDomain))
+    const position = hit ? hit.position : null
+    details.push({
+      id: k.id,
+      keyword: k.keyword,
+      position,
+      inFirstPage: !!position && position <= 10,
+      top10: results,
+    })
+  }
+
+  const inFirstPageCount = details.filter(d => d.inFirstPage).length
+  res.json({
+    engine,
+    siteDomain: targetDomain,
+    checked: details.length,
+    inFirstPageCount,
+    details,
+  })
+})
+
+app.post('/api/sites/:siteId/keywords/scan-weekly-now', auth, verifySite, async (req, res) => {
+  try {
+    const engines = Array.isArray(req.body?.engines) && req.body.engines.length
+      ? req.body.engines.map(normalizeEngine)
+      : SUPPORTED_ENGINES
+    const limit = Math.min(Math.max(parseInt(req.body?.limit || 30), 1), 80)
+    const scan = await scanSiteKeywordTransitions(req.siteId, engines, limit)
+
+    if (scan.report) {
+      await pool.query(
+        'INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)',
+        [req.siteId, 'rank-weekly-report', buildRankSummaryAlertMessage(scan.report), 'info']
+      )
+    }
+
+    let emailedTo = []
+    let emailError = null
+    const sendEmail = req.body?.sendEmail !== false
+    if (sendEmail && scan.report) {
+      const { rows: eRows } = await pool.query('SELECT enabled, recipients FROM email_report_settings WHERE site_id=$1 LIMIT 1', [req.siteId])
+      const configured = eRows[0]
+      const recipients = configured?.enabled && Array.isArray(configured?.recipients) && configured.recipients.length
+        ? configured.recipients
+        : (req.user?.email ? [req.user.email] : [])
+
+      if (recipients.length) {
+        try {
+          await sendRankScanReportEmail(recipients, scan.report)
+          emailedTo = recipients
+        } catch (e) {
+          emailError = e.message
+          console.error('Manual weekly scan email failed:', e.message)
+        }
+      }
+    }
+
+    res.json({ ok: true, ...scan, engines, emailedTo, emailError })
+  } catch (e) {
+    console.error('Manual weekly scan failed:', e)
+    res.status(500).json({ error: 'Weekly scan failed' })
+  }
 })
 
 // Backlinks
@@ -979,6 +1325,7 @@ Respond in JSON only, no markdown:
 // ─── SERP Analysis — Rank #1 ─────────────────────────────────────────────────
 app.post('/api/sites/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
   const { keyword } = req.body
+  const engine = normalizeEngine(req.body?.engine)
   if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0)
     return res.status(400).json({ error: 'keyword required' })
   const kw = keyword.trim().slice(0, 200)
@@ -986,71 +1333,7 @@ app.post('/api/sites/:siteId/serp-analysis', auth, verifySite, async (req, res) 
   const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
   const site = s[0]
 
-  let serpResults = []
-
-  // Primary: ValueSERP (cheapest, commercial-ok) — set VALUESERP_KEY in env
-  // Fallback: SerpAPI — set SERPAPI_KEY in env
-  if (process.env.VALUESERP_KEY) {
-    try {
-      const { data } = await axios.get('https://api.valueserp.com/search', {
-        params: { api_key: process.env.VALUESERP_KEY, q: kw, num: 10, gl: 'us', hl: 'en', output: 'json' },
-        timeout: 15000,
-      })
-      serpResults = (data.organic_results || []).slice(0, 10).map((r, i) => ({
-        position: i + 1,
-        title: r.title || '',
-        url: r.link || '',
-        domain: (() => { try { return new URL(r.link).hostname.replace('www.', '') } catch { return r.link } })(),
-        snippet: r.snippet || '',
-      }))
-    } catch (e) { console.error('ValueSERP error:', e.message) }
-  } else if (process.env.SERPAPI_KEY) {
-    try {
-      const { data } = await axios.get('https://serpapi.com/search.json', {
-        params: { api_key: process.env.SERPAPI_KEY, q: kw, num: 10, gl: 'us', hl: 'en' },
-        timeout: 15000,
-      })
-      serpResults = (data.organic_results || []).slice(0, 10).map((r, i) => ({
-        position: i + 1,
-        title: r.title || '',
-        url: r.link || '',
-        domain: (() => { try { return new URL(r.link).hostname.replace('www.', '') } catch { return r.link } })(),
-        snippet: r.snippet || '',
-      }))
-    } catch (e) { console.error('SerpAPI error:', e.message) }
-  }
-
-  // Fallback: scrape Google
-  if (serpResults.length === 0) {
-    try {
-      const { data: html } = await axios.get('https://www.google.com/search', {
-        params: { q: kw, num: 10, hl: 'en', safe: 'active' },
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-          'Accept-Language': 'en-US,en;q=0.9',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        },
-        timeout: 12000,
-      })
-      const $ = cheerio.load(html)
-      // Try multiple known Google result selectors
-      $('div.g, div[jscontroller][jsaction][data-hveid], article').each((_, el) => {
-        if (serpResults.length >= 10) return false
-        const a = $(el).find('a[href^="http"]').first()
-        const href = a.attr('href')
-        const title = $(el).find('h3').first().text().trim()
-        const snippet = $(el).find('[data-sncf], .VwiC3b, [style*="-webkit-line-clamp"]').first().text().trim()
-        if (href && title && !href.includes('google.com') && !href.includes('youtube.com/results')) {
-          try {
-            const domain = new URL(href).hostname.replace('www.', '')
-            if (!serpResults.find(r => r.domain === domain)) {
-              serpResults.push({ position: serpResults.length + 1, title, url: href, domain, snippet: snippet.slice(0, 220) })
-            }
-          } catch {}
-        }
-      })
-    } catch (e) { console.error('Google scrape error:', e.message) }
-  }
+  const serpResults = await fetchSerpResults(kw, engine)
 
   // AI ranking plan
   let plan = null
@@ -1058,11 +1341,12 @@ app.post('/api/sites/:siteId/serp-analysis', auth, verifySite, async (req, res) 
     const competitorList = serpResults.length
       ? serpResults.map(r => `${r.position}. ${r.domain} — "${r.title}"`).join('\n')
       : '(SERP data unavailable — generate plan based on keyword only)'
-    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on Google for: "${kw}"
+    const engineLabel = engine === 'duckduckgo' ? 'DuckDuckGo' : engine[0].toUpperCase() + engine.slice(1)
+    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engineLabel} for: "${kw}"
 
 Their site: ${site.name} (${site.url})
 
-Current Google Page 1 results:
+Current ${engineLabel} Page 1 results:
 ${competitorList}
 
 Create a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:
@@ -1088,7 +1372,7 @@ Create a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanat
     catch { plan = { quickWin: text, steps: [] } }
   } catch (e) { console.error('AI plan error:', e) }
 
-  res.json({ keyword: kw, results: serpResults, plan })
+  res.json({ keyword: kw, engine, results: serpResults, plan })
 })
 
 // ─── AI Visibility Score ──────────────────────────────────────────────────────
@@ -1332,6 +1616,12 @@ app.put('/api/sites/:siteId/alerts/read-all', auth, verifySite, async (req, res)
   res.json({ ok: true })
 })
 
+function buildRankSummaryAlertMessage(report) {
+  if (!report) return 'Weekly rank scan completed.'
+  const parts = (report.engines || []).map((e) => `${e.label}: ${e.inFirstPageCount}/${e.checked} on page 1`)
+  return `Weekly rank scan completed for ${report.siteName}. ${parts.join(' | ')}.`
+}
+
 // ─── Integrations Hub ────────────────────────────────────────────────────────
 app.get('/api/sites/:siteId/integrations', auth, verifySite, async (req, res) => {
   const [uR, iR, aR] = await Promise.all([
@@ -1484,6 +1774,100 @@ function createTransporter() {
     port: parseInt(process.env.SMTP_PORT || '587'),
     secure: process.env.SMTP_SECURE === 'true',
     auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+  })
+}
+
+function buildRankScanEmailHtml(report) {
+  const generatedAt = new Date(report.generatedAt || Date.now()).toLocaleString('en-GB')
+  const engineRows = (report.engines || []).map(e => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b">${e.label}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#1e293b">${e.inFirstPageCount}/${e.checked}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#16a34a">+${e.enteredCount}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#dc2626">-${e.droppedCount}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#64748b">${e.avgPosition ?? '&mdash;'}</td>
+    </tr>
+  `).join('')
+
+  const transitionRows = (report.transitions || []).slice(0, 14).map(t => `
+    <tr>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;color:#1e293b">${t.keyword}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#475569">${engineLabel(t.engine)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:${t.action === 'entered' ? '#16a34a' : '#dc2626'};font-weight:700">${t.action === 'entered' ? 'Entered' : 'Dropped'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#64748b">${t.prevPosition ?? '&mdash;'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #f1f5f9;text-align:center;color:#1e293b">${t.currentPosition ?? '&mdash;'}</td>
+    </tr>
+  `).join('')
+
+  return `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+<div style="max-width:700px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+  <div style="background:linear-gradient(135deg,#1e3a8a,#1d4ed8);padding:26px 30px;color:#fff">
+    <h1 style="margin:0 0 6px;font-size:22px;font-weight:700">Weekly Rank Scan Report</h1>
+    <p style="margin:0;opacity:.9;font-size:14px">${report.siteName} &middot; ${report.siteDomain}</p>
+    <p style="margin:8px 0 0;opacity:.75;font-size:12px">Generated ${generatedAt}</p>
+  </div>
+  <div style="padding:24px 30px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+      <div style="flex:1;min-width:130px;background:#f8fafc;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:#1e293b">${report.checkedKeywords}</div>
+        <div style="font-size:12px;color:#64748b">Keywords Checked</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:#f8fafc;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:#16a34a">${(report.transitions || []).filter(t => t.action === 'entered').length}</div>
+        <div style="font-size:12px;color:#64748b">Entered Page 1</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:#f8fafc;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:#dc2626">${(report.transitions || []).filter(t => t.action === 'dropped').length}</div>
+        <div style="font-size:12px;color:#64748b">Dropped from Page 1</div>
+      </div>
+      <div style="flex:1;min-width:130px;background:#f8fafc;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:24px;font-weight:700;color:#2563eb">${report.alertsCreated || 0}</div>
+        <div style="font-size:12px;color:#64748b">Alerts Created</div>
+      </div>
+    </div>
+
+    <h2 style="margin:0 0 12px;font-size:16px;color:#1e293b">Coverage by Search Engine</h2>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:22px">
+      <thead><tr style="background:#f8fafc">
+        <th style="padding:8px 12px;text-align:left;font-size:12px;color:#64748b;text-transform:uppercase">Engine</th>
+        <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Page 1 Coverage</th>
+        <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Entered</th>
+        <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Dropped</th>
+        <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Avg Pos</th>
+      </tr></thead>
+      <tbody>${engineRows}</tbody>
+    </table>
+
+    <h2 style="margin:0 0 12px;font-size:16px;color:#1e293b">Transitions</h2>
+    ${(report.transitions || []).length ? `
+      <table style="width:100%;border-collapse:collapse;margin-bottom:10px">
+        <thead><tr style="background:#f8fafc">
+          <th style="padding:8px 12px;text-align:left;font-size:12px;color:#64748b;text-transform:uppercase">Keyword</th>
+          <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Engine</th>
+          <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Action</th>
+          <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Prev</th>
+          <th style="padding:8px 12px;text-align:center;font-size:12px;color:#64748b;text-transform:uppercase">Now</th>
+        </tr></thead>
+        <tbody>${transitionRows}</tbody>
+      </table>
+    ` : `<p style="margin:0;color:#64748b;font-size:14px">No page-1 transitions this week. Rankings were stable.</p>`}
+  </div>
+</div>
+</body>
+</html>`
+}
+
+async function sendRankScanReportEmail(recipients, report) {
+  const transporter = createTransporter()
+  if (!transporter) throw new Error('SMTP not configured. Add SMTP_HOST, SMTP_USER, SMTP_PASS to .env')
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || `"SEO Reports" <${process.env.SMTP_USER}>`,
+    to: recipients.join(', '),
+    subject: `Weekly Rank Scan — ${report.siteName} (${new Date().toLocaleDateString('en-GB')})`,
+    html: buildRankScanEmailHtml(report),
   })
 }
 
@@ -1724,6 +2108,56 @@ cron.schedule('0 * * * *', async () => {
     }
   } catch (e) {
     console.error('Cron check failed:', e)
+  }
+})
+
+// ─── Weekly Rank Transition Scan (Sunday 02:20 UTC) ─────────────────────────
+cron.schedule('20 2 * * 0', async () => {
+  try {
+    const { rows: sites } = await pool.query(
+      `SELECT s.id
+       FROM sites s
+       WHERE EXISTS (SELECT 1 FROM keywords k WHERE k.site_id=s.id)
+       ORDER BY s.id ASC`
+    )
+
+    let totalChecked = 0
+    let totalAlerts = 0
+    for (const s of sites) {
+      try {
+        const scan = await scanSiteKeywordTransitions(s.id, SUPPORTED_ENGINES, 30)
+        totalChecked += scan.checked
+        totalAlerts += scan.alertsCreated
+
+        if (scan.report) {
+          await pool.query(
+            'INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)',
+            [s.id, 'rank-weekly-report', buildRankSummaryAlertMessage(scan.report), 'info']
+          )
+
+          const { rows: eRows } = await pool.query(
+            'SELECT enabled, recipients FROM email_report_settings WHERE site_id=$1 LIMIT 1',
+            [s.id]
+          )
+          const cfg = eRows[0]
+          const recipients = cfg?.enabled && Array.isArray(cfg?.recipients) && cfg.recipients.length
+            ? cfg.recipients
+            : []
+          if (recipients.length) {
+            try {
+              await sendRankScanReportEmail(recipients, scan.report)
+            } catch (e) {
+              console.error(`Weekly rank scan email failed for site ${s.id}:`, e.message)
+            }
+          }
+        }
+      } catch (e) {
+        console.error(`Weekly rank scan failed for site ${s.id}:`, e.message)
+      }
+    }
+    console.log(`Weekly rank scan complete: checks=${totalChecked}, alerts=${totalAlerts}, sites=${sites.length}`)
+  } catch (e) {
+    console.error('Weekly rank scan cron failed:', e)
   }
 })
 

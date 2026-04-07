@@ -9,6 +9,12 @@ import {
 import { T, PageHeader } from '../components/UI'
 import api from '../utils/api'
 
+const ENGINES = [
+  { value: 'google', label: 'Google' },
+  { value: 'bing', label: 'Bing' },
+  { value: 'duckduckgo', label: 'DuckDuckGo' },
+]
+
 const DIFF_COLOR = {
   Easy:       { bg: '#F0FDF4', color: '#16A34A', border: '#BBF7D0' },
   Medium:     { bg: '#FEF3C7', color: '#D97706', border: '#FDE68A' },
@@ -60,6 +66,7 @@ function PositionBadge({ pos }) {
 export default function RankNo1() {
   const { siteId } = useParams()
   const [keyword, setKeyword] = useState('')
+  const [engine, setEngine] = useState('google')
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
@@ -76,7 +83,7 @@ export default function RankNo1() {
     setError(null)
     setData(null)
     try {
-      const { data: result } = await api.post(`/sites/${siteId}/serp-analysis`, { keyword: kw })
+      const { data: result } = await api.post(`/sites/${siteId}/serp-analysis`, { keyword: kw, engine })
       setData(result)
     } catch (e) {
       setError(e.response?.data?.error || 'Analysis failed. Please try again.')
@@ -84,14 +91,16 @@ export default function RankNo1() {
     setLoading(false)
   }
 
+  const selectedEngine = ENGINES.find(e => e.value === (data?.engine || engine))?.label || 'Google'
+
   const diff = data?.plan?.difficulty
   const diffStyle = DIFF_COLOR[diff] || DIFF_COLOR.Medium
 
   return (
     <div className="fade-in" style={{ maxWidth: 860, margin: '0 auto' }}>
       <PageHeader
-        title="Rank #1 on Google"
-        subtitle="See who's on page 1 for any keyword — and get a step-by-step plan to beat them"
+        title="Rank #1 by Search Engine"
+        subtitle="See who is on page 1 for any keyword in Google, Bing, or DuckDuckGo — and get a step-by-step plan"
       />
 
       {/* Search bar */}
@@ -112,6 +121,17 @@ export default function RankNo1() {
             color: '#111827', background: 'transparent', fontFamily: 'inherit',
           }}
         />
+        <select
+          value={engine}
+          onChange={e => setEngine(e.target.value)}
+          style={{
+            border: '1px solid #E5E7EB', borderRadius: 9, padding: '8px 10px',
+            fontSize: 12, color: '#374151', background: '#fff', fontFamily: 'inherit',
+            flexShrink: 0,
+          }}
+        >
+          {ENGINES.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
+        </select>
         <button
           onClick={analyze}
           disabled={loading || !keyword.trim()}
@@ -162,7 +182,7 @@ export default function RankNo1() {
         <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: 24 }}>
           <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={faCircleNotch} spin style={{ color: T.orange }} />
-            Fetching Google Page 1 results and generating your ranking plan…
+            Fetching {ENGINES.find(e => e.value === engine)?.label || 'Google'} Page 1 results and generating your ranking plan…
           </div>
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} style={{
@@ -234,14 +254,14 @@ export default function RankNo1() {
               }}>
                 <FontAwesomeIcon icon={faTrophy} style={{ color: '#D97706', fontSize: 14 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                  Google Page 1 — <span style={{ color: T.orange }}>"{data.keyword}"</span>
+                  {selectedEngine} Page 1 — <span style={{ color: T.orange }}>"{data.keyword}"</span>
                 </span>
               </div>
 
               {data.results.length === 0 ? (
                 <div style={{ padding: '32px 18px', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
                   Could not retrieve live results.<br />
-                  <span style={{ fontSize: 11, marginTop: 4, display: 'block' }}>Set <code>SERPAPI_KEY</code> in your backend .env for reliable SERP data.</span>
+                  <span style={{ fontSize: 11, marginTop: 4, display: 'block' }}>Set SERPAPI_KEY in backend .env for reliable multi-engine SERP data.</span>
                 </div>
               ) : data.results.map(r => (
                 <div key={r.position} style={{
