@@ -762,6 +762,86 @@ app.delete('/api/sites/:siteId/keywords/:id', auth, verifySite, async (req, res)
   res.json({ ok: true })
 })
 
+app.post('/api/sites/:siteId/keywords/ai-suggest', auth, verifySite, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.body?.limit || 12), 3), 25)
+    const [siteR, kR, cR] = await Promise.all([
+      pool.query('SELECT name, url FROM sites WHERE id=$1 LIMIT 1', [req.siteId]),
+      pool.query('SELECT keyword, position, difficulty FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT 60', [req.siteId]),
+      pool.query('SELECT name, url, dr FROM competitors WHERE site_id=$1 ORDER BY dr DESC LIMIT 20', [req.siteId]),
+    ])
+
+    const site = siteR.rows[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const existingKeywords = kR.rows.map(k => `${k.keyword} (pos ${k.position || '?'}, ${k.difficulty || 'Unknown'})`).join(', ') || 'none'
+    const competitorHints = cR.rows
+      .map(c => `${c.name}${c.url ? ` (${c.url})` : ''}${c.dr ? ` DR ${c.dr}` : ''}`)
+      .join(', ') || 'none'
+
+    const prompt = `You are an expert SEO strategist.
+Generate high-opportunity keyword ideas for this business.
+
+Business: ${site.name}
+Website: ${site.url}
+Existing keywords: ${existingKeywords}
+Competitors: ${competitorHints}
+
+Rules:
+- Return ${limit} keywords
+- Avoid duplicates and avoid exact matches from existing keywords
+- Focus on realistic opportunities (mix of quick wins + strategic terms)
+- Include short-tail and long-tail keywords
+
+Return ONLY valid JSON:
+{
+  "suggestions": [
+    {
+      "keyword": "...",
+      "intent": "Informational|Commercial|Transactional|Navigational",
+      "difficulty": "Easy|Medium|Hard",
+      "estimatedVolume": 0,
+      "why": "short reason why this is a good target"
+    }
+  ]
+}`
+
+    const r = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1400,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const text = r.content?.[0]?.text?.trim() || '{}'
+    const jsonStart = text.indexOf('{')
+    const jsonEnd = text.lastIndexOf('}')
+    let parsed = { suggestions: [] }
+    try {
+      parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
+    } catch {
+      parsed = { suggestions: [] }
+    }
+
+    const existingSet = new Set(kR.rows.map(k => String(k.keyword || '').toLowerCase().trim()))
+    const cleaned = (Array.isArray(parsed.suggestions) ? parsed.suggestions : [])
+      .map(s => ({
+        keyword: String(s?.keyword || '').trim(),
+        intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'].includes(String(s?.intent || '')) ? s.intent : 'Informational',
+        difficulty: ['Easy', 'Medium', 'Hard'].includes(String(s?.difficulty || '')) ? s.difficulty : 'Medium',
+        estimatedVolume: Math.max(0, parseInt(s?.estimatedVolume || 0) || 0),
+        why: String(s?.why || '').trim(),
+      }))
+      .filter(s => s.keyword)
+      .filter(s => !existingSet.has(s.keyword.toLowerCase()))
+      .slice(0, limit)
+
+    res.json({ suggestions: cleaned })
+  } catch (e) {
+    console.error('AI keyword suggest failed:', e)
+    res.status(500).json({ error: 'AI keyword suggestion failed' })
+  }
+})
+
 app.post('/api/sites/:siteId/keywords/first-page-status', auth, verifySite, async (req, res) => {
   const engine = normalizeEngine(req.body?.engine)
   const limit = Math.min(Math.max(parseInt(req.body?.limit || 20), 1), 50)
