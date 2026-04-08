@@ -176,6 +176,15 @@ async function initDB() {
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE(site_id, user_id)
     );
+CREATE TABLE IF NOT EXISTS keyword_searches (
+  id SERIAL PRIMARY KEY,
+  site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE UNIQUE,
+  query TEXT NOT NULL,
+  results JSONB NOT NULL,
+  searched_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS keyword_searches_site_id_uidx ON keyword_searches(site_id);
+  
   `)
   console.log('DB initialized')
 }

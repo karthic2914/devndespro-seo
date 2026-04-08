@@ -48,6 +48,20 @@ router.delete('/:siteId/keywords/:id', auth, verifySite, async (req, res) => {
   res.json({ ok: true })
 })
 
+// Get last keyword search for this site
+router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT query, results, searched_at FROM keyword_searches WHERE site_id=$1 ORDER BY searched_at DESC LIMIT 1',
+      [req.siteId]
+    )
+    if (!rows.length) return res.json({ query: '', suggestions: [] })
+    res.json({ query: rows[0].query, suggestions: rows[0].results, searchedAt: rows[0].searched_at })
+  } catch (e) {
+    res.json({ query: '', suggestions: [] })
+  }
+})
+
 // DataForSEO keyword suggestions with real volume + difficulty
 router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req, res) => {
   const { keyword } = req.body
@@ -86,6 +100,14 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req
       competition: item.keyword_info?.competition || 0,
       trend: (item.keyword_info?.monthly_searches || []).slice(-6).map(m => m.search_volume),
     }))
+
+    // Save search to DB (upsert — keep only latest per site)
+    await pool.query(
+      `INSERT INTO keyword_searches (site_id, query, results)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (site_id) DO UPDATE SET query=$2, results=$3, searched_at=NOW()`,
+      [req.siteId, keyword, JSON.stringify(suggestions)]
+    )
 
     res.json({ suggestions, source: 'dataforseo' })
   } catch (e) {

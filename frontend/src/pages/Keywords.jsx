@@ -92,7 +92,16 @@ export default function Keywords() {
       })
     }).finally(() => setLoading(false))
 
-  useEffect(() => { load() }, [siteId])
+  useEffect(() => {
+  load()
+  // Load last search from DB
+  api.get(`/sites/${siteId}/keywords/last-search`).then(r => {
+    if (r.data.suggestions?.length) {
+      setDfsSuggestions(r.data.suggestions)
+      setDfsQuery(r.data.query || '')
+    }
+  }).catch(() => {})
+}, [siteId])
 
   const searchDataForSEO = async () => {
     if (!dfsQuery.trim()) return
