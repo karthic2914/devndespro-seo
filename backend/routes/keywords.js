@@ -1,4 +1,5 @@
 const express = require('express')
+const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, isDomainMatch, SUPPORTED_ENGINES, buildHeuristicKeywordSuggestions } = require('../utils/helpers')
@@ -13,24 +14,130 @@ function buildRankSummaryAlertMessage(report) {
   return `Weekly rank scan completed for ${report.siteName}. ${parts.join(' | ')}.`
 }
 
+function getDataForSEOAuth() {
+  const login = process.env.DATAFORSEO_LOGIN
+  const password = process.env.DATAFORSEO_PASSWORD
+  if (!login || !password) return null
+  return Buffer.from(`${login}:${password}`).toString('base64')
+}
+
 router.get('/:siteId/keywords', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM keywords WHERE site_id=$1 ORDER BY created_at ASC', [req.siteId])
   res.json(rows)
 })
+
 router.post('/:siteId/keywords', auth, verifySite, async (req, res) => {
   const { keyword, volume, difficulty, position } = req.body
-  const { rows } = await pool.query('INSERT INTO keywords (site_id, keyword, volume, difficulty, position) VALUES ($1,$2,$3,$4,$5) RETURNING *', [req.siteId, keyword, volume || 0, difficulty || 'Easy', position || null])
+  const { rows } = await pool.query(
+    'INSERT INTO keywords (site_id, keyword, volume, difficulty, position) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [req.siteId, keyword, volume || 0, difficulty || 'Easy', position || null]
+  )
   res.json(rows[0])
 })
+
 router.put('/:siteId/keywords/:id', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query('UPDATE keywords SET position=$1 WHERE id=$2 AND site_id=$3 RETURNING *', [req.body.position, req.params.id, req.siteId])
+  const { rows } = await pool.query(
+    'UPDATE keywords SET position=$1 WHERE id=$2 AND site_id=$3 RETURNING *',
+    [req.body.position, req.params.id, req.siteId]
+  )
   res.json(rows[0])
 })
+
 router.delete('/:siteId/keywords/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM keywords WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
 })
 
+// DataForSEO keyword suggestions with real volume + difficulty
+router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req, res) => {
+  const { keyword } = req.body
+  if (!keyword) return res.status(400).json({ error: 'keyword required' })
+
+  const authHeader = getDataForSEOAuth()
+  if (!authHeader) return res.status(500).json({ error: 'DataForSEO not configured' })
+
+  try {
+    const { data } = await axios.post(
+      'https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_suggestions/live',
+      [{
+        keyword,
+        language_name: 'English',
+        location_code: 2840,
+        limit: 10,
+        include_serp_info: false,
+        include_seed_keyword: true,
+      }],
+      {
+        headers: { 'Authorization': `Basic ${authHeader}`, 'Content-Type': 'application/json' },
+        timeout: 15000,
+      }
+    )
+
+    const items = data?.tasks?.[0]?.result?.[0]?.items || []
+    const suggestions = items.map(item => ({
+      keyword: item.keyword,
+      volume: item.keyword_info?.search_volume || 0,
+      difficulty: item.keyword_properties?.keyword_difficulty
+        ? item.keyword_properties.keyword_difficulty < 33 ? 'Easy'
+          : item.keyword_properties.keyword_difficulty < 66 ? 'Medium' : 'Hard'
+        : 'Medium',
+      difficultyScore: item.keyword_properties?.keyword_difficulty || 0,
+      cpc: item.keyword_info?.cpc || 0,
+      competition: item.keyword_info?.competition || 0,
+      trend: (item.keyword_info?.monthly_searches || []).slice(-6).map(m => m.search_volume),
+    }))
+
+    res.json({ suggestions, source: 'dataforseo' })
+  } catch (e) {
+    console.error('DataForSEO suggest error:', e.response?.data || e.message)
+    res.status(500).json({ error: 'DataForSEO request failed' })
+  }
+})
+
+// Enrich existing keywords with real volume from DataForSEO
+router.post('/:siteId/keywords/enrich', auth, verifySite, async (req, res) => {
+  const authHeader = getDataForSEOAuth()
+  if (!authHeader) return res.status(500).json({ error: 'DataForSEO not configured' })
+
+  try {
+    const { rows: keywords } = await pool.query(
+      'SELECT id, keyword FROM keywords WHERE site_id=$1 AND (volume IS NULL OR volume=0) LIMIT 10',
+      [req.siteId]
+    )
+    if (!keywords.length) return res.json({ enriched: 0, message: 'All keywords already have volume data' })
+
+    const { data } = await axios.post(
+      'https://api.dataforseo.com/v3/keywords_data/google_ads/search_volume/live',
+      [{ keywords: keywords.map(k => k.keyword), language_name: 'English', location_code: 2840 }],
+      {
+        headers: { 'Authorization': `Basic ${authHeader}`, 'Content-Type': 'application/json' },
+        timeout: 15000,
+      }
+    )
+
+    const results = data?.tasks?.[0]?.result || []
+    let enriched = 0
+    for (const r of results) {
+      const kw = keywords.find(k => k.keyword.toLowerCase() === r.keyword?.toLowerCase())
+      if (kw && r.search_volume != null) {
+        const diff = r.competition_index != null
+          ? r.competition_index < 33 ? 'Easy' : r.competition_index < 66 ? 'Medium' : 'Hard'
+          : 'Medium'
+        await pool.query(
+          'UPDATE keywords SET volume=$1, difficulty=$2 WHERE id=$3',
+          [r.search_volume, diff, kw.id]
+        )
+        enriched++
+      }
+    }
+    res.json({ enriched })
+  } catch (e) {
+    console.error('Enrich error:', e.response?.data || e.message)
+    res.status(500).json({ error: 'Enrichment failed' })
+  }
+})
+
+// AI keyword suggestions
 router.post('/:siteId/keywords/ai-suggest', auth, verifySite, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 12), 3), 25)

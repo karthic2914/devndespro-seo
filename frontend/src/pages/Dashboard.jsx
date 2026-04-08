@@ -115,7 +115,7 @@ export default function Dashboard() {
     return Number.isFinite(n) ? n : fallback
   }
 
-  const healthValue = toNum(metrics.health, overallScore)
+  const healthValue = metrics.health != null ? toNum(metrics.health, 0) : overallScore
   const gscClicks = toNum(gscData?.totals?.clicks, toNum(metrics.clicks, 0))
   const gscImpressions = toNum(gscData?.totals?.impressions, toNum(metrics.impressions, 0))
   const gscPositionRaw = Number(gscData?.totals?.position)
