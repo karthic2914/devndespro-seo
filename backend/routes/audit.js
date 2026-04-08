@@ -10,15 +10,52 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
   const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
   const url = s[0].url
   try {
-    const { data: html } = await axios.get(url, {
+    const crawlStartedAt = Date.now()
+    const crawlRes = await axios.get(url, {
       timeout: 15000,
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
       maxRedirects: 5,
     })
+    const html = typeof crawlRes.data === 'string' ? crawlRes.data : String(crawlRes.data || '')
     const $ = cheerio.load(html)
     const checks = []
     const add = (check, status, message, impact, category) =>
       checks.push({ check, status, message, impact, category })
+
+    const finalUrl = crawlRes?.request?.res?.responseUrl || url
+    const responseTimeMs = Date.now() - crawlStartedAt
+    const statusCode = Number(crawlRes.status || 0)
+    const headerLength = Number(crawlRes.headers?.['content-length'])
+    const fileSizeBytes = Number.isFinite(headerLength) && headerLength > 0 ? headerLength : Buffer.byteLength(html, 'utf8')
+    const language = ($('html').attr('lang') || '').trim() || null
+
+    const rootHost = (() => {
+      try { return new URL(finalUrl).hostname.toLowerCase().replace(/^www\./, '') } catch { return '' }
+    })()
+    const internalLinkSet = new Set()
+    const externalLinkSet = new Set()
+
+    $('a[href]').each((_, el) => {
+      const href = String($(el).attr('href') || '').trim()
+      if (!href) return
+      if (href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) return
+
+      if (href.startsWith('http://') || href.startsWith('https://') || href.startsWith('//')) {
+        try {
+          const absolute = href.startsWith('//') ? `https:${href}` : href
+          const linkHost = new URL(absolute).hostname.toLowerCase().replace(/^www\./, '')
+          if (rootHost && linkHost === rootHost) internalLinkSet.add(absolute)
+          else externalLinkSet.add(absolute)
+        } catch {
+          // ignore malformed URLs
+        }
+        return
+      }
+
+      internalLinkSet.add(href)
+    })
+    const internalLinks = internalLinkSet.size
+    const externalLinks = externalLinkSet.size
 
     // On-Page
     const title = $('title').text().trim()
@@ -48,7 +85,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     else if (imgCount > 0) add('img_alt', 'pass', `All ${imgCount} images have alt text`, 'Medium', 'On-Page SEO')
 
     // Content
-    const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(w => w.length > 2).length
+    const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
     if (wordCount < 300) add('content', 'error', `Very low word count: ~${wordCount} words (aim 500+)`, 'High', 'Content Quality')
     else if (wordCount < 700) add('content', 'warning', `Low word count: ~${wordCount} words (aim 800+ for ranking)`, 'Medium', 'Content Quality')
     else add('content', 'pass', `Good content volume: ~${wordCount} words`, 'Medium', 'Content Quality')
@@ -75,6 +112,12 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (!hasSchema) add('schema', 'warning', 'No JSON-LD structured data — missing rich result eligibility', 'Medium', 'Technical SEO')
     else add('schema', 'pass', 'Structured data (JSON-LD) found', 'Medium', 'Technical SEO')
 
+    if (internalLinks < 3) add('internal_links', 'warning', `Very few internal links found: ${internalLinks} (aim 5+)`, 'Medium', 'On-Page SEO')
+    else add('internal_links', 'pass', `Internal link structure looks good: ${internalLinks} links`, 'Low', 'On-Page SEO')
+
+    if (externalLinks === 0) add('external_links', 'warning', 'No external links found on this page', 'Low', 'On-Page SEO')
+    else add('external_links', 'pass', `External links found: ${externalLinks}`, 'Low', 'On-Page SEO')
+
     const errors = checks.filter(c => c.status === 'error').length
     const warnings = checks.filter(c => c.status === 'warning').length
     const score = Math.max(0, 100 - errors * 13 - warnings * 5)
@@ -100,7 +143,23 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       } catch (e) { console.log('PageSpeed API failed:', e.message) }
     }
 
-    const result = { checks, score, speed, scannedAt: new Date().toISOString(), url }
+    const result = {
+      checks,
+      score,
+      speed,
+      scannedAt: new Date().toISOString(),
+      url,
+      crawl: {
+        finalUrl,
+        statusCode,
+        responseTimeMs,
+        fileSizeBytes,
+        language,
+        wordCount,
+        internalLinks,
+        externalLinks,
+      },
+    }
     await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])
     await pool.query('INSERT INTO seo_metrics (site_id, health) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET health=$2, updated_at=NOW()', [req.siteId, score])
     for (const c of checks.filter(x => x.status === 'error')) {

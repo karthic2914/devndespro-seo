@@ -197,6 +197,14 @@ export default function SiteAudit() {
   const scannedDate = auditData.scannedAt
     ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
     : 'Unknown'
+  const crawl = auditData.crawl || null
+  const fmtMs = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '—')
+  const fmtBytes = (n) => {
+    const b = Number(n)
+    if (!Number.isFinite(b) || b <= 0) return '—'
+    if (b >= 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(2)} MB`
+    return `${(b / 1024).toFixed(2)} KB`
+  }
 
   return (
     <div style={{ padding: '1.5rem 2rem' }}>
@@ -241,6 +249,53 @@ export default function SiteAudit() {
 
       {/* Speed panel — separate component */}
       <AuditSpeedPanel speed={auditData.speed} />
+
+      {crawl && (
+        <div style={{
+          background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
+          boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem', padding:'12px 14px',
+        }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'#6B7280', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+            Crawl Snapshot
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(120px, 1fr))', gap:10 }}>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Status code</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.statusCode || '—'}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Response time</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>File size</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Language</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.language || '—'}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Word count</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Internal links</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>External links</div>
+              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
+            </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>Final URL</div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#2563EB', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={crawl.finalUrl || ''}>
+                {crawl.finalUrl || '—'}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tab bar */}
       <TabBar tabs={tabOptions} active={activeTab} onChange={id => { setActiveTab(id); setExpandedIdx(null) }} />
