@@ -28,6 +28,40 @@ function DifficultyBar({ score }) {
   )
 }
 
+// Opportunity tag logic — same for both DataForSEO suggestions and tracked keywords
+function getOpportunityTag(volume, difficultyRaw) {
+  // difficultyRaw can be a number (0-100) or a string ("Easy"/"Medium"/"Hard")
+  let diffScore
+  if (typeof difficultyRaw === 'number') {
+    diffScore = difficultyRaw
+  } else {
+    const d = String(difficultyRaw || '').toLowerCase()
+    diffScore = d === 'easy' ? 20 : d === 'medium' ? 50 : d === 'hard' ? 80 : 50
+  }
+
+  const vol = volume || 0
+
+  if (vol >= 500 && diffScore < 40) return { label: '🔥 Quick Win', color: '#16a34a', bg: '#dcfce7' }
+  if (vol >= 1000 && diffScore < 66) return { label: '📈 High Value', color: '#0369a1', bg: '#e0f2fe' }
+  if (vol < 200 && diffScore < 40) return { label: '🎯 Long Tail', color: '#7c3aed', bg: '#ede9fe' }
+  if (vol >= 500 && diffScore >= 66) return { label: '💪 High Competition', color: '#b45309', bg: '#fef3c7' }
+  if (vol < 100 && diffScore >= 50) return { label: '⚠️ Low Priority', color: '#6b7280', bg: '#f3f4f6' }
+  return { label: '📊 Standard', color: '#374151', bg: '#f9fafb' }
+}
+
+function OpportunityTag({ volume, difficulty }) {
+  const tag = getOpportunityTag(volume, difficulty)
+  return (
+    <span style={{
+      fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+      background: tag.bg, color: tag.color, whiteSpace: 'nowrap',
+      letterSpacing: '0.02em',
+    }}>
+      {tag.label}
+    </span>
+  )
+}
+
 export default function Keywords() {
   const { siteId } = useParams()
   const [keywords, setKeywords] = useState([])
@@ -48,9 +82,23 @@ export default function Keywords() {
   const [dfsQuery, setDfsQuery] = useState('')
   const [dfsLoading, setDfsLoading] = useState(false)
   const [dfsSuggestions, setDfsSuggestions] = useState([])
+  // Track added keywords by keyword string — pre-seed from tracked list
   const [addedKeywords, setAddedKeywords] = useState(new Set())
+  // Track which keywords are currently being added (to disable button mid-request)
+  const [addingKeywords, setAddingKeywords] = useState(new Set())
 
-  const load = () => api.get(`/sites/${siteId}/keywords`).then(r => setKeywords(r.data)).finally(() => setLoading(false))
+  const load = () =>
+    api.get(`/sites/${siteId}/keywords`).then(r => {
+      const kws = r.data || []
+      setKeywords(kws)
+      // Pre-seed addedKeywords from tracked list so suggestions already tracked show as Added
+      setAddedKeywords(prev => {
+        const next = new Set(prev)
+        kws.forEach(k => next.add(k.keyword.toLowerCase().trim()))
+        return next
+      })
+    }).finally(() => setLoading(false))
+
   useEffect(() => { load() }, [siteId])
 
   const searchDataForSEO = async () => {
@@ -68,6 +116,11 @@ export default function Keywords() {
   }
 
   const addDfsSuggestion = async (s) => {
+    const key = s.keyword.toLowerCase().trim()
+    // Prevent duplicate add
+    if (addedKeywords.has(key)) return
+    // Mark as in-progress
+    setAddingKeywords(prev => new Set([...prev, key]))
     try {
       await api.post(`/sites/${siteId}/keywords`, {
         keyword: s.keyword,
@@ -75,12 +128,20 @@ export default function Keywords() {
         difficulty: s.difficulty || 'Medium',
         position: null,
       })
-      setAddedKeywords(prev => new Set([...prev, s.keyword]))
+      setAddedKeywords(prev => new Set([...prev, key]))
       toast.success(`Added: ${s.keyword}`)
       load()
     } catch (e) {
-      toast.error(e.response?.data?.error || 'Failed to add keyword')
+      // Check if it's a duplicate error from backend
+      const msg = e.response?.data?.error || ''
+      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
+        setAddedKeywords(prev => new Set([...prev, key]))
+        toast('Already tracked', { icon: 'ℹ️' })
+      } else {
+        toast.error(msg || 'Failed to add keyword')
+      }
     }
+    setAddingKeywords(prev => { const n = new Set(prev); n.delete(key); return n })
   }
 
   const enrichKeywords = async () => {
@@ -134,21 +195,38 @@ export default function Keywords() {
   }
 
   const addAiSuggestion = async (s) => {
+    const key = s.keyword.toLowerCase().trim()
+    if (addedKeywords.has(key)) return
     try {
       await api.post(`/sites/${siteId}/keywords`, {
         keyword: s.keyword, volume: s.estimatedVolume || 0,
         difficulty: s.difficulty || 'Medium', position: null,
       })
+      setAddedKeywords(prev => new Set([...prev, key]))
       setAiSuggestions(prev => prev.filter(x => x.keyword !== s.keyword))
       toast.success(`Added: ${s.keyword}`)
       load()
-    } catch {}
+    } catch (e) {
+      const msg = e.response?.data?.error || ''
+      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
+        setAddedKeywords(prev => new Set([...prev, key]))
+        setAiSuggestions(prev => prev.filter(x => x.keyword !== s.keyword))
+        toast('Already tracked', { icon: 'ℹ️' })
+      } else {
+        toast.error('Failed to add keyword')
+      }
+    }
   }
 
   useEffect(() => { setPage1Data(null); setPage1Map({}) }, [engine])
 
   const add = async () => {
     if (!form.keyword.trim()) return
+    const key = form.keyword.toLowerCase().trim()
+    if (addedKeywords.has(key)) {
+      toast('Already tracked', { icon: 'ℹ️' })
+      return
+    }
     setAdding(true)
     try {
       await api.post(`/sites/${siteId}/keywords`, {
@@ -157,7 +235,14 @@ export default function Keywords() {
       })
       setForm({ keyword: '', volume: '', difficulty: 'Easy', position: '' })
       load()
-    } catch {}
+    } catch (e) {
+      const msg = e.response?.data?.error || ''
+      if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
+        toast('Already tracked', { icon: 'ℹ️' })
+      } else {
+        toast.error('Failed to add keyword')
+      }
+    }
     setAdding(false)
   }
 
@@ -166,7 +251,10 @@ export default function Keywords() {
   }
 
   const remove = async (id) => {
-    try { await api.delete(`/sites/${siteId}/keywords/${id}`); load() } catch {}
+    try {
+      await api.delete(`/sites/${siteId}/keywords/${id}`)
+      load()
+    } catch {}
   }
 
   const firstPageCount = page1Data?.inFirstPageCount || 0
@@ -220,21 +308,26 @@ export default function Keywords() {
           {dfsSuggestions.length > 0 && (
             <div style={{ marginTop: 12, border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
               {/* Table header */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 140px 70px 70px 80px', padding: '8px 12px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
-                {['Keyword', 'Volume', 'Difficulty', 'CPC', 'Comp.', ''].map(h => (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px 140px 70px 70px 90px', padding: '8px 12px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
+                {['Keyword', 'Opportunity', 'Volume', 'Difficulty', 'CPC', 'Comp.', ''].map(h => (
                   <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
                 ))}
               </div>
               {dfsSuggestions.map((s, i) => {
-                const isAdded = addedKeywords.has(s.keyword)
+                const key = s.keyword.toLowerCase().trim()
+                const isAdded = addedKeywords.has(key)
+                const isAdding = addingKeywords.has(key)
                 return (
                   <div key={s.keyword + i} style={{
-                    display: 'grid', gridTemplateColumns: '1fr 80px 140px 70px 70px 80px',
+                    display: 'grid', gridTemplateColumns: '1fr 100px 80px 140px 70px 70px 90px',
                     padding: '10px 12px', alignItems: 'center',
                     borderBottom: i < dfsSuggestions.length - 1 ? `1px solid #F3F4F6` : 'none',
                     background: isAdded ? '#F0FDF4' : '#fff',
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{s.keyword}</div>
+                    <div>
+                      <OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} />
+                    </div>
                     <div style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: T.text2, fontWeight: 700 }}>
                       {s.volume?.toLocaleString() || '—'}
                     </div>
@@ -247,12 +340,21 @@ export default function Keywords() {
                           <FontAwesomeIcon icon={faCircleCheck} />Added
                         </span>
                       ) : (
-                        <button onClick={() => addDfsSuggestion(s)} style={{
-                          background: T.orangeDim, color: T.orange, border: 'none',
-                          borderRadius: 6, padding: '5px 10px', fontSize: 12,
-                          fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4,
-                        }}>
-                          <FontAwesomeIcon icon={faPlus} />Add
+                        <button
+                          onClick={() => addDfsSuggestion(s)}
+                          disabled={isAdding}
+                          style={{
+                            background: isAdding ? T.surface2 : T.orangeDim,
+                            color: isAdding ? T.muted : T.orange,
+                            border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12,
+                            fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
+                          }}
+                        >
+                          {isAdding
+                            ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding…</>
+                            : <><FontAwesomeIcon icon={faPlus} />Add</>
+                          }
                         </button>
                       )}
                     </div>
@@ -292,23 +394,37 @@ export default function Keywords() {
                   ({aiSource === 'fallback' ? 'smart fallback' : 'Claude AI'})
                 </span>
               </div>
-              {aiSuggestions.slice(0, 8).map((s, idx) => (
-                <div key={`${s.keyword}-${idx}`} style={{
-                  padding: '9px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  borderBottom: idx < Math.min(aiSuggestions.length, 8) - 1 ? `1px solid ${T.border}` : 'none', gap: 8,
-                }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, color: T.text, fontWeight: 600 }}>{s.keyword}</div>
-                    <div style={{ fontSize: 11, color: T.muted }}>
-                      {s.intent || 'Informational'} • {s.difficulty || 'Medium'} • Vol ~{s.estimatedVolume || 0}
-                      {s.why ? ` • ${s.why}` : ''}
+              {aiSuggestions.slice(0, 8).map((s, idx) => {
+                const key = s.keyword.toLowerCase().trim()
+                const isAdded = addedKeywords.has(key)
+                return (
+                  <div key={`${s.keyword}-${idx}`} style={{
+                    padding: '9px 10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    borderBottom: idx < Math.min(aiSuggestions.length, 8) - 1 ? `1px solid ${T.border}` : 'none', gap: 8,
+                    background: isAdded ? '#F0FDF4' : '#fff',
+                  }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, color: T.text, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {s.keyword}
+                        <OpportunityTag volume={s.estimatedVolume} difficulty={s.difficulty} />
+                      </div>
+                      <div style={{ fontSize: 11, color: T.muted }}>
+                        {s.intent || 'Informational'} • {s.difficulty || 'Medium'} • Vol ~{s.estimatedVolume || 0}
+                        {s.why ? ` • ${s.why}` : ''}
+                      </div>
                     </div>
+                    {isAdded ? (
+                      <span style={{ fontSize: 11, color: T.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                        <FontAwesomeIcon icon={faCircleCheck} />Added
+                      </span>
+                    ) : (
+                      <OrangeBtn onClick={() => addAiSuggestion(s)}>
+                        <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
+                      </OrangeBtn>
+                    )}
                   </div>
-                  <OrangeBtn onClick={() => addAiSuggestion(s)}>
-                    <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
-                  </OrangeBtn>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </Card>
@@ -367,8 +483,9 @@ export default function Keywords() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px 90px 96px 88px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 90px 96px 88px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 <span>Keyword</span>
+                <span>Opportunity</span>
                 <span style={{ textAlign: 'right' }}>Vol/mo</span>
                 <span style={{ textAlign: 'center' }}>Difficulty</span>
                 <span style={{ textAlign: 'center' }}>Manual Pos</span>
@@ -377,8 +494,11 @@ export default function Keywords() {
                 <span></span>
               </div>
               {keywords.map(k => (
-                <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 90px 90px 96px 88px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
+                <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 90px 96px 88px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
                   <span style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{k.keyword}</span>
+                  <div>
+                    <OpportunityTag volume={k.volume} difficulty={k.difficulty} />
+                  </div>
                   <span style={{ fontSize: 13, textAlign: 'right', fontFamily: 'DM Mono, monospace', color: T.text2 }}>{k.volume?.toLocaleString()}</span>
                   <div style={{ textAlign: 'center' }}><Badge status={k.difficulty} /></div>
                   <input type="number" placeholder="—" defaultValue={k.position || ''} onBlur={e => updatePos(k.id, e.target.value)} style={{ width: '100%', textAlign: 'center', padding: '5px 8px', fontSize: 13 }} min="1" max="100" />
