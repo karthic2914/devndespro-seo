@@ -258,7 +258,19 @@ export default function Sites() {
                 safeSites.map(site => (
                   <div key={site.id} className="project-row" onClick={() => enter(site)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="project-row__avatar">{site.name[0].toUpperCase()}</div>
+                      <div className="project-row__avatar" style={{ padding: 0, overflow: 'hidden' }}>
+                        <img
+                          src={`https://www.google.com/s2/favicons?domain=${new URL(site.url).hostname}&sz=64`}
+                          alt={site.name[0].toUpperCase()}
+                          width={36}
+                          height={36}
+                          style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
+                          onError={e => {
+                            e.target.style.display = 'none'
+                            e.target.parentNode.textContent = site.name[0].toUpperCase()
+                          }}
+                        />
+                      </div>
                       <div>
                         <div className="project-row__name">{site.name}</div>
                         <div className="project-row__url">{site.url}</div>
