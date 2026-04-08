@@ -72,6 +72,49 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
     const isHttps = /^https:\/\//i.test(finalUrl)
 
+    const robots = { status: null, valid: null, issues: [], url: null }
+    try {
+      const origin = new URL(finalUrl).origin
+      const robotsUrl = `${origin}/robots.txt`
+      robots.url = robotsUrl
+      const robotsRes = await axios.get(robotsUrl, {
+        timeout: 12000,
+        validateStatus: () => true,
+      })
+      robots.status = Number(robotsRes.status || 0)
+
+      if (robotsRes.status >= 200 && robotsRes.status < 300) {
+        const txt = typeof robotsRes.data === 'string' ? robotsRes.data : String(robotsRes.data || '')
+        const knownDirectives = new Set([
+          'user-agent', 'allow', 'disallow', 'sitemap', 'crawl-delay', 'host', 'clean-param', 'noindex',
+        ])
+        const lines = txt.split(/\r?\n/)
+
+        lines.forEach((raw, idx) => {
+          const line = String(raw || '').trim()
+          if (!line || line.startsWith('#')) return
+          const sep = line.indexOf(':')
+          if (sep < 0) {
+            robots.issues.push({ line: idx + 1, message: 'Line must use directive: value format', value: line })
+            return
+          }
+          const directive = line.slice(0, sep).trim().toLowerCase()
+          const value = line.slice(sep + 1).trim()
+          if (!knownDirectives.has(directive)) {
+            robots.issues.push({ line: idx + 1, message: `Unknown directive: ${directive}`, value })
+          }
+        })
+
+        robots.valid = robots.issues.length === 0
+      } else {
+        robots.valid = false
+        robots.issues.push({ line: 0, message: `robots.txt returned HTTP ${robotsRes.status}` })
+      }
+    } catch (e) {
+      robots.valid = false
+      robots.issues.push({ line: 0, message: `Unable to fetch robots.txt: ${e.message}` })
+    }
+
     // On-Page
     const title = $('title').text().trim()
     if (!title) add('title', 'error', 'Missing <title> tag', 'High', 'On-Page SEO')
@@ -146,6 +189,14 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (externalLinks === 0) add('external_links', 'warning', 'No external links found on this page', 'Low', 'On-Page SEO')
     else add('external_links', 'pass', `External links found: ${externalLinks}`, 'Low', 'On-Page SEO')
 
+    if (robots.valid === true) {
+      add('robots_txt', 'pass', 'robots.txt is valid and crawl directives look well-formed', 'Medium', 'Advanced SEO')
+    } else {
+      const first = robots.issues[0]
+      const detail = first ? ` (line ${first.line || 'n/a'}: ${first.message})` : ''
+      add('robots_txt', 'warning', `robots.txt has formatting issues${detail}`, 'Medium', 'Advanced SEO')
+    }
+
     try {
       const missingPath = `${url.replace(/\/$/, '')}/this-page-should-not-exist-seo-audit-${Date.now()}`
       const notFoundRes = await axios.get(missingPath, {
@@ -199,6 +250,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         wordCount,
         internalLinks,
         externalLinks,
+        robots,
       },
     }
     await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])

@@ -294,7 +294,19 @@ export default function SiteAudit() {
                 {crawl.finalUrl || '—'}
               </div>
             </div>
+            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+              <div style={{ fontSize:11, color:'#9CA3AF' }}>robots.txt</div>
+              <div style={{ fontSize:14, fontWeight:700, color: crawl.robots?.valid ? '#16A34A' : '#B45309' }}>
+                {crawl.robots?.valid ? 'Valid' : 'Needs Fix'}
+              </div>
+            </div>
           </div>
+          {!crawl.robots?.valid && Array.isArray(crawl.robots?.issues) && crawl.robots.issues.length > 0 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 10px' }}>
+              robots.txt issue: {crawl.robots.issues[0].message}
+              {Number(crawl.robots.issues[0].line) > 0 ? ` (line ${crawl.robots.issues[0].line})` : ''}
+            </div>
+          )}
         </div>
       )}
 
