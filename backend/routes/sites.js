@@ -11,7 +11,7 @@ router.get('/', auth, async (req, res) => {
   const { rows } = await pool.query(
     `SELECT
       s.*,
-      COALESCE(m.health, 100) AS health,
+      m.health AS health,
       COALESCE(m.dr, 0) AS dr,
       COALESCE(k.keyword_count, 0) AS keyword_count,
       COALESCE(b.backlink_count, 0) AS backlink_count
