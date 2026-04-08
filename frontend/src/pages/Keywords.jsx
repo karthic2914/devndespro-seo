@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus, faXmark, faArrowsRotate, faWandMagicSparkles,
-  faMagnifyingGlass, faChartLine, faBolt, faCircleCheck,
+  faMagnifyingGlass, faChartLine, faBolt, faCircleCheck, faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
 import api from '../utils/api'
@@ -28,9 +28,7 @@ function DifficultyBar({ score }) {
   )
 }
 
-// Opportunity tag logic — same for both DataForSEO suggestions and tracked keywords
 function getOpportunityTag(volume, difficultyRaw) {
-  // difficultyRaw can be a number (0-100) or a string ("Easy"/"Medium"/"Hard")
   let diffScore
   if (typeof difficultyRaw === 'number') {
     diffScore = difficultyRaw
@@ -38,9 +36,7 @@ function getOpportunityTag(volume, difficultyRaw) {
     const d = String(difficultyRaw || '').toLowerCase()
     diffScore = d === 'easy' ? 20 : d === 'medium' ? 50 : d === 'hard' ? 80 : 50
   }
-
   const vol = volume || 0
-
   if (vol >= 500 && diffScore < 40) return { label: '🔥 Quick Win', color: '#16a34a', bg: '#dcfce7' }
   if (vol >= 1000 && diffScore < 66) return { label: '📈 High Value', color: '#0369a1', bg: '#e0f2fe' }
   if (vol < 200 && diffScore < 40) return { label: '🎯 Long Tail', color: '#7c3aed', bg: '#ede9fe' }
@@ -54,8 +50,7 @@ function OpportunityTag({ volume, difficulty }) {
   return (
     <span style={{
       fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
-      background: tag.bg, color: tag.color, whiteSpace: 'nowrap',
-      letterSpacing: '0.02em',
+      background: tag.bg, color: tag.color, whiteSpace: 'nowrap', letterSpacing: '0.02em',
     }}>
       {tag.label}
     </span>
@@ -77,21 +72,19 @@ export default function Keywords() {
   const [page1Data, setPage1Data] = useState(null)
   const [page1Map, setPage1Map] = useState({})
   const [scanReport, setScanReport] = useState(null)
+  const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
-  // DataForSEO search
   const [dfsQuery, setDfsQuery] = useState('')
   const [dfsLoading, setDfsLoading] = useState(false)
   const [dfsSuggestions, setDfsSuggestions] = useState([])
-  // Track added keywords by keyword string — pre-seed from tracked list
   const [addedKeywords, setAddedKeywords] = useState(new Set())
-  // Track which keywords are currently being added (to disable button mid-request)
   const [addingKeywords, setAddingKeywords] = useState(new Set())
 
   const load = () =>
     api.get(`/sites/${siteId}/keywords`).then(r => {
       const kws = r.data || []
       setKeywords(kws)
-      // Pre-seed addedKeywords from tracked list so suggestions already tracked show as Added
       setAddedKeywords(prev => {
         const next = new Set(prev)
         kws.forEach(k => next.add(k.keyword.toLowerCase().trim()))
@@ -117,22 +110,17 @@ export default function Keywords() {
 
   const addDfsSuggestion = async (s) => {
     const key = s.keyword.toLowerCase().trim()
-    // Prevent duplicate add
     if (addedKeywords.has(key)) return
-    // Mark as in-progress
     setAddingKeywords(prev => new Set([...prev, key]))
     try {
       await api.post(`/sites/${siteId}/keywords`, {
-        keyword: s.keyword,
-        volume: s.volume || 0,
-        difficulty: s.difficulty || 'Medium',
-        position: null,
+        keyword: s.keyword, volume: s.volume || 0,
+        difficulty: s.difficulty || 'Medium', position: null,
       })
       setAddedKeywords(prev => new Set([...prev, key]))
       toast.success(`Added: ${s.keyword}`)
       load()
     } catch (e) {
-      // Check if it's a duplicate error from backend
       const msg = e.response?.data?.error || ''
       if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
         setAddedKeywords(prev => new Set([...prev, key]))
@@ -223,10 +211,7 @@ export default function Keywords() {
   const add = async () => {
     if (!form.keyword.trim()) return
     const key = form.keyword.toLowerCase().trim()
-    if (addedKeywords.has(key)) {
-      toast('Already tracked', { icon: 'ℹ️' })
-      return
-    }
+    if (addedKeywords.has(key)) { toast('Already tracked', { icon: 'ℹ️' }); return }
     setAdding(true)
     try {
       await api.post(`/sites/${siteId}/keywords`, {
@@ -250,11 +235,25 @@ export default function Keywords() {
     try { await api.put(`/sites/${siteId}/keywords/${id}`, { position: parseInt(position) || null }) } catch {}
   }
 
-  const remove = async (id) => {
+  const confirmDelete = (k) => setDeleteConfirm(k)
+
+  const remove = async () => {
+    if (!deleteConfirm) return
+    setDeleting(true)
     try {
-      await api.delete(`/sites/${siteId}/keywords/${id}`)
+      await api.delete(`/sites/${siteId}/keywords/${deleteConfirm.id}`)
+      setAddedKeywords(prev => {
+        const next = new Set(prev)
+        next.delete(deleteConfirm.keyword.toLowerCase().trim())
+        return next
+      })
+      toast.success(`Removed: ${deleteConfirm.keyword}`)
       load()
-    } catch {}
+    } catch {
+      toast.error('Failed to remove keyword')
+    }
+    setDeleting(false)
+    setDeleteConfirm(null)
   }
 
   const firstPageCount = page1Data?.inFirstPageCount || 0
@@ -307,7 +306,6 @@ export default function Keywords() {
 
           {dfsSuggestions.length > 0 && (
             <div style={{ marginTop: 12, border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-              {/* Table header */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px 140px 70px 70px 90px', padding: '8px 12px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
                 {['Keyword', 'Opportunity', 'Volume', 'Difficulty', 'CPC', 'Comp.', ''].map(h => (
                   <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
@@ -325,9 +323,7 @@ export default function Keywords() {
                     background: isAdded ? '#F0FDF4' : '#fff',
                   }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{s.keyword}</div>
-                    <div>
-                      <OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} />
-                    </div>
+                    <div><OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} /></div>
                     <div style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: T.text2, fontWeight: 700 }}>
                       {s.volume?.toLocaleString() || '—'}
                     </div>
@@ -340,21 +336,13 @@ export default function Keywords() {
                           <FontAwesomeIcon icon={faCircleCheck} />Added
                         </span>
                       ) : (
-                        <button
-                          onClick={() => addDfsSuggestion(s)}
-                          disabled={isAdding}
-                          style={{
-                            background: isAdding ? T.surface2 : T.orangeDim,
-                            color: isAdding ? T.muted : T.orange,
-                            border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12,
-                            fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
-                          }}
-                        >
-                          {isAdding
-                            ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding…</>
-                            : <><FontAwesomeIcon icon={faPlus} />Add</>
-                          }
+                        <button onClick={() => addDfsSuggestion(s)} disabled={isAdding} style={{
+                          background: isAdding ? T.surface2 : T.orangeDim, color: isAdding ? T.muted : T.orange,
+                          border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12,
+                          fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
+                          display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
+                        }}>
+                          {isAdding ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding…</> : <><FontAwesomeIcon icon={faPlus} />Add</>}
                         </button>
                       )}
                     </div>
@@ -496,9 +484,7 @@ export default function Keywords() {
               {keywords.map(k => (
                 <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 90px 96px 88px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
                   <span style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{k.keyword}</span>
-                  <div>
-                    <OpportunityTag volume={k.volume} difficulty={k.difficulty} />
-                  </div>
+                  <div><OpportunityTag volume={k.volume} difficulty={k.difficulty} /></div>
                   <span style={{ fontSize: 13, textAlign: 'right', fontFamily: 'DM Mono, monospace', color: T.text2 }}>{k.volume?.toLocaleString()}</span>
                   <div style={{ textAlign: 'center' }}><Badge status={k.difficulty} /></div>
                   <input type="number" placeholder="—" defaultValue={k.position || ''} onBlur={e => updatePos(k.id, e.target.value)} style={{ width: '100%', textAlign: 'center', padding: '5px 8px', fontSize: 13 }} min="1" max="100" />
@@ -511,8 +497,14 @@ export default function Keywords() {
                   <div style={{ textAlign: 'center', fontSize: 12, color: T.text2, fontWeight: 700 }}>
                     {page1Map[k.id]?.position || '-'}
                   </div>
-                  <button onClick={() => remove(k.id)} style={{ background: 'none', border: 'none', color: T.muted, fontSize: 16, cursor: 'pointer' }}>
-                    <FontAwesomeIcon icon={faXmark} />
+                  <button
+                    onClick={() => confirmDelete(k)}
+                    title="Remove keyword"
+                    style={{ background: 'none', border: 'none', color: T.muted, fontSize: 14, cursor: 'pointer', padding: 4, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'color 0.15s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
+                    onMouseLeave={e => e.currentTarget.style.color = T.muted}
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
                   </button>
                 </div>
               ))}
@@ -520,6 +512,46 @@ export default function Keywords() {
           )}
         </Card>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setDeleteConfirm(null) }}
+        >
+          <div style={{ background: '#fff', borderRadius: 16, padding: '32px', maxWidth: 400, width: '90%', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+            <div style={{ width: 48, height: 48, borderRadius: 12, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+              <FontAwesomeIcon icon={faTrash} style={{ color: '#ef4444', fontSize: 18 }} />
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: T.text, marginBottom: 8 }}>Remove Keyword?</div>
+            <div style={{ fontSize: 13, color: T.muted, marginBottom: 8 }}>This will permanently remove:</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: T.text, background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 12px', marginBottom: 12, wordBreak: 'break-all' }}>
+              "{deleteConfirm.keyword}"
+            </div>
+            <div style={{ fontSize: 12, color: T.muted, marginBottom: 24 }}>
+              All tracking history will be lost. This cannot be undone.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: `1px solid ${T.border}`, background: '#fff', fontSize: 13, fontWeight: 600, color: T.text2, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={remove}
+                disabled={deleting}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: deleting ? '#fca5a5' : '#ef4444', fontSize: 13, fontWeight: 700, color: '#fff', cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                {deleting
+                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Removing…</>
+                  : <><FontAwesomeIcon icon={faTrash} />Remove</>
+                }
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
