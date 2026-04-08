@@ -52,9 +52,7 @@ export default function Dashboard() {
     api.get(`/sites/${siteId}/gsc`).then(r => { if (r.data) setGscData(r.data) }).catch(() => {})
   }
 
-  useEffect(() => {
-    loadDashboardData()
-  }, [siteId])
+  useEffect(() => { loadDashboardData() }, [siteId])
 
   const handleRunAudit = async () => {
     setAuditRunning(true)
@@ -67,7 +65,7 @@ export default function Dashboard() {
     setGscConnecting(true)
     try {
       const r = await api.get('/auth/gsc')
-      const win = window.open(r.data.url, '_blank', 'width=520,height=620,left=200,top=100')
+      window.open(r.data.url, '_blank', 'width=520,height=620,left=200,top=100')
       const handler = (e) => {
         if (e.data === 'gsc_connected') {
           window.removeEventListener('message', handler)
@@ -110,10 +108,7 @@ export default function Dashboard() {
   const previewActions = pendingActions.slice(0, 3)
   const previewAuditScores = categoryScores.filter(s => s.value > 0).slice(0, 3)
 
-  const toNum = (v, fallback = 0) => {
-    const n = Number(v)
-    return Number.isFinite(n) ? n : fallback
-  }
+  const toNum = (v, fallback = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fallback }
 
   const healthValue = metrics.health != null ? toNum(metrics.health, 0) : overallScore
   const gscClicks = toNum(gscData?.totals?.clicks, toNum(metrics.clicks, 0))
@@ -144,16 +139,13 @@ export default function Dashboard() {
 
   const gscConnected = gscData?.connected === true
   const hasTrafficData = weeklyTraffic.length > 0
+  const isClientSiteError = gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
 
   return (
     <div style={{ flex: 1 }}>
 
       {/* Page header */}
-      <div style={{
-        background: '#fff', borderBottom: `1px solid ${T.border}`,
-        padding: '1rem 1rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
+      <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
             Overview {site && <span style={{ color: T.muted, fontWeight: 400 }}>— {site.name}</span>}
@@ -161,7 +153,9 @@ export default function Dashboard() {
           <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <Button variant="secondary" size="sm" onClick={loadDashboardData}><FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Refresh Data</Button>
+          <Button variant="secondary" size="sm" onClick={loadDashboardData}>
+            <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Refresh Data
+          </Button>
           <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning}>
             <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
             {auditRunning ? 'Scanning…' : 'Run Full Audit'}
@@ -185,11 +179,11 @@ export default function Dashboard() {
 
         {/* Top stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: '1.5rem' }}>
-          <StatCard label="Site Health"      value={healthValue}  sub="out of 100"          icon={<FontAwesomeIcon icon={faHeartPulse} />} color={T.orange} accentTop />
-          <StatCard label="GSC Clicks"       value={gscClicks} sub="last 28 days" icon={<FontAwesomeIcon icon={faHandPointer} />} color={T.blue} accentTop />
-          <StatCard label="Impressions"      value={gscImpressions} sub="last 28 days" icon={<FontAwesomeIcon icon={faEye} />} color={T.purple} accentTop />
-          <StatCard label="Avg. Position"    value={gscPosition} sub="across tracked queries" icon={<FontAwesomeIcon icon={faLocationDot} />} color={T.green} accentTop />
-          <StatCard label="Tracked Keywords" value={trackedKeywords}  sub="in DB"               icon={<FontAwesomeIcon icon={faKey} />} color={T.amber} accentTop />
+          <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop />
+          <StatCard label="GSC Clicks"       value={gscClicks}         sub="last 28 days"           icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
+          <StatCard label="Impressions"      value={gscImpressions}    sub="last 28 days"           icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
+          <StatCard label="Avg. Position"    value={gscPosition}       sub="across tracked queries" icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop />
+          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop />
         </div>
 
         {/* Main 2-col grid */}
@@ -205,64 +199,31 @@ export default function Dashboard() {
                   {hasTrafficData ? 'Last 7 days' : 'Last 28 days'}
                 </Badge>
               }>Weekly Traffic</SectionLabel>
+
               {hasTrafficData ? (
                 <BarChart data={weeklyTraffic} color={T.orange} height={140} />
+
               ) : gscConnected && gscError ? (
-                <div style={{
-                  height: 140, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: T.surface2, borderRadius: 8, textAlign: 'center', padding: '0 16px',
-                }}>
-                  {gscAccountEmail && (
-                    <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
-                  )}
+                <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: T.surface2, borderRadius: 8, textAlign: 'center', padding: '0 16px' }}>
+                  {gscAccountEmail && <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>}
                   <div style={{ fontSize: 13, fontWeight: 700, color: T.text2 }}>
-                    {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
-                      ? 'This account cannot access this Search Console property'
-                      : gscError || 'Unable to load Search Console data'}
+                    {isClientSiteError ? 'No GSC access for this property' : gscError || 'Unable to load Search Console data'}
                   </div>
                   <div style={{ fontSize: 11, color: T.muted }}>
-                    {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
-                      ? 'Use a Google account that owns this property or add this account as a verified owner in GSC'
+                    {isClientSiteError
+                      ? 'This is a client site — GSC data requires the client to connect their own Google account via Integrations'
                       : 'Reconnect Google Search Console if the problem continues'}
                   </div>
-                  <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                    {gscConnecting ? 'Connecting…' : 'Reconnect GSC'} : gscConnected && gscError ? (
-                      <div style={{
-                        height: 140, display: 'flex', flexDirection: 'column',
-                        alignItems: 'center', justifyContent: 'center', gap: 8,
-                        background: T.surface2, borderRadius: 8, textAlign: 'center', padding: '0 16px',
-                      }}>
-                        {gscAccountEmail && (
-                          <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
-                        )}
-                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text2 }}>
-                          {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
-                            ? 'No GSC access for this property'
-                            : gscError || 'Unable to load Search Console data'}
-                        </div>
-                        <div style={{ fontSize: 11, color: T.muted }}>
-                          {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
-                            ? 'This is a client site — GSC data requires the client to connect their own Google account via Integrations'
-                            : 'Reconnect Google Search Console if the problem continues'}
-                        </div>
-                        {gscErrorCode !== 'property_access' && gscErrorCode !== 'site_mismatch' && (
-                          <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                            {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
-                          </Button>
-                        )}
-                      </div>
-                  </Button>
-                </div>
-              ) : gscConnected ? (
-                <div style={{
-                  height: 140, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 6,
-                  background: T.surface2, borderRadius: 8,
-                }}>
-                  {gscAccountEmail && (
-                    <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
+                  {!isClientSiteError && (
+                    <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
+                      {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
+                    </Button>
                   )}
+                </div>
+
+              ) : gscConnected ? (
+                <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, background: T.surface2, borderRadius: 8 }}>
+                  {gscAccountEmail && <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>}
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>
                     {gscClicks > 0
                       ? `${gscClicks} clicks · ${gscImpressions} impressions over 28 days`
@@ -272,12 +233,9 @@ export default function Dashboard() {
                     Google anonymises daily data for low-traffic sites — check back as traffic grows
                   </div>
                 </div>
+
               ) : (
-                <div style={{
-                  height: 140, display: 'flex', flexDirection: 'column',
-                  alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: T.surface2, borderRadius: 8,
-                }}>
+                <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: T.surface2, borderRadius: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>Connect Google Search Console to see traffic</div>
                   <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
                     {gscConnecting ? 'Connecting…' : 'Connect GSC'}
@@ -292,24 +250,21 @@ export default function Dashboard() {
                 <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}><FontAwesomeIcon icon={faKey} style={{ marginRight: 6 }} />Keyword Rankings (Preview)</div>
                 <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/keywords`)}>View all <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} /></Button>
               </div>
-              {/* Table header */}
               <div style={{ display: 'grid', gridTemplateColumns: '2fr 80px 80px 80px', padding: '8px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
                 {['Keyword', 'Position', 'Change', 'Volume'].map(h => (
                   <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
                 ))}
               </div>
-              {previewKeywords.map((kw, i) => {
+              {previewKeywords.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', fontSize: 12, color: T.muted }}>No keywords yet. Add keywords to start tracking.</div>
+              ) : previewKeywords.map((kw, i) => {
                 const prevPos = Number(kw.prev)
                 const currentPos = Number(kw.position)
                 const hasValidPositions = Number.isFinite(prevPos) && Number.isFinite(currentPos)
                 const improved = hasValidPositions ? prevPos > currentPos : false
                 const change = hasValidPositions ? (prevPos - currentPos) : null
                 return (
-                  <div key={kw.keyword + i} style={{
-                    display: 'grid', gridTemplateColumns: '2fr 80px 80px 80px',
-                    padding: '11px 20px', alignItems: 'center',
-                    borderBottom: i < previewKeywords.length - 1 ? `1px solid #F3F4F6` : 'none',
-                  }}>
+                  <div key={kw.keyword + i} style={{ display: 'grid', gridTemplateColumns: '2fr 80px 80px 80px', padding: '11px 20px', alignItems: 'center', borderBottom: i < previewKeywords.length - 1 ? `1px solid #F3F4F6` : 'none' }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{kw.keyword}</div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: currentPos <= 3 ? T.green : currentPos <= 10 ? T.orange : T.text, fontFamily: 'DM Mono, monospace' }}>
                       {Number.isFinite(currentPos) && currentPos > 0 ? `#${currentPos}` : '—'}
@@ -374,38 +329,24 @@ export default function Dashboard() {
               <SectionLabel>Domain Authority</SectionLabel>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center', padding: '0.75rem 0' }}>
                 <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 42, fontWeight: 800, color: T.text, fontFamily: 'DM Mono, monospace', lineHeight: 1 }}>{drValue}</div>
+                  <div style={{ fontSize: 42, fontWeight: 800, color: T.text, fontFamily: 'DM Mono, monospace', lineHeight: 1 }}>{drValue}</div>
                   <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>Current DR</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: T.text2, marginBottom: 8, lineHeight: 1.5 }}>
-                    Need <strong style={{ color: T.orange }}>20+</strong> to compete in your niche.
-                    Focus on getting dofollow backlinks.
+                    Need <strong style={{ color: T.orange }}>20+</strong> to compete in your niche. Focus on getting dofollow backlinks.
                   </div>
                   <ProgressBar value={drValue} max={20} color={T.orange} height={6} showLabel />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
                 {[
-                  { label: 'Backlinks',      value: backlinkCount, goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Referring Domains', value: referringDomainCount, goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Dofollow',       value: `${dofollowPct}%`, goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Target DA',      value: '20+' },
+                  { label: 'Backlinks',         value: backlinkCount,        goTo: `/site/${siteId}/backlinks` },
+                  { label: 'Referring Domains',  value: referringDomainCount, goTo: `/site/${siteId}/backlinks` },
+                  { label: 'Dofollow',           value: `${dofollowPct}%`,   goTo: `/site/${siteId}/backlinks` },
+                  { label: 'Target DA',          value: '20+' },
                 ].map(m => (
-                  <button
-                    key={m.label}
-                    type="button"
-                    onClick={() => m.goTo && navigate(m.goTo)}
-                    style={{
-                      background: T.surface2,
-                      borderRadius: 8,
-                      padding: '10px 12px',
-                      border: `1px solid ${T.border}`,
-                      textAlign: 'left',
-                      cursor: m.goTo ? 'pointer' : 'default',
-                      opacity: m.goTo ? 1 : 0.95,
-                    }}
-                  >
+                  <button key={m.label} type="button" onClick={() => m.goTo && navigate(m.goTo)} style={{ background: T.surface2, borderRadius: 8, padding: '10px 12px', border: `1px solid ${T.border}`, textAlign: 'left', cursor: m.goTo ? 'pointer' : 'default' }}>
                     <div style={{ fontSize: 16, fontWeight: 800, color: T.text, fontFamily: 'DM Mono, monospace' }}>{m.value}</div>
                     <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{m.label}</div>
                   </button>
@@ -434,12 +375,16 @@ export default function Dashboard() {
                   </Button>
                 </div>
               ) : gscData?.error ? (
-                <div style={{ fontSize: 12, color: T.amber, background: T.amberDim, borderRadius: 7, padding: '8px 12px' }}>{gscData.error}</div>
+                <div style={{ fontSize: 12, color: T.amber, background: T.amberDim, borderRadius: 7, padding: '8px 12px' }}>
+                  {isClientSiteError
+                    ? 'Client site — ask the client to connect their GSC via Integrations'
+                    : gscData.error}
+                </div>
               ) : (
                 <>
                   {[
-                    { label: 'Total Clicks',   value: gscData.totals?.clicks?.toLocaleString() || '0',   sub: 'last 28 days' },
-                    { label: 'Impressions',    value: gscData.totals?.impressions?.toLocaleString() || '0', sub: 'last 28 days' },
+                    { label: 'Total Clicks',  value: gscData.totals?.clicks?.toLocaleString() || '0',       sub: 'last 28 days' },
+                    { label: 'Impressions',   value: gscData.totals?.impressions?.toLocaleString() || '0',   sub: 'last 28 days' },
                   ].map(s => (
                     <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: `1px solid #F3F4F6` }}>
                       <span style={{ fontSize: 12, color: T.text2 }}>{s.label}</span>
@@ -460,7 +405,9 @@ export default function Dashboard() {
                       ))}
                     </div>
                   )}
-                  <Button variant="secondary" size="sm" fullWidth style={{ marginTop: 12 }} onClick={() => navigate(`/site/${siteId}/integrations`)}>Open Integrations <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} /></Button>
+                  <Button variant="secondary" size="sm" fullWidth style={{ marginTop: 12 }} onClick={() => navigate(`/site/${siteId}/integrations`)}>
+                    Open Integrations <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                  </Button>
                 </>
               )}
             </Card>
@@ -471,4 +418,3 @@ export default function Dashboard() {
     </div>
   )
 }
-
