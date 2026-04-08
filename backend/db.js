@@ -129,7 +129,15 @@ async function initDB() {
     UPDATE competitors c SET site_id = c.id WHERE c.site_id IS NULL AND EXISTS (SELECT 1 FROM sites s WHERE s.id = c.id);
     UPDATE actions a SET site_id = a.id WHERE a.site_id IS NULL AND EXISTS (SELECT 1 FROM sites s WHERE s.id = a.id);
 
-    CREATE UNIQUE INDEX IF NOT EXISTS seo_metrics_site_id_uidx ON seo_metrics(site_id) WHERE site_id IS NOT NULL;
+    DELETE FROM seo_metrics a
+    USING seo_metrics b
+    WHERE a.id < b.id
+      AND a.site_id IS NOT NULL
+      AND b.site_id IS NOT NULL
+      AND a.site_id = b.site_id;
+
+    DROP INDEX IF EXISTS seo_metrics_site_id_uidx;
+    CREATE UNIQUE INDEX IF NOT EXISTS seo_metrics_site_id_uidx ON seo_metrics(site_id);
     CREATE INDEX IF NOT EXISTS keywords_site_id_idx ON keywords(site_id);
     CREATE INDEX IF NOT EXISTS backlinks_site_id_idx ON backlinks(site_id);
     CREATE INDEX IF NOT EXISTS competitors_site_id_idx ON competitors(site_id);
