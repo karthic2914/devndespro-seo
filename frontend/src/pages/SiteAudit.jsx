@@ -15,7 +15,7 @@ import AuditIssueRow    from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel  from '../components/audit/AuditSpeedPanel'
 
 // ─── helpers ───────────────────────────────────────────────────────────────
-const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed']
+const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO']
 
 function groupByCategory(checks = []) {
   const map = {}
@@ -24,7 +24,8 @@ function groupByCategory(checks = []) {
     if (!map[cat]) map[cat] = []
     map[cat].push(c)
   }
-  return CAT_ORDER.map(name => {
+  const orderedNames = [...CAT_ORDER, ...Object.keys(map).filter(n => !CAT_ORDER.includes(n))]
+  return orderedNames.map(name => {
     const issues = map[name] || []
     if (!issues.length) return null
     const score = Math.round(

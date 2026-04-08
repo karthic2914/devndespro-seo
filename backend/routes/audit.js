@@ -57,6 +57,21 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     const internalLinks = internalLinkSet.size
     const externalLinks = externalLinkSet.size
 
+    const cssLinkCount = $('link[rel="stylesheet"]').length
+    const blockingScriptCount = $('head script[src]:not([defer]):not([async])').length
+    const renderBlockingCount = cssLinkCount + blockingScriptCount
+
+    const imageEls = $('img')
+    let legacyImageCount = 0
+    imageEls.each((_, el) => {
+      const src = String($(el).attr('src') || '').toLowerCase()
+      const modernInPicture = $(el).closest('picture').find('source[type*="image/avif"], source[type*="image/webp"]').length > 0
+      const isLegacy = /\.(png|jpe?g|gif)(\?|#|$)/.test(src)
+      if (isLegacy && !modernInPicture) legacyImageCount += 1
+    })
+
+    const isHttps = /^https:\/\//i.test(finalUrl)
+
     // On-Page
     const title = $('title').text().trim()
     if (!title) add('title', 'error', 'Missing <title> tag', 'High', 'On-Page SEO')
@@ -112,11 +127,37 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (!hasSchema) add('schema', 'warning', 'No JSON-LD structured data — missing rich result eligibility', 'Medium', 'Technical SEO')
     else add('schema', 'pass', 'Structured data (JSON-LD) found', 'Medium', 'Technical SEO')
 
+    if (!isHttps) add('https', 'error', 'Site is not served over HTTPS', 'High', 'Server & Security')
+    else add('https', 'pass', 'Site is served securely over HTTPS', 'High', 'Server & Security')
+
+    if (renderBlockingCount >= 5) add('render_blocking', 'error', `High render-blocking resources in critical path: ${renderBlockingCount}`, 'High', 'Page Speed')
+    else if (renderBlockingCount >= 3) add('render_blocking', 'warning', `Some render-blocking resources found: ${renderBlockingCount}`, 'Medium', 'Page Speed')
+    else add('render_blocking', 'pass', `Render-blocking resources are under control: ${renderBlockingCount}`, 'Medium', 'Page Speed')
+
+    if (legacyImageCount > 0) add('modern_images', 'warning', `${legacyImageCount} images appear to use legacy formats without modern alternatives (WebP/AVIF)`, 'Medium', 'Page Speed')
+    else add('modern_images', 'pass', 'Images use modern formats or provide modern fallbacks', 'Low', 'Page Speed')
+
+    if (responseTimeMs > 1800) add('ttfb_proxy', 'warning', `Slow server response observed: ${responseTimeMs}ms`, 'Medium', 'Server & Security')
+    else add('ttfb_proxy', 'pass', `Server response time looks healthy: ${responseTimeMs}ms`, 'Low', 'Server & Security')
+
     if (internalLinks < 3) add('internal_links', 'warning', `Very few internal links found: ${internalLinks} (aim 5+)`, 'Medium', 'On-Page SEO')
     else add('internal_links', 'pass', `Internal link structure looks good: ${internalLinks} links`, 'Low', 'On-Page SEO')
 
     if (externalLinks === 0) add('external_links', 'warning', 'No external links found on this page', 'Low', 'On-Page SEO')
     else add('external_links', 'pass', `External links found: ${externalLinks}`, 'Low', 'On-Page SEO')
+
+    try {
+      const missingPath = `${url.replace(/\/$/, '')}/this-page-should-not-exist-seo-audit-${Date.now()}`
+      const notFoundRes = await axios.get(missingPath, {
+        timeout: 12000,
+        maxRedirects: 5,
+        validateStatus: () => true,
+      })
+      if (notFoundRes.status === 404) add('custom_404', 'pass', '404 handling works (missing pages return HTTP 404)', 'Medium', 'Advanced SEO')
+      else add('custom_404', 'warning', `Missing pages returned HTTP ${notFoundRes.status} instead of 404`, 'Medium', 'Advanced SEO')
+    } catch {
+      add('custom_404', 'warning', 'Unable to validate custom 404 behavior', 'Low', 'Advanced SEO')
+    }
 
     const errors = checks.filter(c => c.status === 'error').length
     const warnings = checks.filter(c => c.status === 'warning').length
