@@ -106,7 +106,7 @@ export default function Dashboard() {
 
   const pendingActions = actions.filter(a => !a.done)
   const nextAction = pendingActions.find(a => String(a.impact || '').toLowerCase() === 'high') || pendingActions[0]
-  const previewKeywords = keywords.slice(0, 3)
+  const previewKeywords = keywords.slice(0, 5)
   const previewActions = pendingActions.slice(0, 3)
   const previewAuditScores = categoryScores.filter(s => s.value > 0).slice(0, 3)
 
