@@ -227,7 +227,31 @@ export default function Dashboard() {
                       : 'Reconnect Google Search Console if the problem continues'}
                   </div>
                   <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                    {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
+                    {gscConnecting ? 'Connecting…' : 'Reconnect GSC'} : gscConnected && gscError ? (
+                      <div style={{
+                        height: 140, display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 8,
+                        background: T.surface2, borderRadius: 8, textAlign: 'center', padding: '0 16px',
+                      }}>
+                        {gscAccountEmail && (
+                          <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>
+                        )}
+                        <div style={{ fontSize: 13, fontWeight: 700, color: T.text2 }}>
+                          {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
+                            ? 'No GSC access for this property'
+                            : gscError || 'Unable to load Search Console data'}
+                        </div>
+                        <div style={{ fontSize: 11, color: T.muted }}>
+                          {gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
+                            ? 'This is a client site — GSC data requires the client to connect their own Google account via Integrations'
+                            : 'Reconnect Google Search Console if the problem continues'}
+                        </div>
+                        {gscErrorCode !== 'property_access' && gscErrorCode !== 'site_mismatch' && (
+                          <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
+                            {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
+                          </Button>
+                        )}
+                      </div>
                   </Button>
                 </div>
               ) : gscConnected ? (
