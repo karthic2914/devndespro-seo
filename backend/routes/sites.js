@@ -37,7 +37,34 @@ router.post('/', auth, async (req, res) => {
       'INSERT INTO sites (user_id, name, url) VALUES ($1,$2,$3) RETURNING *',
       [req.user.id, String(name).trim(), verifiedUrl]
     )
-    await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
+ await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
+    await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
+
+    // Notify admin
+    const axios = require('axios')
+    axios.post(
+      'https://api.zeptomail.com/v1.1/email',
+      {
+        from: { address: 'noreply@devndespro.com', name: 'DevNdesPro SEO' },
+        to: [{ email_address: { address: 'karthic2914@gmail.com' } }],
+        subject: `New project added: ${rows[0].name}`,
+        htmlbody: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+            <h2 style="color:#E66A39;margin:0 0 16px">New Project Added ✓</h2>
+            <p style="color:#555;margin:0 0 8px"><strong>${rows[0].name}</strong> was added.</p>
+            <p style="color:#555;margin:0 0 8px">URL: ${rows[0].url}</p>
+            <p style="color:#999;font-size:12px;margin:0">DevNdesPro SEO notification.</p>
+          </div>
+        `,
+      },
+      {
+        headers: {
+          'Authorization': process.env.ZEPTOMAIL_TOKEN,
+          'Content-Type': 'application/json',
+        },
+      }
+    ).catch(e => console.error('Admin notify failed:', e.message))
+
     res.json(rows[0])
   } catch (e) {
     res.status(400).json({ error: e.message || 'Website verification failed' })
