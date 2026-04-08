@@ -161,7 +161,13 @@ export default function Sites() {
     toast.success('Project deleted')
     load()
   }
-
+const getDomain = (url) => {
+  try {
+    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname
+  } catch {
+    return url
+  }
+}
   const enter = (site) => {
     localStorage.setItem('activeSite', JSON.stringify(site))
     navigate(`/site/${site.id}`)
@@ -260,14 +266,18 @@ export default function Sites() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <div className="project-row__avatar" style={{ padding: 0, overflow: 'hidden' }}>
                         <img
-                          src={`https://www.google.com/s2/favicons?domain=${new URL(site.url).hostname}&sz=64`}
-                          alt={site.name[0].toUpperCase()}
+                          src={`https://${getDomain(site.url)}/favicon.ico`}
+                          alt={site.name}
                           width={36}
                           height={36}
-                          style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 8 }}
-                          onError={e => {
-                            e.target.style.display = 'none'
-                            e.target.parentNode.textContent = site.name[0].toUpperCase()
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'contain',
+                            borderRadius: 8,
+                          }}
+                          onError={(e) => {
+                            e.target.src = `https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`
                           }}
                         />
                       </div>
