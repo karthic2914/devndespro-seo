@@ -264,23 +264,37 @@ const getDomain = (url) => {
                 safeSites.map(site => (
                   <div key={site.id} className="project-row" onClick={() => enter(site)}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div className="project-row__avatar" style={{ padding: 0, overflow: 'hidden' }}>
-                        <img
-                          src={`https://${getDomain(site.url)}/favicon.ico`}
-                          alt={site.name}
-                          width={36}
-                          height={36}
+                      <div
+                          className="project-row__avatar"
                           style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'contain',
-                            borderRadius: 8,
+                            width: 36,
+                            height: 36,
+                            padding: 0,
+                            overflow: 'hidden',
+                            background: 'transparent',
+                            border: 'none',
                           }}
-                          onError={(e) => {
-                            e.target.src = `https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`
-                          }}
-                        />
-                      </div>
+                        >
+                          <img
+                            src={`https://${getDomain(site.url)}/favicon.ico`}
+                            alt={site.name}
+                            width={36}
+                            height={36}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              background: 'transparent',
+                              display: 'block',
+                            }}
+                            onError={(e) => {
+                              if (!e.currentTarget.dataset.fallback) {
+                                e.currentTarget.dataset.fallback = 'true'
+                                e.currentTarget.src = `https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`
+                              }
+                            }}
+                          />
+                        </div>
                       <div>
                         <div className="project-row__name">{site.name}</div>
                         <div className="project-row__url">{site.url}</div>

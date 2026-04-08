@@ -332,7 +332,17 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .project-row { display: grid; grid-template-columns: 2fr 110px 110px 110px 100px 48px; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.12s; }
 .project-row:hover { background: #FAFAFA; }
 .project-row + .project-row { border-top: 1px solid #F3F4F6; }
-.project-row__avatar { width: 38px; height: 38px; background: var(--orange-dim); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; color: var(--orange); flex-shrink: 0; }
+.project-row__avatar {
+  width: 38px;
+  height: 38px;
+  background: transparent;   /* ✅ remove orange */
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;          /* ✅ important for clean icon */
+}
 .project-row__name { font-size: 14px; font-weight: 700; color: var(--text); }
 .project-row__url  { font-size: 11px; color: var(--muted); }
 .project-row__dash { font-size: 13px; color: var(--muted); font-style: italic; }
