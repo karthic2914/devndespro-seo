@@ -192,6 +192,13 @@ CREATE TABLE IF NOT EXISTS keyword_searches (
   searched_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS keyword_searches_site_id_uidx ON keyword_searches(site_id);
+
+CREATE TABLE IF NOT EXISTS ai_keyword_suggestions (
+  site_id INTEGER PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE,
+  suggestions JSONB NOT NULL DEFAULT '[]'::jsonb,
+  source TEXT DEFAULT 'ai',
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
   
   `)
   console.log('DB initialized')

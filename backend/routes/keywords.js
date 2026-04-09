@@ -227,6 +227,7 @@ router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, r
 router.post('/:siteId/keywords/ai-suggest', auth, verifySite, async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 12), 3), 25)
+    const refresh = req.body?.refresh === true
     const [siteR, kR, cR] = await Promise.all([
       pool.query('SELECT name, url FROM sites WHERE id=$1 LIMIT 1', [req.siteId]),
       pool.query('SELECT keyword, position, difficulty FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT 60', [req.siteId]),
@@ -266,6 +267,33 @@ Return ONLY valid JSON:
 }`
 
     const existingSet = new Set(kR.rows.map(k => String(k.keyword || '').toLowerCase().trim()))
+    const normalizeSuggestions = (list) => (Array.isArray(list) ? list : [])
+      .map(s => ({
+        keyword: String(s?.keyword || '').trim(),
+        intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'].includes(String(s?.intent || '')) ? s.intent : 'Informational',
+        difficulty: ['Easy', 'Medium', 'Hard'].includes(String(s?.difficulty || '')) ? s.difficulty : 'Medium',
+        estimatedVolume: Math.max(0, parseInt(s?.estimatedVolume || 0) || 0),
+        why: String(s?.why || '').trim(),
+      }))
+      .filter(s => s.keyword)
+      .filter(s => !existingSet.has(s.keyword.toLowerCase()))
+      .slice(0, limit)
+
+    if (!refresh) {
+      const { rows: cacheRows } = await pool.query(
+        'SELECT suggestions, updated_at FROM ai_keyword_suggestions WHERE site_id=$1 LIMIT 1',
+        [req.siteId]
+      )
+      const cache = cacheRows[0]
+      const cacheAgeMs = cache?.updated_at ? (Date.now() - new Date(cache.updated_at).getTime()) : Number.POSITIVE_INFINITY
+      if (cache && cacheAgeMs < 7 * 24 * 60 * 60 * 1000) {
+        const cachedSuggestions = normalizeSuggestions(cache.suggestions)
+        if (cachedSuggestions.length > 0) {
+          return res.json({ suggestions: cachedSuggestions, source: 'cache', cachedAt: cache.updated_at })
+        }
+      }
+    }
+
     let cleaned = []
 
     try {
@@ -281,25 +309,28 @@ Return ONLY valid JSON:
       try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) }
       catch { parsed = { suggestions: [] } }
 
-      cleaned = (Array.isArray(parsed.suggestions) ? parsed.suggestions : [])
-        .map(s => ({
-          keyword: String(s?.keyword || '').trim(),
-          intent: ['Informational', 'Commercial', 'Transactional', 'Navigational'].includes(String(s?.intent || '')) ? s.intent : 'Informational',
-          difficulty: ['Easy', 'Medium', 'Hard'].includes(String(s?.difficulty || '')) ? s.difficulty : 'Medium',
-          estimatedVolume: Math.max(0, parseInt(s?.estimatedVolume || 0) || 0),
-          why: String(s?.why || '').trim(),
-        }))
-        .filter(s => s.keyword)
-        .filter(s => !existingSet.has(s.keyword.toLowerCase()))
-        .slice(0, limit)
+      cleaned = normalizeSuggestions(parsed.suggestions)
     } catch (e) {
       console.error('AI keyword suggest upstream failed:', e.message)
     }
 
     if (cleaned.length === 0) {
       cleaned = buildHeuristicKeywordSuggestions({ siteName: site.name, siteUrl: site.url, existingSet, limit })
+      await pool.query(
+        `INSERT INTO ai_keyword_suggestions (site_id, suggestions, source, updated_at)
+         VALUES ($1,$2,'fallback',NOW())
+         ON CONFLICT (site_id) DO UPDATE SET suggestions=$2, source='fallback', updated_at=NOW()`,
+        [req.siteId, JSON.stringify(cleaned)]
+      )
       return res.json({ suggestions: cleaned, source: 'fallback' })
     }
+
+    await pool.query(
+      `INSERT INTO ai_keyword_suggestions (site_id, suggestions, source, updated_at)
+       VALUES ($1,$2,'ai',NOW())
+       ON CONFLICT (site_id) DO UPDATE SET suggestions=$2, source='ai', updated_at=NOW()`,
+      [req.siteId, JSON.stringify(cleaned)]
+    )
     res.json({ suggestions: cleaned, source: 'ai' })
   } catch (e) {
     console.error('AI keyword suggest failed:', e)

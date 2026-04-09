@@ -414,7 +414,7 @@
                 <div style={{ padding: '8px 10px', background: T.surface2, fontSize: 11, color: T.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${T.border}` }}>
                   AI Keyword Ideas
                   <span style={{ marginLeft: 8, fontWeight: 500, textTransform: 'none', color: T.muted }}>
-                    ({aiSource === 'fallback' ? 'smart fallback' : 'Claude AI'})
+                    ({aiSource === 'fallback' ? 'smart fallback' : aiSource === 'cache' ? 'saved AI cache' : 'Claude AI'})
                   </span>
                 </div>
                 {aiSuggestions.slice(0, 8).map((s, idx) => {
