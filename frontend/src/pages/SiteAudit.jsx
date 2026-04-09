@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMagnifyingGlass, faArrowsRotate, faPlay,
   faClock, faExternalLink, faPenToSquare,
-  faMagnifyingGlassChart,
+  faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
 } from '@fortawesome/free-solid-svg-icons'
 import { Button, T } from '../components/UI'
 import api from '../utils/api'
@@ -84,6 +84,18 @@ function EmptyAudit({ onRun, running, error }) {
 
 // ─── Tab bar ────────────────────────────────────────────────────────────────
 function TabBar({ tabs, active, onChange }) {
+  const tabIcon = {
+    errors: faCircleXmark,
+    warnings: faTriangleExclamation,
+    passed: faCircleCheck,
+  }
+
+  const tabIconColor = {
+    errors: '#DC2626',
+    warnings: '#D97706',
+    passed: '#16A34A',
+  }
+
   return (
     <div style={{
       display: 'flex', gap: 2, marginBottom: '1rem',
@@ -100,6 +112,9 @@ function TabBar({ tabs, active, onChange }) {
           boxShadow: active === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
           transition: 'all 0.15s',
         }}>
+          {tabIcon[tab.id] && (
+            <FontAwesomeIcon icon={tabIcon[tab.id]} style={{ marginRight: 6, color: tabIconColor[tab.id] }} />
+          )}
           {tab.label}
           {tab.count > 0 && (
             <span style={{

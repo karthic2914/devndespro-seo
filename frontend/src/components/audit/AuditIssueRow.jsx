@@ -16,6 +16,34 @@ function issueIcon(status) {
   return                           { icon: faTriangleExclamation, color: T.amber }
 }
 
+function statusBadge(status) {
+  if (status === 'error') {
+    return {
+      icon: faCircleXmark,
+      label: 'Critical',
+      bg: '#FEF2F2',
+      border: '#FECACA',
+      color: '#DC2626',
+    }
+  }
+  if (status === 'warning') {
+    return {
+      icon: faTriangleExclamation,
+      label: 'Warning',
+      bg: '#FFFBEB',
+      border: '#FDE68A',
+      color: '#D97706',
+    }
+  }
+  return {
+    icon: faCircleCheck,
+    label: 'Passed',
+    bg: '#F0FDF4',
+    border: '#BBF7D0',
+    color: '#16A34A',
+  }
+}
+
 async function fetchAIFix(issue, siteUrl, siteId) {
   const { data } = await api.post(`/sites/${siteId}/audit/ai-fix`, { issue, siteUrl })
   return data
@@ -27,6 +55,7 @@ export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onTogg
   const [marked, setMarked] = useState(false)
   const [copied, setCopied] = useState(false)
   const { icon, color } = issueIcon(issue.status)
+  const statusStyle = statusBadge(issue.status)
 
   async function getAIFix() {
     if (aiFix) return
@@ -82,6 +111,17 @@ export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onTogg
               {issue.detail}
             </div>
           )}
+        </div>
+
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0,
+          background: statusStyle.bg, border: `1px solid ${statusStyle.border}`,
+          borderRadius: 6, padding: '3px 8px',
+        }}>
+          <FontAwesomeIcon icon={statusStyle.icon} style={{ color: statusStyle.color, fontSize: 10 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: statusStyle.color }}>
+            {statusStyle.label}
+          </span>
         </div>
 
         {/* Impact badge */}
