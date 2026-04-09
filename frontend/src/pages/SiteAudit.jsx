@@ -1,11 +1,13 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMagnifyingGlass, faArrowsRotate, faPlay,
   faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
+  faCamera, faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
+import html2canvas from 'html2canvas'
 import { Button, T } from '../components/UI'
 import api from '../utils/api'
 
@@ -141,6 +143,9 @@ export default function SiteAudit() {
   const [activeTab,   setActiveTab]   = useState('all')
   const [expandedIdx, setExpandedIdx] = useState(null)
   const [siteUrl,     setSiteUrl]     = useState('')
+  const [exporting,   setExporting]   = useState(false)
+  const [shareMsg,    setShareMsg]    = useState('')
+  const captureRef = useRef(null)
 
   // Fetch latest audit + site URL
   useEffect(() => {
@@ -165,6 +170,73 @@ export default function SiteAudit() {
       setRunError(e.response?.data?.error || 'Audit failed — check the site URL is accessible')
     }
     setRunning(false)
+  }
+
+  async function makeSnapshotBlob() {
+    if (!captureRef.current) throw new Error('Capture area not found')
+    const canvas = await html2canvas(captureRef.current, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#F3F4F6',
+      logging: false,
+    })
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (!blob) return reject(new Error('Could not create screenshot blob'))
+        resolve(blob)
+      }, 'image/png')
+    })
+  }
+
+  async function downloadSnapshot() {
+    setExporting(true)
+    setShareMsg('')
+    try {
+      const blob = await makeSnapshotBlob()
+      const blobUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const date = new Date().toISOString().slice(0, 10)
+      a.href = blobUrl
+      a.download = `site-audit-${siteId}-${date}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+      setShareMsg('Screenshot downloaded')
+    } catch {
+      setShareMsg('Could not capture screenshot')
+    }
+    setExporting(false)
+  }
+
+  async function shareSnapshot() {
+    setExporting(true)
+    setShareMsg('')
+    try {
+      const blob = await makeSnapshotBlob()
+      const date = new Date().toISOString().slice(0, 10)
+      const file = new File([blob], `site-audit-${siteId}-${date}.png`, { type: 'image/png' })
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: 'Site Audit Report',
+          text: 'Site audit snapshot',
+          files: [file],
+        })
+        setShareMsg('Shared successfully')
+      } else {
+        await downloadSnapshot()
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(window.location.href)
+          setShareMsg('Screenshot downloaded. Link copied for sharing')
+        } else {
+          setShareMsg('Screenshot downloaded. Attach it in email/WhatsApp/Teams')
+        }
+      }
+    } catch {
+      setShareMsg('Share cancelled or failed')
+    }
+    setExporting(false)
   }
 
   // Derived state
@@ -223,7 +295,7 @@ export default function SiteAudit() {
   }
 
   return (
-    <div style={{ padding: '1.5rem 2rem' }}>
+    <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
 
       {/* Page header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.5rem', flexWrap:'wrap', gap:10 }}>
@@ -241,15 +313,25 @@ export default function SiteAudit() {
             )}
           </div>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
+          <Button variant="ghost" size="sm" onClick={downloadSnapshot} disabled={exporting}>
+            <FontAwesomeIcon icon={faCamera} style={{ marginRight:6 }} />
+            {exporting ? 'Capturing...' : 'Download Screenshot'}
+          </Button>
+          <Button variant="ghost" size="sm" onClick={shareSnapshot} disabled={exporting}>
+            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight:6 }} />Share
+          </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
             <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight:6 }} />Fix in Actions
           </Button>
-          <Button variant="primary" size="sm" onClick={runAudit} disabled={running}>
+          <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting}>
             <FontAwesomeIcon icon={faArrowsRotate}
               style={{ marginRight:6, animation: running ? 'spin 1s linear infinite' : 'none' }} />
             {running ? 'Scanning...' : 'Re-run Audit'}
           </Button>
+          {!!shareMsg && (
+            <div style={{ width: '100%', textAlign: 'right', fontSize: 11, color: '#6B7280' }}>{shareMsg}</div>
+          )}
         </div>
       </div>
 
