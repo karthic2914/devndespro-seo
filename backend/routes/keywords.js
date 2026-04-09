@@ -5,6 +5,7 @@ const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, isDomainMatch, SUPPORTED_ENGINES, buildHeuristicKeywordSuggestions } = require('../utils/helpers')
 const { fetchSerpResults, scanSiteKeywordTransitions } = require('../utils/serp')
 const { sendRankScanReportEmail } = require('../utils/email')
+const { getGscAccessToken } = require('../utils/gsc')
 
 const router = express.Router()
 
@@ -156,6 +157,69 @@ router.post('/:siteId/keywords/enrich', auth, verifySite, async (req, res) => {
   } catch (e) {
     console.error('Enrich error:', e.response?.data || e.message)
     res.status(500).json({ error: 'Enrichment failed' })
+  }
+})
+
+// Import keyword ideas from this project's GSC query data
+router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.body?.limit || 25), 5), 100)
+    const [userR, siteR, existingR] = await Promise.all([
+      pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1 LIMIT 1', [req.user.id]),
+      pool.query('SELECT url FROM sites WHERE id=$1 LIMIT 1', [req.siteId]),
+      pool.query('SELECT keyword FROM keywords WHERE site_id=$1', [req.siteId]),
+    ])
+
+    if (!siteR.rows[0]) return res.status(404).json({ error: 'Site not found' })
+    if (!userR.rows[0]?.gsc_refresh_token) {
+      return res.status(400).json({ error: 'Connect Google Search Console first' })
+    }
+
+    const siteUrl = siteR.rows[0].url
+    const accessToken = await getGscAccessToken(userR.rows[0].gsc_refresh_token)
+    const endDate = new Date().toISOString().split('T')[0]
+    const startDate = new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0]
+    const base = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`
+    const { data } = await axios.post(
+      base,
+      {
+        startDate,
+        endDate,
+        dimensions: ['query'],
+        rowLimit: limit,
+        orderBy: [{ fieldName: 'clicks', sortOrder: 'DESCENDING' }],
+      },
+      { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 15000 }
+    )
+
+    const rows = Array.isArray(data?.rows) ? data.rows : []
+    if (!rows.length) return res.json({ imported: 0, skipped: 0, totalRows: 0 })
+
+    const existing = new Set(existingR.rows.map(k => String(k.keyword || '').toLowerCase().trim()))
+    let imported = 0
+    let skipped = 0
+
+    for (const r of rows) {
+      const keyword = String(r.keys?.[0] || '').trim()
+      if (!keyword || keyword.length < 2) { skipped++; continue }
+      if (existing.has(keyword.toLowerCase())) { skipped++; continue }
+
+      const positionRaw = Number(r.position)
+      const position = Number.isFinite(positionRaw) ? Math.max(1, Math.round(positionRaw)) : null
+      const impressions = Number(r.impressions || 0)
+
+      await pool.query(
+        'INSERT INTO keywords (site_id, keyword, volume, difficulty, position) VALUES ($1,$2,$3,$4,$5)',
+        [req.siteId, keyword, impressions, 'Medium', position]
+      )
+      existing.add(keyword.toLowerCase())
+      imported++
+    }
+
+    res.json({ imported, skipped, totalRows: rows.length })
+  } catch (e) {
+    console.error('GSC keyword import failed:', e.response?.data || e.message)
+    res.status(500).json({ error: 'Could not import keywords from GSC for this project' })
   }
 })
 

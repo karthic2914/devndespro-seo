@@ -80,6 +80,7 @@
     const [dfsSuggestions, setDfsSuggestions] = useState([])
     const [addedKeywords, setAddedKeywords] = useState(new Set())
     const [addingKeywords, setAddingKeywords] = useState(new Set())
+    const [importingProjectKeywords, setImportingProjectKeywords] = useState(false)
 
     const load = () =>
       api.get(`/sites/${siteId}/keywords`).then(r => {
@@ -153,6 +154,22 @@
       } catch {
         toast.error('Enrichment failed')
       }
+    }
+
+    const importFromProject = async () => {
+      setImportingProjectKeywords(true)
+      try {
+        const { data } = await api.post(`/sites/${siteId}/keywords/import-from-gsc`, { limit: 30 })
+        if ((data?.imported || 0) > 0) {
+          toast.success(`Imported ${data.imported} keywords from project GSC data`)
+          load()
+        } else {
+          toast('No new keywords found in project GSC data', { icon: 'ℹ️' })
+        }
+      } catch (e) {
+        toast.error(e.response?.data?.error || 'Project keyword import failed')
+      }
+      setImportingProjectKeywords(false)
     }
 
     const refreshFirstPage = async () => {
@@ -278,6 +295,15 @@
             <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Track your target keyword positions</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={importFromProject} disabled={importingProjectKeywords} style={{
+              background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
+              padding: '7px 14px', fontSize: 12, fontWeight: 600, color: T.text2,
+              cursor: importingProjectKeywords ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              opacity: importingProjectKeywords ? 0.75 : 1,
+            }}>
+              <FontAwesomeIcon icon={faBolt} />
+              {importingProjectKeywords ? 'Importing...' : 'Import from Project'}
+            </button>
             <button onClick={enrichKeywords} style={{
               background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
               padding: '7px 14px', fontSize: 12, fontWeight: 600, color: T.text2,
@@ -477,6 +503,12 @@
             ) : keywords.length === 0 ? (
               <div style={{ padding: '3rem', textAlign: 'center', color: T.muted, fontSize: 13 }}>
                 No keywords yet. Search for keywords above or add manually.
+                <div style={{ marginTop: 10 }}>
+                  <OrangeBtn onClick={importFromProject} disabled={importingProjectKeywords}>
+                    <FontAwesomeIcon icon={faBolt} style={{ marginRight: 6 }} />
+                    {importingProjectKeywords ? 'Importing from project…' : 'Import from project data'}
+                  </OrangeBtn>
+                </div>
               </div>
             ) : (
               <>

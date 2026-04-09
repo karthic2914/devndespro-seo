@@ -24,6 +24,7 @@ export default function Backlinks() {
   const [csvText, setCsvText] = useState('')
   const [importingCsv, setImportingCsv] = useState(false)
   const [importResult, setImportResult] = useState(null)
+  const [quickDiscovering, setQuickDiscovering] = useState(false)
 
   const load = () =>
     Promise.all([
@@ -91,6 +92,26 @@ export default function Backlinks() {
     setCrawling(false)
   }
 
+  const discoverFromProject = async () => {
+    setQuickDiscovering(true)
+    try {
+      const stored = localStorage.getItem('activeSite')
+      const site = stored ? JSON.parse(stored) : null
+      const seed = site?.url ? [String(site.url).startsWith('http') ? site.url : `https://${site.url}`] : []
+      const r = await api.post(`/sites/${siteId}/backlinks/crawl`, { seeds: seed })
+      setCrawlResult(r.data)
+      if (r.data.saved > 0) {
+        toast.success(`Discovered ${r.data.saved} backlink${r.data.saved > 1 ? 's' : ''} from project crawl`)
+        load()
+      } else {
+        toast('No new backlinks found for this project yet.', { icon: 'ℹ️' })
+      }
+    } catch {
+      toast.error('Project backlink discovery failed')
+    }
+    setQuickDiscovering(false)
+  }
+
   const loadAiOpportunities = async () => {
     setLoadingOpps(true)
     try {
@@ -153,7 +174,18 @@ export default function Backlinks() {
 
   return (
     <div className="fade-in page-content">
-      <PageHeader title="Backlinks" subtitle="Track, discover and analyse your link building profile" />
+      <PageHeader
+        title="Backlinks"
+        subtitle="Track, discover and analyse your link building profile"
+        action={
+          <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering}>
+            {quickDiscovering
+              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering…</>
+              : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
+            }
+          </OrangeBtn>
+        }
+      />
 
       {/* Metric strip */}
       <div className="bl-metric-strip">
