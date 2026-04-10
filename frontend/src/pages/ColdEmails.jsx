@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faPaperPlane, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
 import api from '../utils/api'
 
@@ -28,8 +28,32 @@ function defaultForm() {
     website: '',
     status: 'sent',
     sentAt: new Date().toISOString().slice(0, 10),
+    subject: '',
+    message: '',
     notes: '',
   }
+}
+
+function defaultSubject(name) {
+  const safeName = String(name || '').trim()
+  return safeName ? `Quick SEO win ideas for ${safeName}` : 'Quick SEO win ideas'
+}
+
+function defaultMessage(name, website) {
+  const safeName = String(name || '').trim() || 'there'
+  const safeWebsite = String(website || '').trim()
+  return [
+    `Hi ${safeName},`,
+    '',
+    safeWebsite
+      ? `I reviewed ${safeWebsite} and found a few fast SEO improvements that can lift clicks and rankings.`
+      : 'I reviewed your site and found a few fast SEO improvements that can lift clicks and rankings.',
+    '',
+    'If you want, I can share a short audit with clear next steps.',
+    '',
+    'Best regards,',
+    'DevNdesPro SEO',
+  ].join('\n')
 }
 
 export default function ColdEmails() {
@@ -37,7 +61,8 @@ export default function ColdEmails() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
-  const [adding, setAdding] = useState(false)
+  const [sending, setSending] = useState(false)
+  const [draftId, setDraftId] = useState(null)
   const [savingId, setSavingId] = useState(null)
   const [form, setForm] = useState(defaultForm)
 
@@ -46,7 +71,27 @@ export default function ColdEmails() {
     setForbidden(false)
     try {
       const { data } = await api.get(`/sites/${siteId}/cold-emails`)
-      setRows(data || [])
+      const list = Array.isArray(data) ? data : []
+      setRows(list)
+
+      const draft = list.find((r) => String(r.status || '').toLowerCase() === 'draft')
+      if (draft) {
+        setDraftId(draft.id)
+        setForm({
+          name: draft.name || '',
+          email: draft.email || '',
+          company: draft.company || '',
+          website: draft.website || '',
+          status: 'sent',
+          sentAt: new Date().toISOString().slice(0, 10),
+          subject: defaultSubject(draft.name),
+          message: defaultMessage(draft.name, draft.website),
+          notes: draft.notes || '',
+        })
+      } else {
+        setDraftId(null)
+        setForm(defaultForm())
+      }
     } catch (error) {
       setRows([])
       if (error?.response?.status === 403) setForbidden(true)
@@ -58,20 +103,40 @@ export default function ColdEmails() {
     load()
   }, [siteId])
 
-  const addProspect = async () => {
-    if (!form.name.trim()) return
-    setAdding(true)
+  const sentRows = rows.filter((r) => String(r.status || '').toLowerCase() !== 'draft')
+
+  const sendEmail = async () => {
+    if (!form.name.trim() || !String(form.email || '').trim()) return
+    setSending(true)
+    const subject = String(form.subject || '').trim() || defaultSubject(form.name)
+    const message = String(form.message || '').trim() || defaultMessage(form.name, form.website)
     try {
-      const { data } = await api.post(`/sites/${siteId}/cold-emails`, {
-        ...form,
+      const payload = {
         name: toCapitalizedName(form.name).trim(),
-      })
-      setRows((prev) => [data, ...prev])
+        email: String(form.email || '').trim(),
+        company: form.company,
+        website: form.website,
+        status: 'sent',
+        sentAt: form.sentAt,
+        notes: form.notes,
+      }
+      if (draftId) {
+        const { data } = await api.put(`/sites/${siteId}/cold-emails/${draftId}`, payload)
+        setRows((prev) => prev.map((r) => (r.id === draftId ? data : r)))
+      } else {
+        const { data } = await api.post(`/sites/${siteId}/cold-emails`, payload)
+        setRows((prev) => [data, ...prev])
+      }
+
+      const mailto = `mailto:${encodeURIComponent(String(form.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
+      window.location.href = mailto
+
+      setDraftId(null)
       setForm(defaultForm())
     } catch {
       // keep quiet; existing UX pattern in app does not use inline errors for all pages
     }
-    setAdding(false)
+    setSending(false)
   }
 
   const saveProspect = async (row) => {
@@ -110,7 +175,7 @@ export default function ColdEmails() {
     <div className="fade-in page-content">
       <PageHeader
         title="Cold Email Prospects"
-        subtitle="Store people you contacted and track reply/follow-up status (this list is per project)"
+        subtitle="New projects are prefilled in Add New Contact as draft. They move to the table only when you send."
         action={(
           <div style={{
             fontSize: 11,
@@ -161,11 +226,11 @@ export default function ColdEmails() {
                 value={form.website}
                 onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
               />
-              <select value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                {STATUS_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+              <input
+                placeholder="Email subject"
+                value={form.subject}
+                onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
+              />
               <input
                 type="date"
                 value={form.sentAt}
@@ -173,22 +238,29 @@ export default function ColdEmails() {
               />
             </div>
             <textarea
-              placeholder="Notes"
+              placeholder="Email content to send"
+              value={form.message}
+              onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
+              rows={4}
+              style={{ width: '100%', marginTop: 10 }}
+            />
+            <textarea
+              placeholder="Internal notes"
               value={form.notes}
               onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               rows={3}
               style={{ width: '100%', marginTop: 10 }}
             />
             <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-              <OrangeBtn onClick={addProspect} disabled={adding || !form.name.trim()}>
-                {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add Contact</>}
+              <OrangeBtn onClick={sendEmail} disabled={sending || !form.name.trim() || !String(form.email || '').trim()}>
+                {sending ? 'Sending...' : <><FontAwesomeIcon icon={faPaperPlane} style={{ marginRight: 6 }} />Send Email</>}
               </OrangeBtn>
             </div>
           </Card>
 
           <Card>
             <SectionLabel>Your sent prospects</SectionLabel>
-            {loading ? <EmptyState message="Loading prospects..." /> : rows.length === 0 ? (
+            {loading ? <EmptyState message="Loading prospects..." /> : sentRows.length === 0 ? (
               <EmptyState message="No contacts yet. Add your first cold email contact above." />
             ) : (
               <div style={{ overflowX: 'auto' }}>
@@ -206,7 +278,7 @@ export default function ColdEmails() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row) => (
+                    {sentRows.map((row) => (
                       <tr key={row.id}>
                         <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
                           <input value={row.name || ''} onChange={(e) => updateRow(row.id, { name: e.target.value })} />

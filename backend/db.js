@@ -207,7 +207,7 @@ CREATE TABLE IF NOT EXISTS cold_email_prospects (
   email TEXT,
   company TEXT,
   website TEXT,
-  status TEXT DEFAULT 'sent',
+  status TEXT DEFAULT 'draft',
   sent_at DATE,
   notes TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -219,14 +219,33 @@ CREATE INDEX IF NOT EXISTS cold_email_prospects_status_idx ON cold_email_prospec
   `)
   console.log('DB initialized')
 
+  await pool.query(`
+    ALTER TABLE cold_email_prospects
+    ALTER COLUMN status SET DEFAULT 'draft'
+  `)
+
   // Backfill: create a cold email prospect for any site that doesn't have one yet
   await pool.query(`
     INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
-    SELECT s.id, s.name, s.url, 'sent', CURRENT_DATE
+    SELECT s.id, s.name, s.url, 'draft', NULL
     FROM sites s
     WHERE NOT EXISTS (
       SELECT 1 FROM cold_email_prospects c WHERE c.site_id = s.id
     )
+  `)
+
+  // Migrate auto-generated placeholders to draft so only real sends show in sent table.
+  await pool.query(`
+    UPDATE cold_email_prospects c
+    SET status='draft', sent_at=NULL, updated_at=NOW()
+    FROM sites s
+    WHERE c.site_id = s.id
+      AND LOWER(COALESCE(c.status, '')) = 'sent'
+      AND TRIM(COALESCE(c.email, '')) = ''
+      AND TRIM(COALESCE(c.company, '')) = ''
+      AND TRIM(COALESCE(c.notes, '')) = ''
+      AND COALESCE(c.name, '') = COALESCE(s.name, '')
+      AND COALESCE(c.website, '') = COALESCE(s.url, '')
   `)
   console.log('Cold email prospects backfilled')
 }

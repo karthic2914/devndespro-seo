@@ -41,18 +41,19 @@ router.post('/', auth, async (req, res) => {
     await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
 
     // Auto-create a cold email prospect from the site details
-    await pool.query(
+    const { rows: prospectRows } = await pool.query(
       `INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
-       VALUES ($1, $2, $3, 'sent', CURRENT_DATE)`,
+       VALUES ($1, $2, $3, 'draft', NULL)
+       RETURNING id`,
       [rows[0].id, String(rows[0].name).trim(), rows[0].url]
     )
-      // If a contact email was provided, patch the just-created prospect
-      if (contactEmail && String(contactEmail).trim()) {
-        await pool.query(
-          `UPDATE cold_email_prospects SET email=$1 WHERE site_id=$2`,
-          [String(contactEmail).trim(), rows[0].id]
-        )
-      }
+    // If a contact email was provided, save it on the generated draft row.
+    if (contactEmail && String(contactEmail).trim()) {
+      await pool.query(
+        `UPDATE cold_email_prospects SET email=$1 WHERE id=$2`,
+        [String(contactEmail).trim(), prospectRows[0].id]
+      )
+    }
     const axios = require('axios')
     axios.post(
       'https://api.zeptomail.com/v1.1/email',
