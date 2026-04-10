@@ -6,6 +6,14 @@ const { ensureSiteIsVerifiedInGsc } = require('../utils/gsc')
 
 const router = express.Router()
 
+function isInternalProject(name, url) {
+  const safeName = String(name || '').toLowerCase()
+  const safeUrl = String(url || '').toLowerCase()
+  if (safeName.includes('devndespro')) return true
+  if (safeUrl.includes('devndespro.com')) return true
+  return false
+}
+
 // Sites
 router.get('/', auth, async (req, res) => {
   const { rows } = await pool.query(
@@ -40,19 +48,21 @@ router.post('/', auth, async (req, res) => {
  await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
     await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
 
-    // Auto-create a cold email prospect from the site details
-    const { rows: prospectRows } = await pool.query(
-      `INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
-       VALUES ($1, $2, $3, 'draft', NULL)
-       RETURNING id`,
-      [rows[0].id, String(rows[0].name).trim(), rows[0].url]
-    )
-    // If a contact email was provided, save it on the generated draft row.
-    if (contactEmail && String(contactEmail).trim()) {
-      await pool.query(
-        `UPDATE cold_email_prospects SET email=$1 WHERE id=$2`,
-        [String(contactEmail).trim(), prospectRows[0].id]
+    if (!isInternalProject(rows[0].name, rows[0].url)) {
+      // Auto-create a draft contact from the project details.
+      const { rows: prospectRows } = await pool.query(
+        `INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
+         VALUES ($1, $2, $3, 'draft', NULL)
+         RETURNING id`,
+        [rows[0].id, String(rows[0].name).trim(), rows[0].url]
       )
+      // If a contact email was provided, save it on the generated draft row.
+      if (contactEmail && String(contactEmail).trim()) {
+        await pool.query(
+          `UPDATE cold_email_prospects SET email=$1 WHERE id=$2`,
+          [String(contactEmail).trim(), prospectRows[0].id]
+        )
+      }
     }
     const axios = require('axios')
     axios.post(

@@ -229,9 +229,25 @@ CREATE INDEX IF NOT EXISTS cold_email_prospects_status_idx ON cold_email_prospec
     INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
     SELECT s.id, s.name, s.url, 'draft', NULL
     FROM sites s
-    WHERE NOT EXISTS (
+    WHERE LOWER(COALESCE(s.url, '')) NOT LIKE '%devndespro.com%'
+      AND LOWER(COALESCE(s.name, '')) NOT LIKE '%devndespro%'
+      AND NOT EXISTS (
       SELECT 1 FROM cold_email_prospects c WHERE c.site_id = s.id
     )
+  `)
+
+  // Remove internal placeholder rows where outreach is not needed.
+  await pool.query(`
+    DELETE FROM cold_email_prospects c
+    USING sites s
+    WHERE c.site_id = s.id
+      AND (
+        LOWER(COALESCE(s.url, '')) LIKE '%devndespro.com%'
+        OR LOWER(COALESCE(s.name, '')) LIKE '%devndespro%'
+      )
+      AND TRIM(COALESCE(c.email, '')) = ''
+      AND TRIM(COALESCE(c.company, '')) = ''
+      AND TRIM(COALESCE(c.notes, '')) = ''
   `)
 
   // Migrate auto-generated placeholders to draft so only real sends show in sent table.

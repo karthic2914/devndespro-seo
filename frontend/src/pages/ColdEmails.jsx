@@ -36,23 +36,29 @@ function defaultForm() {
 
 function defaultSubject(name) {
   const safeName = String(name || '').trim()
-  return safeName ? `Quick SEO win ideas for ${safeName}` : 'Quick SEO win ideas'
+  return safeName ? `Quick SEO suggestions for ${safeName}` : 'Quick SEO suggestions for your website'
 }
 
 function defaultMessage(name, website) {
-  const safeName = String(name || '').trim() || 'there'
+  const safeName = String(name || '').trim()
   const safeWebsite = String(website || '').trim()
   return [
-    `Hi ${safeName},`,
+    'Hi,',
     '',
     safeWebsite
-      ? `I reviewed ${safeWebsite} and found a few fast SEO improvements that can lift clicks and rankings.`
-      : 'I reviewed your site and found a few fast SEO improvements that can lift clicks and rankings.',
+      ? `I came across your website (${safeWebsite}) while looking for restaurants online and had a quick look.`
+      : 'I came across your website while looking for restaurants online and had a quick look.',
     '',
-    'If you want, I can share a short audit with clear next steps.',
+    'I noticed your site feels a bit slow on mobile and a couple of small SEO things could be improved.',
     '',
-    'Best regards,',
-    'DevNdesPro SEO',
+    'I ran a quick check using my tool.',
+    '',
+    'Happy to share a short report if you are interested.',
+    '',
+    'https://www.seo.devndespro.com',
+    '',
+    'Regards,',
+    'www.devndespro.com',
   ].join('\n')
 }
 
