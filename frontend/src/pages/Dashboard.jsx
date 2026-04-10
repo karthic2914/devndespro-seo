@@ -101,6 +101,10 @@ export default function Dashboard() {
   const overallScore = Number.isFinite(Number(latestAudit?.score))
     ? Number(latestAudit.score)
     : Math.round(categoryScores.reduce((s, a) => s + a.value, 0) / Math.max(categoryScores.length, 1))
+  const auditChecks = Array.isArray(latestAudit?.checks) ? latestAudit.checks : []
+  const auditErrorCount = auditChecks.filter(c => c.status === 'error').length
+  const auditWarningCount = auditChecks.filter(c => c.status === 'warning').length
+  const auditPassCount = auditChecks.filter(c => c.status === 'pass').length
 
   const pendingActions = actions.filter(a => !a.done)
   const nextAction = pendingActions.find(a => String(a.impact || '').toLowerCase() === 'high') || pendingActions[0]
@@ -110,14 +114,18 @@ export default function Dashboard() {
 
   const toNum = (v, fallback = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fallback }
 
-  const healthValue = metrics.health != null ? toNum(metrics.health, 0) : overallScore
-  const gscClicks = toNum(gscData?.totals?.clicks, toNum(metrics.clicks, 0))
-  const gscImpressions = toNum(gscData?.totals?.impressions, toNum(metrics.impressions, 0))
-  const gscPositionRaw = Number(gscData?.totals?.position)
-  const gscPosition = Number.isFinite(gscPositionRaw) ? gscPositionRaw.toFixed(1) : 'N/A'
+  const hasLatestAudit = !!latestAudit
+  const healthValue = hasLatestAudit ? overallScore : (metrics.health != null ? toNum(metrics.health, 0) : overallScore)
   const gscError = String(gscData?.error || '')
   const gscErrorCode = String(gscData?.errorCode || '')
   const gscAccountEmail = String(gscData?.accountEmail || '')
+  const gscConnected = gscData?.connected === true
+  const hasLiveGscTotals = gscConnected && !gscError
+  const gscClicks = hasLiveGscTotals ? toNum(gscData?.totals?.clicks, 0) : 0
+  const gscImpressions = hasLiveGscTotals ? toNum(gscData?.totals?.impressions, 0) : 0
+  const gscPositionRaw = hasLiveGscTotals ? Number(gscData?.totals?.position) : NaN
+  const gscPosition = Number.isFinite(gscPositionRaw) ? gscPositionRaw.toFixed(1) : 'N/A'
+  const gscSubLabel = hasLiveGscTotals ? 'last 28 days (GSC)' : (gscConnected ? 'GSC data unavailable' : 'connect GSC')
   const trackedKeywords = Array.isArray(keywords) ? keywords.length : 0
   const drValue = toNum(metrics.dr, 0)
   const backlinkCount = Array.isArray(backlinks) ? backlinks.length : 0
@@ -137,7 +145,6 @@ export default function Dashboard() {
     }))
     .filter(d => d.value > 0)
 
-  const gscConnected = gscData?.connected === true
   const hasTrafficData = weeklyTraffic.length > 0
   const isClientSiteError = gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
 
@@ -180,8 +187,8 @@ export default function Dashboard() {
         {/* Top stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: '1.5rem' }}>
           <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop />
-          <StatCard label="GSC Clicks"       value={gscClicks}         sub="last 28 days"           icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
-          <StatCard label="Impressions"      value={gscImpressions}    sub="last 28 days"           icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
+          <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
+          <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
           <StatCard label="Avg. Position"    value={gscPosition}       sub="across tracked queries" icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop />
           <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop />
         </div>
@@ -312,6 +319,25 @@ export default function Dashboard() {
               <SectionLabel action={<Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/audit`)}>Open Audit</Button>}>Site Health Score</SectionLabel>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0' }}>
                 <HealthScore score={overallScore} size="lg" />
+                {auditChecks.length > 0 && (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {auditErrorCount > 0 && (
+                      <span style={{ fontSize: 11, color: '#DC2626', background: '#FEF2F2', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {auditErrorCount} critical
+                      </span>
+                    )}
+                    {auditWarningCount > 0 && (
+                      <span style={{ fontSize: 11, color: '#D97706', background: '#FFFBEB', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {auditWarningCount} warnings
+                      </span>
+                    )}
+                    {auditPassCount > 0 && (
+                      <span style={{ fontSize: 11, color: '#16A34A', background: '#F0FDF4', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {auditPassCount} passed
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 8 }}>
                 {previewAuditScores.map(s => (

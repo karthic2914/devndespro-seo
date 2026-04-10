@@ -4,6 +4,13 @@ const { auth, verifySite } = require('../middleware')
 
 const router = express.Router()
 
+function toCapitalizedName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/(^|[\s'-])([a-z])/g, (_, prefix, char) => `${prefix}${char.toUpperCase()}`)
+    .trim()
+}
+
 async function verifySiteOwner(req, res, next) {
   const { rows } = await pool.query('SELECT user_id FROM sites WHERE id=$1 LIMIT 1', [req.siteId])
   if (!rows[0] || Number(rows[0].user_id) !== Number(req.user.id)) {
@@ -22,7 +29,8 @@ router.get('/:siteId/cold-emails', auth, verifySite, verifySiteOwner, async (req
 
 router.post('/:siteId/cold-emails', auth, verifySite, verifySiteOwner, async (req, res) => {
   const { name, email, company, website, status, sentAt, notes } = req.body
-  if (!String(name || '').trim()) {
+  const normalizedName = toCapitalizedName(name)
+  if (!normalizedName) {
     return res.status(400).json({ error: 'Name is required' })
   }
 
@@ -34,7 +42,7 @@ router.post('/:siteId/cold-emails', auth, verifySite, verifySiteOwner, async (re
      RETURNING *`,
     [
       req.siteId,
-      String(name).trim(),
+      normalizedName,
       String(email || '').trim() || null,
       String(company || '').trim() || null,
       String(website || '').trim() || null,
@@ -48,13 +56,17 @@ router.post('/:siteId/cold-emails', auth, verifySite, verifySiteOwner, async (re
 
 router.put('/:siteId/cold-emails/:id', auth, verifySite, verifySiteOwner, async (req, res) => {
   const { name, email, company, website, status, sentAt, notes } = req.body
+  const normalizedName = toCapitalizedName(name)
+  if (!normalizedName) {
+    return res.status(400).json({ error: 'Name is required' })
+  }
   const { rows } = await pool.query(
     `UPDATE cold_email_prospects
      SET name=$1, email=$2, company=$3, website=$4, status=$5, sent_at=$6, notes=$7, updated_at=NOW()
      WHERE id=$8 AND site_id=$9
      RETURNING *`,
     [
-      String(name || '').trim(),
+      normalizedName,
       String(email || '').trim() || null,
       String(company || '').trim() || null,
       String(website || '').trim() || null,

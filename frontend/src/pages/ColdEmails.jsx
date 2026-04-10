@@ -14,6 +14,12 @@ const STATUS_OPTIONS = [
   { value: 'bounced', label: 'Bounced' },
 ]
 
+function toCapitalizedName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/(^|[\s'-])([a-z])/g, (_, prefix, char) => `${prefix}${char.toUpperCase()}`)
+}
+
 function defaultForm() {
   return {
     name: '',
@@ -62,7 +68,7 @@ export default function ColdEmails() {
     try {
       const { data } = await api.post(`/sites/${siteId}/cold-emails`, {
         ...form,
-        name: form.name.trim(),
+        name: toCapitalizedName(form.name).trim(),
       })
       setRows((prev) => [data, ...prev])
       setForm(defaultForm())
@@ -76,7 +82,7 @@ export default function ColdEmails() {
     setSavingId(row.id)
     try {
       const { data } = await api.put(`/sites/${siteId}/cold-emails/${row.id}`, {
-        name: row.name,
+        name: toCapitalizedName(row.name),
         email: row.email,
         company: row.company,
         website: row.website,
@@ -108,7 +114,7 @@ export default function ColdEmails() {
     <div className="fade-in page-content">
       <PageHeader
         title="Cold Email Prospects"
-        subtitle="Store people you contacted and track reply/follow-up status"
+        subtitle="Store people you contacted and track reply/follow-up status (this list is per project)"
         action={(
           <div style={{
             fontSize: 11,
@@ -142,7 +148,7 @@ export default function ColdEmails() {
               <input
                 placeholder="Name *"
                 value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                onChange={(e) => setForm((p) => ({ ...p, name: toCapitalizedName(e.target.value) }))}
               />
               <input
                 placeholder="Email"
