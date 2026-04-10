@@ -15,29 +15,51 @@ function scoreBg(s) {
   return s >= 80 ? '#F0FDF4' : s >= 55 ? '#FFFBEB' : '#FEF2F2'
 }
 
-function ScoreRing({ score, size = 88 }) {
+function ScoreRing({ score, size = 88, noAnimation = false }) {
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
   const r = (size - 10) / 2
+  const cx = size / 2
+  const cy = size / 2
   const circ = 2 * Math.PI * r
-  const dash = (safeScore / 100) * circ
-  const dashOffset = circ - dash
+  const dashOffset = circ - (safeScore / 100) * circ
   const color = scoreColor(safeScore)
+
   return (
-    <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F3F4F6" strokeWidth={7} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={7}
-        strokeDasharray={circ} strokeDashoffset={dashOffset} strokeLinecap="round"
-        style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central"
-        style={{ fill: color, fontSize: size * 0.26, fontWeight: 700,
-          transform: 'rotate(90deg)', transformOrigin: 'center', fontFamily: 'inherit' }}>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
+      {/* Background track */}
+      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={7} />
+
+      {/* Score arc — starts from top (rotated -90deg via transform attribute) */}
+      <circle
+        cx={cx} cy={cy} r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth={7}
+        strokeDasharray={circ}
+        strokeDashoffset={dashOffset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${cx} ${cy})`}
+        style={{ transition: noAnimation ? 'none' : 'stroke-dashoffset 0.8s ease' }}
+      />
+
+      {/* Score text — centered, no CSS transform needed */}
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill={color}
+        fontSize={size * 0.26}
+        fontWeight={700}
+        fontFamily="inherit"
+      >
         {safeScore}
       </text>
     </svg>
   )
 }
 
-export default function AuditScoreBanner({ auditData, categories }) {
+export default function AuditScoreBanner({ auditData, categories, isScreenshot = false }) {
   const checks = auditData.checks || []
   const errorCount = checks.filter(i => i.status === 'error').length
   const warnCount  = checks.filter(i => i.status === 'warning').length
@@ -52,7 +74,7 @@ export default function AuditScoreBanner({ auditData, categories }) {
     }}>
       {/* Score ring */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-        <ScoreRing score={auditData.score || 0} size={88} />
+        <ScoreRing score={auditData.score || 0} size={88} noAnimation={isScreenshot} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
             Overall Health Score
