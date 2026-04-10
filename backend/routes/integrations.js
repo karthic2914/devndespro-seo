@@ -5,6 +5,41 @@ const { firstValueByKey, parseSimpleCsv, toInt } = require('../utils/helpers')
 
 const router = express.Router()
 
+const PUBLISHING_PROVIDERS = {
+  wordpress: {
+    connectedColumn: 'wordpress_connected',
+    fields: ['wordpress_site_url', 'wordpress_username', 'wordpress_app_password'],
+  },
+  webflow: {
+    connectedColumn: 'webflow_connected',
+    fields: ['webflow_site_id', 'webflow_collection_id', 'webflow_api_token'],
+  },
+  shopify: {
+    connectedColumn: 'shopify_connected',
+    fields: ['shopify_store_domain', 'shopify_api_token'],
+  },
+  wix: {
+    connectedColumn: 'wix_connected',
+    fields: ['wix_site_id', 'wix_api_key'],
+  },
+  framer: {
+    connectedColumn: 'framer_connected',
+    fields: ['framer_site_id', 'framer_collection_id', 'framer_api_token'],
+  },
+  webhook: {
+    connectedColumn: 'webhook_connected',
+    fields: ['webhook_url', 'webhook_secret'],
+  },
+}
+
+function providerPayload(provider, row) {
+  const config = PUBLISHING_PROVIDERS[provider]
+  return {
+    connected: !!row?.[config.connectedColumn],
+    values: Object.fromEntries(config.fields.map((field) => [field, row?.[field] || ''])),
+  }
+}
+
 router.get('/:siteId/integrations', auth, verifySite, async (req, res) => {
   const [uR, iR, aR] = await Promise.all([
     pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1', [req.user.id]),
@@ -24,7 +59,65 @@ router.get('/:siteId/integrations', auth, verifySite, async (req, res) => {
       lastImportAt: iR.rows[0]?.ahrefs_last_import_at || null,
       latest: aR.rows[0] || null,
     },
+    publishing: {
+      wordpress: providerPayload('wordpress', iR.rows[0]),
+      webflow: providerPayload('webflow', iR.rows[0]),
+      shopify: providerPayload('shopify', iR.rows[0]),
+      wix: providerPayload('wix', iR.rows[0]),
+      framer: providerPayload('framer', iR.rows[0]),
+      webhook: providerPayload('webhook', iR.rows[0]),
+    },
   })
+})
+
+router.put('/:siteId/integrations/publishing/:provider', auth, verifySite, async (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase()
+  const config = PUBLISHING_PROVIDERS[provider]
+  if (!config) return res.status(400).json({ error: 'Unsupported provider' })
+
+  const values = config.fields.map((field) => String(req.body?.[field] || '').trim() || null)
+  const hasRequiredValue = values.some(Boolean)
+  if (!hasRequiredValue) {
+    return res.status(400).json({ error: 'Add at least one integration value before saving' })
+  }
+
+  const insertColumns = ['site_id', config.connectedColumn, ...config.fields, 'updated_at']
+  const insertPlaceholders = insertColumns.map((_, index) => `$${index + 1}`)
+  const updates = [
+    `${config.connectedColumn}=EXCLUDED.${config.connectedColumn}`,
+    ...config.fields.map((field) => `${field}=EXCLUDED.${field}`),
+    'updated_at=NOW()',
+  ]
+
+  await pool.query(
+    `INSERT INTO integration_settings (${insertColumns.join(', ')})
+     VALUES (${insertPlaceholders.join(', ')})
+     ON CONFLICT (site_id) DO UPDATE SET ${updates.join(', ')}`,
+    [req.siteId, true, ...values, new Date()]
+  )
+
+  res.json({ ok: true })
+})
+
+router.delete('/:siteId/integrations/publishing/:provider', auth, verifySite, async (req, res) => {
+  const provider = String(req.params.provider || '').toLowerCase()
+  const config = PUBLISHING_PROVIDERS[provider]
+  if (!config) return res.status(400).json({ error: 'Unsupported provider' })
+
+  const resetColumns = [config.connectedColumn, ...config.fields]
+  const updates = [`${config.connectedColumn}=false`, ...config.fields.map((field) => `${field}=NULL`), 'updated_at=NOW()']
+  const insertColumns = ['site_id', ...resetColumns, 'updated_at']
+  const insertValues = [req.siteId, false, ...config.fields.map(() => null), new Date()]
+  const insertPlaceholders = insertColumns.map((_, index) => `$${index + 1}`)
+
+  await pool.query(
+    `INSERT INTO integration_settings (${insertColumns.join(', ')})
+     VALUES (${insertPlaceholders.join(', ')})
+     ON CONFLICT (site_id) DO UPDATE SET ${updates.join(', ')}`,
+    insertValues
+  )
+
+  res.json({ ok: true })
 })
 
 router.put('/:siteId/integrations/ga4', auth, verifySite, async (req, res) => {

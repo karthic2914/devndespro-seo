@@ -86,6 +86,27 @@ async function initDB() {
       ahrefs_connected BOOLEAN DEFAULT FALSE,
       ahrefs_last_import_at TIMESTAMPTZ,
       ahrefs_source TEXT,
+      wordpress_connected BOOLEAN DEFAULT FALSE,
+      wordpress_site_url TEXT,
+      wordpress_username TEXT,
+      wordpress_app_password TEXT,
+      webflow_connected BOOLEAN DEFAULT FALSE,
+      webflow_site_id TEXT,
+      webflow_collection_id TEXT,
+      webflow_api_token TEXT,
+      shopify_connected BOOLEAN DEFAULT FALSE,
+      shopify_store_domain TEXT,
+      shopify_api_token TEXT,
+      wix_connected BOOLEAN DEFAULT FALSE,
+      wix_site_id TEXT,
+      wix_api_key TEXT,
+      framer_connected BOOLEAN DEFAULT FALSE,
+      framer_site_id TEXT,
+      framer_collection_id TEXT,
+      framer_api_token TEXT,
+      webhook_connected BOOLEAN DEFAULT FALSE,
+      webhook_url TEXT,
+      webhook_secret TEXT,
       created_at TIMESTAMPTZ DEFAULT NOW(),
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
@@ -102,6 +123,27 @@ async function initDB() {
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS gsc_refresh_token TEXT;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_site_url TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_username TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_app_password TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webflow_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webflow_site_id TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webflow_collection_id TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webflow_api_token TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS shopify_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS shopify_store_domain TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS shopify_api_token TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wix_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wix_site_id TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wix_api_key TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS framer_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS framer_site_id TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS framer_collection_id TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS framer_api_token TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webhook_connected BOOLEAN DEFAULT FALSE;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webhook_url TEXT;
+    ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS webhook_secret TEXT;
 
     CREATE TABLE IF NOT EXISTS email_report_settings (
       id SERIAL PRIMARY KEY,
