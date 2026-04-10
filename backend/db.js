@@ -218,6 +218,17 @@ CREATE INDEX IF NOT EXISTS cold_email_prospects_status_idx ON cold_email_prospec
   
   `)
   console.log('DB initialized')
+
+  // Backfill: create a cold email prospect for any site that doesn't have one yet
+  await pool.query(`
+    INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
+    SELECT s.id, s.name, s.url, 'sent', CURRENT_DATE
+    FROM sites s
+    WHERE NOT EXISTS (
+      SELECT 1 FROM cold_email_prospects c WHERE c.site_id = s.id
+    )
+  `)
+  console.log('Cold email prospects backfilled')
 }
 
 module.exports = { initDB }

@@ -17,6 +17,7 @@ import {
   faLightbulb,
   faCheck,
   faArrowRight,
+  faEnvelope,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
@@ -76,7 +77,7 @@ export default function Sites() {
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: '', url: '' })
+  const [form, setForm] = useState({ name: '', url: '', contactEmail: '' })
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState({})
   const { logout } = useAuth()
@@ -137,7 +138,7 @@ export default function Sites() {
         const e = await res.json().catch(() => ({}))
         throw new Error(e.error || 'Failed to add site. Try again.')
       }
-      setForm({ name: '', url: '' })
+      setForm({ name: '', url: '', contactEmail: '' })
       setShowAdd(false)
       toast.success('Project added successfully')
       load()
@@ -207,6 +208,7 @@ const getDomain = (url) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Input label="Project name" placeholder="e.g. devndespro" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} icon={<FontAwesomeIcon icon={faTag} />} />
             <Input label="Website URL" placeholder="e.g. devndespro.com" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} error={errors.url} icon={<FontAwesomeIcon icon={faGlobe} />} hint="Only domains verified in your connected GSC account are allowed." />
+            <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." />
           </div>
         </Modal>
 

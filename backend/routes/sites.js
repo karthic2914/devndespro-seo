@@ -27,7 +27,7 @@ router.get('/', auth, async (req, res) => {
 })
 
 router.post('/', auth, async (req, res) => {
-  const { name, url } = req.body
+  const { name, url, contactEmail } = req.body
   if (!name || !url) return res.status(400).json({ error: 'name and url required' })
   if (!String(name).trim()) return res.status(400).json({ error: 'Project name is required' })
   try {
@@ -40,7 +40,19 @@ router.post('/', auth, async (req, res) => {
  await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
     await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
 
-    // Notify admin
+    // Auto-create a cold email prospect from the site details
+    await pool.query(
+      `INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
+       VALUES ($1, $2, $3, 'sent', CURRENT_DATE)`,
+      [rows[0].id, String(rows[0].name).trim(), rows[0].url]
+    )
+      // If a contact email was provided, patch the just-created prospect
+      if (contactEmail && String(contactEmail).trim()) {
+        await pool.query(
+          `UPDATE cold_email_prospects SET email=$1 WHERE site_id=$2`,
+          [String(contactEmail).trim(), rows[0].id]
+        )
+      }
     const axios = require('axios')
     axios.post(
       'https://api.zeptomail.com/v1.1/email',
