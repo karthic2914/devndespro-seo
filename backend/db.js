@@ -199,6 +199,22 @@ CREATE TABLE IF NOT EXISTS ai_keyword_suggestions (
   source TEXT DEFAULT 'ai',
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS cold_email_prospects (
+  id SERIAL PRIMARY KEY,
+  site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT,
+  company TEXT,
+  website TEXT,
+  status TEXT DEFAULT 'sent',
+  sent_at DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS cold_email_prospects_site_id_idx ON cold_email_prospects(site_id);
+CREATE INDEX IF NOT EXISTS cold_email_prospects_status_idx ON cold_email_prospects(status);
   
   `)
   console.log('DB initialized')

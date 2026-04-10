@@ -17,6 +17,7 @@ import {
   faBell,
   faPlug,
   faEnvelope,
+  faPaperPlane,
   faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, ProgressBar } from '../components/UI'
@@ -31,6 +32,7 @@ const NAV = [
   { to: 'ai',          label: 'AI Assistant', icon: faRobot },
   { to: 'integrations',   label: 'Integrations',  icon: faPlug },
   { to: 'email-reports',   label: 'Email Reports', icon: faEnvelope },
+  { to: 'cold-emails',     label: 'Cold Email',    icon: faPaperPlane },
   { to: 'competitors',     label: 'Competitors',   icon: faUsers },
   { to: 'alerts',          label: 'Alerts',        icon: faBell },
 ]
@@ -100,6 +102,9 @@ export default function Layout() {
           {/* Nav links */}
           <nav className="sidebar__nav">
             {NAV.map(({ to, label, icon, end }) => (
+              to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)
+                ? null
+                : (
               <NavLink
                 key={to}
                 to={`/site/${siteId}${to ? '/' + to : ''}`}
@@ -118,6 +123,7 @@ export default function Layout() {
                 )}
                 {collapsed && <span className="nav-tooltip">{label}</span>}
               </NavLink>
+                )
             ))}
 
             {/* Admin-only: Users */}

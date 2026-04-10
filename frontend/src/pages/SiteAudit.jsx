@@ -142,19 +142,44 @@ export default function SiteAudit() {
   const [runError,    setRunError]    = useState(null)
   const [activeTab,   setActiveTab]   = useState('all')
   const [expandedIdx, setExpandedIdx] = useState(null)
+  const [siteName,    setSiteName]    = useState('')
   const [siteUrl,     setSiteUrl]     = useState('')
   const [exporting,   setExporting]   = useState(false)
   const [shareMsg,    setShareMsg]    = useState('')
   const captureRef = useRef(null)
 
+  function toFileSafeSlug(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/^www\./, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60)
+  }
+
+  function buildSnapshotFilename(date) {
+    const fromUrl = (() => {
+      try {
+        return new URL(siteUrl || auditData?.url || '').hostname
+      } catch {
+        return ''
+      }
+    })()
+    const slug = toFileSafeSlug(siteName) || toFileSafeSlug(fromUrl) || `site-${siteId}`
+    return `site-audit-${slug}-${date}.png`
+  }
+
   // Fetch latest audit + site URL
   useEffect(() => {
     Promise.all([
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
-      api.get(`/sites/${siteId}`).catch(() => null),
-    ]).then(([auditRes, siteRes]) => {
+      api.get('/sites').catch(() => null),
+    ]).then(([auditRes, sitesRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
-      if (siteRes?.data?.url) setSiteUrl(siteRes.data.url)
+      const currentSite = (sitesRes?.data || []).find(s => String(s.id) === String(siteId))
+      if (currentSite?.name) setSiteName(currentSite.name)
+      if (currentSite?.url) setSiteUrl(currentSite.url)
     }).finally(() => setLoading(false))
   }, [siteId])
 
@@ -197,7 +222,7 @@ export default function SiteAudit() {
       const a = document.createElement('a')
       const date = new Date().toISOString().slice(0, 10)
       a.href = blobUrl
-      a.download = `site-audit-${siteId}-${date}.png`
+      a.download = buildSnapshotFilename(date)
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -215,7 +240,7 @@ export default function SiteAudit() {
     try {
       const blob = await makeSnapshotBlob()
       const date = new Date().toISOString().slice(0, 10)
-      const file = new File([blob], `site-audit-${siteId}-${date}.png`, { type: 'image/png' })
+      const file = new File([blob], buildSnapshotFilename(date), { type: 'image/png' })
 
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
