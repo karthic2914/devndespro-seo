@@ -128,7 +128,7 @@ router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
     const mismatchIssue = status === 404 || /not found/i.test(apiMessage)
     const tokenIssue = status === 401 || /invalid_grant|invalid credentials/i.test(apiMessage)
     let errorCode = 'gsc_fetch_failed'
-    let error = 'Failed to fetch GSC data. Please try reconnecting Google Search Console.'
+    let error = 'Failed to fetch GSC data. Please try reconnecting Googl5e Search Console.'
     let connected = true
 
     if (permissionIssue) {

@@ -16,20 +16,22 @@ function scoreBg(s) {
 }
 
 function ScoreRing({ score, size = 88 }) {
+  const safeScore = Math.max(0, Math.min(100, Number(score) || 0))
   const r = (size - 10) / 2
   const circ = 2 * Math.PI * r
-  const dash = (score / 100) * circ
-  const color = scoreColor(score)
+  const dash = (safeScore / 100) * circ
+  const dashOffset = circ - dash
+  const color = scoreColor(safeScore)
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', flexShrink: 0 }}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#F3F4F6" strokeWidth={7} />
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={7}
-        strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-        style={{ transition: 'stroke-dasharray 0.8s ease' }} />
+        strokeDasharray={circ} strokeDashoffset={dashOffset} strokeLinecap="round"
+        style={{ transition: 'stroke-dashoffset 0.8s ease' }} />
       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central"
         style={{ fill: color, fontSize: size * 0.26, fontWeight: 700,
           transform: 'rotate(90deg)', transformOrigin: 'center', fontFamily: 'inherit' }}>
-        {score}
+        {safeScore}
       </text>
     </svg>
   )
