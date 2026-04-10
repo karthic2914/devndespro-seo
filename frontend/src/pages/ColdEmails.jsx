@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
@@ -34,6 +33,11 @@ function defaultForm() {
   }
 }
 
+function toDateInputValue(value) {
+  if (!value) return ''
+  return String(value).slice(0, 10)
+}
+
 function defaultSubject(name) {
   const safeName = String(name || '').trim()
   return safeName ? `Quick SEO suggestions for ${safeName}` : 'Quick SEO suggestions for your website'
@@ -62,83 +66,142 @@ function defaultMessage(name, website) {
   ].join('\n')
 }
 
+function followupSubject(name) {
+  const safeName = String(name || '').trim()
+  return safeName ? `Following up: SEO report for ${safeName}` : 'Following up: SEO report'
+}
+
+function followupMessage(name, website) {
+  const safeWebsite = String(website || '').trim()
+  return [
+    'Hi,',
+    '',
+    safeWebsite
+      ? `Following up on my previous note about ${safeWebsite}.`
+      : 'Following up on my previous note about your website.',
+    '',
+    'If helpful, I can share a quick SEO report with practical fixes.',
+    '',
+    'Regards,',
+    'www.devndespro.com',
+  ].join('\n')
+}
+
 export default function ColdEmails() {
-  const { siteId } = useParams()
   const [rows, setRows] = useState([])
+  const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
-  const [forbidden, setForbidden] = useState(false)
   const [sending, setSending] = useState(false)
   const [draftId, setDraftId] = useState(null)
+  const [selectedSiteId, setSelectedSiteId] = useState('')
+  const [composeMode, setComposeMode] = useState('first')
   const [savingId, setSavingId] = useState(null)
   const [form, setForm] = useState(defaultForm)
 
+  const pendingRows = rows.filter((r) => String(r.status || '').toLowerCase() === 'draft')
+  const sentRows = rows.filter((r) => String(r.status || '').toLowerCase() !== 'draft')
+
+  const resetComposer = (siteId = '') => {
+    setDraftId(null)
+    setComposeMode('first')
+    setSelectedSiteId(siteId ? String(siteId) : '')
+    setForm(defaultForm())
+  }
+
+  const openDraftInComposer = (draft) => {
+    setDraftId(draft.id)
+    setComposeMode('first')
+    setSelectedSiteId(String(draft.site_id))
+    setForm({
+      name: draft.name || '',
+      email: draft.email || '',
+      company: draft.company || '',
+      website: draft.website || draft.site_url || '',
+      status: 'sent',
+      sentAt: new Date().toISOString().slice(0, 10),
+      subject: defaultSubject(draft.name),
+      message: defaultMessage(draft.name, draft.website || draft.site_url),
+      notes: draft.notes || '',
+    })
+  }
+
+  const openFollowupInComposer = (row) => {
+    setDraftId(row.id)
+    setComposeMode('followup')
+    setSelectedSiteId(String(row.site_id))
+    setForm({
+      name: row.name || '',
+      email: row.email || '',
+      company: row.company || '',
+      website: row.website || row.site_url || '',
+      status: 'follow-up',
+      sentAt: new Date().toISOString().slice(0, 10),
+      subject: followupSubject(row.name),
+      message: followupMessage(row.name, row.website || row.site_url),
+      notes: row.notes || '',
+    })
+  }
+
   const load = async () => {
     setLoading(true)
-    setForbidden(false)
     try {
-      const { data } = await api.get(`/sites/${siteId}/cold-emails`)
-      const list = Array.isArray(data) ? data : []
+      const [prospectsRes, projectsRes] = await Promise.all([
+        api.get('/sites/cold-emails'),
+        api.get('/sites'),
+      ])
+      const list = Array.isArray(prospectsRes?.data) ? prospectsRes.data : []
+      const sites = Array.isArray(projectsRes?.data) ? projectsRes.data : []
       setRows(list)
+      setProjects(sites)
 
       const draft = list.find((r) => String(r.status || '').toLowerCase() === 'draft')
       if (draft) {
-        setDraftId(draft.id)
-        setForm({
-          name: draft.name || '',
-          email: draft.email || '',
-          company: draft.company || '',
-          website: draft.website || '',
-          status: 'sent',
-          sentAt: new Date().toISOString().slice(0, 10),
-          subject: defaultSubject(draft.name),
-          message: defaultMessage(draft.name, draft.website),
-          notes: draft.notes || '',
-        })
+        openDraftInComposer(draft)
       } else {
-        setDraftId(null)
-        setForm(defaultForm())
+        resetComposer(sites[0]?.id || '')
       }
-    } catch (error) {
+    } catch {
       setRows([])
-      if (error?.response?.status === 403) setForbidden(true)
+      setProjects([])
     }
     setLoading(false)
   }
 
   useEffect(() => {
     load()
-  }, [siteId])
-
-  const sentRows = rows.filter((r) => String(r.status || '').toLowerCase() !== 'draft')
+  }, [])
 
   const sendEmail = async () => {
     if (!form.name.trim() || !String(form.email || '').trim()) return
+    const numericSiteId = Number(selectedSiteId)
+    if (!numericSiteId) return
+
     setSending(true)
     const subject = String(form.subject || '').trim() || defaultSubject(form.name)
     const message = String(form.message || '').trim() || defaultMessage(form.name, form.website)
     try {
       const payload = {
+        siteId: numericSiteId,
         name: toCapitalizedName(form.name).trim(),
         email: String(form.email || '').trim(),
         company: form.company,
         website: form.website,
-        status: 'sent',
+        status: composeMode === 'followup' ? 'follow-up' : 'sent',
         sentAt: form.sentAt,
         notes: form.notes,
       }
       if (draftId) {
-        const { data } = await api.put(`/sites/${siteId}/cold-emails/${draftId}`, payload)
+        const { data } = await api.put(`/sites/cold-emails/${draftId}`, payload)
         setRows((prev) => prev.map((r) => (r.id === draftId ? data : r)))
       } else {
-        const { data } = await api.post(`/sites/${siteId}/cold-emails`, payload)
+        const { data } = await api.post('/sites/cold-emails', payload)
         setRows((prev) => [data, ...prev])
       }
 
       const mailto = `mailto:${encodeURIComponent(String(form.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
       window.location.href = mailto
 
-      setDraftId(null)
-      setForm(defaultForm())
+      await load()
     } catch {
       // keep quiet; existing UX pattern in app does not use inline errors for all pages
     }
@@ -148,7 +211,7 @@ export default function ColdEmails() {
   const saveProspect = async (row) => {
     setSavingId(row.id)
     try {
-      const { data } = await api.put(`/sites/${siteId}/cold-emails/${row.id}`, {
+      const { data } = await api.put(`/sites/cold-emails/${row.id}`, {
         name: toCapitalizedName(row.name),
         email: row.email,
         company: row.company,
@@ -166,7 +229,7 @@ export default function ColdEmails() {
 
   const removeProspect = async (id) => {
     try {
-      await api.delete(`/sites/${siteId}/cold-emails/${id}`)
+      await api.delete(`/sites/cold-emails/${id}`)
       setRows((prev) => prev.filter((r) => r.id !== id))
     } catch {
       // keep quiet; existing UX pattern in app does not use inline errors for all pages
@@ -181,7 +244,7 @@ export default function ColdEmails() {
     <div className="fade-in page-content">
       <PageHeader
         title="Cold Email Prospects"
-        subtitle="New projects are prefilled in Add New Contact as draft. They move to the table only when you send."
+        subtitle="Common across all projects. New projects appear as pending drafts, then move to history after you send."
         action={(
           <div style={{
             fontSize: 11,
@@ -199,19 +262,51 @@ export default function ColdEmails() {
         )}
       />
 
-      {forbidden ? (
-        <Card>
-          <EmptyState
-            title="Access restricted"
-            message="Only the site owner can view cold email prospects for this project."
-          />
-        </Card>
-      ) : (
-        <>
+      <>
 
           <Card style={{ marginBottom: 14 }}>
-            <SectionLabel>Add new contact</SectionLabel>
+            <SectionLabel>Pending contacts (not sent yet)</SectionLabel>
+            {loading ? <EmptyState message="Loading pending contacts..." /> : pendingRows.length === 0 ? (
+              <EmptyState message="No pending contacts. Add a new project to auto-create a draft here." />
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 860 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Project</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Name</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Email</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Website</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pendingRows.map((row) => (
+                      <tr key={row.id}>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.site_name || '-'}</td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.name || '-'}</td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.email || '-'}</td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--muted)' }}>{row.website || row.site_url || '-'}</td>
+                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', whiteSpace: 'nowrap' }}>
+                          <OrangeBtn onClick={() => openDraftInComposer(row)}>Prepare First Email</OrangeBtn>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
+          <Card style={{ marginBottom: 14 }}>
+            <SectionLabel>Compose email</SectionLabel>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: 10 }}>
+              <select value={selectedSiteId} onChange={(e) => setSelectedSiteId(e.target.value)}>
+                <option value="">Select project</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
               <input
                 placeholder="Name *"
                 value={form.name}
@@ -239,7 +334,7 @@ export default function ColdEmails() {
               />
               <input
                 type="date"
-                value={form.sentAt}
+                value={toDateInputValue(form.sentAt)}
                 onChange={(e) => setForm((p) => ({ ...p, sentAt: e.target.value }))}
               />
             </div>
@@ -258,21 +353,22 @@ export default function ColdEmails() {
               style={{ width: '100%', marginTop: 10 }}
             />
             <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-              <OrangeBtn onClick={sendEmail} disabled={sending || !form.name.trim() || !String(form.email || '').trim()}>
+              <OrangeBtn onClick={sendEmail} disabled={sending || !selectedSiteId || !form.name.trim() || !String(form.email || '').trim()}>
                 {sending ? 'Sending...' : <><FontAwesomeIcon icon={faPaperPlane} style={{ marginRight: 6 }} />Send Email</>}
               </OrangeBtn>
             </div>
           </Card>
 
           <Card>
-            <SectionLabel>Your sent prospects</SectionLabel>
+            <SectionLabel>Sent and follow-up history</SectionLabel>
             {loading ? <EmptyState message="Loading prospects..." /> : sentRows.length === 0 ? (
               <EmptyState message="No contacts yet. Add your first cold email contact above." />
             ) : (
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 980 }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 1120 }}>
                   <thead>
                     <tr>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Project</th>
                       <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Name</th>
                       <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Email</th>
                       <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Company</th>
@@ -286,6 +382,9 @@ export default function ColdEmails() {
                   <tbody>
                     {sentRows.map((row) => (
                       <tr key={row.id}>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>
+                          {row.site_name || '-'}
+                        </td>
                         <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
                           <input value={row.name || ''} onChange={(e) => updateRow(row.id, { name: e.target.value })} />
                         </td>
@@ -308,7 +407,7 @@ export default function ColdEmails() {
                         <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
                           <input
                             type="date"
-                            value={row.sent_at ? String(row.sent_at).slice(0, 10) : ''}
+                            value={toDateInputValue(row.sent_at)}
                             onChange={(e) => updateRow(row.id, { sent_at: e.target.value })}
                           />
                         </td>
@@ -322,6 +421,19 @@ export default function ColdEmails() {
                         </td>
                         <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', gap: 8 }}>
+                            <button
+                              onClick={() => openFollowupInComposer(row)}
+                              style={{
+                                background: 'transparent',
+                                color: 'var(--orange)',
+                                border: '1px solid var(--orange)',
+                                borderRadius: 8,
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Follow-up
+                            </button>
                             <OrangeBtn onClick={() => saveProspect(row)} disabled={savingId === row.id || !String(row.name || '').trim()}>
                               {savingId === row.id ? 'Saving...' : 'Save'}
                             </OrangeBtn>
@@ -347,8 +459,8 @@ export default function ColdEmails() {
               </div>
             )}
           </Card>
-        </>
-      )}
+
+      </>
     </div>
   )
 }
