@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -40,10 +40,6 @@ export default function ColdEmails() {
   const [adding, setAdding] = useState(false)
   const [savingId, setSavingId] = useState(null)
   const [form, setForm] = useState(defaultForm)
-
-  const statusLabelByValue = useMemo(() => {
-    return Object.fromEntries(STATUS_OPTIONS.map((o) => [o.value, o.label]))
-  }, [])
 
   const load = async () => {
     setLoading(true)
@@ -195,56 +191,81 @@ export default function ColdEmails() {
             {loading ? <EmptyState message="Loading prospects..." /> : rows.length === 0 ? (
               <EmptyState message="No contacts yet. Add your first cold email contact above." />
             ) : (
-              <div style={{ display: 'grid', gap: 10 }}>
-                {rows.map((row) => (
-                  <div key={row.id} style={{ border: '1px solid var(--dark4)', borderRadius: 10, padding: 10 }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(170px, 1fr))', gap: 10 }}>
-                      <input value={row.name || ''} onChange={(e) => updateRow(row.id, { name: e.target.value })} />
-                      <input value={row.email || ''} onChange={(e) => updateRow(row.id, { email: e.target.value })} />
-                      <input value={row.company || ''} onChange={(e) => updateRow(row.id, { company: e.target.value })} />
-                      <input value={row.website || ''} onChange={(e) => updateRow(row.id, { website: e.target.value })} />
-                      <select value={row.status || 'sent'} onChange={(e) => updateRow(row.id, { status: e.target.value })}>
-                        {STATUS_OPTIONS.map((o) => (
-                          <option key={o.value} value={o.value}>{o.label}</option>
-                        ))}
-                      </select>
-                      <input
-                        type="date"
-                        value={row.sent_at ? String(row.sent_at).slice(0, 10) : ''}
-                        onChange={(e) => updateRow(row.id, { sent_at: e.target.value })}
-                      />
-                    </div>
-                    <textarea
-                      rows={2}
-                      value={row.notes || ''}
-                      onChange={(e) => updateRow(row.id, { notes: e.target.value })}
-                      style={{ width: '100%', marginTop: 8 }}
-                    />
-                    <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                        Status: {statusLabelByValue[row.status] || 'Sent'}
-                      </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <OrangeBtn onClick={() => saveProspect(row)} disabled={savingId === row.id || !String(row.name || '').trim()}>
-                          {savingId === row.id ? 'Saving...' : 'Save'}
-                        </OrangeBtn>
-                        <button
-                          onClick={() => removeProspect(row.id)}
-                          style={{
-                            background: 'transparent',
-                            color: 'var(--red)',
-                            border: '1px solid var(--red)',
-                            borderRadius: 8,
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} style={{ marginRight: 6 }} />Delete
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 980 }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Name</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Email</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Company</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Website</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Status</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Sent Date</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Notes</th>
+                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => (
+                      <tr key={row.id}>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <input value={row.name || ''} onChange={(e) => updateRow(row.id, { name: e.target.value })} />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <input value={row.email || ''} onChange={(e) => updateRow(row.id, { email: e.target.value })} />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <input value={row.company || ''} onChange={(e) => updateRow(row.id, { company: e.target.value })} />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <input value={row.website || ''} onChange={(e) => updateRow(row.id, { website: e.target.value })} />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <select value={row.status || 'sent'} onChange={(e) => updateRow(row.id, { status: e.target.value })}>
+                            {STATUS_OPTIONS.map((o) => (
+                              <option key={o.value} value={o.value}>{o.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
+                          <input
+                            type="date"
+                            value={row.sent_at ? String(row.sent_at).slice(0, 10) : ''}
+                            onChange={(e) => updateRow(row.id, { sent_at: e.target.value })}
+                          />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', minWidth: 220 }}>
+                          <textarea
+                            rows={2}
+                            value={row.notes || ''}
+                            onChange={(e) => updateRow(row.id, { notes: e.target.value })}
+                            style={{ width: '100%' }}
+                          />
+                        </td>
+                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', gap: 8 }}>
+                            <OrangeBtn onClick={() => saveProspect(row)} disabled={savingId === row.id || !String(row.name || '').trim()}>
+                              {savingId === row.id ? 'Saving...' : 'Save'}
+                            </OrangeBtn>
+                            <button
+                              onClick={() => removeProspect(row.id)}
+                              style={{
+                                background: 'transparent',
+                                color: 'var(--red)',
+                                border: '1px solid var(--red)',
+                                borderRadius: 8,
+                                padding: '8px 12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <FontAwesomeIcon icon={faTrash} style={{ marginRight: 6 }} />Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </Card>
