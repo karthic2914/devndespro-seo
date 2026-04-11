@@ -90,7 +90,12 @@ router.post('/', auth, async (req, res) => {
 
     res.json(rows[0])
   } catch (e) {
-    res.status(400).json({ error: e.message || 'Website verification failed' })
+    const message = String(e?.message || 'Website verification failed')
+    const statusFromMessage = Number((message.match(/\b(5\d{2})\b/) || [])[1] || 0)
+    if (statusFromMessage >= 500) {
+      return res.status(503).json({ error: message })
+    }
+    res.status(400).json({ error: message })
   }
 })
 

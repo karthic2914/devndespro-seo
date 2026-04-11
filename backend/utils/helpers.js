@@ -96,22 +96,36 @@ async function normalizeAndVerifyWebsite(inputUrl) {
   }
 
   let lastErr = null
+  let sawServerError = false
   for (const candidate of [parsed.toString(), `${parsed.protocol}//${host}${parsed.pathname || ''}`]) {
     try {
       const r = await axios.get(candidate, {
         timeout: 12000,
         maxRedirects: 5,
-        validateStatus: s => s >= 200 && s < 500,
+        validateStatus: () => true,
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SiteVerifyBot/1.0)' },
       })
       if (r.status >= 200 && r.status < 500) {
         return candidate.endsWith('/') ? candidate.slice(0, -1) : candidate
       }
-      lastErr = new Error(`Website returned status ${r.status}`)
+      if (r.status >= 500) {
+        sawServerError = true
+        lastErr = new Error(`Target website is temporarily unavailable (HTTP ${r.status})`)
+      } else {
+        lastErr = new Error(`Website returned status ${r.status}`)
+      }
     } catch (e) {
       lastErr = e
     }
   }
+
+  // Some sites block bot-like verification requests but are still valid public websites.
+  // If DNS is valid and we only saw temporary server-side errors, allow project creation.
+  if (sawServerError) {
+    const normalized = `${parsed.protocol}//${host}${parsed.pathname || ''}`
+    return normalized.endsWith('/') ? normalized.slice(0, -1) : normalized
+  }
+
   throw new Error(lastErr?.message || 'Website verification failed. Ensure the site is live and public.')
 }
 
