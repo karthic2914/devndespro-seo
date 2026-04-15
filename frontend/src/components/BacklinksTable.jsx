@@ -80,6 +80,14 @@ function SortIcon({ field, sort }) {
   return <FontAwesomeIcon icon={sort.dir === 'asc' ? faSortUp : faSortDown} className="bl-sort-icon bl-sort-icon--active" />
 }
 
+function sourceConfig(source) {
+  const value = String(source || 'manual').toLowerCase()
+  if (value === 'crawled') return { cls: 'crawled', label: 'Crawled' }
+  if (value === 'csv') return { cls: 'csv', label: 'Imported' }
+  if (value === 'domain') return { cls: 'domain', label: 'Domain' }
+  return { cls: 'manual', label: 'Manual' }
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onRemove }) {
@@ -126,7 +134,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
     const headers = ['Domain', 'URL', 'Anchor', 'Type', 'DR', 'Status', 'Source', 'Spam']
     const rows = sorted.map(b => [
       b.name, b.url, b.anchor, b.type, b.dr, b.status,
-      b.source || 'manual', isSpam(b) ? 'Yes' : 'No',
+      sourceConfig(b.source).label, isSpam(b) ? 'Yes' : 'No',
     ])
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ||'').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -212,6 +220,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
               <tbody>
                 {sorted.map(b => {
                   const spam = isSpam(b)
+                  const source = sourceConfig(b.source)
                   return (
                     <tr key={b.id} className={spam ? 'bl-row-spam' : ''}>
 
@@ -258,8 +267,8 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
 
                       {/* Source */}
                       <td className="bl-td-center">
-                        <span className={`bl-source-badge bl-source-badge--${b.source === 'crawled' ? 'crawled' : 'manual'}`}>
-                          {b.source === 'crawled' ? 'Crawled' : 'Manual'}
+                        <span className={`bl-source-badge bl-source-badge--${source.cls}`}>
+                          {source.label}
                         </span>
                       </td>
 

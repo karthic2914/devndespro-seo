@@ -12,10 +12,13 @@ router.get('/:siteId/backlinks', auth, verifySite, async (req, res) => {
   res.json(rows)
 })
 router.post('/:siteId/backlinks', auth, verifySite, async (req, res) => {
-  const { name, dr, status, anchor, url, type } = req.body
+  const { name, dr, status, anchor, url, type, source } = req.body
+  const finalSource = ['manual', 'domain'].includes(String(source || '').toLowerCase())
+    ? String(source).toLowerCase()
+    : 'manual'
   const { rows } = await pool.query(
-    'INSERT INTO backlinks (site_id, name, dr, status, anchor, url, type) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
-    [req.siteId, name, dr || 0, status || 'Todo', anchor || '', url || '', type || 'dofollow']
+    'INSERT INTO backlinks (site_id, name, dr, status, anchor, url, type, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
+    [req.siteId, name, dr || 0, status || 'Todo', anchor || '', url || '', type || 'dofollow', finalSource]
   )
   res.json(rows[0])
 })

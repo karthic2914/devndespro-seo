@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faCircleQuestion, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar } from '@fortawesome/free-solid-svg-icons'
-import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader } from '../components/UI'
+import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar } from '@fortawesome/free-solid-svg-icons'
+import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import api from '../utils/api'
 
@@ -12,12 +12,15 @@ export default function Backlinks() {
   const [backlinks, setBacklinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name: '', dr: '', status: 'Todo', url: '', anchor: '', type: 'dofollow' })
+  const [addMode, setAddMode] = useState('domain')
+  const [quickDomain, setQuickDomain] = useState('')
+  const [quickSettings, setQuickSettings] = useState({ status: 'Todo', type: 'dofollow' })
   const [adding, setAdding] = useState(false)
   const [crawling, setCrawling] = useState(false)
   const [crawlResult, setCrawlResult] = useState(null)
   const [seeds, setSeeds] = useState('')
   const [showCrawler, setShowCrawler] = useState(false)
-  const [showAdd, setShowAdd] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [integrations, setIntegrations] = useState(null)
   const [loadingOpps, setLoadingOpps] = useState(false)
   const [opportunities, setOpportunities] = useState([])
@@ -46,27 +49,74 @@ export default function Backlinks() {
     return new URL(w).href
   }
 
-  const add = async () => {
-    if (!form.name.trim()) { toast.error('Site name is required'); return }
+  const normalizeDomain = (raw) => {
+    const v = String(raw || '').trim()
+    if (!v) return ''
+    const w = /^https?:\/\//i.test(v) ? v : `https://${v}`
+    return new URL(w).hostname.replace(/^www\./i, '').toLowerCase()
+  }
+
+  const createBacklink = async (payload, successMessage) => {
+    setAdding(true)
+    try {
+      await api.post(`/sites/${siteId}/backlinks`, payload)
+      toast.success(successMessage)
+      await load()
+      return true
+    } catch { toast.error('Failed to add backlink') }
+    setAdding(false)
+    return false
+  }
+
+  const addDomain = async () => {
+    let domain = ''
+    try { domain = normalizeDomain(quickDomain) }
+    catch { toast.error('Please enter a valid domain'); return }
+
+    if (!domain) { toast.error('Domain is required'); return }
+
+    const ok = await createBacklink({
+      name: domain,
+      dr: 0,
+      status: quickSettings.status,
+      url: `https://${domain}/`,
+      anchor: '',
+      type: quickSettings.type,
+      source: 'domain',
+    }, 'Domain added to backlinks')
+
+    if (ok) setQuickDomain('')
+    setAdding(false)
+  }
+
+  const addManual = async () => {
     let normalizedUrl = ''
     if (form.url.trim()) {
       try { normalizedUrl = normalizeUrl(form.url) }
       catch { toast.error('Please enter a valid source URL'); return }
     }
-    setAdding(true)
-    try {
-      const dr = Number(form.dr)
-      await api.post(`/sites/${siteId}/backlinks`, {
-        name: form.name.trim(),
-        dr: Number.isFinite(dr) ? Math.max(0, Math.min(100, dr)) : 0,
-        status: form.status, url: normalizedUrl,
-        anchor: form.anchor.trim(), type: form.type,
-      })
+
+    const derivedName = normalizedUrl
+      ? new URL(normalizedUrl).hostname.replace(/^www\./i, '')
+      : ''
+    const finalName = form.name.trim() || derivedName
+
+    if (!finalName) { toast.error('Add a domain/site name or a valid source URL'); return }
+
+    const dr = Number(form.dr)
+    const ok = await createBacklink({
+      name: finalName,
+      dr: Number.isFinite(dr) ? Math.max(0, Math.min(100, dr)) : 0,
+      status: form.status,
+      url: normalizedUrl,
+      anchor: form.anchor.trim(),
+      type: form.type,
+      source: 'manual',
+    }, 'Backlink added')
+
+    if (ok) {
       setForm({ name: '', dr: '', status: 'Todo', url: '', anchor: '', type: 'dofollow' })
-      toast.success('Backlink added')
-      setShowAdd(false)
-      load()
-    } catch { toast.error('Failed to add backlink') }
+    }
     setAdding(false)
   }
 
@@ -176,16 +226,166 @@ export default function Backlinks() {
     <div className="fade-in page-content">
       <PageHeader
         title="Backlinks"
-        subtitle="Track, discover and analyse your link building profile"
-        action={
-          <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering}>
-            {quickDiscovering
-              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering…</>
-              : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
-            }
-          </OrangeBtn>
-        }
+        subtitle="Add backlinks by domain, log exact links manually, and keep discovery tools out of the way until you need them."
       />
+
+      <Card style={{ marginBottom: 14 }}>
+        <div className="bl-intake">
+          <div className="bl-intake-head">
+            <div className="bl-intake-copy">
+              <div className="bl-intake-kicker">Simpler workflow</div>
+              <div className="bl-intake-title">Start with a domain. Switch to manual only when you already know the exact page.</div>
+              <div className="bl-intake-sub">
+                Domain mode is the fastest way to track outreach targets and prospects. Manual mode is for confirmed links with URL, anchor text, or DR.
+              </div>
+            </div>
+            <div className="bl-intake-actions">
+              <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering}>
+                {quickDiscovering
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering…</>
+                  : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
+                }
+              </OrangeBtn>
+              <GhostBtn onClick={loadAiOpportunities} style={{ height: 38 }}>
+                {loadingOpps
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding…</>
+                  : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Find AI ideas</>
+                }
+              </GhostBtn>
+              <GhostBtn onClick={() => setShowAdvanced(p => !p)} style={{ height: 38 }}>
+                {showAdvanced ? 'Hide advanced tools' : 'Open advanced tools'}
+              </GhostBtn>
+            </div>
+          </div>
+
+          <div className="bl-mode-switch">
+            <button className={`bl-mode-btn${addMode === 'domain' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('domain')}>
+              Add by domain
+            </button>
+            <button className={`bl-mode-btn${addMode === 'manual' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('manual')}>
+              Add manually
+            </button>
+          </div>
+
+          <div className="bl-form-shell">
+            {addMode === 'domain' ? (
+              <>
+                <div className="bl-domain-row">
+                  <div className="bl-field">
+                    <label>Domain or site</label>
+                    <input
+                      placeholder="clutch.co or https://clutch.co"
+                      value={quickDomain}
+                      onChange={e => setQuickDomain(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addDomain()}
+                    />
+                  </div>
+                  <div className="bl-field">
+                    <label>Type</label>
+                    <select value={quickSettings.type} onChange={e => setQuickSettings(p => ({ ...p, type: e.target.value }))}>
+                      <option value="dofollow">Dofollow</option>
+                      <option value="nofollow">Nofollow</option>
+                    </select>
+                  </div>
+                  <div className="bl-field">
+                    <label>Starting status</label>
+                    <select value={quickSettings.status} onChange={e => setQuickSettings(p => ({ ...p, status: e.target.value }))}>
+                      <option>Todo</option>
+                      <option>Pending</option>
+                      <option>Live</option>
+                    </select>
+                  </div>
+                  <OrangeBtn onClick={addDomain} disabled={adding} style={{ alignSelf: 'end', justifyContent: 'center' }}>
+                    {adding ? 'Adding…' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add domain</>}
+                  </OrangeBtn>
+                </div>
+                <div className="bl-form-help">Use this when you only need to track the referring domain first. You can update status and details later from the table.</div>
+              </>
+            ) : (
+              <>
+                <div className="bl-manual-grid">
+                  <div className="bl-field">
+                    <label>Referring domain or site</label>
+                    <input
+                      placeholder="Clutch.co"
+                      value={form.name}
+                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                    />
+                  </div>
+                  <div className="bl-field">
+                    <label>Source URL</label>
+                    <input
+                      placeholder="https://example.com/post"
+                      value={form.url}
+                      onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
+                    />
+                  </div>
+                  <div className="bl-field bl-field--full">
+                    <label>Anchor text</label>
+                    <input
+                      placeholder="Best SEO agency"
+                      value={form.anchor}
+                      onChange={e => setForm(p => ({ ...p, anchor: e.target.value }))}
+                      onKeyDown={e => e.key === 'Enter' && addManual()}
+                    />
+                  </div>
+                  <div className="bl-field">
+                    <label>DR</label>
+                    <input
+                      placeholder="0-100"
+                      value={form.dr}
+                      type="number"
+                      onChange={e => setForm(p => ({ ...p, dr: e.target.value }))}
+                    />
+                  </div>
+                  <div className="bl-field">
+                    <label>Type</label>
+                    <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                      <option value="dofollow">Dofollow</option>
+                      <option value="nofollow">Nofollow</option>
+                    </select>
+                  </div>
+                  <div className="bl-field">
+                    <label>Status</label>
+                    <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                      <option>Todo</option>
+                      <option>Pending</option>
+                      <option>Live</option>
+                    </select>
+                  </div>
+                  <div className="bl-field bl-field--action">
+                    <label>&nbsp;</label>
+                    <OrangeBtn onClick={addManual} disabled={adding} style={{ justifyContent: 'center' }}>
+                      {adding ? 'Adding…' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Save backlink</>}
+                    </OrangeBtn>
+                  </div>
+                </div>
+                <div className="bl-form-help">If you leave the site name empty, it will be derived automatically from the source URL.</div>
+              </>
+            )}
+          </div>
+
+          {opportunities.length > 0 && (
+            <div className="bl-opportunities">
+              <SectionLabel>AI link opportunities</SectionLabel>
+              <div className="bl-opportunity-list">
+                {opportunities.slice(0, 4).map((opp, idx) => (
+                  <div key={`${opp.site}-${idx}`} className="bl-opportunity-card">
+                    <div style={{ minWidth: 0 }}>
+                      <div className="bl-opportunity-title">{opp.site}</div>
+                      <div className="bl-opportunity-meta">{opp.type} • {opp.relevance} relevance • Estimated DR {opp.estimatedDR || 0}</div>
+                      <div className="bl-opportunity-strategy">{opp.strategy}</div>
+                    </div>
+                    <OrangeBtn onClick={() => addOpportunity(opp)}>
+                      <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
+                    </OrangeBtn>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
 
       {/* Metric strip */}
       <div className="bl-metric-strip">
@@ -207,11 +407,20 @@ export default function Backlinks() {
         </Card>
       )}
 
+      {/* Advanced table */}
+      <Card style={{ marginBottom: 12 }}>
+        <BacklinksTable
+          backlinks={backlinks}
+          loading={loading}
+          onUpdateStatus={updateStatus}
+          onRemove={remove}
+        />
+      </Card>
+
       {bestPicks.length > 0 && (
         <Card style={{ marginBottom: 12 }}>
-          <SectionLabel style={{ marginBottom: 8 }}>
-            <FontAwesomeIcon icon={faStar} style={{ marginRight: 8, color: 'var(--orange)' }} />
-            Best backlinks to show customer
+          <SectionLabel>
+            <><FontAwesomeIcon icon={faStar} style={{ marginRight: 8, color: 'var(--orange)' }} />Best backlinks to show customer</>
           </SectionLabel>
           <div style={{ display: 'grid', gap: 8 }}>
             {bestPicks.map((b) => (
@@ -233,159 +442,88 @@ export default function Backlinks() {
         </Card>
       )}
 
-      <Card style={{ marginBottom: 12 }}>
+      <Card>
         <div className="crawler-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={faCloudArrowUp} style={{ color: 'var(--orange)' }} />
-            <SectionLabel style={{ margin: 0 }}>Bulk import backlinks CSV</SectionLabel>
+            <SectionLabel>Advanced backlinks tools</SectionLabel>
           </div>
-          <OrangeBtn onClick={importDetailedCsv} disabled={importingCsv}>
-            {importingCsv
-              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importing…</>
-              : <>Import rows</>
-            }
-          </OrangeBtn>
+          <GhostBtn onClick={() => setShowAdvanced(p => !p)}>
+            {showAdvanced ? 'Hide advanced' : 'Show advanced'}
+          </GhostBtn>
         </div>
-        <div className="crawler-body">
-          <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
-            Paste CSV with columns like Domain/Site, URL, Anchor Text, DR, Type, Status.
-          </div>
-          <textarea
-            className="crawler-seeds"
-            rows={5}
-            placeholder={'Domain,URL,Anchor Text,DR,Type,Status\nexample.com,https://example.com/post,Best seo agency,74,dofollow,Live'}
-            value={csvText}
-            onChange={e => setCsvText(e.target.value)}
-          />
-          {importResult && (
-            <div style={{ marginTop: 8, fontSize: 12, color: 'var(--text2)' }}>
-              Imported <strong>{importResult.imported}</strong>, skipped <strong>{importResult.skipped}</strong> from {importResult.totalRows} rows.
-            </div>
-          )}
-        </div>
-      </Card>
 
-      <Card style={{ marginBottom: 12 }}>
-        <div className="crawler-header" onClick={() => setOpportunities(p => p.length ? [] : p)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: 'var(--orange)' }} />
-            <SectionLabel style={{ margin: 0 }}>AI link opportunities</SectionLabel>
-          </div>
-          <OrangeBtn onClick={(e) => { e.stopPropagation(); loadAiOpportunities() }} disabled={loadingOpps}>
-            {loadingOpps
-              ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding…</>
-              : <>Find opportunities</>
-            }
-          </OrangeBtn>
-        </div>
-        {opportunities.length > 0 && (
-          <div className="crawler-body">
-            {opportunities.slice(0, 8).map((opp, idx) => (
-              <div key={`${opp.site}-${idx}`} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12,
-                padding: idx === 0 ? '0 0 10px' : '10px 0', borderTop: idx === 0 ? 'none' : '1px solid var(--dark4)',
-              }}>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{opp.site}</div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 2 }}>
-                    {opp.type} • {opp.relevance} relevance • Estimated DR {opp.estimatedDR || 0}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 6, lineHeight: 1.6 }}>{opp.strategy}</div>
-                </div>
-                <OrangeBtn onClick={() => addOpportunity(opp)}>
-                  <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
-                </OrangeBtn>
+        {showAdvanced && (
+          <div className="bl-advanced-grid">
+            <div className="bl-advanced-box">
+              <div className="bl-advanced-title">
+                <FontAwesomeIcon icon={faCloudArrowUp} style={{ color: 'var(--orange)' }} />
+                Bulk import CSV
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+                Paste CSV with columns like Domain/Site, URL, Anchor Text, DR, Type, Status.
+              </div>
+              <textarea
+                className="crawler-seeds"
+                rows={6}
+                placeholder={'Domain,URL,Anchor Text,DR,Type,Status\nexample.com,https://example.com/post,Best seo agency,74,dofollow,Live'}
+                value={csvText}
+                onChange={e => setCsvText(e.target.value)}
+              />
+              <div className="bl-inline-actions">
+                <OrangeBtn onClick={importDetailedCsv} disabled={importingCsv}>
+                  {importingCsv
+                    ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importing…</>
+                    : <>Import rows</>
+                  }
+                </OrangeBtn>
+                {importResult && (
+                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                    Imported <strong>{importResult.imported}</strong>, skipped <strong>{importResult.skipped}</strong> from {importResult.totalRows} rows.
+                  </div>
+                )}
+              </div>
+            </div>
 
-      {/* Crawler */}
-      <Card style={{ marginBottom: 12 }}>
-        <div className="crawler-header" onClick={() => setShowCrawler(p => !p)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={faSpider} style={{ color: 'var(--orange)' }} />
-            <SectionLabel style={{ margin: 0 }}>Discover backlinks — web crawler</SectionLabel>
-          </div>
-          <span className="crawler-toggle">{showCrawler ? '▲' : '▼'}</span>
-        </div>
-        {showCrawler && (
-          <div className="crawler-body">
-            <p className="crawler-desc">
-              By default it queries <strong>Common Crawl</strong> (8B+ pages) and <strong>Bing search</strong>.
-              Add <strong>seed URLs</strong> below for a third optional source — then it verifies and saves pages that link to your site.
-            </p>
-            <label className="crawler-label">Seed URLs <span>(optional — one per line)</span></label>
-            <textarea className="crawler-seeds" rows={4}
-              placeholder={"https://clutch.co/agencies\nhttps://www.g2.com/categories/seo"}
-              value={seeds} onChange={e => setSeeds(e.target.value)} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-              <OrangeBtn onClick={crawl} disabled={crawling}>
-                {crawling
-                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawling…</>
-                  : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Run crawler</>}
-              </OrangeBtn>
-              {crawlResult && (
-                <span className="crawler-result">
-                  {crawlResult.saved > 0 ? `✓ ${crawlResult.saved} new backlink${crawlResult.saved > 1 ? 's' : ''} saved` : 'No new backlinks found'}
-                </span>
+            <div className="bl-advanced-box">
+              <div className="crawler-header" onClick={() => setShowCrawler(p => !p)}>
+                <div className="bl-advanced-title" style={{ marginBottom: 0 }}>
+                  <FontAwesomeIcon icon={faSpider} style={{ color: 'var(--orange)' }} />
+                  Discover backlinks with crawler
+                </div>
+                <span className="crawler-toggle">{showCrawler ? '▲' : '▼'}</span>
+              </div>
+
+              {showCrawler && (
+                <div className="crawler-body">
+                  <p className="crawler-desc">
+                    Uses Common Crawl and Bing by default. Add optional seed URLs to verify pages that link back to your site.
+                  </p>
+                  <label className="crawler-label">Seed URLs <span>(optional, one per line)</span></label>
+                  <textarea
+                    className="crawler-seeds"
+                    rows={5}
+                    placeholder={"https://clutch.co/agencies\nhttps://www.g2.com/categories/seo"}
+                    value={seeds}
+                    onChange={e => setSeeds(e.target.value)}
+                  />
+                  <div className="bl-inline-actions">
+                    <OrangeBtn onClick={crawl} disabled={crawling}>
+                      {crawling
+                        ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawling…</>
+                        : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Run crawler</>}
+                    </OrangeBtn>
+                    {crawlResult && (
+                      <span className="crawler-result">
+                        {crawlResult.saved > 0 ? `Saved ${crawlResult.saved} new backlink${crawlResult.saved > 1 ? 's' : ''}` : 'No new backlinks found'}
+                      </span>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>
         )}
-      </Card>
-
-      {/* Add manually */}
-      <Card style={{ marginBottom: 12 }}>
-        <div className="crawler-header" onClick={() => setShowAdd(p => !p)}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={faPlus} style={{ color: 'var(--orange)' }} />
-            <SectionLabel style={{ margin: 0 }}>Add backlink manually</SectionLabel>
-            <div className="tooltip-trigger">
-              <FontAwesomeIcon icon={faCircleQuestion} />
-              <div className="tooltip-popup">Add one opportunity per domain and move it from Todo → Pending → Live.</div>
-            </div>
-          </div>
-          <span className="crawler-toggle">{showAdd ? '▲' : '▼'}</span>
-        </div>
-        {showAdd && (
-          <div className="crawler-body">
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <input placeholder="Site name (e.g. Clutch.co)" value={form.name}
-                onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && add()} style={{ flex: 2, minWidth: 160 }} />
-              <input placeholder="Source URL" value={form.url}
-                onChange={e => setForm(p => ({ ...p, url: e.target.value }))} style={{ flex: 2, minWidth: 160 }} />
-            </div>
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 8 }}>
-              <input placeholder="Anchor text" value={form.anchor}
-                onChange={e => setForm(p => ({ ...p, anchor: e.target.value }))} style={{ flex: 2, minWidth: 140 }} />
-              <input placeholder="DR (0–100)" value={form.dr} type="number"
-                onChange={e => setForm(p => ({ ...p, dr: e.target.value }))} style={{ width: 90 }} />
-              <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))} style={{ width: 120 }}>
-                <option value="dofollow">Dofollow</option>
-                <option value="nofollow">Nofollow</option>
-              </select>
-              <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))} style={{ width: 110 }}>
-                <option>Todo</option><option>Pending</option><option>Live</option>
-              </select>
-              <OrangeBtn onClick={add} disabled={adding}>
-                {adding ? 'Adding…' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add</>}
-              </OrangeBtn>
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Advanced table */}
-      <Card>
-        <BacklinksTable
-          backlinks={backlinks}
-          loading={loading}
-          onUpdateStatus={updateStatus}
-          onRemove={remove}
-        />
       </Card>
     </div>
   )
