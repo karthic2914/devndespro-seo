@@ -136,7 +136,9 @@ export default function Backlinks() {
       const seedList = seeds.split('\n').map(s => s.trim()).filter(s => s.startsWith('http'))
       const r = await api.post(`/sites/${siteId}/backlinks/crawl`, { seeds: seedList })
       setCrawlResult(r.data)
+      setOpportunities(Array.isArray(r.data?.opportunities) ? r.data.opportunities : [])
       if (r.data.saved > 0) { toast.success(`Discovered ${r.data.saved} new backlink${r.data.saved > 1 ? 's' : ''}!`); load() }
+      else if (Array.isArray(r.data?.opportunities) && r.data.opportunities.length > 0) toast('No new live backlinks found, but new opportunities were identified.')
       else toast('No new backlinks found this crawl.')
     } catch { toast.error('Crawl failed') }
     setCrawling(false)
@@ -150,9 +152,12 @@ export default function Backlinks() {
       const seed = site?.url ? [String(site.url).startsWith('http') ? site.url : `https://${site.url}`] : []
       const r = await api.post(`/sites/${siteId}/backlinks/crawl`, { seeds: seed })
       setCrawlResult(r.data)
+      setOpportunities(Array.isArray(r.data?.opportunities) ? r.data.opportunities : [])
       if (r.data.saved > 0) {
         toast.success(`Discovered ${r.data.saved} backlink${r.data.saved > 1 ? 's' : ''} from project crawl`)
         load()
+      } else if (Array.isArray(r.data?.opportunities) && r.data.opportunities.length > 0) {
+        toast('No live backlinks found yet, but the engine found new opportunities.', { icon: 'ℹ️' })
       } else {
         toast('No new backlinks found for this project yet.', { icon: 'ℹ️' })
       }
@@ -181,8 +186,9 @@ export default function Backlinks() {
         dr: Number(opp.estimatedDR || 0),
         status: 'Todo',
         anchor: String(opp.strategy || '').trim(),
-        url: '',
+        url: String(opp.siteUrl || '').trim(),
         type: 'dofollow',
+        source: 'domain',
       })
       setOpportunities(prev => prev.filter(x => x.site !== opp.site))
       toast.success('Opportunity added to backlinks')
@@ -249,7 +255,7 @@ export default function Backlinks() {
               <GhostBtn onClick={loadAiOpportunities} style={{ height: 38 }}>
                 {loadingOpps
                   ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding…</>
-                  : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Find AI ideas</>
+                  : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Find opportunities</>
                 }
               </GhostBtn>
               <GhostBtn onClick={() => setShowAdvanced(p => !p)} style={{ height: 38 }}>
@@ -367,7 +373,7 @@ export default function Backlinks() {
 
           {opportunities.length > 0 && (
             <div className="bl-opportunities">
-              <SectionLabel>AI link opportunities</SectionLabel>
+              <SectionLabel>Link opportunities</SectionLabel>
               <div className="bl-opportunity-list">
                 {opportunities.slice(0, 4).map((opp, idx) => (
                   <div key={`${opp.site}-${idx}`} className="bl-opportunity-card">
@@ -375,6 +381,12 @@ export default function Backlinks() {
                       <div className="bl-opportunity-title">{opp.site}</div>
                       <div className="bl-opportunity-meta">{opp.type} • {opp.relevance} relevance • Estimated DR {opp.estimatedDR || 0}</div>
                       <div className="bl-opportunity-strategy">{opp.strategy}</div>
+                      {opp.evidence && <div className="bl-form-help" style={{ marginTop: 6 }}>{opp.evidence}</div>}
+                      {opp.siteUrl && (
+                        <a href={opp.siteUrl} target="_blank" rel="noopener noreferrer" className="bl-form-help" style={{ display: 'inline-block', marginTop: 4 }}>
+                          Open source
+                        </a>
+                      )}
                     </div>
                     <OrangeBtn onClick={() => addOpportunity(opp)}>
                       <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add
@@ -497,7 +509,7 @@ export default function Backlinks() {
               {showCrawler && (
                 <div className="crawler-body">
                   <p className="crawler-desc">
-                    Uses Common Crawl and Bing by default. Add optional seed URLs to verify pages that link back to your site.
+                    Finds verified live backlinks from public web mentions and also surfaces evidence-backed opportunities. Add optional seed URLs to check specific pages.
                   </p>
                   <label className="crawler-label">Seed URLs <span>(optional, one per line)</span></label>
                   <textarea

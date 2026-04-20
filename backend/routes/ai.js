@@ -3,6 +3,7 @@ const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
+const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
 
 const router = express.Router()
 
@@ -267,22 +268,21 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
 
 router.post('/:siteId/ai/link-opportunities', auth, verifySite, async (req, res) => {
   try {
-    const [sR, cR, kR, bR] = await Promise.all([
+    const [sR, bR] = await Promise.all([
       pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId]),
-      pool.query('SELECT name FROM competitors WHERE site_id=$1 LIMIT 10', [req.siteId]),
-      pool.query('SELECT keyword FROM keywords WHERE site_id=$1 LIMIT 10', [req.siteId]),
-      pool.query('SELECT name FROM backlinks WHERE site_id=$1', [req.siteId]),
+      pool.query('SELECT name, url, anchor FROM backlinks WHERE site_id=$1', [req.siteId]),
     ])
     const site = sR.rows[0]
-    const prompt = `You are a link building expert. Suggest 8 specific, realistic link opportunities.\nSite: ${site?.name} (${site?.url})\nKeywords: ${kR.rows.map(k => k.keyword).join(', ') || 'web design, digital agency'}\nCompetitors: ${cR.rows.map(c => c.name).join(', ') || 'none tracked'}\nAlready linked from: ${bR.rows.map(b => b.name).join(', ') || 'none yet'}\n\nReturn ONLY a JSON array:\n[{"site":"Clutch.co","type":"Directory|Guest post|Resource page|Unlinked mention|Partnership","relevance":"High|Medium","strategy":"specific action","estimatedDR":75}]`
-    const r = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
-    let opps = []
-    try {
-      const raw = r.content[0].text.trim()
-      const json = raw.startsWith('[') ? raw : raw.slice(raw.indexOf('['), raw.lastIndexOf(']') + 1)
-      opps = JSON.parse(json)
-    } catch { opps = [] }
-    res.json(opps)
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const analysis = await analyzeBacklinkLandscape({
+      siteName: site.name,
+      siteUrl: site.url,
+      existingBacklinks: bR.rows,
+      seedUrls: [],
+    })
+
+    res.json(analysis.opportunities)
   } catch (e) { console.error(e); res.status(500).json({ error: 'Link opportunities failed' }) }
 })
 
