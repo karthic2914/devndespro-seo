@@ -279,8 +279,9 @@ async function sendSiteReport(siteId, recipients) {
 }
 
 async function sendSummaryEmail({ to, subject, message, fullReport }) {
-  const apiKey = process.env.ZEPTO_API_KEY
-  if (!apiKey) throw new Error('ZEPTO_API_KEY not set')
+  // Use SMTP_PASS as the ZeptoMail API key (same token used for SMTP auth)
+  const apiKey = process.env.ZEPTO_API_KEY || process.env.SMTP_PASS
+  if (!apiKey) throw new Error('No email API key configured')
 
   const htmlBody = `<!DOCTYPE html>
 <html>
@@ -299,7 +300,7 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
     htmlbody: htmlBody,
   }
 
-  const resp = await fetch('https://api.zeptomail.eu/v1.1/email', {
+  const resp = await fetch('https://api.zeptomail.com/v1.1/email', {
     method: 'POST',
     headers: {
       'Authorization': apiKey,
