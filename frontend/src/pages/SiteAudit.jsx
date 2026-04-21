@@ -8,7 +8,31 @@ import {
   faCamera, faShareNodes,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
-import { Button, T } from '../components/UI'
+import { Button, T, Modal, Input } from '../components/UI'
+import { useAuth } from '../hooks/useAuth'
+  const { user } = useAuth()
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailSubject, setEmailSubject] = useState('Your SEO Audit Summary')
+  const [emailMessage, setEmailMessage] = useState('Hi,\n\nHere is a quick summary of your latest SEO audit.\n\nHealth Score: ' + (auditData?.score ?? '—') + '\nCritical Issues: ' + allIssues.filter(i => i.status === 'error').length + '\nWarnings: ' + allIssues.filter(i => i.status === 'warning').length + '\n\nLet me know if you want the full report or help fixing any issues!')
+  const [includeFullReport, setIncludeFullReport] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  async function sendSummaryEmail() {
+    setSendingEmail(true)
+    try {
+      await api.post('/admin-email/send-summary', {
+        siteId,
+        subject: emailSubject,
+        message: emailMessage,
+        includeFullReport,
+      })
+      setShowEmailModal(false)
+      setSendingEmail(false)
+      alert('Summary email sent!')
+    } catch (e) {
+      setSendingEmail(false)
+      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
+    }
+  }
 import api from '../utils/api'
 
 // Lazy-loaded sub-components (import at top to keep file clean)
@@ -374,6 +398,35 @@ export default function SiteAudit() {
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
+                {user?.id === 1 && (
+                  <Button variant="secondary" size="sm" style={{ marginBottom: 12 }} onClick={() => setShowEmailModal(true)}>
+                    Send summary email
+                  </Button>
+                )}
+              <Modal
+                open={showEmailModal}
+                onClose={() => setShowEmailModal(false)}
+                title="Send Audit Summary Email"
+                width={480}
+                footer={
+                  <>
+                    <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+                    <Button variant="primary" loading={sendingEmail} onClick={sendSummaryEmail}>
+                      Send Email
+                    </Button>
+                  </>
+                }
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
+                  <textarea value={emailMessage} onChange={e => setEmailMessage(e.target.value)} rows={7} style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }} />
+                  <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
+                    <input type="checkbox" checked={includeFullReport} onChange={e => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
+                    Include full audit report
+                  </label>
+                </div>
+              </Modal>
         <div style={{
           background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
           boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem', padding:'12px 14px',

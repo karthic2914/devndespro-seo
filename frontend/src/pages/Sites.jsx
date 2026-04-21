@@ -73,11 +73,15 @@ const QUICK_WINS = [
 
 const completedCount = CHECKLIST.filter(c => c.done).length
 
+import api from '../utils/api'
+
 export default function Sites() {
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ name: '', url: '', contactEmail: '', notifyAdmin: true })
+  const [findingEmail, setFindingEmail] = useState(false)
+  const { user } = useAuth()
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState({})
   const { logout } = useAuth()
@@ -208,7 +212,30 @@ const getDomain = (url) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <Input label="Project name" placeholder="e.g. devndespro" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} icon={<FontAwesomeIcon icon={faTag} />} />
             <Input label="Website URL" placeholder="e.g. devndespro.com" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} error={errors.url} icon={<FontAwesomeIcon icon={faGlobe} />} hint="Only domains verified in your connected GSC account are allowed." />
-            <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." style={{ flex: 1 }} />
+              {user?.id === 1 && (
+                <Button variant="secondary" size="sm" loading={findingEmail} style={{ minWidth: 120 }}
+                  onClick={async () => {
+                    if (!form.url) return toast.error('Enter a website URL first')
+                    setFindingEmail(true)
+                    try {
+                      const r = await api.post('/extract/extract-email', { url: form.url.startsWith('http') ? form.url : `https://${form.url}` })
+                      if (Array.isArray(r.data?.emails) && r.data.emails.length > 0) {
+                        setForm(p => ({ ...p, contactEmail: r.data.emails[0] }))
+                        toast.success('Email found and filled!')
+                      } else {
+                        toast.error('No email found on homepage')
+                      }
+                    } catch (e) {
+                      toast.error('Failed to extract email')
+                    }
+                    setFindingEmail(false)
+                  }}>
+                  Find email from site
+                </Button>
+              )}
+            </div>
             <label style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
               <input
                 type="checkbox"
