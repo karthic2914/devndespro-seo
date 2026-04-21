@@ -295,11 +295,11 @@ export default function SiteAudit() {
     setSendingEmail(true)
     try {
       await api.post('/admin-email/send-summary', {
-        siteId,
+        siteId: Number(siteId),
         subject: emailSubject,
         message: emailMessage,
         includeFullReport,
-        overrideEmail: recipientEmail?.trim() || undefined,
+        overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
       })
       setShowEmailModal(false)
       alert('Summary email sent!')
