@@ -278,4 +278,47 @@ async function sendSiteReport(siteId, recipients) {
   })
 }
 
-module.exports = { createTransporter, buildRankScanEmailHtml, sendRankScanReportEmail, buildEmailHtml, sendSiteReport }
+async function sendSummaryEmail({ to, subject, message, fullReport }) {
+  const apiKey = process.env.ZEPTO_API_KEY
+  if (!apiKey) throw new Error('ZEPTO_API_KEY not set')
+
+  const htmlBody = `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="font-family:sans-serif;max-width:600px;margin:32px auto;color:#1e293b;line-height:1.7">
+  ${message}
+  ${fullReport ? `<hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
+  <p style="font-size:12px;color:#94a3b8">Full audit report attached above.</p>` : ''}
+</body>
+</html>`
+
+  const payload = {
+    from: { address: 'hello@devndespro.com', name: 'Mahadevan | DevndeSPRO SEO' },
+    to: [{ email_address: { address: to } }],
+    subject,
+    htmlbody: htmlBody,
+  }
+
+  const resp = await fetch('https://api.zeptomail.eu/v1.1/email', {
+    method: 'POST',
+    headers: {
+      'Authorization': apiKey,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  if (!resp.ok) {
+    const err = await resp.text()
+    throw new Error('ZeptoMail error: ' + err)
+  }
+}
+
+module.exports = {
+  createTransporter,
+  buildRankScanEmailHtml,
+  sendRankScanReportEmail,
+  buildEmailHtml,
+  sendSiteReport,
+  sendSummaryEmail,
+}

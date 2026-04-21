@@ -3,7 +3,7 @@ const { pool } = require('../clients')
 const { auth } = require('../middleware')
 const { getSetting } = require('../utils/settings')
 const { sendSiteReport } = require('../utils/email')
-
+const { sendSummaryEmail } = require('../utils/email')
 const router = express.Router()
 
 // Send summary email to project contact (admin only)
