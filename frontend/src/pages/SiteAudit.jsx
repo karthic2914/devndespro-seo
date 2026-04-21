@@ -15,11 +15,6 @@ import AuditScoreBanner from '../components/audit/AuditScoreBanner'
 import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 
-// Lazy-loaded sub-components (import at top to keep file clean)
-import AuditScoreBanner from '../components/audit/AuditScoreBanner'
-import AuditIssueRow from '../components/audit/AuditIssueRow'
-import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
-
 // ─── helpers ───────────────────────────────────────────────────────────────
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO']
 
@@ -41,7 +36,6 @@ function groupByCategory(checks = []) {
   }).filter(Boolean)
 }
 
-// Priority sort: errors first, then by impact weight
 const IMPACT_W = { High: 3, Medium: 2, Low: 1 }
 function sortByPriority(issues) {
   return [...issues].sort((a, b) => {
@@ -95,13 +89,11 @@ function TabBar({ tabs, active, onChange }) {
     warnings: faTriangleExclamation,
     passed: faCircleCheck,
   }
-
   const tabIconColor = {
     errors: '#DC2626',
     warnings: '#D97706',
     passed: '#16A34A',
   }
-
   return (
     <div style={{
       display: 'flex', gap: 2, marginBottom: '1rem',
@@ -139,33 +131,57 @@ function TabBar({ tabs, active, onChange }) {
 export default function SiteAudit() {
   const { siteId } = useParams()
   const navigate   = useNavigate()
-  const { user } = useAuth()
-  const [showEmailModal, setShowEmailModal] = useState(false)
-  const [auditData,   setAuditData]   = useState(null)
-  const [loading,     setLoading]     = useState(true)
-  const [running,     setRunning]     = useState(false)
-  const [runError,    setRunError]    = useState(null)
-  const [activeTab,   setActiveTab]   = useState('all')
-  const [expandedIdx, setExpandedIdx] = useState(null)
-  const [siteName,    setSiteName]    = useState('')
-  const [siteUrl,     setSiteUrl]     = useState('')
-  const [exporting,   setExporting]   = useState(false)
-  const [shareMsg,    setShareMsg]    = useState('')
-  const [emailSubject, setEmailSubject] = useState('Your SEO Audit Summary')
-  const [emailMessage, setEmailMessage] = useState('')
+  const { user }   = useAuth()
+
+  const [showEmailModal,    setShowEmailModal]    = useState(false)
+  const [auditData,         setAuditData]         = useState(null)
+  const [loading,           setLoading]           = useState(true)
+  const [running,           setRunning]           = useState(false)
+  const [runError,          setRunError]          = useState(null)
+  const [activeTab,         setActiveTab]         = useState('all')
+  const [expandedIdx,       setExpandedIdx]       = useState(null)
+  const [siteName,          setSiteName]          = useState('')
+  const [siteUrl,           setSiteUrl]           = useState('')
+  const [exporting,         setExporting]         = useState(false)
+  const [shareMsg,          setShareMsg]          = useState('')
+  const [emailSubject,      setEmailSubject]      = useState('Your SEO Audit Summary')
+  const [emailMessage,      setEmailMessage]      = useState('')
   const [includeFullReport, setIncludeFullReport] = useState(false)
-  const [sendingEmail, setSendingEmail] = useState(false)
-  const [recipientEmail, setRecipientEmail] = useState('')
-  const [loadingRecipient, setLoadingRecipient] = useState(false)
+  const [sendingEmail,      setSendingEmail]      = useState(false)
+  const [recipientEmail,    setRecipientEmail]    = useState('')
+  const [loadingRecipient,  setLoadingRecipient]  = useState(false)
   const captureRef = useRef(null)
 
-  // Set default email message when auditData or allIssues change
+  // Fetch latest audit + site info
   useEffect(() => {
+    Promise.all([
+      api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
+      api.get('/sites').catch(() => null),
+    ]).then(([auditRes, sitesRes]) => {
+      if (auditRes?.data) setAuditData(auditRes.data)
+      const currentSite = (sitesRes?.data || []).find(s => String(s.id) === String(siteId))
+      if (currentSite?.name) setSiteName(currentSite.name)
+      if (currentSite?.url)  setSiteUrl(currentSite.url)
+    }).finally(() => setLoading(false))
+  }, [siteId])
+
+  // Derived state — declared BEFORE any useEffect that reads them
+  const categories = useMemo(() => groupByCategory(auditData?.checks), [auditData])
+  const allIssues  = useMemo(() => sortByPriority(
+    (auditData?.checks || []).map((issue, i) => ({ ...issue, _idx: i }))
+  ), [auditData])
+
+  // Default email message — reads from auditData.checks directly (no hoisting issue)
+  useEffect(() => {
+    if (!auditData) return
+    const errors   = (auditData.checks || []).filter(i => i.status === 'error').length
+    const warnings = (auditData.checks || []).filter(i => i.status === 'warning').length
     setEmailMessage(
-      'Hi,\n\nHere is a quick summary of your latest SEO audit.\n\nHealth Score: ' + (auditData?.score ?? '—') +
-      '\nCritical Issues: ' + allIssues.filter(i => i.status === 'error').length +
-      '\nWarnings: ' + allIssues.filter(i => i.status === 'warning').length +
-      '\n\nLet me know if you want the full report or help fixing any issues!'
+      'Hi,\n\nHere is a quick summary of your latest SEO audit.\n\n' +
+      'Health Score: ' + (auditData.score ?? '—') + '\n' +
+      'Critical Issues: ' + errors + '\n' +
+      'Warnings: ' + warnings + '\n\n' +
+      'Let me know if you want the full report or help fixing any issues!'
     )
   }, [auditData, showEmailModal])
 
@@ -175,7 +191,6 @@ export default function SiteAudit() {
       setLoadingRecipient(true)
       api.get(`/sites/${siteId}/cold-emails`)
         .then(res => {
-          // Find first non-empty email
           const found = (res.data || []).find(e => e.email && e.email.trim())
           setRecipientEmail(found?.email || '')
         })
@@ -183,25 +198,6 @@ export default function SiteAudit() {
         .finally(() => setLoadingRecipient(false))
     }
   }, [showEmailModal, siteId])
-
-  async function sendSummaryEmail() {
-    setSendingEmail(true)
-    try {
-      await api.post('/admin-email/send-summary', {
-        siteId,
-        subject: emailSubject,
-        message: emailMessage,
-        includeFullReport,
-        overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
-      })
-      setShowEmailModal(false)
-      setSendingEmail(false)
-      alert('Summary email sent!')
-    } catch (e) {
-      setSendingEmail(false)
-      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
-    }
-  }
 
   function toFileSafeSlug(value) {
     return String(value || '')
@@ -215,53 +211,20 @@ export default function SiteAudit() {
 
   function buildSnapshotFilename(date) {
     const fromUrl = (() => {
-      try {
-        return new URL(siteUrl || auditData?.url || '').hostname
-      } catch {
-        return ''
-      }
+      try { return new URL(siteUrl || auditData?.url || '').hostname }
+      catch { return '' }
     })()
     const slug = toFileSafeSlug(siteName) || toFileSafeSlug(fromUrl) || `site-${siteId}`
     return `site-audit-${slug}-${date}.png`
   }
 
-  // Fetch latest audit + site URL
-  useEffect(() => {
-    Promise.all([
-      api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
-      api.get('/sites').catch(() => null),
-    ]).then(([auditRes, sitesRes]) => {
-      if (auditRes?.data) setAuditData(auditRes.data)
-      const currentSite = (sitesRes?.data || []).find(s => String(s.id) === String(siteId))
-      if (currentSite?.name) setSiteName(currentSite.name)
-      if (currentSite?.url) setSiteUrl(currentSite.url)
-    }).finally(() => setLoading(false))
-  }, [siteId])
-
-  async function runAudit() {
-    setRunning(true)
-    setRunError(null)
-    try {
-      const r = await api.post(`/sites/${siteId}/audit/run`)
-      setAuditData(r.data)
-      setActiveTab('all')
-      setExpandedIdx(null)
-    } catch (e) {
-      setRunError(e.response?.data?.error || 'Audit failed — check the site URL is accessible')
-    }
-    setRunning(false)
-  }
-
   async function makeSnapshotBlob() {
     if (!captureRef.current) throw new Error('Capture area not found')
     const canvas = await html2canvas(captureRef.current, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: '#F3F4F6',
-      logging: false,
+      scale: 2, useCORS: true, backgroundColor: '#F3F4F6', logging: false,
     })
-    return await new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(blob => {
         if (!blob) return reject(new Error('Could not create screenshot blob'))
         resolve(blob)
       }, 'image/png')
@@ -272,12 +235,12 @@ export default function SiteAudit() {
     setExporting(true)
     setShareMsg('')
     try {
-      const blob = await makeSnapshotBlob()
+      const blob    = await makeSnapshotBlob()
       const blobUrl = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      const date = new Date().toISOString().slice(0, 10)
-      a.href = blobUrl
-      a.download = buildSnapshotFilename(date)
+      const a       = document.createElement('a')
+      const date    = new Date().toISOString().slice(0, 10)
+      a.href        = blobUrl
+      a.download    = buildSnapshotFilename(date)
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
@@ -296,13 +259,8 @@ export default function SiteAudit() {
       const blob = await makeSnapshotBlob()
       const date = new Date().toISOString().slice(0, 10)
       const file = new File([blob], buildSnapshotFilename(date), { type: 'image/png' })
-
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Site Audit Report',
-          text: 'Site audit snapshot',
-          files: [file],
-        })
+        await navigator.share({ title: 'Site Audit Report', text: 'Site audit snapshot', files: [file] })
         setShareMsg('Shared successfully')
       } else {
         await downloadSnapshot()
@@ -319,17 +277,43 @@ export default function SiteAudit() {
     setExporting(false)
   }
 
-  // Derived state
-  const categories   = useMemo(() => groupByCategory(auditData?.checks), [auditData])
-  const allIssues    = useMemo(() => sortByPriority(
-    (auditData?.checks || []).map((issue, i) => ({ ...issue, _idx: i }))
-  ), [auditData])
+  async function runAudit() {
+    setRunning(true)
+    setRunError(null)
+    try {
+      const r = await api.post(`/sites/${siteId}/audit/run`)
+      setAuditData(r.data)
+      setActiveTab('all')
+      setExpandedIdx(null)
+    } catch (e) {
+      setRunError(e.response?.data?.error || 'Audit failed — check the site URL is accessible')
+    }
+    setRunning(false)
+  }
+
+  async function sendSummaryEmail() {
+    setSendingEmail(true)
+    try {
+      await api.post('/admin-email/send-summary', {
+        siteId,
+        subject: emailSubject,
+        message: emailMessage,
+        includeFullReport,
+        overrideEmail: recipientEmail?.trim() || undefined,
+      })
+      setShowEmailModal(false)
+      alert('Summary email sent!')
+    } catch (e) {
+      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
+    }
+    setSendingEmail(false)
+  }
 
   const tabOptions = useMemo(() => [
-    { id: 'all', label: 'All Issues', count: allIssues.filter(i => i.status !== 'pass').length },
-    { id: 'errors',   label: 'Critical', count: allIssues.filter(i => i.status === 'error').length },
-    { id: 'warnings', label: 'Warnings', count: allIssues.filter(i => i.status === 'warning').length },
-    { id: 'passed',   label: 'Passed',   count: allIssues.filter(i => i.status === 'pass').length },
+    { id: 'all',      label: 'All Issues', count: allIssues.filter(i => i.status !== 'pass').length },
+    { id: 'errors',   label: 'Critical',   count: allIssues.filter(i => i.status === 'error').length },
+    { id: 'warnings', label: 'Warnings',   count: allIssues.filter(i => i.status === 'warning').length },
+    { id: 'passed',   label: 'Passed',     count: allIssues.filter(i => i.status === 'pass').length },
     ...categories.map(c => ({
       id: c.id, label: c.name,
       count: c.issues.filter(i => i.status !== 'pass').length,
@@ -349,8 +333,8 @@ export default function SiteAudit() {
   // ── Loading ──
   if (loading) {
     return (
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:'60vh', color:'#9CA3AF', fontSize:14 }}>
-        <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight:10, opacity:0.4 }} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#9CA3AF', fontSize: 14 }}>
+        <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 10, opacity: 0.4 }} />
         Loading audit data...
       </div>
     )
@@ -363,10 +347,12 @@ export default function SiteAudit() {
 
   // ── Has data ──
   const scannedDate = auditData.scannedAt
-    ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' })
+    ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', {
+        day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+      })
     : 'Unknown'
-  const crawl = auditData.crawl || null
-  const fmtMs = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '—')
+  const crawl    = auditData.crawl || null
+  const fmtMs    = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '—')
   const fmtBytes = (n) => {
     const b = Number(n)
     if (!Number.isFinite(b) || b <= 0) return '—'
@@ -378,35 +364,35 @@ export default function SiteAudit() {
     <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
 
       {/* Page header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'1.5rem', flexWrap:'wrap', gap:10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
         <div>
-          <h1 style={{ fontSize:20, fontWeight:700, color:'#111827', margin:0 }}>Site Audit</h1>
-          <div style={{ fontSize:12, color:'#9CA3AF', marginTop:3, display:'flex', alignItems:'center', gap:6 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: 0 }}>Site Audit</h1>
+          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
             <FontAwesomeIcon icon={faClock} />
             Last scanned: {scannedDate}
             {auditData.url && (
               <a href={auditData.url} target="_blank" rel="noopener noreferrer"
-                style={{ color:'#3B82F6', textDecoration:'none', marginLeft:6, display:'inline-flex', alignItems:'center', gap:3 }}>
-                <FontAwesomeIcon icon={faExternalLink} style={{ fontSize:10 }} />
+                style={{ color: '#3B82F6', textDecoration: 'none', marginLeft: 6, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                <FontAwesomeIcon icon={faExternalLink} style={{ fontSize: 10 }} />
                 {auditData.url}
               </a>
             )}
           </div>
         </div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'flex-end' }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Button variant="ghost" size="sm" onClick={downloadSnapshot} disabled={exporting}>
-            <FontAwesomeIcon icon={faCamera} style={{ marginRight:6 }} />
+            <FontAwesomeIcon icon={faCamera} style={{ marginRight: 6 }} />
             {exporting ? 'Capturing...' : 'Download Screenshot'}
           </Button>
           <Button variant="ghost" size="sm" onClick={shareSnapshot} disabled={exporting}>
-            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight:6 }} />Share
+            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight: 6 }} />Share
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
-            <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight:6 }} />Fix in Actions
+            <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} />Fix in Actions
           </Button>
           <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting}>
             <FontAwesomeIcon icon={faArrowsRotate}
-              style={{ marginRight:6, animation: running ? 'spin 1s linear infinite' : 'none' }} />
+              style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} />
             {running ? 'Scanning...' : 'Re-run Audit'}
           </Button>
           {!!shareMsg && (
@@ -417,17 +403,18 @@ export default function SiteAudit() {
 
       {runError && (
         <div style={{
-          background:'#FEF2F2', color:'#DC2626', border:'1px solid #FECACA',
-          borderRadius:8, padding:'10px 14px', fontSize:13, marginBottom:'1rem',
+          background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA',
+          borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: '1rem',
         }}>{runError}</div>
       )}
 
-      {/* Score banner — separate component */}
+      {/* Score banner */}
       <AuditScoreBanner auditData={auditData} categories={categories} />
 
-      {/* Speed panel — separate component */}
+      {/* Speed panel */}
       <AuditSpeedPanel speed={auditData.speed} />
 
+      {/* Email button + modal + crawl snapshot */}
       {crawl && (
         <>
           <Button
@@ -438,6 +425,7 @@ export default function SiteAudit() {
           >
             Send summary email
           </Button>
+
           <Modal
             open={showEmailModal}
             onClose={() => setShowEmailModal(false)}
@@ -472,58 +460,70 @@ export default function SiteAudit() {
               </div>
               <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
               <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
-              <textarea value={emailMessage} onChange={e => setEmailMessage(e.target.value)} rows={7} style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }} />
+              <textarea
+                value={emailMessage}
+                onChange={e => setEmailMessage(e.target.value)}
+                rows={7}
+                style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }}
+              />
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
-                <input type="checkbox" checked={includeFullReport} onChange={e => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
+                <input
+                  type="checkbox"
+                  checked={includeFullReport}
+                  onChange={e => setIncludeFullReport(e.target.checked)}
+                  style={{ marginRight: 6 }}
+                />
                 Include full audit report
               </label>
             </div>
           </Modal>
+
+          {/* Crawl snapshot */}
           <div style={{
-            background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
-            boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem', padding:'12px 14px',
+            background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '1rem', padding: '12px 14px',
           }}>
-            <div style={{ fontSize:12, fontWeight:700, color:'#6B7280', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Crawl Snapshot
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(120px, 1fr))', gap:10 }}>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Status code</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.statusCode || '—'}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Status code</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{crawl.statusCode || '—'}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Response time</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Response time</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>File size</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>File size</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Language</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.language || '—'}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Language</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{crawl.language || '—'}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Word count</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Word count</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Internal links</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Internal links</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>External links</div>
-                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>External links</div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>Final URL</div>
-                <div style={{ fontSize:12, fontWeight:600, color:'#2563EB', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={crawl.finalUrl || ''}>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Final URL</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={crawl.finalUrl || ''}>
                   {crawl.finalUrl || '—'}
                 </div>
               </div>
-              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-                <div style={{ fontSize:11, color:'#9CA3AF' }}>robots.txt</div>
-                <div style={{ fontSize:14, fontWeight:700, color: crawl.robots?.valid ? '#16A34A' : '#B45309' }}>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>robots.txt</div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: crawl.robots?.valid ? '#16A34A' : '#B45309' }}>
                   {crawl.robots?.valid ? 'Valid' : 'Needs Fix'}
                 </div>
               </div>
@@ -543,11 +543,11 @@ export default function SiteAudit() {
 
       {/* Issues list */}
       <div style={{
-        background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
-        overflow:'hidden', boxShadow:'0 1px 3px rgba(0,0,0,0.04)',
+        background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
+        overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
       }}>
         {visibleIssues.length === 0 ? (
-          <div style={{ padding:'3rem', textAlign:'center', color:'#9CA3AF', fontSize:13 }}>
+          <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
             No issues in this category.
           </div>
         ) : visibleIssues.map(issue => (
