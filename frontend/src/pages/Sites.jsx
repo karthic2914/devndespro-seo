@@ -77,7 +77,7 @@ export default function Sites() {
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: '', url: '', contactEmail: '' })
+  const [form, setForm] = useState({ name: '', url: '', contactEmail: '', notifyAdmin: true })
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState({})
   const { logout } = useAuth()
@@ -138,7 +138,7 @@ export default function Sites() {
         const e = await res.json().catch(() => ({}))
         throw new Error(e.error || 'Failed to add site. Try again.')
       }
-      setForm({ name: '', url: '', contactEmail: '' })
+      setForm({ name: '', url: '', contactEmail: '', notifyAdmin: true })
       setShowAdd(false)
       toast.success('Project added successfully')
       load()
@@ -209,6 +209,15 @@ const getDomain = (url) => {
             <Input label="Project name" placeholder="e.g. devndespro" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} icon={<FontAwesomeIcon icon={faTag} />} />
             <Input label="Website URL" placeholder="e.g. devndespro.com" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} error={errors.url} icon={<FontAwesomeIcon icon={faGlobe} />} hint="Only domains verified in your connected GSC account are allowed." />
             <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." />
+            <label style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+              <input
+                type="checkbox"
+                checked={form.notifyAdmin}
+                onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))}
+                style={{ marginRight: 6 }}
+              />
+              Notify admin by email when this project is added
+            </label>
           </div>
         </Modal>
 

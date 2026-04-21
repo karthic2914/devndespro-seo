@@ -35,7 +35,7 @@ router.get('/', auth, async (req, res) => {
 })
 
 router.post('/', auth, async (req, res) => {
-  const { name, url, contactEmail } = req.body
+  const { name, url, contactEmail, notifyAdmin } = req.body
   if (!name || !url) return res.status(400).json({ error: 'name and url required' })
   if (!String(name).trim()) return res.status(400).json({ error: 'Project name is required' })
   try {
@@ -65,10 +65,15 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // Only send admin notification if enabled in settings
-    const { getSetting } = require('../utils/settings')
-    const notify = await getSetting('notify_on_new_site', true)
-    if (notify) {
+    // Only send admin notification if enabled in settings and not disabled by user
+    let shouldNotify = true
+    if (notifyAdmin === false) {
+      shouldNotify = false
+    } else {
+      const { getSetting } = require('../utils/settings')
+      shouldNotify = await getSetting('notify_on_new_site', true)
+    }
+    if (shouldNotify) {
       const axios = require('axios')
       axios.post(
         'https://api.zeptomail.com/v1.1/email',
