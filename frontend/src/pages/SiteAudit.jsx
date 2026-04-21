@@ -430,7 +430,12 @@ export default function SiteAudit() {
 
       {crawl && (
         <>
-          <Button variant="secondary" size="sm" style={{ marginBottom: 12 }} onClick={() => setShowEmailModal(true)}>
+          <Button
+            variant="secondary"
+            size="sm"
+            style={{ marginBottom: 12, marginTop: 12, display: 'block' }}
+            onClick={() => setShowEmailModal(true)}
+          >
             Send summary email
           </Button>
           <Modal
