@@ -18,6 +18,8 @@ import Layout from './components/Layout'
 import Users from './pages/Users'
 import AcceptInvite from './pages/AcceptInvite'
 
+import AdminSettings from './components/admin/AdminSettings'
+
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth()
   if (loading) return <div style={{ display:'flex',alignItems:'center',justifyContent:'center',height:'100vh',color:'#666',fontFamily:'Syne,sans-serif' }}>Loading...</div>
@@ -46,6 +48,7 @@ export default function App() {
           <Route path="cold-emails" element={<ColdEmails />} />
           <Route path="rank" element={<RankNo1 />} />
           <Route path="users" element={<Users />} />
+          <Route path="admin-settings" element={<AdminSettings />} />
         </Route>
       </Routes>
     </BrowserRouter>

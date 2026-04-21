@@ -15,6 +15,8 @@ const { siteRouter: alertsSiteRouter, globalRouter: alertsGlobalRouter } = requi
 const emailReportsRouter = require('./routes/emailReports')
 const usersRouter = require('./routes/users')
 
+const settingsRouter = require('./routes/settings')
+
 const app = express()
 const PORT = process.env.PORT || 4000
 
@@ -33,6 +35,8 @@ app.use('/api/sites', alertsSiteRouter)
 app.use('/api/alerts', alertsGlobalRouter)
 app.use('/api/sites', emailReportsRouter)
 app.use('/api/users', usersRouter)
+
+app.use('/api/settings', settingsRouter)
 
 initDB().then(() => {
   app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import useAdminSettings from '../hooks/useAdminSettings'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
@@ -88,6 +89,7 @@ function followupMessage(name, website) {
 }
 
 export default function ColdEmails() {
+  const { settings, loading: settingsLoading } = useAdminSettings()
   const [rows, setRows] = useState([])
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
@@ -172,6 +174,10 @@ export default function ColdEmails() {
   }, [])
 
   const sendEmail = async () => {
+    if (!settings.cold_emails_enabled) {
+      alert('Cold email sending is currently disabled by admin.')
+      return
+    }
     if (!form.name.trim() || !String(form.email || '').trim()) return
     const numericSiteId = Number(selectedSiteId)
     if (!numericSiteId) return
@@ -242,6 +248,11 @@ export default function ColdEmails() {
 
   return (
     <div className="fade-in page-content">
+      {!settings.cold_emails_enabled && !settingsLoading && (
+        <div style={{ background: '#fffbe6', color: '#b45309', padding: '12px 18px', borderRadius: 8, marginBottom: 18, fontWeight: 600 }}>
+          Cold email sending is currently <b>disabled</b> by admin. You can still draft and save prospects, but emails will not be sent.
+        </div>
+      )}
       <PageHeader
         title="Cold Email Prospects"
         subtitle="Common across all projects. New projects appear as pending drafts, then move to history after you send."
