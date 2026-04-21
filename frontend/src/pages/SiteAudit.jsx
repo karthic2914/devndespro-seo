@@ -171,19 +171,41 @@ export default function SiteAudit() {
     (auditData?.checks || []).map((issue, i) => ({ ...issue, _idx: i }))
   ), [auditData])
 
-  // Default email message — reads from auditData.checks directly (no hoisting issue)
+  // Default email message -- full Norwegian template with dynamic values
   useEffect(() => {
     if (!auditData) return
-    const errors   = (auditData.checks || []).filter(i => i.status === 'error').length
-    const warnings = (auditData.checks || []).filter(i => i.status === 'warning').length
+    const checks      = auditData.checks || []
+    const errors      = checks.filter(i => i.status === 'error').length
+    const warnings    = checks.filter(i => i.status === 'warning').length
+    const score       = auditData.score ?? 0
+    const cats        = groupByCategory(checks)
+    const techScore   = cats.find(c => c.name === 'Technical SEO')?.score ?? null
+    const contScore   = cats.find(c => c.name === 'Content Quality')?.score ?? null
+    const siteHost    = (() => { try { return new URL(siteUrl || auditData.url || '').hostname } catch { return siteUrl || auditData.url || 'nettstedet' } })()
+    const errorTitles = checks.filter(i => i.status === 'error').map(i => i.title || i.name).filter(Boolean)
+
     setEmailMessage(
-      'Hi,\n\nHere is a quick summary of your latest SEO audit.\n\n' +
-      'Health Score: ' + (auditData.score ?? '—') + '\n' +
-      'Critical Issues: ' + errors + '\n' +
-      'Warnings: ' + warnings + '\n\n' +
-      'Let me know if you want the full report or help fixing any issues!'
+      'Hei,\n\n' +
+      'Jeg har kjort en teknisk SEO-analyse av ' + siteHost + ' og ville dele noen av funnene med dere.\n\n' +
+      'Kort oppsummert:\n' +
+      '- Total helsescore: ' + score + '/100\n' +
+      '- Kritiske problemer: ' + errors + '\n' +
+      '- Advarsler: ' + warnings + '\n' +
+      (techScore !== null ? '- Teknisk SEO: ' + techScore + '/100\n' : '') +
+      (contScore !== null ? '- Content Quality: ' + contScore + '/100\n' : '') +
+      '\n' +
+      (errorTitles.length > 0
+        ? 'De kritiske problemene inkluderer: ' + errorTitles.join(' og ') + ' -- begge pavirker direkte hvordan Google crawler og rangerer siden.\n\n'
+        : '') +
+      'Analysen er gjort via mitt eget SEO-verktoy (seo.devndespro.com), som jeg bruker til a hjelpe norske bedrifter med a forbedre synligheten sin pa nett.\n\n' +
+      'Jeg har en fullstendig rapport klar med konkrete forslag til utbedring -- gjerne gratis tilgjengelig for dere hvis det er av interesse.\n\n' +
+      'Med vennlig hilsen\n' +
+      'Mahadevan\n' +
+      'Devndespro - Webutvikling & SEO\n' +
+      'www.devndespro.com\n' +
+      'seo.devndespro.com'
     )
-  }, [auditData, showEmailModal])
+  }, [auditData, showEmailModal, siteUrl])
 
   // Fetch recipient email when modal opens
   useEffect(() => {
