@@ -509,11 +509,42 @@ Devndespro Web Development & SEO<br>
               </div>
               <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
               <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
-              <div style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: 8, minHeight: 120, background: '#fff', marginBottom: 10 }}
-                   contentEditable
-                   suppressContentEditableWarning
-                   onInput={e => setEmailMessage(e.currentTarget.innerHTML)}
-                   dangerouslySetInnerHTML={{ __html: emailMessage }}
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10, justifyContent: 'flex-end' }}>
+                <label style={{ fontWeight: 600, alignSelf: 'center' }}>Language:</label>
+                <Button
+                  variant={emailLang === 'en' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setEmailLang('en')}
+                  style={{ minWidth: 80 }}
+                >
+                  English
+                </Button>
+                <Button
+                  variant={emailLang === 'no' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setEmailLang('no')}
+                  style={{ minWidth: 80 }}
+                >
+                  Norsk
+                </Button>
+              </div>
+              <div
+                style={{
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 6,
+                  padding: 8,
+                  minHeight: 120,
+                  maxHeight: 220,
+                  background: '#fff',
+                  marginBottom: 10,
+                  overflowY: 'auto',
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                }}
+                contentEditable
+                suppressContentEditableWarning
+                onInput={e => setEmailMessage(e.currentTarget.innerHTML)}
+                dangerouslySetInnerHTML={{ __html: emailMessage }}
               />
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
                 <input
