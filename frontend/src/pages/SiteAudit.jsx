@@ -484,39 +484,44 @@ export default function SiteAudit() {
               <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
 
               {/* Language toggle */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Language:</span>
-                <button
-                  onClick={() => setEmailLang('no')}
-                  style={{
-                    padding: '4px 14px', borderRadius: 6, border: '1px solid #E5E7EB', cursor: 'pointer',
-                    background: emailLang === 'no' ? '#F97316' : '#fff',
-                    color: emailLang === 'no' ? '#fff' : '#374151',
-                    fontWeight: 600, fontSize: 12, fontFamily: 'inherit',
-                  }}
-                >Norsk</button>
-                <button
+              <div style={{ display: 'flex', gap: 10, marginBottom: 10, justifyContent: 'flex-end' }}>
+                <label style={{ fontWeight: 600, alignSelf: 'center' }}>Language:</label>
+                <Button
+                  variant={emailLang === 'en' ? 'primary' : 'ghost'}
+                  size="sm"
                   onClick={() => setEmailLang('en')}
-                  style={{
-                    padding: '4px 14px', borderRadius: 6, border: '1px solid #E5E7EB', cursor: 'pointer',
-                    background: emailLang === 'en' ? '#F97316' : '#fff',
-                    color: emailLang === 'en' ? '#fff' : '#374151',
-                    fontWeight: 600, fontSize: 12, fontFamily: 'inherit',
-                  }}
-                >English</button>
+                  style={{ minWidth: 80 }}
+                >
+                  English
+                </Button>
+                <Button
+                  variant={emailLang === 'no' ? 'primary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setEmailLang('no')}
+                  style={{ minWidth: 80 }}
+                >
+                  Norsk
+                </Button>
               </div>
 
-              <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
               <div
                 style={{
-                  border: '1px solid #E5E7EB', borderRadius: 6, padding: 8,
-                  minHeight: 180, maxHeight: 260, background: '#fff',
-                  overflowY: 'auto', fontSize: 14, lineHeight: 1.7,
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 6,
+                  padding: 8,
+                  minHeight: 120,
+                  maxHeight: 220,
+                  background: '#fff',
+                  marginBottom: 10,
+                  overflowY: 'auto',
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  boxShadow: '0 2px 8px rgba(30,27,46,0.06)'
                 }}
                 contentEditable
                 suppressContentEditableWarning
                 onInput={e => setEmailMessage(e.currentTarget.innerHTML)}
-                dangerouslySetInnerHTML={{ __html: emailMessage }}
+                dangerouslySetInnerHTML={{ __html: `<div style='text-align:center;margin-bottom:16px;'><img src='/images/devndespro_seo.png' alt='Devndespro SEO' style='height:40px;'/></div>` + emailMessage }}
               />
 
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
