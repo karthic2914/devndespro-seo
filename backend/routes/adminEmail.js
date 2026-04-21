@@ -13,7 +13,7 @@ router.post('/send-summary', auth, async (req, res) => {
   if (!siteId || !subject || !message) return res.status(400).json({ error: 'Missing required fields' })
   const { rows: siteRows } = await pool.query('SELECT * FROM sites WHERE id=$1', [siteId])
   if (!siteRows[0]) return res.status(404).json({ error: 'Site not found' })
-  const { rows: prospectRows } = await pool.query('SELECT * FROM cold_email_prospects WHERE site_id=$1 AND email IS NOT NULL AND email <> '''' LIMIT 1', [siteId])
+  const { rows: prospectRows } = await pool.query("SELECT * FROM cold_email_prospects WHERE site_id=$1 AND email IS NOT NULL AND email <> '' LIMIT 1", [siteId])
   if (!prospectRows[0]) return res.status(404).json({ error: 'No contact email found for this site' })
   const to = prospectRows[0].email
   let fullReport = null
