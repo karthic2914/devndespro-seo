@@ -185,25 +185,7 @@ export default function SiteAudit() {
     const errorTitles = checks.filter(i => i.status === 'error').map(i => i.title || i.name).filter(Boolean)
 
     setEmailMessage(
-      'Hei,\n\n' +
-      'Jeg har kjort en teknisk SEO-analyse av ' + siteHost + ' og ville dele noen av funnene med dere.\n\n' +
-      'Kort oppsummert:\n' +
-      '- Total helsescore: ' + score + '/100\n' +
-      '- Kritiske problemer: ' + errors + '\n' +
-      '- Advarsler: ' + warnings + '\n' +
-      (techScore !== null ? '- Teknisk SEO: ' + techScore + '/100\n' : '') +
-      (contScore !== null ? '- Content Quality: ' + contScore + '/100\n' : '') +
-      '\n' +
-      (errorTitles.length > 0
-        ? 'De kritiske problemene inkluderer: ' + errorTitles.join(' og ') + ' -- begge pavirker direkte hvordan Google crawler og rangerer siden.\n\n'
-        : '') +
-      'Analysen er gjort via mitt eget SEO-verktoy (seo.devndespro.com), som jeg bruker til a hjelpe norske bedrifter med a forbedre synligheten sin pa nett.\n\n' +
-      'Jeg har en fullstendig rapport klar med konkrete forslag til utbedring -- gjerne gratis tilgjengelig for dere hvis det er av interesse.\n\n' +
-      'Med vennlig hilsen\n' +
-      'Mahadevan\n' +
-      'Devndespro - Webutvikling & SEO\n' +
-      'www.devndespro.com\n' +
-      'seo.devndespro.com'
+      getSummaryEmailText('no', auditData, allIssues)
     )
   }, [auditData, showEmailModal, siteUrl])
 
@@ -330,6 +312,47 @@ export default function SiteAudit() {
     }
     setSendingEmail(false)
   }
+
+  const getSummaryEmailText = (lang, auditData, allIssues) => {
+    const score = auditData?.score ?? '—';
+    const critical = allIssues.filter(i => i.status === 'error').length;
+    const warnings = allIssues.filter(i => i.status === 'warning').length;
+    if (lang === 'no') {
+      return `Hei,<br><br>
+Jeg har kjørt en teknisk SEO-analyse av <b>${auditData?.url || 'nettstedet'}</b> og ville dele noen av funnene med dere.<br><br>
+<b>Kort oppsummert:</b><br>
+- Total helsescore: <b>${score}/100</b><br>
+- Kritiske problemer: <b>${critical}</b><br>
+- Advarsler: <b>${warnings}</b><br>
+- Teknisk SEO & sikkerhet: ✓<br>
+- Content Quality: ✓<br><br>
+De to kritiske problemene handler om <b>manglende meta-beskrivelse</b> og <b>render-blokkerende ressurser i kritisk sti</b> – begge påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
+Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
+Jeg har en fullstendig rapport klar med konkrete forslag til utbedring – gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
+Med vennlig hilsen<br>
+Mahadevan<br>
+Devndespro Webutvikling & SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a>`;
+    } else {
+      return `Hi,<br><br>
+I've run a technical SEO audit of <b>${auditData?.url || 'the website'}</b> and wanted to share some findings with you.<br><br>
+<b>Summary:</b><br>
+- Overall health score: <b>${score}/100</b><br>
+- Critical issues: <b>${critical}</b><br>
+- Warnings: <b>${warnings}</b><br>
+- Technical SEO & Security: ✓<br>
+- Content Quality: ✓<br><br>
+The two critical issues are <b>missing meta description</b> and <b>render-blocking resources in the critical path</b>—both directly affect how Google crawls and ranks the site.<br><br>
+The analysis was done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), which I use to help Norwegian businesses improve their online visibility.<br><br>
+I have a full report ready with concrete suggestions for improvement, available for free if you're interested.<br><br>
+Best regards,<br>
+Mahadevan<br>
+Devndespro Web Development & SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a>`;
+    }
+  };
 
   const tabOptions = useMemo(() => [
     { id: 'all',      label: 'All Issues', count: allIssues.filter(i => i.status !== 'pass').length },
@@ -486,11 +509,11 @@ export default function SiteAudit() {
               </div>
               <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
               <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
-              <textarea
-                value={emailMessage}
-                onChange={e => setEmailMessage(e.target.value)}
-                rows={7}
-                style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }}
+              <div style={{ border: '1px solid #E5E7EB', borderRadius: 6, padding: 8, minHeight: 120, background: '#fff', marginBottom: 10 }}
+                   contentEditable
+                   suppressContentEditableWarning
+                   onInput={e => setEmailMessage(e.currentTarget.innerHTML)}
+                   dangerouslySetInnerHTML={{ __html: emailMessage }}
               />
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
                 <input
