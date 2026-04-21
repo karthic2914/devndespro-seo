@@ -10,49 +10,10 @@ import {
 import html2canvas from 'html2canvas'
 import { Button, T, Modal, Input } from '../components/UI'
 import { useAuth } from '../hooks/useAuth'
-  const { user } = useAuth()
-  const [showEmailModal, setShowEmailModal] = useState(false)
-  const [emailSubject, setEmailSubject] = useState('Your SEO Audit Summary')
-  const [emailMessage, setEmailMessage] = useState('Hi,\n\nHere is a quick summary of your latest SEO audit.\n\nHealth Score: ' + (auditData?.score ?? '—') + '\nCritical Issues: ' + allIssues.filter(i => i.status === 'error').length + '\nWarnings: ' + allIssues.filter(i => i.status === 'warning').length + '\n\nLet me know if you want the full report or help fixing any issues!')
-  const [includeFullReport, setIncludeFullReport] = useState(false)
-  const [sendingEmail, setSendingEmail] = useState(false)
-  const [recipientEmail, setRecipientEmail] = useState('')
-  const [loadingRecipient, setLoadingRecipient] = useState(false)
-
-  // Fetch recipient email when modal opens
-  useEffect(() => {
-    if (showEmailModal && siteId) {
-      setLoadingRecipient(true)
-      api.get(`/sites/${siteId}/cold-emails`)
-        .then(res => {
-          // Find first non-empty email
-          const found = (res.data || []).find(e => e.email && e.email.trim())
-          setRecipientEmail(found?.email || '')
-        })
-        .catch(() => setRecipientEmail(''))
-        .finally(() => setLoadingRecipient(false))
-    }
-  }, [showEmailModal, siteId])
-
-  async function sendSummaryEmail() {
-    setSendingEmail(true)
-    try {
-      await api.post('/admin-email/send-summary', {
-        siteId,
-        subject: emailSubject,
-        message: emailMessage,
-        includeFullReport,
-        overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
-      })
-      setShowEmailModal(false)
-      setSendingEmail(false)
-      alert('Summary email sent!')
-    } catch (e) {
-      setSendingEmail(false)
-      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
-    }
-  }
 import api from '../utils/api'
+import AuditScoreBanner from '../components/audit/AuditScoreBanner'
+import AuditIssueRow    from '../components/audit/AuditIssueRow'
+import AuditSpeedPanel  from '../components/audit/AuditSpeedPanel'
 
 // Lazy-loaded sub-components (import at top to keep file clean)
 import AuditScoreBanner from '../components/audit/AuditScoreBanner'
@@ -178,7 +139,8 @@ function TabBar({ tabs, active, onChange }) {
 export default function SiteAudit() {
   const { siteId } = useParams()
   const navigate   = useNavigate()
-
+  const { user } = useAuth()
+  const [showEmailModal, setShowEmailModal] = useState(false)
   const [auditData,   setAuditData]   = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [running,     setRunning]     = useState(false)
@@ -189,7 +151,57 @@ export default function SiteAudit() {
   const [siteUrl,     setSiteUrl]     = useState('')
   const [exporting,   setExporting]   = useState(false)
   const [shareMsg,    setShareMsg]    = useState('')
+  const [emailSubject, setEmailSubject] = useState('Your SEO Audit Summary')
+  const [emailMessage, setEmailMessage] = useState('')
+  const [includeFullReport, setIncludeFullReport] = useState(false)
+  const [sendingEmail, setSendingEmail] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState('')
+  const [loadingRecipient, setLoadingRecipient] = useState(false)
   const captureRef = useRef(null)
+
+  // Set default email message when auditData or allIssues change
+  useEffect(() => {
+    setEmailMessage(
+      'Hi,\n\nHere is a quick summary of your latest SEO audit.\n\nHealth Score: ' + (auditData?.score ?? '—') +
+      '\nCritical Issues: ' + allIssues.filter(i => i.status === 'error').length +
+      '\nWarnings: ' + allIssues.filter(i => i.status === 'warning').length +
+      '\n\nLet me know if you want the full report or help fixing any issues!'
+    )
+  }, [auditData, showEmailModal])
+
+  // Fetch recipient email when modal opens
+  useEffect(() => {
+    if (showEmailModal && siteId) {
+      setLoadingRecipient(true)
+      api.get(`/sites/${siteId}/cold-emails`)
+        .then(res => {
+          // Find first non-empty email
+          const found = (res.data || []).find(e => e.email && e.email.trim())
+          setRecipientEmail(found?.email || '')
+        })
+        .catch(() => setRecipientEmail(''))
+        .finally(() => setLoadingRecipient(false))
+    }
+  }, [showEmailModal, siteId])
+
+  async function sendSummaryEmail() {
+    setSendingEmail(true)
+    try {
+      await api.post('/admin-email/send-summary', {
+        siteId,
+        subject: emailSubject,
+        message: emailMessage,
+        includeFullReport,
+        overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
+      })
+      setShowEmailModal(false)
+      setSendingEmail(false)
+      alert('Summary email sent!')
+    } catch (e) {
+      setSendingEmail(false)
+      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
+    }
+  }
 
   function toFileSafeSlug(value) {
     return String(value || '')
@@ -417,108 +429,108 @@ export default function SiteAudit() {
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
-                {user?.id === 1 && (
-                  <Button variant="secondary" size="sm" style={{ marginBottom: 12 }} onClick={() => setShowEmailModal(true)}>
-                    Send summary email
-                  </Button>
+        <>
+          <Button variant="secondary" size="sm" style={{ marginBottom: 12 }} onClick={() => setShowEmailModal(true)}>
+            Send summary email
+          </Button>
+          <Modal
+            open={showEmailModal}
+            onClose={() => setShowEmailModal(false)}
+            title="Send Audit Summary Email"
+            width={480}
+            footer={
+              <>
+                <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+                <Button variant="primary" loading={sendingEmail} onClick={sendSummaryEmail}>
+                  Send Email
+                </Button>
+              </>
+            }
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+                Project: <span style={{ fontWeight: 400 }}>{siteName || siteUrl || `Site #${siteId}`}</span>
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+                Recipient Email:
+                {loadingRecipient ? (
+                  <span style={{ fontWeight: 400, marginLeft: 8, color: '#6B7280' }}>Loading...</span>
+                ) : (
+                  <Input
+                    style={{ marginLeft: 8, width: '100%' }}
+                    value={recipientEmail}
+                    onChange={e => setRecipientEmail(e.target.value)}
+                    placeholder="No email found"
+                    label=""
+                  />
                 )}
-              <Modal
-                open={showEmailModal}
-                onClose={() => setShowEmailModal(false)}
-                title="Send Audit Summary Email"
-                width={480}
-                footer={
-                  <>
-                    <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Cancel</Button>
-                    <Button variant="primary" loading={sendingEmail} onClick={sendSummaryEmail}>
-                      Send Email
-                    </Button>
-                  </>
-                }
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
-                    Project: <span style={{ fontWeight: 400 }}>{siteName || siteUrl || `Site #${siteId}`}</span>
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
-                    Recipient Email:
-                    {loadingRecipient ? (
-                      <span style={{ fontWeight: 400, marginLeft: 8, color: '#6B7280' }}>Loading...</span>
-                    ) : (
-                      <Input
-                        style={{ marginLeft: 8, width: '100%' }}
-                        value={recipientEmail}
-                        onChange={e => setRecipientEmail(e.target.value)}
-                        placeholder="No email found"
-                        label=""
-                      />
-                    )}
-                  </div>
-                  <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
-                  <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
-                  <textarea value={emailMessage} onChange={e => setEmailMessage(e.target.value)} rows={7} style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }} />
-                  <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
-                    <input type="checkbox" checked={includeFullReport} onChange={e => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
-                    Include full audit report
-                  </label>
+              </div>
+              <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
+              <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
+              <textarea value={emailMessage} onChange={e => setEmailMessage(e.target.value)} rows={7} style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }} />
+              <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
+                <input type="checkbox" checked={includeFullReport} onChange={e => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
+                Include full audit report
+              </label>
+            </div>
+          </Modal>
+          <div style={{
+            background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
+            boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem', padding:'12px 14px',
+          }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'#6B7280', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.04em' }}>
+              Crawl Snapshot
+            </div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(120px, 1fr))', gap:10 }}>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Status code</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.statusCode || '—'}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Response time</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>File size</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Language</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.language || '—'}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Word count</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Internal links</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>External links</div>
+                <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>Final URL</div>
+                <div style={{ fontSize:12, fontWeight:600, color:'#2563EB', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={crawl.finalUrl || ''}>
+                  {crawl.finalUrl || '—'}
                 </div>
-              </Modal>
-        <div style={{
-          background:'#fff', borderRadius:12, border:'1px solid #E5E7EB',
-          boxShadow:'0 1px 3px rgba(0,0,0,0.04)', marginBottom:'1rem', padding:'12px 14px',
-        }}>
-          <div style={{ fontSize:12, fontWeight:700, color:'#6B7280', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.04em' }}>
-            Crawl Snapshot
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4, minmax(120px, 1fr))', gap:10 }}>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Status code</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.statusCode || '—'}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Response time</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>File size</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Language</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{crawl.language || '—'}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Word count</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Internal links</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>External links</div>
-              <div style={{ fontSize:16, fontWeight:700, color:'#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
-            </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>Final URL</div>
-              <div style={{ fontSize:12, fontWeight:600, color:'#2563EB', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} title={crawl.finalUrl || ''}>
-                {crawl.finalUrl || '—'}
+              </div>
+              <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
+                <div style={{ fontSize:11, color:'#9CA3AF' }}>robots.txt</div>
+                <div style={{ fontSize:14, fontWeight:700, color: crawl.robots?.valid ? '#16A34A' : '#B45309' }}>
+                  {crawl.robots?.valid ? 'Valid' : 'Needs Fix'}
+                </div>
               </div>
             </div>
-            <div style={{ background:'#F9FAFB', border:'1px solid #E5E7EB', borderRadius:8, padding:'10px 12px' }}>
-              <div style={{ fontSize:11, color:'#9CA3AF' }}>robots.txt</div>
-              <div style={{ fontSize:14, fontWeight:700, color: crawl.robots?.valid ? '#16A34A' : '#B45309' }}>
-                {crawl.robots?.valid ? 'Valid' : 'Needs Fix'}
+            {!crawl.robots?.valid && Array.isArray(crawl.robots?.issues) && crawl.robots.issues.length > 0 && (
+              <div style={{ marginTop: 10, fontSize: 12, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 10px' }}>
+                robots.txt issue: {crawl.robots.issues[0].message}
+                {Number(crawl.robots.issues[0].line) > 0 ? ` (line ${crawl.robots.issues[0].line})` : ''}
               </div>
-            </div>
+            )}
           </div>
-          {!crawl.robots?.valid && Array.isArray(crawl.robots?.issues) && crawl.robots.issues.length > 0 && (
-            <div style={{ marginTop: 10, fontSize: 12, color: '#92400E', background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 10px' }}>
-              robots.txt issue: {crawl.robots.issues[0].message}
-              {Number(crawl.robots.issues[0].line) > 0 ? ` (line ${crawl.robots.issues[0].line})` : ''}
-            </div>
-          )}
-        </div>
+        </>
       )}
 
       {/* Tab bar */}
