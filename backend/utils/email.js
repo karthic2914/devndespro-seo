@@ -315,6 +315,40 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
   }
 }
 
+function buildSummaryEmailHtml({ lang, summaryBody, alerts }) {
+  const logoUrl = 'https://seo.devndespro.com/images/devndespro_seo.png';
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
+  <div style="max-width:600px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08)">
+    <div style="background:#1e1b2e;padding:24px 32px;text-align:center">
+      <img src="${logoUrl}" alt="Devndespro SEO" style="height:48px;margin-bottom:18px;" />
+      <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700">SEO Audit Summary</h1>
+    </div>
+    <div style="padding:28px 32px">
+      <div style="font-size:16px;line-height:1.7;color:#222;">
+        ${summaryBody}
+      </div>
+      ${alerts && alerts.length ? alerts.map(a => `
+        <div style="margin-top:24px;padding:14px 18px;background:#fef2f2;border-left:4px solid #ef4444;border-radius:6px;color:#991b1b;font-size:15px;">
+          <b>Alert:</b> ${a}
+        </div>
+      `).join('') : ''}
+      <div style="margin-top:32px;font-size:13px;color:#64748b;text-align:center;">
+        Devndespro Webutvikling & SEO<br>
+        <a href="https://www.devndespro.com" style="color:#3b82f6;text-decoration:none;">www.devndespro.com</a> &nbsp;|&nbsp;
+        <a href="https://seo.devndespro.com" style="color:#3b82f6;text-decoration:none;">seo.devndespro.com</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 module.exports = {
   createTransporter,
   buildRankScanEmailHtml,
@@ -322,4 +356,5 @@ module.exports = {
   buildEmailHtml,
   sendSiteReport,
   sendSummaryEmail,
-}
+  buildSummaryEmailHtml,
+};
