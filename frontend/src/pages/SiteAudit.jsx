@@ -5,7 +5,7 @@ import {
   faMagnifyingGlass, faArrowsRotate, faPlay,
   faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
-  faCamera, faShareNodes,
+  faCamera, faShareNodes, faEnvelope,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
 import { Button, T, Modal, Input } from '../components/UI'
@@ -417,14 +417,18 @@ export default function SiteAudit() {
       {/* Email button + modal + crawl snapshot */}
       {crawl && (
         <>
-          <Button
-            variant="secondary"
-            size="sm"
-            style={{ marginBottom: 12, marginTop: 12, display: 'block' }}
+          <button
             onClick={() => setShowEmailModal(true)}
+            style={{
+              marginBottom: 12, marginTop: 12, display: 'inline-flex', alignItems: 'center',
+              gap: 8, padding: '8px 18px', borderRadius: 8, border: 'none',
+              background: '#F97316', color: '#fff', fontWeight: 600, fontSize: 13,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
           >
+            <FontAwesomeIcon icon={faEnvelope} />
             Send summary email
-          </Button>
+          </button>
 
           <Modal
             open={showEmailModal}
