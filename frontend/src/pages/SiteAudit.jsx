@@ -12,13 +12,13 @@ import { Button, T, Modal, Input } from '../components/UI'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import AuditScoreBanner from '../components/audit/AuditScoreBanner'
-import AuditIssueRow    from '../components/audit/AuditIssueRow'
-import AuditSpeedPanel  from '../components/audit/AuditSpeedPanel'
+import AuditIssueRow from '../components/audit/AuditIssueRow'
+import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 
 // Lazy-loaded sub-components (import at top to keep file clean)
 import AuditScoreBanner from '../components/audit/AuditScoreBanner'
-import AuditIssueRow    from '../components/audit/AuditIssueRow'
-import AuditSpeedPanel  from '../components/audit/AuditSpeedPanel'
+import AuditIssueRow from '../components/audit/AuditIssueRow'
+import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 
 // ─── helpers ───────────────────────────────────────────────────────────────
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO']
