@@ -16,6 +16,24 @@ import { useAuth } from '../hooks/useAuth'
   const [emailMessage, setEmailMessage] = useState('Hi,\n\nHere is a quick summary of your latest SEO audit.\n\nHealth Score: ' + (auditData?.score ?? '—') + '\nCritical Issues: ' + allIssues.filter(i => i.status === 'error').length + '\nWarnings: ' + allIssues.filter(i => i.status === 'warning').length + '\n\nLet me know if you want the full report or help fixing any issues!')
   const [includeFullReport, setIncludeFullReport] = useState(false)
   const [sendingEmail, setSendingEmail] = useState(false)
+  const [recipientEmail, setRecipientEmail] = useState('')
+  const [loadingRecipient, setLoadingRecipient] = useState(false)
+
+  // Fetch recipient email when modal opens
+  useEffect(() => {
+    if (showEmailModal && siteId) {
+      setLoadingRecipient(true)
+      api.get(`/sites/${siteId}/cold-emails`)
+        .then(res => {
+          // Find first non-empty email
+          const found = (res.data || []).find(e => e.email && e.email.trim())
+          setRecipientEmail(found?.email || '')
+        })
+        .catch(() => setRecipientEmail(''))
+        .finally(() => setLoadingRecipient(false))
+    }
+  }, [showEmailModal, siteId])
+
   async function sendSummaryEmail() {
     setSendingEmail(true)
     try {
@@ -24,6 +42,7 @@ import { useAuth } from '../hooks/useAuth'
         subject: emailSubject,
         message: emailMessage,
         includeFullReport,
+        overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
       })
       setShowEmailModal(false)
       setSendingEmail(false)
@@ -418,6 +437,23 @@ export default function SiteAudit() {
                 }
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+                    Project: <span style={{ fontWeight: 400 }}>{siteName || siteUrl || `Site #${siteId}`}</span>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
+                    Recipient Email:
+                    {loadingRecipient ? (
+                      <span style={{ fontWeight: 400, marginLeft: 8, color: '#6B7280' }}>Loading...</span>
+                    ) : (
+                      <Input
+                        style={{ marginLeft: 8, width: '100%' }}
+                        value={recipientEmail}
+                        onChange={e => setRecipientEmail(e.target.value)}
+                        placeholder="No email found"
+                        label=""
+                      />
+                    )}
+                  </div>
                   <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
                   <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
                   <textarea value={emailMessage} onChange={e => setEmailMessage(e.target.value)} rows={7} style={{ width: '100%', fontSize: 14, padding: 8, borderRadius: 6, border: '1px solid #E5E7EB' }} />
