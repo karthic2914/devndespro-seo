@@ -15,7 +15,6 @@ import AuditScoreBanner from '../components/audit/AuditScoreBanner'
 import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 
-// ─── helpers ───────────────────────────────────────────────────────────────
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO']
 
 function groupByCategory(checks = []) {
@@ -46,7 +45,50 @@ function sortByPriority(issues) {
   })
 }
 
-// ─── Empty state ────────────────────────────────────────────────────────────
+// ── Email template helper (defined outside component so no hoisting issue) ──
+function getSummaryEmailText(lang, auditData, allIssues) {
+  const score    = auditData?.score ?? '—'
+  const critical = (allIssues || []).filter(i => i.status === 'error').length
+  const warnings = (allIssues || []).filter(i => i.status === 'warning').length
+  const url      = auditData?.url || 'nettstedet'
+
+  if (lang === 'no') {
+    return `Hei,<br><br>
+Jeg har kjort en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
+<b>Kort oppsummert:</b><br>
+- Total helsescore: <b>${score}/100</b><br>
+- Kritiske problemer: <b>${critical}</b><br>
+- Advarsler: <b>${warnings}</b><br>
+- Teknisk SEO &amp; sikkerhet: <b>100</b> &#10003;<br>
+- Content Quality: <b>100</b> &#10003;<br><br>
+De kritiske problemene pavirker direkte hvordan Google crawler og rangerer siden.<br><br>
+Analysen er gjort via mitt eget SEO-verktoy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til a hjelpe norske bedrifter med a forbedre synligheten sin pa nett.<br><br>
+Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
+Med vennlig hilsen<br>
+Mahadevan<br>
+Devndespro - Webutvikling &amp; SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a>`
+  }
+  return `Hi,<br><br>
+I've run a technical SEO audit of <b>${url}</b> and wanted to share some findings.<br><br>
+<b>Summary:</b><br>
+- Overall health score: <b>${score}/100</b><br>
+- Critical issues: <b>${critical}</b><br>
+- Warnings: <b>${warnings}</b><br>
+- Technical SEO &amp; Security: <b>100</b> &#10003;<br>
+- Content Quality: <b>100</b> &#10003;<br><br>
+The critical issues directly affect how Google crawls and ranks the site.<br><br>
+Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>).<br><br>
+I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
+Best regards,<br>
+Mahadevan<br>
+Devndespro - Web Development &amp; SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a>`
+}
+
+// ─── Empty state ─────────────────────────────────────────────────────────────
 function EmptyAudit({ onRun, running, error }) {
   return (
     <div style={{ padding: '1.5rem 2rem' }}>
@@ -62,8 +104,7 @@ function EmptyAudit({ onRun, running, error }) {
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>No audit run yet</h2>
         <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.7, margin: '0 0 24px' }}>
           Run a full site audit to get a real-time health check — title tags, meta descriptions,
-          H1s, canonicals, structured data, Core Web Vitals, and more. Each issue comes with
-          an AI-generated fix tailored to your site.
+          H1s, canonicals, structured data, Core Web Vitals, and more.
         </p>
         {error && (
           <div style={{
@@ -82,18 +123,10 @@ function EmptyAudit({ onRun, running, error }) {
   )
 }
 
-// ─── Tab bar ────────────────────────────────────────────────────────────────
+// ─── Tab bar ──────────────────────────────────────────────────────────────────
 function TabBar({ tabs, active, onChange }) {
-  const tabIcon = {
-    errors: faCircleXmark,
-    warnings: faTriangleExclamation,
-    passed: faCircleCheck,
-  }
-  const tabIconColor = {
-    errors: '#DC2626',
-    warnings: '#D97706',
-    passed: '#16A34A',
-  }
+  const tabIcon = { errors: faCircleXmark, warnings: faTriangleExclamation, passed: faCircleCheck }
+  const tabIconColor = { errors: '#DC2626', warnings: '#D97706', passed: '#16A34A' }
   return (
     <div style={{
       display: 'flex', gap: 2, marginBottom: '1rem',
@@ -117,8 +150,7 @@ function TabBar({ tabs, active, onChange }) {
           {tab.count > 0 && (
             <span style={{
               marginLeft: 6, background: active === tab.id ? '#F3F4F6' : '#E5E7EB',
-              borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700,
-              color: '#6B7280',
+              borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: '#6B7280',
             }}>{tab.count}</span>
           )}
         </button>
@@ -127,7 +159,7 @@ function TabBar({ tabs, active, onChange }) {
   )
 }
 
-// ─── Main page ──────────────────────────────────────────────────────────────
+// ─── Main page ────────────────────────────────────────────────────────────────
 export default function SiteAudit() {
   const { siteId } = useParams()
   const navigate   = useNavigate()
@@ -146,6 +178,7 @@ export default function SiteAudit() {
   const [shareMsg,          setShareMsg]          = useState('')
   const [emailSubject,      setEmailSubject]      = useState('Your SEO Audit Summary')
   const [emailMessage,      setEmailMessage]      = useState('')
+  const [emailLang,         setEmailLang]         = useState('no')
   const [includeFullReport, setIncludeFullReport] = useState(false)
   const [sendingEmail,      setSendingEmail]      = useState(false)
   const [recipientEmail,    setRecipientEmail]    = useState('')
@@ -165,29 +198,17 @@ export default function SiteAudit() {
     }).finally(() => setLoading(false))
   }, [siteId])
 
-  // Derived state — declared BEFORE any useEffect that reads them
+  // Derived state
   const categories = useMemo(() => groupByCategory(auditData?.checks), [auditData])
   const allIssues  = useMemo(() => sortByPriority(
     (auditData?.checks || []).map((issue, i) => ({ ...issue, _idx: i }))
   ), [auditData])
 
-  // Default email message -- full Norwegian template with dynamic values
+  // Rebuild email message when lang, auditData or modal visibility changes
   useEffect(() => {
     if (!auditData) return
-    const checks      = auditData.checks || []
-    const errors      = checks.filter(i => i.status === 'error').length
-    const warnings    = checks.filter(i => i.status === 'warning').length
-    const score       = auditData.score ?? 0
-    const cats        = groupByCategory(checks)
-    const techScore   = cats.find(c => c.name === 'Technical SEO')?.score ?? null
-    const contScore   = cats.find(c => c.name === 'Content Quality')?.score ?? null
-    const siteHost    = (() => { try { return new URL(siteUrl || auditData.url || '').hostname } catch { return siteUrl || auditData.url || 'nettstedet' } })()
-    const errorTitles = checks.filter(i => i.status === 'error').map(i => i.title || i.name).filter(Boolean)
-
-    setEmailMessage(
-      getSummaryEmailText('no', auditData, allIssues)
-    )
-  }, [auditData, showEmailModal, siteUrl])
+    setEmailMessage(getSummaryEmailText(emailLang, auditData, allIssues))
+  }, [auditData, allIssues, emailLang, showEmailModal])
 
   // Fetch recipient email when modal opens
   useEffect(() => {
@@ -313,47 +334,6 @@ export default function SiteAudit() {
     setSendingEmail(false)
   }
 
-  const getSummaryEmailText = (lang, auditData, allIssues) => {
-    const score = auditData?.score ?? '—';
-    const critical = allIssues.filter(i => i.status === 'error').length;
-    const warnings = allIssues.filter(i => i.status === 'warning').length;
-    if (lang === 'no') {
-      return `Hei,<br><br>
-Jeg har kjørt en teknisk SEO-analyse av <b>${auditData?.url || 'nettstedet'}</b> og ville dele noen av funnene med dere.<br><br>
-<b>Kort oppsummert:</b><br>
-- Total helsescore: <b>${score}/100</b><br>
-- Kritiske problemer: <b>${critical}</b><br>
-- Advarsler: <b>${warnings}</b><br>
-- Teknisk SEO & sikkerhet: ✓<br>
-- Content Quality: ✓<br><br>
-De to kritiske problemene handler om <b>manglende meta-beskrivelse</b> og <b>render-blokkerende ressurser i kritisk sti</b> – begge påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
-Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
-Jeg har en fullstendig rapport klar med konkrete forslag til utbedring – gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
-Med vennlig hilsen<br>
-Mahadevan<br>
-Devndespro Webutvikling & SEO<br>
-<a href="https://www.devndespro.com">www.devndespro.com</a><br>
-<a href="https://seo.devndespro.com">seo.devndespro.com</a>`;
-    } else {
-      return `Hi,<br><br>
-I've run a technical SEO audit of <b>${auditData?.url || 'the website'}</b> and wanted to share some findings with you.<br><br>
-<b>Summary:</b><br>
-- Overall health score: <b>${score}/100</b><br>
-- Critical issues: <b>${critical}</b><br>
-- Warnings: <b>${warnings}</b><br>
-- Technical SEO & Security: ✓<br>
-- Content Quality: ✓<br><br>
-The two critical issues are <b>missing meta description</b> and <b>render-blocking resources in the critical path</b>—both directly affect how Google crawls and ranks the site.<br><br>
-The analysis was done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), which I use to help Norwegian businesses improve their online visibility.<br><br>
-I have a full report ready with concrete suggestions for improvement, available for free if you're interested.<br><br>
-Best regards,<br>
-Mahadevan<br>
-Devndespro Web Development & SEO<br>
-<a href="https://www.devndespro.com">www.devndespro.com</a><br>
-<a href="https://seo.devndespro.com">seo.devndespro.com</a>`;
-    }
-  };
-
   const tabOptions = useMemo(() => [
     { id: 'all',      label: 'All Issues', count: allIssues.filter(i => i.status !== 'pass').length },
     { id: 'errors',   label: 'Critical',   count: allIssues.filter(i => i.status === 'error').length },
@@ -375,7 +355,6 @@ Devndespro Web Development & SEO<br>
     )
   }, [allIssues, activeTab])
 
-  // ── Loading ──
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#9CA3AF', fontSize: 14 }}>
@@ -385,12 +364,10 @@ Devndespro Web Development & SEO<br>
     )
   }
 
-  // ── Empty ──
   if (!auditData) {
     return <EmptyAudit onRun={runAudit} running={running} error={runError} />
   }
 
-  // ── Has data ──
   const scannedDate = auditData.scannedAt
     ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', {
         day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
@@ -453,15 +430,12 @@ Devndespro Web Development & SEO<br>
         }}>{runError}</div>
       )}
 
-      {/* Score banner */}
       <AuditScoreBanner auditData={auditData} categories={categories} />
-
-      {/* Speed panel */}
       <AuditSpeedPanel speed={auditData.speed} />
 
-      {/* Email button + modal + crawl snapshot */}
       {crawl && (
         <>
+          {/* Orange send email button */}
           <button
             onClick={() => setShowEmailModal(true)}
             style={{
@@ -508,44 +482,43 @@ Devndespro Web Development & SEO<br>
                 )}
               </div>
               <Input label="Subject" value={emailSubject} onChange={e => setEmailSubject(e.target.value)} />
-              <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
-              <div style={{ display: 'flex', gap: 10, marginBottom: 10, justifyContent: 'flex-end' }}>
-                <label style={{ fontWeight: 600, alignSelf: 'center' }}>Language:</label>
-                <Button
-                  variant={emailLang === 'en' ? 'primary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setEmailLang('en')}
-                  style={{ minWidth: 80 }}
-                >
-                  English
-                </Button>
-                <Button
-                  variant={emailLang === 'no' ? 'primary' : 'ghost'}
-                  size="sm"
+
+              {/* Language toggle */}
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>Language:</span>
+                <button
                   onClick={() => setEmailLang('no')}
-                  style={{ minWidth: 80 }}
-                >
-                  Norsk
-                </Button>
+                  style={{
+                    padding: '4px 14px', borderRadius: 6, border: '1px solid #E5E7EB', cursor: 'pointer',
+                    background: emailLang === 'no' ? '#F97316' : '#fff',
+                    color: emailLang === 'no' ? '#fff' : '#374151',
+                    fontWeight: 600, fontSize: 12, fontFamily: 'inherit',
+                  }}
+                >Norsk</button>
+                <button
+                  onClick={() => setEmailLang('en')}
+                  style={{
+                    padding: '4px 14px', borderRadius: 6, border: '1px solid #E5E7EB', cursor: 'pointer',
+                    background: emailLang === 'en' ? '#F97316' : '#fff',
+                    color: emailLang === 'en' ? '#fff' : '#374151',
+                    fontWeight: 600, fontSize: 12, fontFamily: 'inherit',
+                  }}
+                >English</button>
               </div>
+
+              <label style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>Message</label>
               <div
                 style={{
-                  border: '1px solid #E5E7EB',
-                  borderRadius: 6,
-                  padding: 8,
-                  minHeight: 120,
-                  maxHeight: 220,
-                  background: '#fff',
-                  marginBottom: 10,
-                  overflowY: 'auto',
-                  fontSize: 15,
-                  lineHeight: 1.6,
+                  border: '1px solid #E5E7EB', borderRadius: 6, padding: 8,
+                  minHeight: 180, maxHeight: 260, background: '#fff',
+                  overflowY: 'auto', fontSize: 14, lineHeight: 1.7,
                 }}
                 contentEditable
                 suppressContentEditableWarning
                 onInput={e => setEmailMessage(e.currentTarget.innerHTML)}
                 dangerouslySetInnerHTML={{ __html: emailMessage }}
               />
+
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
                 <input
                   type="checkbox"
@@ -567,34 +540,20 @@ Devndespro Web Development & SEO<br>
               Crawl Snapshot
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Status code</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{crawl.statusCode || '—'}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Response time</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{fmtMs(crawl.responseTimeMs)}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>File size</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{fmtBytes(crawl.fileSizeBytes)}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Language</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{crawl.language || '—'}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Word count</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.wordCount || 0).toLocaleString()}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Internal links</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.internalLinks || 0).toLocaleString()}</div>
-              </div>
-              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
-                <div style={{ fontSize: 11, color: '#9CA3AF' }}>External links</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{Number(crawl.externalLinks || 0).toLocaleString()}</div>
-              </div>
+              {[
+                { label: 'Status code',    value: crawl.statusCode || '—' },
+                { label: 'Response time',  value: fmtMs(crawl.responseTimeMs) },
+                { label: 'File size',      value: fmtBytes(crawl.fileSizeBytes) },
+                { label: 'Language',       value: crawl.language || '—' },
+                { label: 'Word count',     value: Number(crawl.wordCount || 0).toLocaleString() },
+                { label: 'Internal links', value: Number(crawl.internalLinks || 0).toLocaleString() },
+                { label: 'External links', value: Number(crawl.externalLinks || 0).toLocaleString() },
+              ].map(({ label, value }) => (
+                <div key={label} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: '#9CA3AF' }}>{label}</div>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#111827' }}>{value}</div>
+                </div>
+              ))}
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#9CA3AF' }}>Final URL</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={crawl.finalUrl || ''}>
@@ -618,10 +577,8 @@ Devndespro Web Development & SEO<br>
         </>
       )}
 
-      {/* Tab bar */}
       <TabBar tabs={tabOptions} active={activeTab} onChange={id => { setActiveTab(id); setExpandedIdx(null) }} />
 
-      {/* Issues list */}
       <div style={{
         background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
         overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
