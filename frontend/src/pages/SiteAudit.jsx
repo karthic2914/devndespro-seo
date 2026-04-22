@@ -9,6 +9,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
 import { Button, T, Modal, Input } from '../components/UI'
+import { Snackbar } from '../components/UI'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import AuditScoreBanner from '../components/audit/AuditScoreBanner'
@@ -161,6 +162,7 @@ function TabBar({ tabs, active, onChange }) {
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function SiteAudit() {
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info' })
   const { siteId } = useParams()
   const navigate   = useNavigate()
   const { user }   = useAuth()
@@ -327,9 +329,9 @@ export default function SiteAudit() {
         overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
       })
       setShowEmailModal(false)
-      alert('Summary email sent!')
+      setSnackbar({ open: true, message: 'Summary email sent!', type: 'success' })
     } catch (e) {
-      alert('Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'))
+      setSnackbar({ open: true, message: 'Failed to send email: ' + (e?.response?.data?.error || 'Unknown error'), type: 'error' })
     }
     setSendingEmail(false)
   }
@@ -383,7 +385,15 @@ export default function SiteAudit() {
   }
 
   return (
-    <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
+    <>
+      <Snackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        type={snackbar.type}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        position="bottom"
+      />
+      <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
 
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
@@ -606,5 +616,6 @@ export default function SiteAudit() {
 
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
-  )
+      </div>
+    </>
 }

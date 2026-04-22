@@ -1,3 +1,51 @@
+import { useState, useEffect } from 'react'
+// Snackbar (Toast) component for alerts
+export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClose, position = 'bottom' }) => {
+  useEffect(() => {
+    if (!open) return;
+    if (duration === 0) return;
+    const timer = setTimeout(() => onClose?.(), duration);
+    return () => clearTimeout(timer);
+  }, [open, duration, onClose]);
+
+  if (!open) return null;
+  const colorMap = {
+    info:   { bg: 'rgba(30,64,175,0.97)', color: '#fff' },
+    success:{ bg: 'rgba(16,185,129,0.97)', color: '#fff' },
+    error:  { bg: 'rgba(239,68,68,0.97)', color: '#fff' },
+    warning:{ bg: 'rgba(251,191,36,0.97)', color: '#111' },
+  };
+  const style = {
+    position: 'fixed',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    zIndex: 9999,
+    minWidth: 220,
+    maxWidth: 400,
+    padding: '14px 28px',
+    borderRadius: 8,
+    fontSize: 15,
+    fontWeight: 500,
+    boxShadow: '0 4px 24px rgba(0,0,0,0.13)',
+    ...colorMap[type],
+    bottom: position === 'bottom' ? 36 : undefined,
+    top: position === 'top' ? 36 : undefined,
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
+  };
+  return (
+    <div style={style} onClick={onClose} role="alert" aria-live="polite">
+      {type === 'success' && <span style={{fontSize:18}}>✔️</span>}
+      {type === 'error' && <span style={{fontSize:18}}>❌</span>}
+      {type === 'warning' && <span style={{fontSize:18}}>⚠️</span>}
+      {type === 'info' && <span style={{fontSize:18}}>ℹ️</span>}
+      <span>{message}</span>
+    </div>
+  );
+};
 import { useEffect } from 'react'
 
 export const T = {
