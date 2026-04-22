@@ -34,6 +34,27 @@ router.get('/', auth, async (req, res) => {
   res.json(rows)
 })
 
+// Single site by ID
+router.get('/:siteId', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT
+      s.*,
+      m.health AS health,
+      COALESCE(m.dr, 0) AS dr,
+      COALESCE(k.keyword_count, 0) AS keyword_count,
+      COALESCE(b.backlink_count, 0) AS backlink_count
+    FROM sites s
+    INNER JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1
+    LEFT JOIN seo_metrics m ON m.site_id = s.id
+    LEFT JOIN (SELECT site_id, COUNT(*)::int AS keyword_count FROM keywords GROUP BY site_id) k ON k.site_id = s.id
+    LEFT JOIN (SELECT site_id, COUNT(*)::int AS backlink_count FROM backlinks GROUP BY site_id) b ON b.site_id = s.id
+    WHERE s.id = $2`,
+    [req.user.id, req.siteId]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'Site not found' })
+  res.json(rows[0])
+})
+
 router.post('/', auth, async (req, res) => {
   const { name, url, contactEmail, notifyAdmin } = req.body
   if (!name || !url) return res.status(400).json({ error: 'name and url required' })
@@ -45,18 +66,16 @@ router.post('/', auth, async (req, res) => {
       'INSERT INTO sites (user_id, name, url) VALUES ($1,$2,$3) RETURNING *',
       [req.user.id, String(name).trim(), verifiedUrl]
     )
- await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
+    await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
     await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
 
     if (!isInternalProject(rows[0].name, rows[0].url)) {
-      // Auto-create a draft contact from the project details.
       const { rows: prospectRows } = await pool.query(
         `INSERT INTO cold_email_prospects (site_id, name, website, status, sent_at)
          VALUES ($1, $2, $3, 'draft', NULL)
          RETURNING id`,
         [rows[0].id, String(rows[0].name).trim(), rows[0].url]
       )
-      // If a contact email was provided, save it on the generated draft row.
       if (contactEmail && String(contactEmail).trim()) {
         await pool.query(
           `UPDATE cold_email_prospects SET email=$1 WHERE id=$2`,
@@ -65,7 +84,6 @@ router.post('/', auth, async (req, res) => {
       }
     }
 
-    // Only send admin notification if enabled in settings and not disabled by user
     let shouldNotify = true
     if (notifyAdmin === false) {
       shouldNotify = false
@@ -167,7 +185,7 @@ router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
     const mismatchIssue = status === 404 || /not found/i.test(apiMessage)
     const tokenIssue = status === 401 || /invalid_grant|invalid credentials/i.test(apiMessage)
     let errorCode = 'gsc_fetch_failed'
-    let error = 'Failed to fetch GSC data. Please try reconnecting Googl5e Search Console.'
+    let error = 'Failed to fetch GSC data. Please try reconnecting Google Search Console.'
     let connected = true
 
     if (permissionIssue) {

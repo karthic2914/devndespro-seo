@@ -183,15 +183,24 @@ export default function SiteAudit() {
   const [loadingRecipient,  setLoadingRecipient]  = useState(false)
   const captureRef = useRef(null)
 
+  // Bot-protection / low-content warning
+  const isBotBlocked = useMemo(() => {
+    if (!auditData?.crawl) return false
+    const { wordCount, statusCode } = auditData.crawl
+    return Number(wordCount || 0) === 0 && Number(statusCode || 0) !== 200
+  }, [auditData])
+
   useEffect(() => {
     Promise.all([
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
-      api.get('/sites').catch(() => null),
-    ]).then(([auditRes, sitesRes]) => {
+      // Fetch single site instead of all sites — avoids 400 errors and is more efficient
+      api.get(`/sites/${siteId}`).catch(() => null),
+    ]).then(([auditRes, siteRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
-      const currentSite = (sitesRes?.data || []).find((s) => String(s.id) === String(siteId))
-      if (currentSite?.name) setSiteName(currentSite.name)
-      if (currentSite?.url)  setSiteUrl(currentSite.url)
+      if (siteRes?.data?.name) setSiteName(siteRes.data.name)
+      if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
+      // Fallback: pull URL from audit data if site fetch failed
+      else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
     }).finally(() => setLoading(false))
   }, [siteId])
 
@@ -395,6 +404,26 @@ export default function SiteAudit() {
           background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA',
           borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: '1rem',
         }}>{runError}</div>
+      )}
+
+      {/* Bot-protection warning banner */}
+      {isBotBlocked && (
+        <div style={{
+          background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10,
+          padding: '12px 16px', marginBottom: '1rem',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <FontAwesomeIcon icon={faTriangleExclamation} style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>
+              Site appears to be behind bot protection or a CAPTCHA wall
+            </div>
+            <div style={{ fontSize: 12, color: '#92400E', marginTop: 3, lineHeight: 1.6 }}>
+              The crawler received no content (0 words, status {auditData.crawl?.statusCode}).
+              Audit scores may be inaccurate. The site owner should check if their host is blocking automated crawlers.
+            </div>
+          </div>
+        </div>
       )}
 
       <AuditScoreBanner auditData={auditData} categories={categories} />
