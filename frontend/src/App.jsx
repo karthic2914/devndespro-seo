@@ -37,10 +37,10 @@ function GlobalSnackbar({ snackbar, onClose }) {
   if (!snackbar.open) return null
 
   const colorMap = {
-    success: { bg: 'rgba(16,185,129,0.97)', color: '#fff' },
-    error:   { bg: 'rgba(239,68,68,0.97)',  color: '#fff' },
-    warning: { bg: 'rgba(251,191,36,0.97)', color: '#111' },
-    info:    { bg: 'rgba(30,64,175,0.97)',  color: '#fff' },
+    success: { background: '#059669', color: '#fff' },
+    error:   { background: '#DC2626', color: '#fff' },
+    warning: { background: '#D97706', color: '#fff' },
+    info:    { background: '#1D4ED8', color: '#fff' },
   }
   const c = colorMap[snackbar.type] || colorMap.info
 
@@ -52,9 +52,9 @@ function GlobalSnackbar({ snackbar, onClose }) {
         position: 'fixed', bottom: 36, left: '50%', transform: 'translateX(-50%)',
         zIndex: 999999, minWidth: 220, maxWidth: 420,
         padding: '14px 28px', borderRadius: 8, fontSize: 15, fontWeight: 500,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.18)',
+        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
         display: 'flex', alignItems: 'center', gap: 12,
-        cursor: 'pointer', ...c,
+        cursor: 'pointer', background: c.background, color: c.color,
       }}
     >
       {snackbar.type === 'success' && <span>✔️</span>}
