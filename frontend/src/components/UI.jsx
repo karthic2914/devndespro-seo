@@ -46,7 +46,7 @@ export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClos
     </div>
   );
 };
-import { useEffect } from 'react'
+
 
 export const T = {
   orange: 'var(--orange)',
