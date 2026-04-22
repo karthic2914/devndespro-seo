@@ -129,7 +129,6 @@ function EmptyAudit({ onRun, running, error }) {
       <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: '0 0 2rem' }}>
         Site Audit
       </h1>
-
       <div
         style={{
           background: '#fff',
@@ -145,16 +144,13 @@ function EmptyAudit({ onRun, running, error }) {
         <div style={{ fontSize: 48, marginBottom: 16, color: '#E5E7EB' }}>
           <FontAwesomeIcon icon={faMagnifyingGlassChart} />
         </div>
-
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>
           No audit run yet
         </h2>
-
         <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.7, margin: '0 0 24px' }}>
           Run a full site audit to get a real-time health check — title tags, meta descriptions,
           H1s, canonicals, structured data, Core Web Vitals, and more.
         </p>
-
         {error && (
           <div
             style={{
@@ -170,7 +166,6 @@ function EmptyAudit({ onRun, running, error }) {
             {error}
           </div>
         )}
-
         <Button variant="primary" onClick={onRun} disabled={running}>
           <FontAwesomeIcon
             icon={running ? faArrowsRotate : faPlay}
@@ -179,7 +174,6 @@ function EmptyAudit({ onRun, running, error }) {
           {running ? 'Scanning your site...' : 'Run First Audit'}
         </Button>
       </div>
-
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </div>
   )
@@ -537,7 +531,7 @@ export default function SiteAudit() {
   }
 
   return (
-    <div>
+    <>
       <Snackbar
         open={snackbar.open}
         message={snackbar.message}
@@ -545,7 +539,6 @@ export default function SiteAudit() {
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         position="bottom"
       />
-
       <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
         <div
           style={{
@@ -948,6 +941,6 @@ export default function SiteAudit() {
 
         <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       </div>
-    </div>
+    </>
   )
 }
