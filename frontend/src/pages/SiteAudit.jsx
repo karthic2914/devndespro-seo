@@ -33,7 +33,7 @@ const CAT_ORDER = [
   'Server & Security',
   'Advanced SEO',
 ]
-
+const [emailSent, setEmailSent] = useState(false)
 function groupByCategory(checks = []) {
   const map = {}
   for (const c of checks) {
