@@ -276,6 +276,9 @@ export default function Sites() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>Projects</h1>
+              <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: '0 0 8px 0' }}>
+                {loading ? '' : `Total projects: ${safeSites.length}`}
+              </p>
               <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
                 {loading ? 'Loading...' : `${filteredSites.length} of ${safeSites.length} site${safeSites.length !== 1 ? 's' : ''}`}
               </p>
@@ -375,12 +378,31 @@ export default function Sites() {
                     Loading projects...
                   </div>
                 ) : filteredSites.length === 0 ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
-                    {search ? `No projects matching "${search}"` : 'No projects yet'}
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', fontSize: 15 }}>
+                    <div style={{ marginBottom: 16 }}>
+                      {search ? `No projects matching "${search}"` : 'No projects yet'}
+                    </div>
+                    <Button variant="primary" size="md" onClick={() => setShowAdd(true)}>
+                      <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />Add Your First Project
+                    </Button>
                   </div>
                 ) : (
-                  filteredSites.map(site => (
-                    <div key={site.id} className="project-row" onClick={() => enter(site)}>
+                  filteredSites.map((site, idx) => (
+                    <div
+                      key={site.id}
+                      className="project-row"
+                      onClick={() => enter(site)}
+                      style={{
+                        background: idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff',
+                        cursor: 'pointer',
+                        transition: 'background 0.15s',
+                        position: 'relative',
+                        borderRadius: 8,
+                        marginBottom: 4,
+                      }}
+                      onMouseOver={e => (e.currentTarget.style.background = '#f3f4f6')}
+                      onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div className="project-row__avatar" style={{ width: 36, height: 36, padding: 0, overflow: 'hidden', background: 'transparent', border: 'none' }}>
                           <img
@@ -407,9 +429,27 @@ export default function Sites() {
                       <div className="project-row__date">
                         {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
                       </div>
-                      <button className="project-row__del" onClick={e => remove(site.id, e)}>
-                        <FontAwesomeIcon icon={faXmark} />
-                      </button>
+                      {/* Quick Actions Menu */}
+                      <div
+                        style={{ position: 'absolute', right: 10, top: 10, zIndex: 2 }}
+                        onClick={e => e.stopPropagation()}
+                      >
+                        <button
+                          style={{
+                            background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                            borderRadius: 4, fontSize: 18, color: '#9CA3AF',
+                            transition: 'background 0.15s',
+                          }}
+                          title="Quick actions"
+                          onClick={e => {
+                            e.stopPropagation();
+                            // For now, just show delete. You can expand this to a dropdown menu.
+                            if (window.confirm('Delete this project and all its data?')) remove(site.id, e)
+                          }}
+                        >
+                          ⋮
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
