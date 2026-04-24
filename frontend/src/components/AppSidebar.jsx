@@ -1,19 +1,20 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faFolder, faChartBar, faWrench, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { Logo } from './UI'
 
 const NAV = [
-  { label: 'Projects', icon: faFolder,   active: true },
-  { label: 'Reports',  icon: faChartBar },
-  { label: 'Tools',    icon: faWrench },
-  { label: 'Settings', icon: faGear },
+  { label: 'Projects', icon: faFolder,   path: '/' },
+  { label: 'Reports',  icon: faChartBar, path: '/reports' },
+  { label: 'Tools',    icon: faWrench,   path: '/' },
+  { label: 'Settings', icon: faGear,     path: '/' },
 ]
 
 export default function AppSidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
@@ -27,14 +28,24 @@ export default function AppSidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        {NAV.map(item => (
-          <div key={item.label} className={`nav-item${item.active ? ' active' : ''}`}>
-            <span className="nav-item__icon">
-              <FontAwesomeIcon icon={item.icon} />
-            </span>
-            {item.label}
-          </div>
-        ))}
+        {NAV.map(item => {
+          const isActive = item.path === '/'
+            ? location.pathname === '/'
+            : location.pathname.startsWith(item.path)
+          return (
+            <div
+              key={item.label}
+              className={`nav-item${isActive ? ' active' : ''}`}
+              onClick={() => navigate(item.path)}
+              style={{ cursor: 'pointer' }}
+            >
+              <span className="nav-item__icon">
+                <FontAwesomeIcon icon={item.icon} />
+              </span>
+              {item.label}
+            </div>
+          )
+        })}
       </nav>
 
       <div className="sidebar__footer">
