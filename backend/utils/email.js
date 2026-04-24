@@ -278,11 +278,8 @@ async function sendSiteReport(siteId, recipients) {
   })
 }
 
+// ─── ZeptoMail HTTP API (works on Railway — no SMTP port issues) ───────────────
 async function sendSummaryEmail({ to, subject, message, fullReport }) {
-  // Use nodemailer with Zoho SMTP
-  const transporter = createTransporter();
-  if (!transporter) throw new Error('SMTP not configured. Add SMTP_HOST, SMTP_USER, SMTP_PASS to .env');
-
   const htmlBody = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -291,18 +288,30 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
   ${fullReport ? `<hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
   <p style="font-size:12px;color:#94a3b8">Full audit report attached above.</p>` : ''}
 </body>
-</html>`;
+</html>`
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'hello@devndespro.com',
-    to,
-    subject,
-    html: htmlBody,
-  });
+  const response = await fetch('https://api.zeptomail.com/v1.1/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': process.env.ZEPTO_API_KEY,
+    },
+    body: JSON.stringify({
+      from: { address: 'hello@devndespro.com', name: 'devndespro' },
+      to: [{ email_address: { address: to } }],
+      subject,
+      htmlbody: htmlBody,
+    }),
+  })
+
+  if (!response.ok) {
+    const err = await response.text()
+    throw new Error(`ZeptoMail error: ${err}`)
+  }
 }
 
 function buildSummaryEmailHtml({ lang, summaryBody, alerts }) {
-  const logoUrl = 'https://seo.devndespro.com/images/devndespro_seo.png';
+  const logoUrl = 'https://seo.devndespro.com/images/devndespro_seo.png'
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -332,7 +341,7 @@ function buildSummaryEmailHtml({ lang, summaryBody, alerts }) {
     </div>
   </div>
 </body>
-</html>`;
+</html>`
 }
 
 module.exports = {
@@ -343,4 +352,4 @@ module.exports = {
   sendSiteReport,
   sendSummaryEmail,
   buildSummaryEmailHtml,
-};
+}
