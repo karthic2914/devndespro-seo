@@ -45,51 +45,83 @@ function sortByPriority(issues) {
   })
 }
 
-function getSummaryEmailText(lang, auditData, allIssues) {
+function getSummaryEmailText(lang, tone, auditData, allIssues) {
   const score    = auditData?.score ?? '—'
   const critical = (allIssues || []).filter((i) => i.status === 'error').length
   const warnings = (allIssues || []).filter((i) => i.status === 'warning').length
   const url      = auditData?.url || 'nettstedet'
 
-  // Find category scores
-  let techScore = null, contentScore = null;
+  let techScore = null, contentScore = null
   if (Array.isArray(auditData?.checks)) {
-    // Group by category and calculate scores
-    const grouped = groupByCategory(auditData.checks);
+    const grouped = groupByCategory(auditData.checks)
     for (const cat of grouped) {
       if (cat.name.toLowerCase().includes('technical seo') || cat.name.toLowerCase().includes('sikkerhet') || cat.name.toLowerCase().includes('security')) {
-        techScore = cat.score;
+        techScore = cat.score
       }
       if (cat.name.toLowerCase().includes('content quality')) {
-        contentScore = cat.score;
+        contentScore = cat.score
       }
     }
   }
-  // Fallback to dash if not found
-  techScore = techScore ?? '—';
-  contentScore = contentScore ?? '—';
-  const techTick = techScore === 100 ? ' &#10003;' : '';
-  const contentTick = contentScore === 100 ? ' &#10003;' : '';
+  techScore    = techScore ?? '—'
+  contentScore = contentScore ?? '—'
+  const techTick    = techScore === 100 ? ' &#10003;' : ''
+  const contentTick = contentScore === 100 ? ' &#10003;' : ''
 
+  // ── NORWEGIAN ────────────────────────────────────────────────────────────────
   if (lang === 'no') {
+    if (tone === 'formal') {
+      return `Kjære [Navn/Team],<br><br>
+Jeg har nylig gjennomført en teknisk SEO-analyse av <b>${url}</b> og ønsker å dele en oppsummering av funn som kan være relevante for deres digitale synlighet.<br><br>
+<b>Revisjonsoppsummering:</b><br>
+- Total helsescore: <b>${score}/100</b><br>
+- Kritiske problemer: <b>${critical}</b> (påvirker direkte Googles indeksering)<br>
+- Advarsler: <b>${warnings}</b><br>
+- Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
+- Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
+En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet ønsker å gjennomgå den.<br><br>
+Med vennlig hilsen,<br>
+<b>Mahadevan</b><br>
+Devndespro – Webutvikling &amp; SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
+    }
+    // casual norsk
     return `Hei,<br><br>
-Jeg har kjort en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
+Jeg har kjørt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
 - Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
-- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
-De kritiske problemene pavirker direkte hvordan Google crawler og rangerer siden.<br><br>
-Analysen er gjort via mitt eget SEO-verktoy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til a hjelpe norske bedrifter med a forbedre synligheten sin pa nett.<br><br>
-Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
-Med vennlig hilsen<br>
-Mahadevan<br>
-Devndespro - Webutvikling &amp; SEO<br>
+- Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
+De kritiske problemene påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
+Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
+Jeg har en fullstendig rapport klar med konkrete forslag til utbedring — gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
+Med vennlig hilsen,<br>
+<b>Mahadevan</b><br>
+Devndespro – Webutvikling &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
   }
 
+  // ── ENGLISH ──────────────────────────────────────────────────────────────────
+  if (tone === 'formal') {
+    return `Dear [Name/Team],<br><br>
+I recently conducted a technical SEO audit of <b>${url}</b> and wanted to share a summary of findings that may be relevant to your digital visibility.<br><br>
+<b>Audit Summary:</b><br>
+- Overall Health Score: <b>${score}/100</b><br>
+- Critical Issues: <b>${critical}</b> (directly impacting Google crawling and indexing)<br>
+- Warnings: <b>${warnings}</b><br>
+- Technical SEO &amp; Security: <b>${techScore}</b>${techTick}<br>
+- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
+A full report with actionable recommendations is available at no cost, should your team wish to review it.<br><br>
+Best regards,<br>
+<b>Mahadevan</b><br>
+Devndespro – Web Development &amp; SEO<br>
+<a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
+  }
+
+  // casual english
   return `Hi,<br><br>
 I've run a technical SEO audit of <b>${url}</b> and wanted to share some findings.<br><br>
 <b>Summary:</b><br>
@@ -102,8 +134,8 @@ The critical issues directly affect how Google crawls and ranks the site.<br><br
 Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>).<br><br>
 I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
 Best regards,<br>
-Mahadevan<br>
-Devndespro - Web Development &amp; SEO<br>
+<b>Mahadevan</b><br>
+Devndespro – Web Development &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
 }
@@ -197,13 +229,13 @@ export default function SiteAudit() {
   const [emailSubject,      setEmailSubject]      = useState('Your SEO Audit Summary')
   const [emailMessage,      setEmailMessage]      = useState('')
   const [emailLang,         setEmailLang]         = useState('no')
+  const [emailTone,         setEmailTone]         = useState('casual')
   const [includeFullReport, setIncludeFullReport] = useState(false)
   const [sendingEmail,      setSendingEmail]      = useState(false)
   const [recipientEmail,    setRecipientEmail]    = useState('')
   const [loadingRecipient,  setLoadingRecipient]  = useState(false)
   const captureRef = useRef(null)
 
-  // Bot-protection / low-content warning
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
     const { wordCount, statusCode } = auditData.crawl
@@ -213,13 +245,11 @@ export default function SiteAudit() {
   useEffect(() => {
     Promise.all([
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
-      // Fetch single site instead of all sites — avoids 400 errors and is more efficient
       api.get(`/sites/${siteId}`).catch(() => null),
     ]).then(([auditRes, siteRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
-      // Fallback: pull URL from audit data if site fetch failed
       else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
     }).finally(() => setLoading(false))
   }, [siteId])
@@ -232,8 +262,8 @@ export default function SiteAudit() {
 
   useEffect(() => {
     if (!auditData) return
-    setEmailMessage(getSummaryEmailText(emailLang, auditData, allIssues))
-  }, [auditData, allIssues, emailLang, showEmailModal])
+    setEmailMessage(getSummaryEmailText(emailLang, emailTone, auditData, allIssues))
+  }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
 
   useEffect(() => {
     if (showEmailModal && siteId) {
@@ -426,7 +456,6 @@ export default function SiteAudit() {
         }}>{runError}</div>
       )}
 
-      {/* Bot-protection warning banner */}
       {isBotBlocked && (
         <div style={{
           background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10,
@@ -490,13 +519,32 @@ export default function SiteAudit() {
                 )}
               </div>
               <Input label="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
-              <div style={{ display: 'flex', gap: 10, marginBottom: 10, justifyContent: 'flex-end' }}>
-                <label style={{ fontWeight: 600, alignSelf: 'center' }}>Language:</label>
-                <Button variant={emailLang === 'en' ? 'primary' : 'ghost'} size="sm"
-                  onClick={() => setEmailLang('en')} style={{ minWidth: 80 }}>English</Button>
-                <Button variant={emailLang === 'no' ? 'primary' : 'ghost'} size="sm"
-                  onClick={() => setEmailLang('no')} style={{ minWidth: 80 }}>Norsk</Button>
+
+              {/* Language + Tone selectors */}
+              <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Language:</label>
+                  <Button variant={emailLang === 'en' ? 'primary' : 'ghost'} size="sm"
+                    onClick={() => setEmailLang('en')} style={{ minWidth: 72 }}>English</Button>
+                  <Button variant={emailLang === 'no' ? 'primary' : 'ghost'} size="sm"
+                    onClick={() => setEmailLang('no')} style={{ minWidth: 72 }}>Norsk</Button>
+                </div>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Tone:</label>
+                  <Button variant={emailTone === 'casual' ? 'primary' : 'ghost'} size="sm"
+                    onClick={() => setEmailTone('casual')} style={{ minWidth: 72 }}>Casual</Button>
+                  <Button variant={emailTone === 'formal' ? 'primary' : 'ghost'} size="sm"
+                    onClick={() => setEmailTone('formal')} style={{ minWidth: 72 }}>Formal</Button>
+                </div>
               </div>
+
+              {/* Tone hint */}
+              <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
+                {emailTone === 'formal'
+                  ? '📋 Formal — suited for corporate and enterprise prospects'
+                  : '💬 Casual — suited for SMB and local businesses'}
+              </div>
+
               <div
                 style={{
                   border: '1px solid #E5E7EB', borderRadius: 6, padding: 8,
