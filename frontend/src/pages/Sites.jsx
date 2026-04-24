@@ -18,6 +18,9 @@ import {
   faCheck,
   faArrowRight,
   faEnvelope,
+  faMagnifyingGlass,
+  faArrowUpWideShort,
+  faArrowDownWideShort,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
@@ -87,6 +90,12 @@ export default function Sites() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const didLoadRef = useRef(false)
+
+  // ── Filter & sort state ──────────────────────────────────────────────────────
+  const [search, setSearch] = useState('')
+  const [sortCol, setSortCol] = useState('created_at')
+  const [sortDir, setSortDir] = useState('desc')
+
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
@@ -94,13 +103,7 @@ export default function Sites() {
   const load = async () => {
     try {
       const res = await fetch('/api/sites', { headers: authHeaders })
-
-      if (res.status === 401) {
-        logout()
-        navigate('/login', { replace: true })
-        return
-      }
-
+      if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
       const data = await res.json()
       setSites(Array.isArray(data) ? data : [])
     } catch {
@@ -109,12 +112,43 @@ export default function Sites() {
       setLoading(false)
     }
   }
+
   useEffect(() => {
-    // React StrictMode runs effects twice in dev; guard to avoid duplicate API calls.
     if (didLoadRef.current) return
     didLoadRef.current = true
     load()
   }, [])
+
+  // ── Filtered + sorted sites ──────────────────────────────────────────────────
+  const filteredSites = safeSites
+    .filter(s => {
+      const q = search.toLowerCase()
+      return (
+        s.name?.toLowerCase().includes(q) ||
+        s.url?.toLowerCase().includes(q)
+      )
+    })
+    .sort((a, b) => {
+      let av = a[sortCol], bv = b[sortCol]
+      if (sortCol === 'created_at') { av = new Date(av); bv = new Date(bv) }
+      else { av = Number(av ?? 0); bv = Number(bv ?? 0) }
+      return sortDir === 'asc' ? av - bv : bv - av
+    })
+
+  function toggleSort(col) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    else { setSortCol(col); setSortDir('desc') }
+  }
+
+  function SortIcon({ col }) {
+    if (sortCol !== col) return null
+    return (
+      <FontAwesomeIcon
+        icon={sortDir === 'asc' ? faArrowUpWideShort : faArrowDownWideShort}
+        style={{ marginLeft: 4, fontSize: 10, opacity: 0.7 }}
+      />
+    )
+  }
 
   const validate = () => {
     const e = {}
@@ -133,11 +167,7 @@ export default function Sites() {
         headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(form),
       })
-      if (res.status === 401) {
-        logout()
-        navigate('/login', { replace: true })
-        return
-      }
+      if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))
         throw new Error(e.error || 'Failed to add site. Try again.')
@@ -158,33 +188,32 @@ export default function Sites() {
     e.stopPropagation()
     if (!confirm('Delete this project and all its data?')) return
     const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
-    if (res.status === 401) {
-      logout()
-      navigate('/login', { replace: true })
-      return
-    }
+    if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
     toast.success('Project deleted')
     load()
   }
-const getDomain = (url) => {
-  try {
-    return new URL(url.startsWith('http') ? url : `https://${url}`).hostname
-  } catch {
-    return url
+
+  const getDomain = (url) => {
+    try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname }
+    catch { return url }
   }
-}
+
   const enter = (site) => {
     localStorage.setItem('activeSite', JSON.stringify(site))
     navigate(`/site/${site.id}`)
   }
 
+  const SORT_COLS = [
+    { key: 'health',        label: 'Health' },
+    { key: 'keyword_count', label: 'Keywords' },
+    { key: 'backlink_count',label: 'Backlinks' },
+    { key: 'created_at',    label: 'Added' },
+  ]
+
   return (
     <div className="app-shell">
-
-      {/* â”€â”€ Sidebar â”€â”€ */}
       <AppSidebar />
 
-      {/* â”€â”€ Main â”€â”€ */}
       <div className="app-main">
         <div className="topbar">
           <span className="topbar__title">Projects</span>
@@ -193,7 +222,7 @@ const getDomain = (url) => {
           </Button>
         </div>
 
-        {/* â”€â”€ Add Site Modal â”€â”€ */}
+        {/* Add Site Modal */}
         <Modal
           open={showAdd}
           onClose={() => { setShowAdd(false); setErrors({}) }}
@@ -237,26 +266,18 @@ const getDomain = (url) => {
               )}
             </div>
             <label style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <input
-                type="checkbox"
-                checked={form.notifyAdmin}
-                onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))}
-                style={{ marginRight: 6 }}
-              />
+              <input type="checkbox" checked={form.notifyAdmin} onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))} style={{ marginRight: 6 }} />
               Notify admin by email when this project is added
             </label>
           </div>
         </Modal>
 
-        {/* â”€â”€ Main Content â”€â”€ */}
         <div className="page-content">
-
-          {/* Page heading */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>Projects</h1>
               <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
-                {loading ? 'Loading...' : `${safeSites.length} site${safeSites.length !== 1 ? 's' : ''} tracked`}
+                {loading ? 'Loading...' : `${filteredSites.length} of ${safeSites.length} site${safeSites.length !== 1 ? 's' : ''}`}
               </p>
             </div>
           </div>
@@ -275,56 +296,98 @@ const getDomain = (url) => {
             ))}
           </div>
 
-          {/* Two-column layout */}
           <div className="grid-sidebar-layout">
 
             {/* Left - projects table */}
             <div className="projects-table">
-              <div className="projects-table__head">
-                {['Project', 'Health', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
-                  <div key={h} className="projects-table__head-cell">{h}</div>
-                ))}
+
+              {/* ── Search + Sort toolbar ── */}
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '10px 14px', borderBottom: '1px solid var(--border)',
+                background: 'var(--surface)', flexWrap: 'wrap',
+              }}>
+                {/* Search */}
+                <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
+                  <FontAwesomeIcon icon={faMagnifyingGlass} style={{
+                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                    color: 'var(--muted)', fontSize: 12, pointerEvents: 'none',
+                  }} />
+                  <input
+                    type="text"
+                    placeholder="Search projects..."
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    style={{
+                      width: '100%', paddingLeft: 30, paddingRight: 10,
+                      height: 32, border: '1px solid var(--border)', borderRadius: 6,
+                      fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)',
+                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
+
+                {/* Sort buttons */}
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {SORT_COLS.map(col => (
+                    <button
+                      key={col.key}
+                      onClick={() => toggleSort(col.key)}
+                      style={{
+                        height: 32, padding: '0 10px', borderRadius: 6, fontSize: 12,
+                        fontFamily: 'inherit', cursor: 'pointer', border: '1px solid var(--border)',
+                        background: sortCol === col.key ? 'var(--accent)' : 'var(--bg)',
+                        color: sortCol === col.key ? '#fff' : 'var(--muted)',
+                        fontWeight: sortCol === col.key ? 600 : 400,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      {col.label}<SortIcon col={col.key} />
+                    </button>
+                  ))}
+                  {search && (
+                    <button
+                      onClick={() => setSearch('')}
+                      style={{
+                        height: 32, padding: '0 10px', borderRadius: 6, fontSize: 12,
+                        fontFamily: 'inherit', cursor: 'pointer',
+                        border: '1px solid var(--border)', background: 'var(--bg)',
+                        color: 'var(--muted)',
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faXmark} style={{ marginRight: 4 }} />Clear
+                    </button>
+                  )}
+                </div>
               </div>
 
-              {loading ? (
-                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
-                  <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
-                  Loading projects...
+              {/* ── Scrollable table body ── */}
+              <div style={{ maxHeight: 480, overflowY: 'auto' }}>
+                <div className="projects-table__head">
+                  {['Project', 'Health', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                    <div key={h} className="projects-table__head-cell">{h}</div>
+                  ))}
                 </div>
-              ) : safeSites.length === 0 ? (
-                <EmptyState
-                  icon={<FontAwesomeIcon icon={faGlobe} />}
-                  title="No projects yet"
-                  desc="Add your first website to start tracking keyword rankings, backlinks and domain authority."
-                  action={<Button variant="primary" onClick={() => setShowAdd(true)}><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add your first project</Button>}
-                />
-              ) : (
-                safeSites.map(site => (
-                  <div key={site.id} className="project-row" onClick={() => enter(site)}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div
-                          className="project-row__avatar"
-                          style={{
-                            width: 36,
-                            height: 36,
-                            padding: 0,
-                            overflow: 'hidden',
-                            background: 'transparent',
-                            border: 'none',
-                          }}
-                        >
+
+                {loading ? (
+                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
+                    <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
+                    Loading projects...
+                  </div>
+                ) : filteredSites.length === 0 ? (
+                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', fontSize: 13 }}>
+                    {search ? `No projects matching "${search}"` : 'No projects yet'}
+                  </div>
+                ) : (
+                  filteredSites.map(site => (
+                    <div key={site.id} className="project-row" onClick={() => enter(site)}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div className="project-row__avatar" style={{ width: 36, height: 36, padding: 0, overflow: 'hidden', background: 'transparent', border: 'none' }}>
                           <img
                             src={`https://${getDomain(site.url)}/favicon.ico`}
                             alt={site.name}
-                            width={36}
-                            height={36}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'contain',
-                              background: 'transparent',
-                              display: 'block',
-                            }}
+                            width={36} height={36}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'transparent', display: 'block' }}
                             onError={(e) => {
                               if (!e.currentTarget.dataset.fallback) {
                                 e.currentTarget.dataset.fallback = 'true'
@@ -333,29 +396,28 @@ const getDomain = (url) => {
                             }}
                           />
                         </div>
-                      <div>
-                        <div className="project-row__name">{site.name}</div>
-                        <div className="project-row__url">{site.url}</div>
+                        <div>
+                          <div className="project-row__name">{site.name}</div>
+                          <div className="project-row__url">{site.url}</div>
+                        </div>
                       </div>
+                      <div className="project-row__dash">{site.health ?? '-'}</div>
+                      <div className="project-row__dash">{site.keyword_count ?? 0}</div>
+                      <div className="project-row__dash">{site.backlink_count ?? 0}</div>
+                      <div className="project-row__date">
+                        {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                      </div>
+                      <button className="project-row__del" onClick={e => remove(site.id, e)}>
+                        <FontAwesomeIcon icon={faXmark} />
+                      </button>
                     </div>
-                    <div className="project-row__dash">{site.health ?? '-'}</div>
-                    <div className="project-row__dash">{site.keyword_count ?? 0}</div>
-                    <div className="project-row__dash">{site.backlink_count ?? 0}</div>
-                    <div className="project-row__date">
-                      {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
-                    </div>
-                    <button className="project-row__del" onClick={e => remove(site.id, e)}>
-                      <FontAwesomeIcon icon={faXmark} />
-                    </button>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
 
             {/* Right sidebar */}
             <div className="right-rail">
-
-              {/* DA Goal */}
               <div className="da-goal-card">
                 <div className="da-goal-card__label">
                   <FontAwesomeIcon icon={faBullseye} />Domain Authority Goal
@@ -369,7 +431,6 @@ const getDomain = (url) => {
                 <p className="da-goal-card__tip">Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.</p>
               </div>
 
-              {/* Setup checklist */}
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Setup Checklist</div>
@@ -388,7 +449,6 @@ const getDomain = (url) => {
                 ))}
               </div>
 
-              {/* Quick wins */}
               <div className="card">
                 <div className="quick-wins-title">
                   <FontAwesomeIcon icon={faLightbulb} />SEO Action Queue
@@ -408,7 +468,6 @@ const getDomain = (url) => {
                   </div>
                 ))}
               </div>
-
             </div>
           </div>
         </div>
