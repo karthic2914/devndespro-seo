@@ -16,6 +16,7 @@ const emailReportsRouter = require('./routes/emailReports')
 const usersRouter = require('./routes/users')
 const extractRouter = require('./routes/extract')
 const adminEmailRouter = require('./routes/adminEmail')
+const reportsRouter = require('./routes/reports')
 
 const settingsRouter = require('./routes/settings')
 
@@ -37,6 +38,7 @@ app.use('/api/sites', alertsSiteRouter)
 app.use('/api/alerts', alertsGlobalRouter)
 app.use('/api/sites', emailReportsRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/reports', reportsRouter)
 
 app.use('/api/extract', extractRouter)
 
