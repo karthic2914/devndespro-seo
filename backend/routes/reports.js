@@ -1,3 +1,8 @@
+
+const express = require('express');
+const { pool } = require('../clients');
+const router = express.Router();
+
 // Health trend (last 30 days)
 router.get('/health-trend', async (req, res) => {
   try {
@@ -54,9 +59,6 @@ router.get('/backlink-trend', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch backlink trend.' });
   }
 });
-const express = require('express');
-const { pool } = require('../clients');
-const router = express.Router();
 
 // GET /api/reports/summary
 router.get('/summary', async (req, res) => {
