@@ -279,9 +279,9 @@ async function sendSiteReport(siteId, recipients) {
 }
 
 async function sendSummaryEmail({ to, subject, message, fullReport }) {
-  // Use SMTP_PASS as the ZeptoMail API key (same token used for SMTP auth)
-  const apiKey = process.env.ZEPTO_API_KEY || process.env.SMTP_PASS
-  if (!apiKey) throw new Error('No email API key configured')
+  // Use nodemailer with Zoho SMTP
+  const transporter = createTransporter();
+  if (!transporter) throw new Error('SMTP not configured. Add SMTP_HOST, SMTP_USER, SMTP_PASS to .env');
 
   const htmlBody = `<!DOCTYPE html>
 <html>
@@ -291,28 +291,14 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
   ${fullReport ? `<hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
   <p style="font-size:12px;color:#94a3b8">Full audit report attached above.</p>` : ''}
 </body>
-</html>`
+</html>`;
 
-  const payload = {
-    from: { address: 'hello@devndespro.com', name: 'Mahadevan | DevndeSPRO SEO' },
-    to: [{ email_address: { address: to } }],
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || 'hello@devndespro.com',
+    to,
     subject,
-    htmlbody: htmlBody,
-  }
-
-  const resp = await fetch('https://api.zeptomail.com/v1.1/email', {
-    method: 'POST',
-    headers: {
-      'Authorization': apiKey,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  })
-
-  if (!resp.ok) {
-    const err = await resp.text()
-    throw new Error('ZeptoMail error: ' + err)
-  }
+    html: htmlBody,
+  });
 }
 
 function buildSummaryEmailHtml({ lang, summaryBody, alerts }) {
