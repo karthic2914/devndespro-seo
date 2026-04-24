@@ -19,6 +19,7 @@ import Layout from './components/Layout'
 import Users from './pages/Users'
 import AcceptInvite from './pages/AcceptInvite'
 import AdminSettings from './components/admin/AdminSettings'
+import Reports from './pages/Reports'
 
 // ── Global Snackbar context ──────────────────────────────────────────────────
 export const SnackbarContext = createContext(null)
@@ -111,6 +112,7 @@ export default function App() {
             <Route path="rank" element={<RankNo1 />} />
             <Route path="users" element={<Users />} />
             <Route path="admin-settings" element={<AdminSettings />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
       </BrowserRouter>

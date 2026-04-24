@@ -24,6 +24,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
 import AppSidebar from '../components/AppSidebar'
 
 const BENCHMARKS = [
@@ -185,8 +186,7 @@ export default function Sites() {
   }
 
   const remove = async (id, e) => {
-    e.stopPropagation()
-    if (!confirm('Delete this project and all its data?')) return
+    if (e) e.stopPropagation()
     const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
     if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
     toast.success('Project deleted')
@@ -443,13 +443,40 @@ export default function Sites() {
                           title="Quick actions"
                           onClick={e => {
                             e.stopPropagation();
-                            // For now, just show delete. You can expand this to a dropdown menu.
-                            if (window.confirm('Delete this project and all its data?')) remove(site.id, e)
+                            setConfirmDelete({ open: true, site })
                           }}
                         >
                           ⋮
                         </button>
                       </div>
+                          {/* Delete confirmation modal */}
+                          <Modal
+                            open={confirmDelete.open}
+                            onClose={() => setConfirmDelete({ open: false, site: null })}
+                            title="Delete Project?"
+                            width={380}
+                            footer={
+                              <>
+                                <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, site: null })}>Cancel</Button>
+                                <Button
+                                  variant="danger"
+                                  onClick={async () => {
+                                    if (confirmDelete.site) await remove(confirmDelete.site.id)
+                                    setConfirmDelete({ open: false, site: null })
+                                  }}
+                                >
+                                  Delete
+                                </Button>
+                              </>
+                            }
+                          >
+                            <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
+                              Are you sure you want to delete <span style={{ color: '#111' }}>{confirmDelete.site?.name}</span>?
+                            </div>
+                            <div style={{ fontSize: 13, color: '#6B7280' }}>
+                              This will permanently remove the project and all its data. This action cannot be undone.
+                            </div>
+                          </Modal>
                     </div>
                   ))
                 )}
