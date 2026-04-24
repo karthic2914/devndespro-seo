@@ -51,6 +51,26 @@ function getSummaryEmailText(lang, auditData, allIssues) {
   const warnings = (allIssues || []).filter((i) => i.status === 'warning').length
   const url      = auditData?.url || 'nettstedet'
 
+  // Find category scores
+  let techScore = null, contentScore = null;
+  if (Array.isArray(auditData?.checks)) {
+    // Group by category and calculate scores
+    const grouped = groupByCategory(auditData.checks);
+    for (const cat of grouped) {
+      if (cat.name.toLowerCase().includes('technical seo') || cat.name.toLowerCase().includes('sikkerhet') || cat.name.toLowerCase().includes('security')) {
+        techScore = cat.score;
+      }
+      if (cat.name.toLowerCase().includes('content quality')) {
+        contentScore = cat.score;
+      }
+    }
+  }
+  // Fallback to dash if not found
+  techScore = techScore ?? '—';
+  contentScore = contentScore ?? '—';
+  const techTick = techScore === 100 ? ' &#10003;' : '';
+  const contentTick = contentScore === 100 ? ' &#10003;' : '';
+
   if (lang === 'no') {
     return `Hei,<br><br>
 Jeg har kjort en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
@@ -58,8 +78,8 @@ Jeg har kjort en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funn
 - Total helsescore: <b>${score}/100</b><br>
 - Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
-- Teknisk SEO &amp; sikkerhet: <b>100</b> &#10003;<br>
-- Content Quality: <b>100</b> &#10003;<br><br>
+- Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
+- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
 De kritiske problemene pavirker direkte hvordan Google crawler og rangerer siden.<br><br>
 Analysen er gjort via mitt eget SEO-verktoy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til a hjelpe norske bedrifter med a forbedre synligheten sin pa nett.<br><br>
 Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
@@ -76,8 +96,8 @@ I've run a technical SEO audit of <b>${url}</b> and wanted to share some finding
 - Overall health score: <b>${score}/100</b><br>
 - Critical issues: <b>${critical}</b><br>
 - Warnings: <b>${warnings}</b><br>
-- Technical SEO &amp; Security: <b>100</b> &#10003;<br>
-- Content Quality: <b>100</b> &#10003;<br><br>
+- Technical SEO &amp; Security: <b>${techScore}</b>${techTick}<br>
+- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
 The critical issues directly affect how Google crawls and ranks the site.<br><br>
 Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>).<br><br>
 I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
