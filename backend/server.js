@@ -17,8 +17,8 @@ const usersRouter = require('./routes/users')
 const extractRouter = require('./routes/extract')
 const adminEmailRouter = require('./routes/adminEmail')
 const reportsRouter = require('./routes/reports')
-
 const settingsRouter = require('./routes/settings')
+const publicAuditRouter = require('./routes/publicAudit')
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -39,12 +39,10 @@ app.use('/api/alerts', alertsGlobalRouter)
 app.use('/api/sites', emailReportsRouter)
 app.use('/api/users', usersRouter)
 app.use('/api/reports', reportsRouter)
-
 app.use('/api/extract', extractRouter)
-
 app.use('/api/admin-email', adminEmailRouter)
-
 app.use('/api/settings', settingsRouter)
+app.use('/api/public', publicAuditRouter)
 
 initDB().then(() => {
   app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
