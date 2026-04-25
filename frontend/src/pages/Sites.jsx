@@ -19,12 +19,11 @@ import {
   faArrowRight,
   faEnvelope,
   faMagnifyingGlass,
-  faArrowUpWideShort,
-  faArrowDownWideShort,
+  faChevronUp,
+  faChevronDown,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
-  const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
 import AppSidebar from '../components/AppSidebar'
 
 const BENCHMARKS = [
@@ -91,6 +90,7 @@ export default function Sites() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const didLoadRef = useRef(false)
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
 
   // ── Filter & sort state ──────────────────────────────────────────────────────
   const [search, setSearch] = useState('')
@@ -145,7 +145,7 @@ export default function Sites() {
     if (sortCol !== col) return null
     return (
       <FontAwesomeIcon
-        icon={sortDir === 'asc' ? faArrowUpWideShort : faArrowDownWideShort}
+        icon={sortDir === 'asc' ? faChevronUp : faChevronDown}
         style={{ marginLeft: 4, fontSize: 10, opacity: 0.7 }}
       />
     )
@@ -185,8 +185,7 @@ export default function Sites() {
     setAdding(false)
   }
 
-  const remove = async (id, e) => {
-    if (e) e.stopPropagation()
+  const remove = async (id) => {
     const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
     if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
     toast.success('Project deleted')
@@ -272,6 +271,35 @@ export default function Sites() {
           </div>
         </Modal>
 
+        {/* Delete Confirmation Modal - outside the map loop */}
+        <Modal
+          open={confirmDelete.open}
+          onClose={() => setConfirmDelete({ open: false, site: null })}
+          title="Delete Project?"
+          width={380}
+          footer={
+            <>
+              <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, site: null })}>Cancel</Button>
+              <Button
+                variant="danger"
+                onClick={async () => {
+                  if (confirmDelete.site) await remove(confirmDelete.site.id)
+                  setConfirmDelete({ open: false, site: null })
+                }}
+              >
+                Delete
+              </Button>
+            </>
+          }
+        >
+          <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
+            Are you sure you want to delete <span style={{ color: '#111' }}>{confirmDelete.site?.name}</span>?
+          </div>
+          <div style={{ fontSize: 13, color: '#6B7280' }}>
+            This will permanently remove the project and all its data. This action cannot be undone.
+          </div>
+        </Modal>
+
         <div className="page-content">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
@@ -304,13 +332,12 @@ export default function Sites() {
             {/* Left - projects table */}
             <div className="projects-table">
 
-              {/* ── Search + Sort toolbar ── */}
+              {/* Search + Sort toolbar */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderBottom: '1px solid var(--border)',
                 background: 'var(--surface)', flexWrap: 'wrap',
               }}>
-                {/* Search */}
                 <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
                   <FontAwesomeIcon icon={faMagnifyingGlass} style={{
                     position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
@@ -329,8 +356,6 @@ export default function Sites() {
                     }}
                   />
                 </div>
-
-                {/* Sort buttons */}
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {SORT_COLS.map(col => (
                     <button
@@ -364,7 +389,7 @@ export default function Sites() {
                 </div>
               </div>
 
-              {/* ── Scrollable table body ── */}
+              {/* Scrollable table body */}
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
                   {['Project', 'Health', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
@@ -440,43 +465,15 @@ export default function Sites() {
                             borderRadius: 4, fontSize: 18, color: '#9CA3AF',
                             transition: 'background 0.15s',
                           }}
-                          title="Quick actions"
+                          title="Delete project"
                           onClick={e => {
-                            e.stopPropagation();
+                            e.stopPropagation()
                             setConfirmDelete({ open: true, site })
                           }}
                         >
                           ⋮
                         </button>
                       </div>
-                          {/* Delete confirmation modal */}
-                          <Modal
-                            open={confirmDelete.open}
-                            onClose={() => setConfirmDelete({ open: false, site: null })}
-                            title="Delete Project?"
-                            width={380}
-                            footer={
-                              <>
-                                <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, site: null })}>Cancel</Button>
-                                <Button
-                                  variant="danger"
-                                  onClick={async () => {
-                                    if (confirmDelete.site) await remove(confirmDelete.site.id)
-                                    setConfirmDelete({ open: false, site: null })
-                                  }}
-                                >
-                                  Delete
-                                </Button>
-                              </>
-                            }
-                          >
-                            <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
-                              Are you sure you want to delete <span style={{ color: '#111' }}>{confirmDelete.site?.name}</span>?
-                            </div>
-                            <div style={{ fontSize: 13, color: '#6B7280' }}>
-                              This will permanently remove the project and all its data. This action cannot be undone.
-                            </div>
-                          </Modal>
                     </div>
                   ))
                 )}
