@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -33,48 +33,7 @@ const BENCHMARKS = [
   { label: 'Dofollow Backlinks',   value: '10-30',  sub: 'to start ranking',  color: T.purple, icon: faLink },
 ]
 
-const CHECKLIST = [
-  { done: true,  label: 'Sitemap submitted to Google Search Console' },
-  { done: true,  label: 'DMARC DNS record configured' },
-  { done: true,  label: 'Top citation profiles completed' },
-  { done: true,  label: 'Business directory submissions completed' },
-  { done: false, label: 'Prospected 30 niche-relevant backlink targets' },
-  { done: false, label: 'First SEO blog post published' },
-  { done: false, label: 'Domain Authority reaches 10+' },
-]
 
-const QUICK_WINS = [
-  {
-    icon: faLink,
-    title: 'Build Backlinks',
-    desc: 'Run outreach to niche-relevant domains with contextual dofollow opportunities.',
-    impact: 'High',
-    eta: '2 days',
-  },
-  {
-    icon: faPenToSquare,
-    title: 'Publish Content',
-    desc: 'Publish one linkable asset targeting a low-difficulty topic cluster.',
-    impact: 'High',
-    eta: '3 days',
-  },
-  {
-    icon: faBolt,
-    title: 'Fix Core Web Vitals',
-    desc: 'Push LCP under 2.5s and CLS under 0.1 on top traffic pages.',
-    impact: 'Medium',
-    eta: '1 day',
-  },
-  {
-    icon: faSitemap,
-    title: 'Reclaim Link Equity',
-    desc: 'Fix broken pages, add redirects, and recover backlinks pointing to dead URLs.',
-    impact: 'Medium',
-    eta: '45 min',
-  },
-]
-
-const completedCount = CHECKLIST.filter(c => c.done).length
 
 import api from '../utils/api'
 
@@ -91,8 +50,9 @@ export default function Sites() {
   const navigate = useNavigate()
   const didLoadRef = useRef(false)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
+  const [summary, setSummary] = useState(null)
 
-  // ── Filter & sort state ──────────────────────────────────────────────────────
+  // -- Filter & sort state ------------------------------------------------------
   const [search, setSearch] = useState('')
   const [sortCol, setSortCol] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
@@ -107,6 +67,11 @@ export default function Sites() {
       if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
       const data = await res.json()
       setSites(Array.isArray(data) ? data : [])
+      const sumRes = await fetch('/api/sites/summary', { headers: authHeaders })
+      if (sumRes.ok) {
+        const sumData = await sumRes.json()
+        setSummary(sumData)
+      }
     } catch {
       setSites([])
     } finally {
@@ -120,7 +85,7 @@ export default function Sites() {
     load()
   }, [])
 
-  // ── Filtered + sorted sites ──────────────────────────────────────────────────
+  // -- Filtered + sorted sites --------------------------------------------------
   const filteredSites = safeSites
     .filter(s => {
       const q = search.toLowerCase()
@@ -471,7 +436,7 @@ export default function Sites() {
                             setConfirmDelete({ open: true, site })
                           }}
                         >
-                          ⋮
+                          ?
                         </button>
                       </div>
                     </div>
@@ -487,23 +452,23 @@ export default function Sites() {
                   <FontAwesomeIcon icon={faBullseye} />Domain Authority Goal
                 </div>
                 <div className="da-goal-card__nums">
-                  <span className="da-goal-card__num">0</span>
+                  <span className="da-goal-card__num">{summary?.max_dr ?? 0}</span>
                   <span className="da-goal-card__arrow"><FontAwesomeIcon icon={faArrowRight} /></span>
                   <span className="da-goal-card__num">20</span>
                 </div>
-                <div className="da-goal-card__bar"><div className="da-goal-card__fill" /></div>
-                <p className="da-goal-card__tip">Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.</p>
+                <div className="da-goal-card__bar"><div className="da-goal-card__fill" style={{ width: `${Math.min(((summary?.max_dr ?? 0) / 20) * 100, 100)}%` }} /></div>
+                <p className="da-goal-card__tip">{summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.' : summary?.max_dr >= 10 ? 'Good progress � keep building backlinks to hit DR 20.' : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}</p>
               </div>
 
               <div className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Setup Checklist</div>
-                  <Badge variant="orange">{completedCount}/{CHECKLIST.length}</Badge>
+                  {summary && <Badge variant="orange">{summary.checklist.filter(c => c.done).length}/{summary.checklist.length}</Badge>}
                 </div>
                 <div className="checklist-progress">
-                  <div className="checklist-progress__fill" style={{ width: `${(completedCount / CHECKLIST.length) * 100}%` }} />
+                  <div className="checklist-progress__fill" style={{ width: summary ? `${(summary.checklist.filter(c => c.done).length / summary.checklist.length) * 100}%` : `0%` }} />
                 </div>
-                {CHECKLIST.map((item, i) => (
+                {(summary?.checklist ?? []).map((item, i) => (
                   <div key={i} className={`checklist-item checklist-item--${item.done ? 'done' : 'todo'}`}>
                     <div className={`checklist-check checklist-check--${item.done ? 'done' : 'todo'}`}>
                       {item.done && <FontAwesomeIcon icon={faCheck} />}
@@ -517,10 +482,10 @@ export default function Sites() {
                 <div className="quick-wins-title">
                   <FontAwesomeIcon icon={faLightbulb} />SEO Action Queue
                 </div>
-                {QUICK_WINS.map((tip, idx) => (
+                {(summary?.actions ?? []).map((tip, idx) => (
                   <div key={tip.title} className="quick-win-row">
                     <div className="quick-win-row__rank">{idx + 1}</div>
-                    <span className="quick-win-row__icon"><FontAwesomeIcon icon={tip.icon} /></span>
+
                     <div className="quick-win-row__content">
                       <div className="quick-win-row__top">
                         <div className="quick-win-row__title">{tip.title}</div>

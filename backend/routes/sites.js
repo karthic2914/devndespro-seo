@@ -34,6 +34,60 @@ router.get('/', auth, async (req, res) => {
   res.json(rows)
 })
 
+// Summary stats across all user's sites
+router.get('/summary', auth, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT
+      COALESCE(MAX(m.dr), 0) AS max_dr,
+      COALESCE(SUM(k.kcount), 0) AS total_keywords,
+      COALESCE(SUM(b.bcount), 0) AS total_backlinks,
+      COUNT(s.id) AS total_sites,
+      BOOL_OR(u.gsc_refresh_token IS NOT NULL) AS gsc_connected,
+      COALESCE(AVG(m.health), 0) AS avg_health
+    FROM sites s
+    INNER JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1
+    LEFT JOIN seo_metrics m ON m.site_id = s.id
+    LEFT JOIN (SELECT site_id, COUNT(*)::int AS kcount FROM keywords GROUP BY site_id) k ON k.site_id = s.id
+    LEFT JOIN (SELECT site_id, COUNT(*)::int AS bcount FROM backlinks GROUP BY site_id) b ON b.site_id = s.id
+    LEFT JOIN users u ON u.id = $1`,
+    [req.user.id]
+  )
+  const summary = rows[0]
+
+  const checklist = [
+    { done: Boolean(summary.gsc_connected),      label: 'Google Search Console connected' },
+    { done: Number(summary.total_sites) > 0,     label: 'First project added' },
+    { done: Number(summary.total_keywords) > 0,  label: 'Keywords tracked' },
+    { done: Number(summary.total_backlinks) > 0, label: 'Backlinks recorded' },
+    { done: Number(summary.max_dr) >= 10,        label: 'Domain Authority reaches 10+' },
+    { done: Number(summary.max_dr) >= 20,        label: 'Domain Authority reaches 20+' },
+    { done: Number(summary.avg_health) >= 80,    label: 'Site health above 80' },
+  ]
+
+  const actions = []
+  if (!summary.gsc_connected)
+    actions.push({ title: 'Connect Google Search Console', desc: 'Link GSC to start tracking impressions, clicks and keyword positions.', impact: 'High', eta: '5 min' })
+  if (Number(summary.total_keywords) === 0)
+    actions.push({ title: 'Add Target Keywords', desc: 'Research and add keywords you want to rank for in each project.', impact: 'High', eta: '30 min' })
+  if (Number(summary.total_backlinks) === 0)
+    actions.push({ title: 'Start Link Building', desc: 'Add backlink targets and begin outreach to niche-relevant domains.', impact: 'High', eta: '2 days' })
+  if (Number(summary.avg_health) < 80)
+    actions.push({ title: 'Fix Site Health Issues', desc: 'Run a site audit and resolve critical on-page issues dragging health below 80.', impact: 'Medium', eta: '1 day' })
+  if (Number(summary.max_dr) < 10)
+    actions.push({ title: 'Build Domain Authority', desc: 'Focus on earning contextual dofollow backlinks from DR20+ sites.', impact: 'High', eta: '2-4 weeks' })
+  actions.push({ title: 'Publish SEO Content', desc: 'Publish a 1,500+ word post targeting a low-difficulty keyword cluster.', impact: 'High', eta: '3 days' })
+
+  res.json({
+    max_dr: Number(summary.max_dr),
+    total_keywords: Number(summary.total_keywords),
+    total_backlinks: Number(summary.total_backlinks),
+    total_sites: Number(summary.total_sites),
+    gsc_connected: Boolean(summary.gsc_connected),
+    checklist,
+    actions: actions.slice(0, 4),
+  })
+})
+
 // Single site by ID
 router.get('/:siteId', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query(
