@@ -21,6 +21,7 @@ import {
   faMagnifyingGlass,
   faChevronUp,
   faChevronDown,
+  faEllipsisV,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
@@ -181,9 +182,11 @@ export default function Sites() {
       <div className="app-main">
         <div className="topbar">
           <span className="topbar__title">Projects</span>
-          <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>
-            <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />New Project
-          </Button>
+          {user?.id === 1 && (
+            <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>
+              <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />New Project
+            </Button>
+          )}
         </div>
 
         {/* Add Site Modal */}
@@ -421,7 +424,7 @@ export default function Sites() {
                       </div>
                       {/* Quick Actions Menu */}
                       <div
-                        style={{ position: 'absolute', right: 10, top: 10, zIndex: 2 }}
+                        style={{ position: 'absolute', right: 10, top: 10, zIndex: 2, display: user?.id === 1 ? 'block' : 'none' }}
                         onClick={e => e.stopPropagation()}
                       >
                         <button
@@ -436,7 +439,7 @@ export default function Sites() {
                             setConfirmDelete({ open: true, site })
                           }}
                         >
-                          ?
+                          <FontAwesomeIcon icon={faEllipsisV} />
                         </button>
                       </div>
                     </div>
