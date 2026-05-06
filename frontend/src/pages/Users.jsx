@@ -4,6 +4,8 @@ import {
   faUserPlus, faEnvelope, faTrash, faRotateRight,
   faCircleCheck, faClock, faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { Card, Button, PageHeader, Badge, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
 import api from '../utils/api'
@@ -12,12 +14,18 @@ import toast from 'react-hot-toast'
 const STATUS_VARIANT = { pending: 'warning', accepted: 'success', revoked: 'default' }
 
 export default function Users() {
+  const { user: authUser } = useAuth()
+  const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [siteId, setSiteId] = useState('')
   const [sending, setSending] = useState(false)
+
+  useEffect(() => {
+    if (authUser && authUser.id !== 1) navigate('/', { replace: true })
+  }, [authUser])
 
   const load = async () => {
     setLoading(true)
