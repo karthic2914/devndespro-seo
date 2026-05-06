@@ -5,6 +5,7 @@ import {
   faCircleCheck, faClock, faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, Button, PageHeader, Badge, T } from '../components/UI'
+import AppSidebar from '../components/AppSidebar'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 
@@ -82,7 +83,10 @@ export default function Users() {
   const accepted = users.filter(u => u.status === 'accepted')
 
   return (
-    <div className="fade-in" style={{ padding: '1.25rem 1.5rem' }}>
+    <div className="app-shell">
+      <AppSidebar />
+      <div className="app-main">
+      <div className="page-content fade-in">
       <PageHeader
         title="Team & Users"
         subtitle="Invite people to access a specific project. They'll receive an email with a login link."
@@ -196,6 +200,8 @@ export default function Users() {
           </>
         )}
       </Card>
+      </div>
+      </div>
     </div>
   )
 }
