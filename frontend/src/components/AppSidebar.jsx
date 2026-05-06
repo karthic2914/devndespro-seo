@@ -1,14 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faFolder, faChartBar, faWrench, faGear, faRightFromBracket } from '@fortawesome/free-solid-svg-icons'
+import { faFolder, faChartBar, faWrench, faGear, faRightFromBracket, faUsers } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Logo } from './UI'
 
 const NAV = [
-  { label: 'Projects', icon: faFolder,   path: '/' },
-  { label: 'Reports',  icon: faChartBar, path: '/reports' },
-  { label: 'Tools',    icon: faWrench,   path: '/' },
-  { label: 'Settings', icon: faGear,     path: '/' },
+  { label: 'Projects', icon: faFolder,   path: '/',         adminOnly: false },
+  { label: 'Reports',  icon: faChartBar, path: '/reports',  adminOnly: false },
+  { label: 'Users',    icon: faUsers,    path: '/users',    adminOnly: true  },
+  { label: 'Tools',    icon: faWrench,   path: '/tools',    adminOnly: false },
+  { label: 'Settings', icon: faGear,     path: '/settings', adminOnly: false },
 ]
 
 export default function AppSidebar() {
@@ -28,7 +29,7 @@ export default function AppSidebar() {
       </div>
 
       <nav className="sidebar__nav">
-        {NAV.map(item => {
+        {NAV.filter(item => !item.adminOnly || user?.id === 1).map(item => {
           const isActive = item.path === '/'
             ? location.pathname === '/'
             : location.pathname.startsWith(item.path)
