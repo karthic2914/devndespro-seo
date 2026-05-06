@@ -22,6 +22,7 @@ import {
   faChevronUp,
   faChevronDown,
   faEllipsisV,
+  faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
