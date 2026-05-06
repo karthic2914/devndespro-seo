@@ -439,7 +439,7 @@ export default function Sites() {
                             setConfirmDelete({ open: true, site })
                           }}
                         >
-                          <FontAwesomeIcon icon={faEllipsisV} />
+                          <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
                     </div>
@@ -460,7 +460,7 @@ export default function Sites() {
                   <span className="da-goal-card__num">20</span>
                 </div>
                 <div className="da-goal-card__bar"><div className="da-goal-card__fill" style={{ width: `${Math.min(((summary?.max_dr ?? 0) / 20) * 100, 100)}%` }} /></div>
-                <p className="da-goal-card__tip">{summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.' : summary?.max_dr >= 10 ? 'Good progress — keep building backlinks to hit DR 20.' : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}</p>
+                <p className="da-goal-card__tip">{summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.' : summary?.max_dr >= 10 ? 'Good progress ï¿½ keep building backlinks to hit DR 20.' : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}</p>
               </div>
 
               <div className="card">
