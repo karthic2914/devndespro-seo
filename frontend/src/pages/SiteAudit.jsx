@@ -545,19 +545,22 @@ export default function SiteAudit() {
                   : '💬 Casual — suited for SMB and local businesses'}
               </div>
 
-              <div
-                style={{
-                  border: '1px solid #E5E7EB', borderRadius: 6, padding: 8,
-                  minHeight: 120, maxHeight: 220, background: '#fff',
-                  marginBottom: 10, overflowY: 'auto', fontSize: 15, lineHeight: 1.6,
-                  boxShadow: '0 2px 8px rgba(30,27,46,0.06)',
-                }}
-                contentEditable suppressContentEditableWarning
-                onInput={(e) => setEmailMessage(e.currentTarget.innerHTML)}
-                dangerouslySetInnerHTML={{
-                  __html: `<div style='text-align:center;margin-bottom:16px;'><img src='/images/devndespro_seo.png' alt='Devndespro SEO' style='height:40px;'/></div>` + emailMessage,
-                }}
-              />
+              <div style={{
+                border: '1px solid #E5E7EB', borderRadius: 6,
+                minHeight: 120, maxHeight: 220, background: '#fff',
+                marginBottom: 10, overflowY: 'auto', fontSize: 15, lineHeight: 1.6,
+                boxShadow: '0 2px 8px rgba(30,27,46,0.06)',
+              }}>
+                <div style={{ textAlign: 'center', padding: '12px 8px 8px', borderBottom: '1px solid #F3F4F6' }}>
+                  <img src='/images/devndespro_seo.png' alt='Devndespro SEO' style={{ height: 36 }} />
+                </div>
+                <div
+                  style={{ padding: '10px 12px' }}
+                  contentEditable suppressContentEditableWarning
+                  onInput={(e) => setEmailMessage(e.currentTarget.innerHTML)}
+                  dangerouslySetInnerHTML={{ __html: emailMessage }}
+                />
+              </div>
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
                 <input type="checkbox" checked={includeFullReport}
                   onChange={(e) => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
