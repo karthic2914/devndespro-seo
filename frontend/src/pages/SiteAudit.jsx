@@ -266,7 +266,11 @@ export default function SiteAudit() {
 
   useEffect(() => {
     if (!auditData) return
-    setEmailMessage(getSummaryEmailText(emailLang, emailTone, auditData, allIssues))
+    const html = getSummaryEmailText(emailLang, emailTone, auditData, allIssues)
+    setEmailMessage(html)
+    isProgrammatic.current = true
+    if (emailBodyRef.current) emailBodyRef.current.innerHTML = html
+    isProgrammatic.current = false
   }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
 
   useEffect(() => {
@@ -275,7 +279,7 @@ export default function SiteAudit() {
       emailBodyRef.current.innerHTML = emailMessage
       isProgrammatic.current = false
     }
-  }, [emailLang, emailTone, showEmailModal, emailMessage])
+  }, [emailLang, emailTone, showEmailModal])
 
   useEffect(() => {
     if (showEmailModal && siteId) {
