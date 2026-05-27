@@ -5,6 +5,7 @@ import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
   faCamera, faShareNodes, faEnvelope,
+  faAlignLeft, faAlignCenter, faAlignRight,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
 import { Button, Modal, Input } from '../components/UI'
@@ -236,6 +237,7 @@ export default function SiteAudit() {
   const [loadingRecipient,  setLoadingRecipient]  = useState(false)
   const captureRef = useRef(null)
   const emailBodyRef = useRef(null)
+  const isProgrammatic = useRef(false)
   const [logoAlign, setLogoAlign] = useState('center')
 
   const isBotBlocked = useMemo(() => {
@@ -268,10 +270,12 @@ export default function SiteAudit() {
   }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
 
   useEffect(() => {
-    if (emailBodyRef.current && emailMessage) {
+    if (emailBodyRef.current) {
+      isProgrammatic.current = true
       emailBodyRef.current.innerHTML = emailMessage
+      isProgrammatic.current = false
     }
-  }, [emailMessage])
+  }, [emailLang, emailTone, showEmailModal, emailMessage])
 
   useEffect(() => {
     if (showEmailModal && siteId) {
@@ -556,14 +560,18 @@ export default function SiteAudit() {
               {/* Logo alignment controls */}
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
                 <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Logo:</span>
-                {['left', 'center', 'right'].map((align) => (
-                  <button key={align} onClick={() => setLogoAlign(align)} style={{
-                    padding: '3px 10px', borderRadius: 5, border: '1px solid #E5E7EB', fontSize: 11,
-                    fontWeight: logoAlign === align ? 700 : 400, cursor: 'pointer', fontFamily: 'inherit',
-                    background: logoAlign === align ? '#F97316' : '#fff',
-                    color: logoAlign === align ? '#fff' : '#6B7280',
+                {[
+                  { id: 'left',   icon: faAlignLeft   },
+                  { id: 'center', icon: faAlignCenter  },
+                  { id: 'right',  icon: faAlignRight   },
+                ].map(({ id, icon }) => (
+                  <button key={id} onClick={() => setLogoAlign(id)} title={id} style={{
+                    padding: '5px 10px', borderRadius: 5, border: '1px solid #E5E7EB', fontSize: 13,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                    background: logoAlign === id ? '#F97316' : '#fff',
+                    color: logoAlign === id ? '#fff' : '#6B7280',
                   }}>
-                    {align === 'left' ? '⬅' : align === 'center' ? '⬛' : '➡'} {align}
+                    <FontAwesomeIcon icon={icon} />
                   </button>
                 ))}
               </div>
@@ -580,7 +588,7 @@ export default function SiteAudit() {
                   ref={emailBodyRef}
                   style={{ padding: '10px 12px' }}
                   contentEditable suppressContentEditableWarning
-                  onInput={(e) => setEmailMessage(e.currentTarget.innerHTML)}
+                  onInput={(e) => { if (!isProgrammatic.current) setEmailMessage(e.currentTarget.innerHTML) }}
                 />
               </div>
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>

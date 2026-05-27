@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 // Snackbar (Toast) component for alerts
 export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClose, position = 'bottom' }) => {
   useEffect(() => {
