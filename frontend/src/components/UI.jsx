@@ -257,9 +257,9 @@ export const PageHeader = ({ title, subtitle, action }) => (
 
 export const Modal = ({ open, onClose, title, subtitle, children, footer, width = 500, closeOnOverlayClick = false }) => {
   useEffect(() => {
-    const onEsc = e => e.key === 'Escape' && onClose?.()
-    if (open) window.addEventListener('keydown', onEsc)
-    return () => window.removeEventListener('keydown', onEsc)
+    const onEsc = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation() } }
+    window.addEventListener('keydown', onEsc, true)
+    return () => window.removeEventListener('keydown', onEsc, true)
   }, [open, onClose])
 
   if (!open) return null
