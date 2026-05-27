@@ -235,6 +235,8 @@ export default function SiteAudit() {
   const [recipientEmail,    setRecipientEmail]    = useState('')
   const [loadingRecipient,  setLoadingRecipient]  = useState(false)
   const captureRef = useRef(null)
+  const emailBodyRef = useRef(null)
+  const [logoAlign, setLogoAlign] = useState('center')
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -264,6 +266,12 @@ export default function SiteAudit() {
     if (!auditData) return
     setEmailMessage(getSummaryEmailText(emailLang, emailTone, auditData, allIssues))
   }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
+
+  useEffect(() => {
+    if (emailBodyRef.current && emailMessage) {
+      emailBodyRef.current.innerHTML = emailMessage
+    }
+  }, [emailMessage])
 
   useEffect(() => {
     if (showEmailModal && siteId) {
@@ -545,20 +553,34 @@ export default function SiteAudit() {
                   : '💬 Casual — suited for SMB and local businesses'}
               </div>
 
+              {/* Logo alignment controls */}
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: '#6B7280', fontWeight: 600 }}>Logo:</span>
+                {['left', 'center', 'right'].map((align) => (
+                  <button key={align} onClick={() => setLogoAlign(align)} style={{
+                    padding: '3px 10px', borderRadius: 5, border: '1px solid #E5E7EB', fontSize: 11,
+                    fontWeight: logoAlign === align ? 700 : 400, cursor: 'pointer', fontFamily: 'inherit',
+                    background: logoAlign === align ? '#F97316' : '#fff',
+                    color: logoAlign === align ? '#fff' : '#6B7280',
+                  }}>
+                    {align === 'left' ? '⬅' : align === 'center' ? '⬛' : '➡'} {align}
+                  </button>
+                ))}
+              </div>
               <div style={{
                 border: '1px solid #E5E7EB', borderRadius: 6,
                 minHeight: 120, maxHeight: 220, background: '#fff',
                 marginBottom: 10, overflowY: 'auto', fontSize: 15, lineHeight: 1.6,
                 boxShadow: '0 2px 8px rgba(30,27,46,0.06)',
               }}>
-                <div style={{ textAlign: 'center', padding: '12px 8px 8px', borderBottom: '1px solid #F3F4F6' }}>
+                <div style={{ textAlign: logoAlign, padding: '12px 8px 8px', borderBottom: '1px solid #F3F4F6' }}>
                   <img src='/images/devndespro_seo.png' alt='Devndespro SEO' style={{ height: 36 }} />
                 </div>
                 <div
+                  ref={emailBodyRef}
                   style={{ padding: '10px 12px' }}
                   contentEditable suppressContentEditableWarning
                   onInput={(e) => setEmailMessage(e.currentTarget.innerHTML)}
-                  dangerouslySetInnerHTML={{ __html: emailMessage }}
                 />
               </div>
               <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
