@@ -464,7 +464,7 @@ export default function Sites() {
                             src={`https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`}
                             alt=""
                             width={36} height={36}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, zIndex: 1, background: '#fff', borderRadius: 8 }}
                             onError={(e) => { e.currentTarget.style.display = 'none' }}
                           />
                         </div>
