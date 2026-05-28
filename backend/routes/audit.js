@@ -314,7 +314,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       },
     }
     await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])
-    await pool.query('INSERT INTO seo_metrics (site_id, health) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET health=$2, updated_at=NOW()', [req.siteId, score])
+    const aeoChecksAll = checks.filter(c => c.category === 'AEO')
+    const aeoErrors = aeoChecksAll.filter(c => c.status === 'error').length
+    const aeoWarnings = aeoChecksAll.filter(c => c.status === 'warning').length
+    const aeoScore = Math.max(0, 100 - aeoErrors * 13 - aeoWarnings * 8)
+    await pool.query('INSERT INTO seo_metrics (site_id, health, aeo_score) VALUES ($1,$2,$3) ON CONFLICT (site_id) DO UPDATE SET health=$2, aeo_score=$3, updated_at=NOW()', [req.siteId, score, aeoScore])
     for (const c of checks.filter(x => x.status === 'error')) {
       await pool.query('INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)', [req.siteId, 'audit', c.message, 'error'])
     }
