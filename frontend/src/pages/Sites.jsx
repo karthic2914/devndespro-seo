@@ -40,6 +40,24 @@ const BENCHMARKS = [
 
 import api from '../utils/api'
 
+function SiteAvatar({ name, domain }) {
+  const [imgFailed, setImgFailed] = React.useState(false)
+  const bg = `hsl(${(name.charCodeAt(0) * 37) % 360}, 55%, 50%)`
+  return (
+    <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, overflow: 'hidden', position: 'relative', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>{name.charAt(0)}</span>
+      {!imgFailed && (
+        <img
+          src={`https://logo.clearbit.com/${domain}`}
+          alt=""
+          width={36} height={36}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#fff', borderRadius: 8 }}
+          onError={() => setImgFailed(true)}
+        />
+      )}
+    </div>
+  )
+}
 export default function Sites() {
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
@@ -296,183 +314,7 @@ export default function Sites() {
               boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 22 }}>🤖</span>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-                    New: AEO Audits are now live!
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
-                    See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AEO score.
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }}
-                style={{
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 6, padding: '4px 10px', color: '#fff', fontSize: 12,
-                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                }}
-              >
-                Dismiss
-              </button>
-            </div>
-          )}
-
-          {/* Benchmarks */}
-          <div className="grid-4col mb-24">
-            {BENCHMARKS.map(b => (
-              <div key={b.label} className="bench-card" style={{ borderTop: `3px solid ${b.color}` }}>
-                <div className="bench-card__header">
-                  <span className="bench-card__icon" style={{ color: b.color }}><FontAwesomeIcon icon={b.icon} /></span>
-                  <span className="bench-card__title">{b.label}</span>
-                </div>
-                <div className="bench-card__value" style={{ color: b.color }}>{b.value}</div>
-                <div className="bench-card__sub">{b.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          <div className="grid-sidebar-layout">
-
-            {/* Left - projects table */}
-            <div className="projects-table">
-
-              {/* Search + Filter toolbar */}
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                background: 'var(--surface)',
-              }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <FontAwesomeIcon icon={faMagnifyingGlass} style={{
-                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                    color: 'var(--muted)', fontSize: 12, pointerEvents: 'none',
-                  }} />
-                  <input
-                    type="text"
-                    placeholder="Search projects..."
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    style={{
-                      width: '100%', paddingLeft: 30, paddingRight: 40,
-                      height: 34, border: '1px solid var(--border)', borderRadius: 6,
-                      fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)',
-                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
-                    }}
-                  />
-                  {search && (
-                    <button onClick={() => setSearch('')} style={{
-                      position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)',
-                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 12, padding: 2,
-                    }}>
-                      <FontAwesomeIcon icon={faXmark} />
-                    </button>
-                  )}
-                  {/* Filter icon */}
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <button
-                      onClick={() => setShowSortDropdown(v => !v)}
-                      style={{
-                        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                        background: showSortDropdown ? 'var(--accent)' : 'none',
-                        border: '1px solid var(--border)', borderRadius: 5,
-                        cursor: 'pointer', color: showSortDropdown ? '#fff' : 'var(--muted)',
-                        fontSize: 12, padding: '3px 7px', lineHeight: 1,
-                      }}
-                      title="Sort by"
-                    >
-                      <FontAwesomeIcon icon={faSliders} />
-                    </button>
-                    {showSortDropdown && (
-                      <div style={{
-                        position: 'absolute', right: 0, top: 36, zIndex: 100,
-                        background: '#fff', border: '1px solid var(--border)', borderRadius: 8,
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 180, padding: 6,
-                      }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', padding: '4px 10px 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort by</div>
-                        {SORT_COLS.map(col => (
-                          <button key={col.key} onClick={() => { toggleSort(col.key); setShowSortDropdown(false) }} style={{
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            width: '100%', padding: '7px 10px', borderRadius: 6, border: 'none',
-                            background: sortCol === col.key ? '#FFF4EE' : 'none',
-                            color: sortCol === col.key ? 'var(--accent)' : 'var(--text)',
-                            fontWeight: sortCol === col.key ? 700 : 400,
-                            fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
-                          }}>
-                            {col.label}
-                            {sortCol === col.key && <FontAwesomeIcon icon={sortDir === 'asc' ? faChevronUp : faChevronDown} style={{ fontSize: 10 }} />}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Scrollable table body */}
-              <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-                <div className="projects-table__head">
-                  {['Project', 'Health', 'AEO', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
-                    <div key={h} className="projects-table__head-cell">{h}</div>
-                  ))}
-                </div>
-
-                {loading ? (
-                  <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
-                    <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
-                    Loading projects...
-                  </div>
-                ) : filteredSites.length === 0 ? (
-                  <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', fontSize: 15 }}>
-                    <div style={{ marginBottom: 16 }}>
-                      {search ? `No projects matching "${search}"` : 'No projects yet'}
-                    </div>
-                    <Button variant="primary" size="md" onClick={() => setShowAdd(true)}>
-                      <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />Add Your First Project
-                    </Button>
-                  </div>
-                ) : (
-                  filteredSites.map((site, idx) => (
-                    <div
-                      key={site.id}
-                      className="project-row"
-                      onClick={() => enter(site)}
-                      style={{
-                        background: idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff',
-                        cursor: 'pointer',
-                        transition: 'background 0.15s',
-                        position: 'relative',
-                        borderRadius: 8,
-                        marginBottom: 4,
-                      }}
-                      onMouseOver={e => (e.currentTarget.style.background = '#f3f4f6')}
-                      onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, position: 'relative', overflow: 'hidden',
-                          background: `hsl(${(site.name.charCodeAt(0) * 37) % 360}, 55%, 50%)`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}>
-                          <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, textTransform: 'uppercase', position: 'absolute' }}>
-                            {site.name.charAt(0)}
-                          </span>
-                          <img
-                            src={`https://logo.clearbit.com/`}
-                            alt=""
-                            width={36} height={36}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1, background: '#fff', borderRadius: 8 }}
-                            onError={(e) => { e.currentTarget.style.display = 'none' }}
-                          />
-                        </div>
-                          <img
-                            src={`https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`}
-                            alt=""
-                            width={36} height={36}
-                            style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'absolute', inset: 0, zIndex: 1, background: '#fff', borderRadius: 8 }}
-                            onError={(e) => { e.currentTarget.style.display = 'none' }}
-                          />
-                        </div>
+                        <SiteAvatar name={site.name} domain={getDomain(site.url)} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
