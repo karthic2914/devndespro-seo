@@ -452,7 +452,7 @@ export default function Sites() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div className="project-row__avatar" style={{ width: 36, height: 36, padding: 0, overflow: 'hidden', background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <img
-                            src={`https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`}
+                            src={`https://icons.duckduckgo.com/ip3/${getDomain(site.url)}.ico`}
                             alt={site.name}
                             width={36} height={36}
                             style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'transparent', display: 'block' }}
