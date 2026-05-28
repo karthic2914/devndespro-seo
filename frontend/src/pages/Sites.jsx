@@ -202,7 +202,7 @@ export default function Sites() {
 
   const SORT_COLS = [
     { key: 'health',         label: 'Health' },
-    { key: 'aeo_score',      label: 'AEO Score' },
+    { key: 'ai_snippet_score',      label: 'AI Snippet Score' },
     { key: 'keyword_count',  label: 'Keywords' },
     { key: 'backlink_count', label: 'Backlinks' },
     { key: 'created_at',     label: 'Added' },
@@ -312,8 +312,8 @@ export default function Sites() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 22 }}>🤖</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AEO Audits are now live!</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AEO score.</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AI Snippet Audits are now live!</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AI Snippet score.</div>
                 </div>
               </div>
               <button onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }} style={{
@@ -410,7 +410,7 @@ export default function Sites() {
 
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
-                  {['Project', 'Health', 'AEO', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                  {['Project', 'Health', 'AI Snippet', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
                     <div key={h} className="projects-table__head-cell">{h}</div>
                   ))}
                 </div>
@@ -450,9 +450,9 @@ export default function Sites() {
                       </div>
                       <div className="project-row__dash">{site.health ?? '-'}</div>
                       <div className="project-row__dash" style={{
-                        color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)',
-                        fontWeight: site.aeo_score ? 700 : 400,
-                      }}>{site.aeo_score ?? '—'}</div>
+                        color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : 'var(--muted)',
+                        fontWeight: site.ai_snippet_score ? 700 : 400,
+                      }}>{site.ai_snippet_score ?? '—'}</div>
                       <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">

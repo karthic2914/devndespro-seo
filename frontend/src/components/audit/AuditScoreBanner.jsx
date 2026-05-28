@@ -6,7 +6,7 @@ const CAT_ICONS = {
   'Technical SEO': faGears,
   'Content Quality': faFileLines,
   'Page Speed': faBolt,
-  'AEO': faRobot,
+  'AI Snippet': faRobot,
 }
 
 function scoreColor(s) {

@@ -214,32 +214,32 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     // ── AEO (Answer Engine Optimization) ─────────────────────────────────────
     // 1. FAQ Schema
     const faqSchema = html.includes('"FAQPage"') || html.includes("'FAQPage'")
-    if (!faqSchema) add('aeo_faq_schema', 'warning', 'No FAQPage schema — add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AEO')
-    else add('aeo_faq_schema', 'pass', 'FAQPage schema found — eligible for AI answer features', 'High', 'AEO')
+    if (!faqSchema) add('snippet_faq_schema', 'warning', 'No FAQPage schema — add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AI Snippet')
+    else add('snippet_faq_schema', 'pass', 'FAQPage schema found — eligible for AI answer features', 'High', 'AI Snippet')
 
     // 2. HowTo Schema
     const howtoSchema = html.includes('"HowTo"') || html.includes("'HowTo'")
-    if (!howtoSchema) add('aeo_howto_schema', 'warning', 'No HowTo schema — add HowTo JSON-LD for step-by-step AI answers', 'Medium', 'AEO')
-    else add('aeo_howto_schema', 'pass', 'HowTo schema found — eligible for step-by-step rich results', 'Medium', 'AEO')
+    if (!howtoSchema) add('snippet_howto_schema', 'warning', 'No HowTo schema — add HowTo JSON-LD for step-by-step AI answers', 'Medium', 'AI Snippet')
+    else add('snippet_howto_schema', 'pass', 'HowTo schema found — eligible for step-by-step rich results', 'Medium', 'AI Snippet')
 
     // 3. Article / BlogPosting Schema
     const articleSchema = html.includes('"Article"') || html.includes('"BlogPosting"') || html.includes('"NewsArticle"')
-    if (!articleSchema) add('aeo_article_schema', 'warning', 'No Article/BlogPosting schema — AI engines prefer structured content', 'Medium', 'AEO')
-    else add('aeo_article_schema', 'pass', 'Article schema found — content is well-structured for AI engines', 'Medium', 'AEO')
+    if (!articleSchema) add('snippet_article_schema', 'warning', 'No Article/BlogPosting schema — AI engines prefer structured content', 'Medium', 'AI Snippet')
+    else add('snippet_article_schema', 'pass', 'Article schema found — content is well-structured for AI engines', 'Medium', 'AI Snippet')
 
     // 4. Speakable Schema
     const speakableSchema = html.includes('"speakable"') || html.includes("'speakable'")
-    if (!speakableSchema) add('aeo_speakable', 'warning', 'No Speakable schema — add speakable property for voice search & AI assistants', 'Low', 'AEO')
-    else add('aeo_speakable', 'pass', 'Speakable schema found — content is voice search ready', 'Low', 'AEO')
+    if (!speakableSchema) add('snippet_speakable', 'warning', 'No Speakable schema — add speakable property for voice search & AI assistants', 'Low', 'AI Snippet')
+    else add('snippet_speakable', 'pass', 'Speakable schema found — content is voice search ready', 'Low', 'AI Snippet')
 
     // 5. Question-based headings
     const questionWords = /^(what|how|why|when|which|can|is|are|does|who|where)\b/i
     const h2h3texts = []
     $('h2, h3').each((_, el) => h2h3texts.push($(el).text().trim()))
     const questionHeadings = h2h3texts.filter(t => questionWords.test(t))
-    if (questionHeadings.length === 0) add('aeo_question_headings', 'warning', 'No question-based H2/H3 headings — AI engines extract Q&A from structured headings', 'High', 'AEO')
-    else if (questionHeadings.length < 2) add('aeo_question_headings', 'warning', `Only ${questionHeadings.length} question-based heading found — aim for 2+ to improve AI answer coverage`, 'Medium', 'AEO')
-    else add('aeo_question_headings', 'pass', `${questionHeadings.length} question-based headings found — good for AI answer extraction`, 'High', 'AEO')
+    if (questionHeadings.length === 0) add('snippet_question_headings', 'warning', 'No question-based H2/H3 headings — AI engines extract Q&A from structured headings', 'High', 'AI Snippet')
+    else if (questionHeadings.length < 2) add('snippet_question_headings', 'warning', `Only ${questionHeadings.length} question-based heading found — aim for 2+ to improve AI answer coverage`, 'Medium', 'AI Snippet')
+    else add('snippet_question_headings', 'pass', `${questionHeadings.length} question-based headings found — good for AI answer extraction`, 'High', 'AI Snippet')
 
     // 6. Featured snippet readiness
     let snippetReady = false
@@ -250,15 +250,15 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         if (words >= 40 && words <= 80) { snippetReady = true; return false }
       }
     })
-    if (!snippetReady) add('aeo_snippet_ready', 'warning', 'No concise answer paragraphs (40-80 words) after headings — add direct answers for featured snippets', 'High', 'AEO')
-    else add('aeo_snippet_ready', 'pass', 'Concise answer paragraphs found after headings — featured snippet ready', 'High', 'AEO')
+    if (!snippetReady) add('snippet_ready', 'warning', 'No concise answer paragraphs (40-80 words) after headings — add direct answers for featured snippets', 'High', 'AI Snippet')
+    else add('snippet_ready', 'pass', 'Concise answer paragraphs found after headings — featured snippet ready', 'High', 'AI Snippet')
 
     // 7. Entity clarity
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim()
     const first100Words = bodyText.split(/\s+/).slice(0, 100).join(' ').toLowerCase()
     const hasEntitySignals = ['service', 'solution', 'company', 'agency', 'studio', 'platform', 'tool', 'software', 'app', 'consulting'].some(w => first100Words.includes(w))
-    if (!hasEntitySignals) add('aeo_entity_clarity', 'warning', 'Entity type not clear in first 100 words — state what your business does early for AI comprehension', 'High', 'AEO')
-    else add('aeo_entity_clarity', 'pass', 'Entity type is clear in first 100 words — good for AI brand understanding', 'High', 'AEO')
+    if (!hasEntitySignals) add('snippet_entity_clarity', 'warning', 'Entity type not clear in first 100 words — state what your business does early for AI comprehension', 'High', 'AI Snippet')
+    else add('snippet_entity_clarity', 'pass', 'Entity type is clear in first 100 words — good for AI brand understanding', 'High', 'AI Snippet')
 
     // 8. Concise answer density
     let shortAnswerCount = 0
@@ -266,10 +266,10 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       const words = $(el).text().trim().split(/\s+/).filter(Boolean).length
       if (words >= 20 && words <= 60) shortAnswerCount++
     })
-    if (shortAnswerCount < 2) add('aeo_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AEO')
-    else add('aeo_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AEO')
+    if (shortAnswerCount < 2) add('snippet_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AI Snippet')
+    else add('snippet_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AI Snippet')
 
-    const seoChecks = checks.filter(c => c.category !== 'AEO')
+    const seoChecks = checks.filter(c => c.category !== 'AI Snippet')
     const errors = seoChecks.filter(c => c.status === 'error').length
     const warnings = seoChecks.filter(c => c.status === 'warning').length
     const score = Math.max(0, 100 - errors * 13 - warnings * 5)
@@ -314,9 +314,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       },
     }
     await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])
-    const aeoChecksAll = checks.filter(c => c.category === 'AEO')
+    const aeoChecksAll = checks.filter(c => c.category === 'AI Snippet')
     const aeoScore = aeoChecksAll.length ? Math.round(aeoChecksAll.reduce((s, i) => s + (i.status === 'pass' ? 100 : i.status === 'warning' ? 55 : 15), 0) / aeoChecksAll.length) : 100
-    await pool.query('INSERT INTO seo_metrics (site_id, health, aeo_score) VALUES ($1,$2,$3) ON CONFLICT (site_id) DO UPDATE SET health=$2, aeo_score=$3, updated_at=NOW()', [req.siteId, score, aeoScore])
+    await pool.query('INSERT INTO seo_metrics (site_id, health, ai_snippet_score) VALUES ($1,$2,$3) ON CONFLICT (site_id) DO UPDATE SET health=$2, ai_snippet_score=$3, updated_at=NOW()', [req.siteId, score, aeoScore])
     for (const c of checks.filter(x => x.status === 'error')) {
       await pool.query('INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)', [req.siteId, 'audit', c.message, 'error'])
     }

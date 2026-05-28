@@ -16,7 +16,7 @@ import AuditScoreBanner from '../components/audit/AuditScoreBanner'
 import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 
-const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AEO']
+const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet']
 
 function groupByCategory(checks = []) {
   const map = {}
