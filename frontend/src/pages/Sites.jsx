@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -52,6 +52,7 @@ export default function Sites() {
   const navigate = useNavigate()
   const didLoadRef = useRef(false)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
+  const [showAeoBanner, setShowAeoBanner] = useState(() => localStorage.getItem('aeo_banner_dismissed') !== '1')
   const [summary, setSummary] = useState(null)
 
   // -- Filter & sort state ------------------------------------------------------
@@ -282,6 +283,39 @@ export default function Sites() {
             </div>
           </div>
 
+          {/* AEO Announcement Banner */}
+          {showAeoBanner && (
+            <div style={{
+              background: 'linear-gradient(135deg, #1e1b2e 0%, #2d1f4e 100%)',
+              borderRadius: 12, padding: '14px 18px', marginBottom: 16,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 12, flexWrap: 'wrap',
+              boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 22 }}>🤖</span>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
+                    New: AEO Audits are now live!
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
+                    See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AEO score.
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }}
+                style={{
+                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: 6, padding: '4px 10px', color: '#fff', fontSize: 12,
+                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+                }}
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {/* Benchmarks */}
           <div className="grid-4col mb-24">
             {BENCHMARKS.map(b => (
@@ -361,7 +395,7 @@ export default function Sites() {
               {/* Scrollable table body */}
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
-                  {['Project', 'Health', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                  {['Project', 'Health', 'AEO', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
                     <div key={h} className="projects-table__head-cell">{h}</div>
                   ))}
                 </div>
@@ -418,6 +452,7 @@ export default function Sites() {
                         </div>
                       </div>
                       <div className="project-row__dash">{site.health ?? '-'}</div>
+                      <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '—'}</div>
                       <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">

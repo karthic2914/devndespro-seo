@@ -45,5 +45,9 @@ app.use('/api/settings', settingsRouter)
 app.use('/api/public', publicAuditRouter)
 
 initDB().then(() => {
-  app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
+  // Auto-migration
+const { pool: _pool } = require('./clients')
+_pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS aeo_score integer').catch(() => {})
+
+app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })

@@ -269,8 +269,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (shortAnswerCount < 2) add('aeo_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AEO')
     else add('aeo_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AEO')
 
-    const errors = checks.filter(c => c.status === 'error').length
-    const warnings = checks.filter(c => c.status === 'warning').length
+    const seoChecks = checks.filter(c => c.category !== 'AEO')
+    const errors = seoChecks.filter(c => c.status === 'error').length
+    const warnings = seoChecks.filter(c => c.status === 'warning').length
     const score = Math.max(0, 100 - errors * 13 - warnings * 5)
 
     let speed = null
