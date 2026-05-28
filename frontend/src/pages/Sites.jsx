@@ -26,17 +26,21 @@ function SiteAvatar({ name, url }) {
   const firstLetter = name?.charAt(0)?.toUpperCase() || '?'
   const bg = `hsl(${((name?.charCodeAt(0) || 65) * 37) % 360}, 55%, 50%)`
 
-  const getFaviconUrl = (siteUrl) => {
-    try {
-      const domain = new URL(
-        siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`
-      ).hostname
+const getFaviconUrl = (siteUrl) => {
+  try {
+    if (!siteUrl) return null
 
-      return `${new URL(siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`).origin}/favicon.ico`
-    } catch {
-      return null
-    }
+    const fixedUrl = siteUrl.startsWith('http')
+      ? siteUrl
+      : `https://${siteUrl}`
+
+    const parsedUrl = new URL(fixedUrl)
+
+    return `${parsedUrl.origin}/favicon.ico`
+  } catch {
+    return null
   }
+}
 
   const faviconUrl = getFaviconUrl(url)
 
@@ -438,7 +442,7 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name || '?'} />
+                        <SiteAvatar name={site.name || '?'} url={site.url} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
@@ -535,4 +539,6 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
