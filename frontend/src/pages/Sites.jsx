@@ -32,7 +32,7 @@ function SiteAvatar({ name, url }) {
         siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`
       ).hostname
 
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+      return `https://icons.duckduckgo.com/ip3/${domain}.ico`
     } catch {
       return null
     }
