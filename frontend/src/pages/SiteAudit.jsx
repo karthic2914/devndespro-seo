@@ -359,6 +359,7 @@ export default function SiteAudit() {
     try {
       const r = await api.post(`/sites/${siteId}/audit/run`)
       setAuditData(r.data); setActiveTab('all'); setExpandedIdx(null)
+      showSnackbar('Audit completed successfully!', 'success')
     } catch (e) {
       setRunError(e.response?.data?.error || 'Audit failed — check the site URL is accessible')
     }
