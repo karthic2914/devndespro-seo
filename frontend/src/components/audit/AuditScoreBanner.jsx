@@ -1,11 +1,12 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faGears, faFileLines, faBolt } from '@fortawesome/free-solid-svg-icons'
+﻿import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot } from '@fortawesome/free-solid-svg-icons'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
   'Technical SEO': faGears,
   'Content Quality': faFileLines,
   'Page Speed': faBolt,
+  'AEO': faRobot,
 }
 
 function scoreColor(s) {

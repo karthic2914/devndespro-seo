@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -209,6 +209,65 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     } catch {
       add('custom_404', 'warning', 'Unable to validate custom 404 behavior', 'Low', 'Advanced SEO')
     }
+
+
+    // ── AEO (Answer Engine Optimization) ─────────────────────────────────────
+    // 1. FAQ Schema
+    const faqSchema = html.includes('"FAQPage"') || html.includes("'FAQPage'")
+    if (!faqSchema) add('aeo_faq_schema', 'warning', 'No FAQPage schema — add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AEO')
+    else add('aeo_faq_schema', 'pass', 'FAQPage schema found — eligible for AI answer features', 'High', 'AEO')
+
+    // 2. HowTo Schema
+    const howtoSchema = html.includes('"HowTo"') || html.includes("'HowTo'")
+    if (!howtoSchema) add('aeo_howto_schema', 'warning', 'No HowTo schema — add HowTo JSON-LD for step-by-step AI answers', 'Medium', 'AEO')
+    else add('aeo_howto_schema', 'pass', 'HowTo schema found — eligible for step-by-step rich results', 'Medium', 'AEO')
+
+    // 3. Article / BlogPosting Schema
+    const articleSchema = html.includes('"Article"') || html.includes('"BlogPosting"') || html.includes('"NewsArticle"')
+    if (!articleSchema) add('aeo_article_schema', 'warning', 'No Article/BlogPosting schema — AI engines prefer structured content', 'Medium', 'AEO')
+    else add('aeo_article_schema', 'pass', 'Article schema found — content is well-structured for AI engines', 'Medium', 'AEO')
+
+    // 4. Speakable Schema
+    const speakableSchema = html.includes('"speakable"') || html.includes("'speakable'")
+    if (!speakableSchema) add('aeo_speakable', 'warning', 'No Speakable schema — add speakable property for voice search & AI assistants', 'Low', 'AEO')
+    else add('aeo_speakable', 'pass', 'Speakable schema found — content is voice search ready', 'Low', 'AEO')
+
+    // 5. Question-based headings
+    const questionWords = /^(what|how|why|when|which|can|is|are|does|who|where)\b/i
+    const h2h3texts = []
+    $('h2, h3').each((_, el) => h2h3texts.push($(el).text().trim()))
+    const questionHeadings = h2h3texts.filter(t => questionWords.test(t))
+    if (questionHeadings.length === 0) add('aeo_question_headings', 'warning', 'No question-based H2/H3 headings — AI engines extract Q&A from structured headings', 'High', 'AEO')
+    else if (questionHeadings.length < 2) add('aeo_question_headings', 'warning', `Only ${questionHeadings.length} question-based heading found — aim for 2+ to improve AI answer coverage`, 'Medium', 'AEO')
+    else add('aeo_question_headings', 'pass', `${questionHeadings.length} question-based headings found — good for AI answer extraction`, 'High', 'AEO')
+
+    // 6. Featured snippet readiness
+    let snippetReady = false
+    $('h2, h3').each((_, el) => {
+      const next = $(el).next('p')
+      if (next.length) {
+        const words = next.text().trim().split(/\s+/).filter(Boolean).length
+        if (words >= 40 && words <= 80) { snippetReady = true; return false }
+      }
+    })
+    if (!snippetReady) add('aeo_snippet_ready', 'warning', 'No concise answer paragraphs (40-80 words) after headings — add direct answers for featured snippets', 'High', 'AEO')
+    else add('aeo_snippet_ready', 'pass', 'Concise answer paragraphs found after headings — featured snippet ready', 'High', 'AEO')
+
+    // 7. Entity clarity
+    const bodyText = $('body').text().replace(/\s+/g, ' ').trim()
+    const first100Words = bodyText.split(/\s+/).slice(0, 100).join(' ').toLowerCase()
+    const hasEntitySignals = ['service', 'solution', 'company', 'agency', 'studio', 'platform', 'tool', 'software', 'app', 'consulting'].some(w => first100Words.includes(w))
+    if (!hasEntitySignals) add('aeo_entity_clarity', 'warning', 'Entity type not clear in first 100 words — state what your business does early for AI comprehension', 'High', 'AEO')
+    else add('aeo_entity_clarity', 'pass', 'Entity type is clear in first 100 words — good for AI brand understanding', 'High', 'AEO')
+
+    // 8. Concise answer density
+    let shortAnswerCount = 0
+    $('p').each((_, el) => {
+      const words = $(el).text().trim().split(/\s+/).filter(Boolean).length
+      if (words >= 20 && words <= 60) shortAnswerCount++
+    })
+    if (shortAnswerCount < 2) add('aeo_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AEO')
+    else add('aeo_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AEO')
 
     const errors = checks.filter(c => c.status === 'error').length
     const warnings = checks.filter(c => c.status === 'warning').length
