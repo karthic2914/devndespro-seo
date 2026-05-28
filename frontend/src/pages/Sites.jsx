@@ -23,6 +23,7 @@ import {
   faChevronDown,
   faEllipsisV,
   faTrash,
+  faSliders,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
@@ -53,6 +54,7 @@ export default function Sites() {
   const didLoadRef = useRef(false)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
   const [showAeoBanner, setShowAeoBanner] = useState(() => localStorage.getItem('aeo_banner_dismissed') !== '1')
+  const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [summary, setSummary] = useState(null)
 
   // -- Filter & sort state ------------------------------------------------------
@@ -172,6 +174,7 @@ export default function Sites() {
 
   const SORT_COLS = [
     { key: 'health',        label: 'Health' },
+    { key: 'aeo_score',     label: 'AEO Score' },
     { key: 'keyword_count', label: 'Keywords' },
     { key: 'backlink_count',label: 'Backlinks' },
     { key: 'created_at',    label: 'Added' },
@@ -335,13 +338,13 @@ export default function Sites() {
             {/* Left - projects table */}
             <div className="projects-table">
 
-              {/* Search + Sort toolbar */}
+              {/* Search + Filter toolbar */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                background: 'var(--surface)', flexWrap: 'wrap',
+                background: 'var(--surface)',
               }}>
-                <div style={{ position: 'relative', flex: 1, minWidth: 160 }}>
+                <div style={{ position: 'relative', flex: 1 }}>
                   <FontAwesomeIcon icon={faMagnifyingGlass} style={{
                     position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
                     color: 'var(--muted)', fontSize: 12, pointerEvents: 'none',
@@ -352,43 +355,58 @@ export default function Sites() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
-                      width: '100%', paddingLeft: 30, paddingRight: 10,
-                      height: 32, border: '1px solid var(--border)', borderRadius: 6,
+                      width: '100%', paddingLeft: 30, paddingRight: 40,
+                      height: 34, border: '1px solid var(--border)', borderRadius: 6,
                       fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)',
                       color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
                     }}
                   />
-                </div>
-                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {SORT_COLS.map(col => (
-                    <button
-                      key={col.key}
-                      onClick={() => toggleSort(col.key)}
-                      style={{
-                        height: 32, padding: '0 10px', borderRadius: 6, fontSize: 12,
-                        fontFamily: 'inherit', cursor: 'pointer', border: '1px solid var(--border)',
-                        background: sortCol === col.key ? 'var(--accent)' : 'var(--bg)',
-                        color: sortCol === col.key ? '#fff' : 'var(--muted)',
-                        fontWeight: sortCol === col.key ? 600 : 400,
-                        transition: 'all 0.15s',
-                      }}
-                    >
-                      {col.label}<SortIcon col={col.key} />
-                    </button>
-                  ))}
                   {search && (
-                    <button
-                      onClick={() => setSearch('')}
-                      style={{
-                        height: 32, padding: '0 10px', borderRadius: 6, fontSize: 12,
-                        fontFamily: 'inherit', cursor: 'pointer',
-                        border: '1px solid var(--border)', background: 'var(--bg)',
-                        color: 'var(--muted)',
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faXmark} style={{ marginRight: 4 }} />Clear
+                    <button onClick={() => setSearch('')} style={{
+                      position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 12, padding: 2,
+                    }}>
+                      <FontAwesomeIcon icon={faXmark} />
                     </button>
                   )}
+                  {/* Filter icon */}
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                      onClick={() => setShowSortDropdown(v => !v)}
+                      style={{
+                        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                        background: showSortDropdown ? 'var(--accent)' : 'none',
+                        border: '1px solid var(--border)', borderRadius: 5,
+                        cursor: 'pointer', color: showSortDropdown ? '#fff' : 'var(--muted)',
+                        fontSize: 12, padding: '3px 7px', lineHeight: 1,
+                      }}
+                      title="Sort by"
+                    >
+                      <FontAwesomeIcon icon={faSliders} />
+                    </button>
+                    {showSortDropdown && (
+                      <div style={{
+                        position: 'absolute', right: 0, top: 36, zIndex: 100,
+                        background: '#fff', border: '1px solid var(--border)', borderRadius: 8,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 180, padding: 6,
+                      }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', padding: '4px 10px 6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort by</div>
+                        {SORT_COLS.map(col => (
+                          <button key={col.key} onClick={() => { toggleSort(col.key); setShowSortDropdown(false) }} style={{
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            width: '100%', padding: '7px 10px', borderRadius: 6, border: 'none',
+                            background: sortCol === col.key ? '#FFF4EE' : 'none',
+                            color: sortCol === col.key ? 'var(--accent)' : 'var(--text)',
+                            fontWeight: sortCol === col.key ? 700 : 400,
+                            fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left',
+                          }}>
+                            {col.label}
+                            {sortCol === col.key && <FontAwesomeIcon icon={sortDir === 'asc' ? faChevronUp : faChevronDown} style={{ fontSize: 10 }} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
