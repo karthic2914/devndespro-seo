@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faClock, faBullseye, faPenToSquare, faLink, faBolt, faSitemap,
+  faClock, faBullseye, faPenToSquare, faLink,
   faPlus, faTag, faGlobe, faHourglassHalf, faXmark, faLightbulb,
   faCheck, faArrowRight, faEnvelope, faMagnifyingGlass,
-  faChevronUp, faChevronDown, faEllipsisV, faTrash, faSliders,
+  faChevronUp, faChevronDown, faTrash, faSliders,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
-import { Button, Badge, Modal, Input, EmptyState, T } from '../components/UI'
+import { Button, Badge, Modal, Input, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
 import api from '../utils/api'
 
@@ -20,21 +20,16 @@ const BENCHMARKS = [
   { label: 'Dofollow Backlinks',   value: '10-30',  sub: 'to start ranking', color: T.purple, icon: faLink },
 ]
 
-function SiteAvatar({ name, domain }) {
-  const [imgFailed, setImgFailed] = useState(false)
+function SiteAvatar({ name }) {
   const bg = `hsl(${(name.charCodeAt(0) * 37) % 360}, 55%, 50%)`
   return (
-    <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, overflow: 'hidden', position: 'relative', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>{name.charAt(0)}</span>
-      {!imgFailed && (
-        <img
-          src={`https://logo.clearbit.com/${domain}`}
-          alt=""
-          width={36} height={36}
-          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', background: '#fff', borderRadius: 8 }}
-          onError={() => setImgFailed(true)}
-        />
-      )}
+    <div style={{
+      width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+      background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>
+        {name.charAt(0)}
+      </span>
     </div>
   )
 }
@@ -96,11 +91,6 @@ export default function Sites() {
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     else { setSortCol(col); setSortDir('desc') }
-  }
-
-  function SortIcon({ col }) {
-    if (sortCol !== col) return null
-    return <FontAwesomeIcon icon={sortDir === 'asc' ? faChevronUp : faChevronDown} style={{ marginLeft: 4, fontSize: 10, opacity: 0.7 }} />
   }
 
   const validate = () => {
@@ -175,7 +165,6 @@ export default function Sites() {
           )}
         </div>
 
-        {/* Add Site Modal */}
         <Modal
           open={showAdd}
           onClose={() => { setShowAdd(false); setErrors({}) }}
@@ -221,7 +210,6 @@ export default function Sites() {
           </div>
         </Modal>
 
-        {/* Delete Confirmation Modal */}
         <Modal
           open={confirmDelete.open}
           onClose={() => setConfirmDelete({ open: false, site: null })}
@@ -258,38 +246,28 @@ export default function Sites() {
             </div>
           </div>
 
-          {/* AEO Announcement Banner */}
           {showAeoBanner && (
             <div style={{
               background: 'linear-gradient(135deg, #1e1b2e 0%, #2d1f4e 100%)',
               borderRadius: 12, padding: '14px 18px', marginBottom: 16,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 12, flexWrap: 'wrap',
-              boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
+              gap: 12, flexWrap: 'wrap', boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 22 }}>🤖</span>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>
-                    New: AEO Audits are now live!
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>
-                    See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AEO score.
-                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AEO Audits are now live!</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AEO score.</div>
                 </div>
               </div>
-              <button
-                onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }}
-                style={{
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: 6, padding: '4px 10px', color: '#fff', fontSize: 12,
-                  cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
-                }}
-              >Dismiss</button>
+              <button onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }} style={{
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 6, padding: '4px 10px', color: '#fff', fontSize: 12,
+                cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
+              }}>Dismiss</button>
             </div>
           )}
 
-          {/* Benchmarks */}
           <div className="grid-4col mb-24">
             {BENCHMARKS.map(b => (
               <div key={b.label} className="bench-card" style={{ borderTop: `3px solid ${b.color}` }}>
@@ -304,9 +282,7 @@ export default function Sites() {
           </div>
 
           <div className="grid-sidebar-layout">
-            {/* Left - projects table */}
             <div className="projects-table">
-              {/* Search + Filter toolbar */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderBottom: '1px solid var(--border)',
@@ -323,10 +299,10 @@ export default function Sites() {
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
-                      width: '100%', paddingLeft: 30, paddingRight: 40,
-                      height: 34, border: '1px solid var(--border)', borderRadius: 6,
-                      fontSize: 13, fontFamily: 'inherit', background: 'var(--bg)',
-                      color: 'var(--text)', outline: 'none', boxSizing: 'border-box',
+                      width: '100%', paddingLeft: 30, paddingRight: 40, height: 34,
+                      border: '1px solid var(--border)', borderRadius: 6, fontSize: 13,
+                      fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)',
+                      outline: 'none', boxSizing: 'border-box',
                     }}
                   />
                   {search && (
@@ -343,9 +319,8 @@ export default function Sites() {
                       style={{
                         position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
                         background: showSortDropdown ? 'var(--accent)' : 'none',
-                        border: '1px solid var(--border)', borderRadius: 5,
-                        cursor: 'pointer', color: showSortDropdown ? '#fff' : 'var(--muted)',
-                        fontSize: 12, padding: '3px 7px', lineHeight: 1,
+                        border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer',
+                        color: showSortDropdown ? '#fff' : 'var(--muted)', fontSize: 12, padding: '3px 7px', lineHeight: 1,
                       }}
                       title="Sort by"
                     >
@@ -377,7 +352,6 @@ export default function Sites() {
                 </div>
               </div>
 
-              {/* Table */}
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
                   {['Project', 'Health', 'AEO', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
@@ -392,9 +366,7 @@ export default function Sites() {
                   </div>
                 ) : filteredSites.length === 0 ? (
                   <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)', fontSize: 15 }}>
-                    <div style={{ marginBottom: 16 }}>
-                      {search ? `No projects matching "${search}"` : 'No projects yet'}
-                    </div>
+                    <div style={{ marginBottom: 16 }}>{search ? `No projects matching "${search}"` : 'No projects yet'}</div>
                     <Button variant="primary" size="md" onClick={() => setShowAdd(true)}>
                       <FontAwesomeIcon icon={faPlus} style={{ marginRight: 8 }} />Add Your First Project
                     </Button>
@@ -414,7 +386,7 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name} />
+                        <SiteAvatar name={site.name || '?'} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
@@ -435,10 +407,7 @@ export default function Sites() {
                         onClick={e => e.stopPropagation()}
                       >
                         <button
-                          style={{
-                            background: 'none', border: 'none', cursor: 'pointer', padding: 4,
-                            borderRadius: 4, fontSize: 18, color: '#9CA3AF', transition: 'background 0.15s',
-                          }}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 18, color: '#9CA3AF' }}
                           title="Delete project"
                           onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
                         >
@@ -451,7 +420,6 @@ export default function Sites() {
               </div>
             </div>
 
-            {/* Right sidebar */}
             <div className="right-rail">
               <div className="da-goal-card">
                 <div className="da-goal-card__label">
@@ -466,10 +434,8 @@ export default function Sites() {
                   <div className="da-goal-card__fill" style={{ width: `${Math.min(((summary?.max_dr ?? 0) / 20) * 100, 100)}%` }} />
                 </div>
                 <p className="da-goal-card__tip">
-                  {summary?.max_dr >= 20
-                    ? 'Goal reached! Target DR 40+ next.'
-                    : summary?.max_dr >= 10
-                    ? 'Good progress — keep building backlinks to hit DR 20.'
+                  {summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.'
+                    : summary?.max_dr >= 10 ? 'Good progress — keep building backlinks to hit DR 20.'
                     : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}
                 </p>
               </div>
