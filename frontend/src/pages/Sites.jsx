@@ -450,14 +450,23 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{
-                          width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-                          background: `hsl(${(site.name.charCodeAt(0) * 37) % 360}, 60%, 55%)`,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
-                          textTransform: 'uppercase', letterSpacing: 0,
-                        }}>
-                          {site.name.charAt(0)}
+                        <div style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0, position: 'relative', overflow: 'hidden' }}>
+                          <div style={{
+                            width: 36, height: 36, borderRadius: 8,
+                            background: `hsl(${(site.name.charCodeAt(0) * 37) % 360}, 60%, 55%)`,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: '#fff', fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                            textTransform: 'uppercase', position: 'absolute', inset: 0,
+                          }}>
+                            {site.name.charAt(0)}
+                          </div>
+                          <img
+                            src={`https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`}
+                            alt=""
+                            width={36} height={36}
+                            style={{ width: '100%', height: '100%', objectFit: 'contain', position: 'relative', zIndex: 1 }}
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
+                          />
                         </div>
                         <div>
                           <div className="project-row__name">{site.name}</div>
