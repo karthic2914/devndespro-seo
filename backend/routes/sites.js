@@ -20,7 +20,7 @@ router.get('/', auth, async (req, res) => {
     `SELECT
       s.*,
       m.health AS health,
-      m.aeo_score,
+      m.ai_snippet_score,
       COALESCE(m.dr, 0) AS dr,
       COALESCE(k.keyword_count, 0) AS keyword_count,
       COALESCE(b.backlink_count, 0) AS backlink_count
