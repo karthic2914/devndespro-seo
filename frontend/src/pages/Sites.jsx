@@ -414,7 +414,7 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name} domain={getDomain(site.url)} />
+                        <SiteAvatar name={site.name} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
