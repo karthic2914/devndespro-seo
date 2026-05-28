@@ -450,20 +450,13 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div className="project-row__avatar" style={{ width: 36, height: 36, padding: 0, overflow: 'hidden', background: 'transparent', border: 'none' }}>
+                        <div className="project-row__avatar" style={{ width: 36, height: 36, padding: 0, overflow: 'hidden', background: 'transparent', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <img
-                            src={`https://${getDomain(site.url)}/favicon.ico`}
+                            src={`https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`}
                             alt={site.name}
                             width={36} height={36}
                             style={{ width: '100%', height: '100%', objectFit: 'contain', background: 'transparent', display: 'block' }}
-                            onError={(e) => {
-                              if (!e.currentTarget.dataset.fallback) {
-                                e.currentTarget.dataset.fallback = 'true'
-                                e.currentTarget.src = `https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`
-                              } else {
-                                e.currentTarget.style.display = 'none'
-                              }
-                            }}
+                            onError={(e) => { e.currentTarget.style.display = 'none' }}
                           />
                         </div>
                         <div>
