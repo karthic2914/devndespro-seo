@@ -20,15 +20,67 @@ const BENCHMARKS = [
   { label: 'Dofollow Backlinks',   value: '10-30',  sub: 'to start ranking', color: T.purple, icon: faLink },
 ]
 
-function SiteAvatar({ name }) {
-  const bg = `hsl(${(name.charCodeAt(0) * 37) % 360}, 55%, 50%)`
+function SiteAvatar({ name, url }) {
+  const [faviconError, setFaviconError] = useState(false)
+
+  const firstLetter = name?.charAt(0)?.toUpperCase() || '?'
+  const bg = `hsl(${((name?.charCodeAt(0) || 65) * 37) % 360}, 55%, 50%)`
+
+  const getFaviconUrl = (siteUrl) => {
+    try {
+      const domain = new URL(
+        siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`
+      ).hostname
+
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`
+    } catch {
+      return null
+    }
+  }
+
+  const faviconUrl = getFaviconUrl(url)
+
+  if (faviconUrl && !faviconError) {
+    return (
+      <img
+        src={faviconUrl}
+        alt={name || 'site'}
+        width={36}
+        height={36}
+        onError={() => setFaviconError(true)}
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          objectFit: 'contain',
+          background: '#fff',
+          border: '1px solid #e5e7eb',
+          flexShrink: 0,
+          padding: 4,
+          boxSizing: 'border-box'
+        }}
+      />
+    )
+  }
+
   return (
     <div style={{
-      width: 36, height: 36, borderRadius: 8, flexShrink: 0,
-      background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: 36,
+      height: 36,
+      borderRadius: 8,
+      flexShrink: 0,
+      background: bg,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
     }}>
-      <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, textTransform: 'uppercase' }}>
-        {name.charAt(0)}
+      <span style={{
+        color: '#fff',
+        fontWeight: 700,
+        fontSize: 15,
+        textTransform: 'uppercase'
+      }}>
+        {firstLetter}
       </span>
     </div>
   )
@@ -386,7 +438,7 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name || '?'} />
+                        <SiteAvatar name={site.name || '?'} url={site.url} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
