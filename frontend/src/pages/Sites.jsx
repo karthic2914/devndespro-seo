@@ -32,7 +32,7 @@ function SiteAvatar({ name, url }) {
         siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`
       ).hostname
 
-      return `https://icons.duckduckgo.com/ip3/${domain}.ico`
+      return `${new URL(siteUrl?.startsWith('http') ? siteUrl : `https://${siteUrl}`).origin}/favicon.ico`
     } catch {
       return null
     }
@@ -438,7 +438,7 @@ export default function Sites() {
                       onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name || '?'} url={site.url} />
+                        <SiteAvatar name={site.name || '?'} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
                           <div className="project-row__url">{site.url}</div>
@@ -535,3 +535,4 @@ export default function Sites() {
     </div>
   )
 }
+
