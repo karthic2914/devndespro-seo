@@ -460,6 +460,8 @@ export default function Sites() {
                               if (!e.currentTarget.dataset.fallback) {
                                 e.currentTarget.dataset.fallback = 'true'
                                 e.currentTarget.src = `https://www.google.com/s2/favicons?sz=64&domain=${getDomain(site.url)}`
+                              } else {
+                                e.currentTarget.style.display = 'none'
                               }
                             }}
                           />
