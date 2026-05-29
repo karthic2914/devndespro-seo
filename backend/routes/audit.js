@@ -310,6 +310,49 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     } catch (e) {
       add('aeo_bing_index', 'warning', 'Could not check Bing indexing — verify manually at bing.com/webmaster', 'Medium', 'AEO')
     }
+
+    // 4. Reddit Presence
+    try {
+      const redditDomain = new URL(url).hostname
+      const redditUrl = 'https://www.reddit.com/search.json?q=site:' + redditDomain + '&limit=10'
+      const redditRes = await axios.get(redditUrl, { timeout: 8000, headers: { 'User-Agent': 'DevndeSproBot/1.0' } })
+      const redditCount = redditRes.data?.data?.dist || 0
+      if (redditCount >= 3) add('aeo_reddit', 'pass', redditCount + ' Reddit mentions found — strong community signal for AI citation', 'High', 'AEO')
+      else if (redditCount >= 1) add('aeo_reddit', 'warning', 'Only ' + redditCount + ' Reddit mention(s) found — more community discussion improves AI citation chances', 'Medium', 'AEO')
+      else add('aeo_reddit', 'error', 'No Reddit mentions found — AI engines like Perplexity heavily use Reddit as a citation source', 'High', 'AEO')
+    } catch (e) {
+      add('aeo_reddit', 'warning', 'Could not check Reddit presence — verify manually at reddit.com/search', 'Medium', 'AEO')
+    }
+
+    // 5. External Citations (outbound links to authoritative domains)
+    const authDomains = ['wikipedia.org', 'gov', 'edu', 'forbes.com', 'bbc.com', 'reuters.com', 'techcrunch.com', 'wired.com', 'medium.com', 'linkedin.com']
+    const extLinks = []
+    a[href].each((_, el) => {
+      const href = .attr('href') || ''
+      if (href.startsWith('http') && !href.includes(new URL(url).hostname)) extLinks.push(href)
+    })
+    const authLinks = extLinks.filter(h => authDomains.some(d => h.includes(d)))
+    if (authLinks.length >= 3) add('aeo_citations', 'pass', authLinks.length + ' authoritative outbound links found — good citation signals for AI engines', 'Medium', 'AEO')
+    else if (authLinks.length >= 1) add('aeo_citations', 'warning', 'Only ' + authLinks.length + ' authoritative outbound link(s) — link to more trusted sources to improve AI credibility', 'Medium', 'AEO')
+    else add('aeo_citations', 'error', 'No authoritative outbound links found — linking to trusted sources signals credibility to AI engines', 'Medium', 'AEO')
+
+    // 6. Review Platform Presence
+    try {
+      const reviewDomain = new URL(url).hostname.replace('www.', '')
+      const reviewPlatforms = [
+        'https://www.trustpilot.com/review/' + reviewDomain,
+        'https://www.g2.com/products/' + reviewDomain,
+      ]
+      const reviewResults = await Promise.allSettled(
+        reviewPlatforms.map(u => axios.get(u, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' }, maxRedirects: 3 }))
+      )
+      const found = reviewResults.filter(r => r.status === 'fulfilled' && r.value.status === 200).length
+      if (found >= 2) add('aeo_reviews', 'pass', 'Listed on ' + found + ' review platforms — strong trust signal for AI citation', 'High', 'AEO')
+      else if (found === 1) add('aeo_reviews', 'warning', 'Listed on 1 review platform — get listed on Trustpilot and G2 to improve AI trust signals', 'High', 'AEO')
+      else add('aeo_reviews', 'error', 'Not found on major review platforms (Trustpilot, G2) — AI engines use reviews as trust signals', 'High', 'AEO')
+    } catch (e) {
+      add('aeo_reviews', 'warning', 'Could not check review platform listings — verify manually on Trustpilot and G2', 'Medium', 'AEO')
+    }
     const seoChecks = checks.filter(c => c.category !== 'AI Snippet' && c.category !== 'AEO')
     const errors = seoChecks.filter(c => c.status === 'error').length
     const warnings = seoChecks.filter(c => c.status === 'warning').length
