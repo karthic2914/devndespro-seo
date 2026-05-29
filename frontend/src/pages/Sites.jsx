@@ -454,7 +454,7 @@ export default function Sites() {
                         fontWeight: site.ai_snippet_score ? 700 : 400,
                       }}>{site.ai_snippet_score ?? '-'}</div>
                       <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '-'}</div>
-                      <div className="project-row__dash" style={{ color: site.chatgpt_cited && site.chatgpt_cited !== '0/' + site.chatgpt_cited.split('/')[1] ? '#16A34A' : site.chatgpt_cited ? '#DC2626' : 'var(--muted)', fontWeight: site.chatgpt_cited ? 700 : 400, fontSize: site.chatgpt_cited ? 13 : 12 }}>{site.chatgpt_cited ?? '-'}</div>
+                      <div className="project-row__dash" style={{ color: site.chatgpt_cited >= 80 ? '#16A34A' : site.chatgpt_cited >= 50 ? '#D97706' : site.chatgpt_cited > 0 ? '#DC2626' : site.chatgpt_cited === 0 ? '#DC2626' : 'var(--muted)', fontWeight: site.chatgpt_cited != null ? 700 : 400 }}>{site.chatgpt_cited != null ? site.chatgpt_cited + '/100' : '-'}</div>
                       <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">

@@ -43,6 +43,8 @@ export default function AIVisibility() {
   const cited = (results || []).filter(r => r.cited).length
   const total = (results || []).length
   const score = total > 0 ? Math.round((cited / total) * 100) : null
+  const scoreLabel = score === null ? 'Not tested' : score >= 80 ? 'Excellent' : score >= 50 ? 'Average' : score > 0 ? 'Below Average' : 'Poor'
+  const scoreColor = score === null ? '#9CA3AF' : score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626'
 
   return (
     <div style={{ padding: '1.5rem 2rem', maxWidth: 820 }}>
