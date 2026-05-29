@@ -2,6 +2,8 @@
  * Sidebar - left navigation for site dashboard
  */
 import { NavLink, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Logo, ProgressBar, T } from '../UI'
 
 const NAV_ITEMS = [
@@ -11,13 +13,14 @@ const NAV_ITEMS = [
   { path: 'audit',      label: 'Site Audit',   icon: '🔍' },
   { path: 'actions',    label: 'Action Plan',  icon: '✅' },
   { path: 'ai',         label: 'AI Assistant', icon: '🤖' },
+  { path: 'ai-visibility', label: 'AI Visibility', faIcon: 'wand' },
   { path: 'competitors',label: 'Competitors',  icon: '⚔️' },
   { path: 'rank',       label: 'Rank #1',      icon: '🏆' },
 ]
 
 const ADMIN_EMAIL = 'karthic2914@gmail.com'
 
-function NavItem({ to, icon, label, end }) {
+function NavItem({ to, icon, faIcon, label, end }) {
   return (
     <NavLink
       to={to}
@@ -40,7 +43,9 @@ function NavItem({ to, icon, label, end }) {
           e.currentTarget.style.background = 'transparent'
       }}
     >
-      <span style={{ width: 20, textAlign: 'center', fontSize: 15, flexShrink: 0 }}>{icon}</span>
+      <span style={{ width: 20, textAlign: 'center', fontSize: 15, flexShrink: 0 }}>
+        {faIcon === 'wand' ? <FontAwesomeIcon icon={faWandMagicSparkles} /> : icon}
+      </span>
       {label}
     </NavLink>
   )
@@ -106,6 +111,7 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, da
             key={path}
             to={`/site/${siteId}${path ? '/' + path : ''}`}
             icon={icon}
+            faIcon={faIcon}
             label={label}
             end={end}
           />

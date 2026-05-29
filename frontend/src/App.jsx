@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
@@ -9,6 +9,7 @@ import Backlinks from './pages/Backlinks'
 import Competitors from './pages/Competitors'
 import Actions from './pages/Actions'
 import AiAssistant from './pages/AiAssistant'
+import AIVisibility from './pages/AIVisibility'
 import SiteAudit from './pages/SiteAudit'
 import Alerts from './pages/Alerts'
 import Integrations from './pages/Integrations'
@@ -106,6 +107,7 @@ export default function App() {
             <Route path="competitors" element={<Competitors />} />
             <Route path="actions" element={<Actions />} />
             <Route path="ai" element={<AiAssistant />} />
+              <Route path="ai-visibility" element={<AIVisibility />} />
             <Route path="audit" element={<SiteAudit />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="integrations" element={<Integrations />} />

@@ -451,4 +451,40 @@ Respond in JSON only, no markdown:
   } catch (e) { console.error(e); res.status(500).json({ error: 'AI error' }) }
 })
 
+
+// AI Visibility - ChatGPT Citation Check
+router.post('/:siteId/ai-visibility/test', auth, verifySite, async (req, res) => {
+  const { queries } = req.body
+  if (!Array.isArray(queries) || queries.length === 0) return res.status(400).json({ error: 'queries required' })
+  const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
+  const siteUrl = s[0]?.url || ''
+  const domain = (() => { try { return new URL(siteUrl).hostname.replace('www.', '') } catch { return siteUrl } })()
+  const OpenAI = require('openai').default || require('openai')
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const results = []
+  for (const query of queries.slice(0, 5)) {
+    try {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: query }],
+        max_tokens: 500,
+      })
+      const response = completion.choices[0]?.message?.content || ''
+      const cited = response.toLowerCase().includes(domain.toLowerCase())
+      const lines = response.split('\n').filter(l => l.toLowerCase().includes(domain.toLowerCase()))
+      const excerpt = lines[0] || response.slice(0, 200)
+      results.push({ query, response, cited, excerpt, domain })
+    } catch (e) {
+      results.push({ query, response: '', cited: false, excerpt: '', error: e.message, domain })
+    }
+  }
+  await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [req.siteId, JSON.stringify(results)]).catch(() => {})
+  res.json({ results, domain })
+})
+
+router.get('/:siteId/ai-visibility/history', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query('SELECT id, results, created_at FROM ai_visibility_tests WHERE site_id=$1 ORDER BY created_at DESC LIMIT 10', [req.siteId])
+  res.json(rows)
+})
+
 module.exports = router
