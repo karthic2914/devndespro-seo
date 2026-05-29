@@ -310,7 +310,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     } catch (e) {
       add('aeo_bing_index', 'warning', 'Could not check Bing indexing — verify manually at bing.com/webmaster', 'Medium', 'AEO')
     }
-    const seoChecks = checks.filter(c => c.category !== 'AI Snippet')
+    const seoChecks = checks.filter(c => c.category !== 'AI Snippet' && c.category !== 'AEO')
     const errors = seoChecks.filter(c => c.status === 'error').length
     const warnings = seoChecks.filter(c => c.status === 'warning').length
     const score = Math.max(0, 100 - errors * 13 - warnings * 5)
