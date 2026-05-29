@@ -1,15 +1,15 @@
-/**
+﻿/**
  * Chart Components
  * import { RankChart, TrendLine, BarChart, DonutChart } from '../components/charts/Charts'
  *
- * No external dependencies — pure SVG
+ * No external dependencies - pure SVG
  */
 
 import { useState } from 'react'
 import { T } from '../UI'
 
 // ─────────────────────────────────────────────
-// TREND LINE — mini sparkline for stat cards
+// TREND LINE - mini sparkline for stat cards
 // Usage: <TrendLine data={[4,7,5,9,12,10,15]} color={T.green} />
 // ─────────────────────────────────────────────
 export function TrendLine({ data = [], color = T.orange, width = 80, height = 32, filled = true }) {
@@ -55,7 +55,7 @@ export function TrendLine({ data = [], color = T.orange, width = 80, height = 32
 }
 
 // ─────────────────────────────────────────────
-// RANK CHART — keyword position over time
+// RANK CHART - keyword position over time
 // Usage: <RankChart data={[{date:'2026-01-01', position:14}, ...]} keyword="web design norway" />
 // Note: Lower position = better (rank 1 is best)
 // ─────────────────────────────────────────────
@@ -169,7 +169,7 @@ export function RankChart({ data = [], keyword, width = '100%', height = 200 }) 
 }
 
 // ─────────────────────────────────────────────
-// BAR CHART — horizontal bars for traffic/volume
+// BAR CHART - horizontal bars for traffic/volume
 // Usage: <BarChart data={[{label:'Jan', value:120}, ...]} color={T.orange} />
 // ─────────────────────────────────────────────
 export function BarChart({ data = [], color = T.orange, height = 160, showValues = true }) {
@@ -203,7 +203,7 @@ export function BarChart({ data = [], color = T.orange, height = 160, showValues
 }
 
 // ─────────────────────────────────────────────
-// DONUT CHART — for score breakdowns
+// DONUT CHART - for score breakdowns
 // Usage: <DonutChart segments={[{label:'Technical', value:80, color:T.green}, ...]} />
 // ─────────────────────────────────────────────
 export function DonutChart({ segments = [], size = 120, strokeWidth = 16 }) {

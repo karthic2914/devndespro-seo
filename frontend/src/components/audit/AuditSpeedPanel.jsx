@@ -1,4 +1,4 @@
-export default function AuditSpeedPanel({ speed }) {
+﻿export default function AuditSpeedPanel({ speed }) {
   if (!speed) return null
 
   const metrics = [
@@ -22,7 +22,7 @@ export default function AuditSpeedPanel({ speed }) {
     good:    { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0', label: 'Good' },
     warn:    { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A', label: 'Needs Work' },
     bad:     { color: '#DC2626', bg: '#FEF2F2', border: '#FECACA', label: 'Poor' },
-    unknown: { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', label: '—' },
+    unknown: { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB', label: '-' },
   }
 
   return (

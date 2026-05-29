@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -160,7 +160,7 @@ export default function EmailReports() {
       }}>
         <FontAwesomeIcon icon={faCircleInfo} style={{ color: 'var(--blue)', marginTop: 2, flexShrink: 0 }} />
         <div style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.6 }}>
-          <strong style={{ color: 'var(--text)' }}>SMTP Setup Required</strong> — Add these to your backend{' '}
+          <strong style={{ color: 'var(--text)' }}>SMTP Setup Required</strong> - Add these to your backend{' '}
           <code style={{ background: 'var(--dark2)', padding: '1px 6px', borderRadius: 4 }}>.env</code> file:
           <br />
           <code style={{ background: 'var(--dark2)', padding: '4px 8px', borderRadius: 4, display: 'inline-block', marginTop: 6, fontSize: 12 }}>
@@ -181,7 +181,7 @@ export default function EmailReports() {
             <div>
               <div style={{ fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>Daily Reports</div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-                {settings.enabled ? 'Active — sending daily' : 'Disabled — no reports will be sent'}
+                {settings.enabled ? 'Active - sending daily' : 'Disabled - no reports will be sent'}
               </div>
             </div>
             <button

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import {
   Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -120,22 +120,22 @@ export default function Reports() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 32 }}>
             <div className="report-card">
               <FontAwesomeIcon icon={faProjectDiagram} style={{ fontSize: 28, color: '#2563EB', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '—' : stats.projects}</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.projects}</div>
               <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Projects</div>
             </div>
             <div className="report-card">
               <FontAwesomeIcon icon={faKey} style={{ fontSize: 28, color: '#16A34A', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '—' : stats.keywords}</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.keywords}</div>
               <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Keywords</div>
             </div>
             <div className="report-card">
               <FontAwesomeIcon icon={faLink} style={{ fontSize: 28, color: '#FF6B2B', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '—' : stats.backlinks}</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.backlinks}</div>
               <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Backlinks</div>
             </div>
             <div className="report-card">
               <FontAwesomeIcon icon={faChartLine} style={{ fontSize: 28, color: '#D97706', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '—' : stats.avgHealth + '%'}</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.avgHealth + '%'}</div>
               <div style={{ color: 'var(--muted)', fontSize: 13 }}>Avg. Health Score</div>
             </div>
           </div>

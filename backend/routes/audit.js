@@ -118,8 +118,8 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     // On-Page
     const title = $('title').text().trim()
     if (!title) add('title', 'error', 'Missing <title> tag', 'High', 'On-Page SEO')
-    else if (title.length < 30) add('title', 'warning', `Title too short: "${title.substring(0,50)}" — ${title.length} chars (aim 50-60)`, 'Medium', 'On-Page SEO')
-    else if (title.length > 60) add('title', 'warning', `Title too long: ${title.length} chars — may be truncated in SERPs`, 'Medium', 'On-Page SEO')
+    else if (title.length < 30) add('title', 'warning', `Title too short: "${title.substring(0,50)}" - ${title.length} chars (aim 50-60)`, 'Medium', 'On-Page SEO')
+    else if (title.length > 60) add('title', 'warning', `Title too long: ${title.length} chars - may be truncated in SERPs`, 'Medium', 'On-Page SEO')
     else add('title', 'pass', `Title OK: "${title.substring(0,55)}"`, 'High', 'On-Page SEO')
 
     const metaDesc = $('meta[name="description"]').attr('content') || ''
@@ -130,11 +130,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
     const h1s = $('h1')
     if (h1s.length === 0) add('h1', 'error', 'No H1 heading found on page', 'High', 'On-Page SEO')
-    else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found — keep only one`, 'Medium', 'On-Page SEO')
+    else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found - keep only one`, 'Medium', 'On-Page SEO')
     else add('h1', 'pass', `H1: "${h1s.first().text().trim().substring(0,55)}"`, 'High', 'On-Page SEO')
 
     const ogTitle = $('meta[property="og:title"]').attr('content') || ''
-    if (!ogTitle) add('og', 'warning', 'Missing og:title — poor social media preview', 'Low', 'On-Page SEO')
+    if (!ogTitle) add('og', 'warning', 'Missing og:title - poor social media preview', 'Low', 'On-Page SEO')
     else add('og', 'pass', 'Open Graph (og:title) present', 'Low', 'On-Page SEO')
 
     const imgCount = $('img').length
@@ -149,25 +149,25 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     else add('content', 'pass', `Good content volume: ~${wordCount} words`, 'Medium', 'Content Quality')
 
     const h2Count = $('h2').length
-    if (h2Count === 0) add('structure', 'warning', 'No H2 subheadings — poor content hierarchy', 'Low', 'Content Quality')
-    else add('structure', 'pass', `${h2Count} H2 subheadings — good structure`, 'Low', 'Content Quality')
+    if (h2Count === 0) add('structure', 'warning', 'No H2 subheadings - poor content hierarchy', 'Low', 'Content Quality')
+    else add('structure', 'pass', `${h2Count} H2 subheadings - good structure`, 'Low', 'Content Quality')
 
     // Technical
     const canonical = $('link[rel="canonical"]').attr('href') || ''
-    if (!canonical) add('canonical', 'warning', 'No canonical URL — risk of duplicate content', 'Medium', 'Technical SEO')
+    if (!canonical) add('canonical', 'warning', 'No canonical URL - risk of duplicate content', 'Medium', 'Technical SEO')
     else add('canonical', 'pass', `Canonical: ${canonical.substring(0,60)}`, 'High', 'Technical SEO')
 
     const viewport = $('meta[name="viewport"]').attr('content') || ''
-    if (!viewport) add('viewport', 'error', 'Missing viewport meta — fails mobile-friendly test', 'High', 'Technical SEO')
+    if (!viewport) add('viewport', 'error', 'Missing viewport meta - fails mobile-friendly test', 'High', 'Technical SEO')
     else add('viewport', 'pass', 'Viewport meta present (mobile-ready)', 'High', 'Technical SEO')
 
     const robotsContent = $('meta[name="robots"]').attr('content') || ''
     if (robotsContent.toLowerCase().includes('noindex'))
-      add('robots', 'error', `Page set to noindex: "${robotsContent}" — Google won't index this`, 'High', 'Technical SEO')
+      add('robots', 'error', `Page set to noindex: "${robotsContent}" - Google won't index this`, 'High', 'Technical SEO')
     else add('robots', 'pass', 'Page is indexable', 'High', 'Technical SEO')
 
     const hasSchema = html.includes('"@context"') || html.includes("'@context'")
-    if (!hasSchema) add('schema', 'warning', 'No JSON-LD structured data — missing rich result eligibility', 'Medium', 'Technical SEO')
+    if (!hasSchema) add('schema', 'warning', 'No JSON-LD structured data - missing rich result eligibility', 'Medium', 'Technical SEO')
     else add('schema', 'pass', 'Structured data (JSON-LD) found', 'Medium', 'Technical SEO')
 
     if (!isHttps) add('https', 'error', 'Site is not served over HTTPS', 'High', 'Server & Security')
@@ -214,32 +214,32 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     // ── AEO (Answer Engine Optimization) ─────────────────────────────────────
     // 1. FAQ Schema
     const faqSchema = html.includes('"FAQPage"') || html.includes("'FAQPage'")
-    if (!faqSchema) add('snippet_faq_schema', 'warning', 'No FAQPage schema — add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AI Snippet')
-    else add('snippet_faq_schema', 'pass', 'FAQPage schema found — eligible for AI answer features', 'High', 'AI Snippet')
+    if (!faqSchema) add('snippet_faq_schema', 'warning', 'No FAQPage schema - add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AI Snippet')
+    else add('snippet_faq_schema', 'pass', 'FAQPage schema found - eligible for AI answer features', 'High', 'AI Snippet')
 
     // 2. HowTo Schema
     const howtoSchema = html.includes('"HowTo"') || html.includes("'HowTo'")
-    if (!howtoSchema) add('snippet_howto_schema', 'warning', 'No HowTo schema — add HowTo JSON-LD for step-by-step AI answers', 'Medium', 'AI Snippet')
-    else add('snippet_howto_schema', 'pass', 'HowTo schema found — eligible for step-by-step rich results', 'Medium', 'AI Snippet')
+    if (!howtoSchema) add('snippet_howto_schema', 'warning', 'No HowTo schema - add HowTo JSON-LD for step-by-step AI answers', 'Medium', 'AI Snippet')
+    else add('snippet_howto_schema', 'pass', 'HowTo schema found - eligible for step-by-step rich results', 'Medium', 'AI Snippet')
 
     // 3. Article / BlogPosting Schema
     const articleSchema = html.includes('"Article"') || html.includes('"BlogPosting"') || html.includes('"NewsArticle"')
-    if (!articleSchema) add('snippet_article_schema', 'warning', 'No Article/BlogPosting schema — AI engines prefer structured content', 'Medium', 'AI Snippet')
-    else add('snippet_article_schema', 'pass', 'Article schema found — content is well-structured for AI engines', 'Medium', 'AI Snippet')
+    if (!articleSchema) add('snippet_article_schema', 'warning', 'No Article/BlogPosting schema - AI engines prefer structured content', 'Medium', 'AI Snippet')
+    else add('snippet_article_schema', 'pass', 'Article schema found - content is well-structured for AI engines', 'Medium', 'AI Snippet')
 
     // 4. Speakable Schema
     const speakableSchema = html.includes('"speakable"') || html.includes("'speakable'")
-    if (!speakableSchema) add('snippet_speakable', 'warning', 'No Speakable schema — add speakable property for voice search & AI assistants', 'Low', 'AI Snippet')
-    else add('snippet_speakable', 'pass', 'Speakable schema found — content is voice search ready', 'Low', 'AI Snippet')
+    if (!speakableSchema) add('snippet_speakable', 'warning', 'No Speakable schema - add speakable property for voice search & AI assistants', 'Low', 'AI Snippet')
+    else add('snippet_speakable', 'pass', 'Speakable schema found - content is voice search ready', 'Low', 'AI Snippet')
 
     // 5. Question-based headings
     const questionWords = /^(what|how|why|when|which|can|is|are|does|who|where)\b/i
     const h2h3texts = []
     $('h2, h3').each((_, el) => h2h3texts.push($(el).text().trim()))
     const questionHeadings = h2h3texts.filter(t => questionWords.test(t))
-    if (questionHeadings.length === 0) add('snippet_question_headings', 'warning', 'No question-based H2/H3 headings — AI engines extract Q&A from structured headings', 'High', 'AI Snippet')
-    else if (questionHeadings.length < 2) add('snippet_question_headings', 'warning', `Only ${questionHeadings.length} question-based heading found — aim for 2+ to improve AI answer coverage`, 'Medium', 'AI Snippet')
-    else add('snippet_question_headings', 'pass', `${questionHeadings.length} question-based headings found — good for AI answer extraction`, 'High', 'AI Snippet')
+    if (questionHeadings.length === 0) add('snippet_question_headings', 'warning', 'No question-based H2/H3 headings - AI engines extract Q&A from structured headings', 'High', 'AI Snippet')
+    else if (questionHeadings.length < 2) add('snippet_question_headings', 'warning', `Only ${questionHeadings.length} question-based heading found - aim for 2+ to improve AI answer coverage`, 'Medium', 'AI Snippet')
+    else add('snippet_question_headings', 'pass', `${questionHeadings.length} question-based headings found - good for AI answer extraction`, 'High', 'AI Snippet')
 
     // 6. Featured snippet readiness
     let snippetReady = false
@@ -250,15 +250,15 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         if (words >= 40 && words <= 80) { snippetReady = true; return false }
       }
     })
-    if (!snippetReady) add('snippet_ready', 'warning', 'No concise answer paragraphs (40-80 words) after headings — add direct answers for featured snippets', 'High', 'AI Snippet')
-    else add('snippet_ready', 'pass', 'Concise answer paragraphs found after headings — featured snippet ready', 'High', 'AI Snippet')
+    if (!snippetReady) add('snippet_ready', 'warning', 'No concise answer paragraphs (40-80 words) after headings - add direct answers for featured snippets', 'High', 'AI Snippet')
+    else add('snippet_ready', 'pass', 'Concise answer paragraphs found after headings - featured snippet ready', 'High', 'AI Snippet')
 
     // 7. Entity clarity
     const bodyText = $('body').text().replace(/\s+/g, ' ').trim()
     const first100Words = bodyText.split(/\s+/).slice(0, 100).join(' ').toLowerCase()
     const hasEntitySignals = ['service', 'solution', 'company', 'agency', 'studio', 'platform', 'tool', 'software', 'app', 'consulting'].some(w => first100Words.includes(w))
-    if (!hasEntitySignals) add('snippet_entity_clarity', 'warning', 'Entity type not clear in first 100 words — state what your business does early for AI comprehension', 'High', 'AI Snippet')
-    else add('snippet_entity_clarity', 'pass', 'Entity type is clear in first 100 words — good for AI brand understanding', 'High', 'AI Snippet')
+    if (!hasEntitySignals) add('snippet_entity_clarity', 'warning', 'Entity type not clear in first 100 words - state what your business does early for AI comprehension', 'High', 'AI Snippet')
+    else add('snippet_entity_clarity', 'pass', 'Entity type is clear in first 100 words - good for AI brand understanding', 'High', 'AI Snippet')
 
     // 8. Concise answer density
     let shortAnswerCount = 0
@@ -266,8 +266,8 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       const words = $(el).text().trim().split(/\s+/).filter(Boolean).length
       if (words >= 20 && words <= 60) shortAnswerCount++
     })
-    if (shortAnswerCount < 2) add('snippet_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AI Snippet')
-    else add('snippet_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AI Snippet')
+    if (shortAnswerCount < 2) add('snippet_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found - add more direct answer blocks`, 'Medium', 'AI Snippet')
+    else add('snippet_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found - good answer density for AI engines`, 'Medium', 'AI Snippet')
 
 
     // ── AEO (True Answer Engine Optimization) ────────────────────────────────
@@ -275,9 +275,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     // 1. Author Entity
     const hasAuthorSchema = html.includes('"author"') || html.includes("'author'")
     const hasAuthorByline = /\b(by|written by|author:)\s+[A-Z][a-z]+/i.test($('body').text())
-    if (hasAuthorSchema) add('aeo_author_entity', 'pass', 'Author entity found in schema — AI engines can attribute content correctly', 'High', 'AEO')
-    else if (hasAuthorByline) add('aeo_author_entity', 'warning', 'Author byline found but no author schema — add author JSON-LD for better AI attribution', 'High', 'AEO')
-    else add('aeo_author_entity', 'error', 'No author entity found — AI engines cannot attribute this content, reducing citation likelihood', 'High', 'AEO')
+    if (hasAuthorSchema) add('aeo_author_entity', 'pass', 'Author entity found in schema - AI engines can attribute content correctly', 'High', 'AEO')
+    else if (hasAuthorByline) add('aeo_author_entity', 'warning', 'Author byline found but no author schema - add author JSON-LD for better AI attribution', 'High', 'AEO')
+    else add('aeo_author_entity', 'error', 'No author entity found - AI engines cannot attribute this content, reducing citation likelihood', 'High', 'AEO')
 
     // 2. E-E-A-T Signals
     const pageText = $('body').text().toLowerCase()
@@ -291,9 +291,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       /\d+\s*\+?\s*years?\s*(of\s*)?(experience|expertise)/i.test(pageText),
     ]
     const eatCount = eatSignals.filter(Boolean).length
-    if (eatCount >= 3) add('aeo_eeat', 'pass', eatCount + ' E-E-A-T signals found — strong authority for AI citation', 'High', 'AEO')
-    else if (eatCount >= 1) add('aeo_eeat', 'warning', 'Only ' + eatCount + ' E-E-A-T signal(s) found — add About, Team pages and credentials', 'High', 'AEO')
-    else add('aeo_eeat', 'error', 'No E-E-A-T signals found — AI engines will not trust or cite this content', 'High', 'AEO')
+    if (eatCount >= 3) add('aeo_eeat', 'pass', eatCount + ' E-E-A-T signals found - strong authority for AI citation', 'High', 'AEO')
+    else if (eatCount >= 1) add('aeo_eeat', 'warning', 'Only ' + eatCount + ' E-E-A-T signal(s) found - add About, Team pages and credentials', 'High', 'AEO')
+    else add('aeo_eeat', 'error', 'No E-E-A-T signals found - AI engines will not trust or cite this content', 'High', 'AEO')
 
     // 3. Bing Indexing
     try {
@@ -304,11 +304,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       const noResults = /no results|There are no results/i.test(bingHtml)
       const countMatch = bingHtml.match(/[\d,]+ results/)
       const resultCount = countMatch ? parseInt(countMatch[0].replace(/[^0-9]/g, '')) : 0
-      if (noResults || resultCount === 0) add('aeo_bing_index', 'error', 'Site not indexed on Bing — ChatGPT uses Bing; fix this to improve AI citation chances', 'High', 'AEO')
-      else if (resultCount < 10) add('aeo_bing_index', 'warning', 'Only ' + resultCount + ' page(s) indexed on Bing — submit sitemap to Bing Webmaster Tools', 'Medium', 'AEO')
-      else add('aeo_bing_index', 'pass', resultCount + '+ pages indexed on Bing — good coverage for ChatGPT and AI search engines', 'High', 'AEO')
+      if (noResults || resultCount === 0) add('aeo_bing_index', 'error', 'Site not indexed on Bing - ChatGPT uses Bing; fix this to improve AI citation chances', 'High', 'AEO')
+      else if (resultCount < 10) add('aeo_bing_index', 'warning', 'Only ' + resultCount + ' page(s) indexed on Bing - submit sitemap to Bing Webmaster Tools', 'Medium', 'AEO')
+      else add('aeo_bing_index', 'pass', resultCount + '+ pages indexed on Bing - good coverage for ChatGPT and AI search engines', 'High', 'AEO')
     } catch (e) {
-      add('aeo_bing_index', 'warning', 'Could not check Bing indexing — verify manually at bing.com/webmaster', 'Medium', 'AEO')
+      add('aeo_bing_index', 'warning', 'Could not check Bing indexing - verify manually at bing.com/webmaster', 'Medium', 'AEO')
     }
 
     // 4. Reddit Presence
@@ -317,11 +317,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       const redditUrl = 'https://www.reddit.com/search.json?q=site:' + redditDomain + '&limit=10'
       const redditRes = await axios.get(redditUrl, { timeout: 8000, headers: { 'User-Agent': 'DevndeSproBot/1.0' } })
       const redditCount = redditRes.data?.data?.dist || 0
-      if (redditCount >= 3) add('aeo_reddit', 'pass', redditCount + ' Reddit mentions found — strong community signal for AI citation', 'High', 'AEO')
-      else if (redditCount >= 1) add('aeo_reddit', 'warning', 'Only ' + redditCount + ' Reddit mention(s) found — more community discussion improves AI citation chances', 'Medium', 'AEO')
-      else add('aeo_reddit', 'error', 'No Reddit mentions found — AI engines like Perplexity heavily use Reddit as a citation source', 'High', 'AEO')
+      if (redditCount >= 3) add('aeo_reddit', 'pass', redditCount + ' Reddit mentions found - strong community signal for AI citation', 'High', 'AEO')
+      else if (redditCount >= 1) add('aeo_reddit', 'warning', 'Only ' + redditCount + ' Reddit mention(s) found - more community discussion improves AI citation chances', 'Medium', 'AEO')
+      else add('aeo_reddit', 'error', 'No Reddit mentions found - AI engines like Perplexity heavily use Reddit as a citation source', 'High', 'AEO')
     } catch (e) {
-      add('aeo_reddit', 'warning', 'Could not check Reddit presence — verify manually at reddit.com/search', 'Medium', 'AEO')
+      add('aeo_reddit', 'warning', 'Could not check Reddit presence - verify manually at reddit.com/search', 'Medium', 'AEO')
     }
 
     // 5. External Citations (outbound links to authoritative domains)
@@ -332,9 +332,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
       if (href.startsWith('http') && !href.includes(new URL(url).hostname)) extLinks.push(href)
     })
     const authLinks = extLinks.filter(h => authDomains.some(d => h.includes(d)))
-    if (authLinks.length >= 3) add('aeo_citations', 'pass', authLinks.length + ' authoritative outbound links found — good citation signals for AI engines', 'Medium', 'AEO')
-    else if (authLinks.length >= 1) add('aeo_citations', 'warning', 'Only ' + authLinks.length + ' authoritative outbound link(s) — link to more trusted sources to improve AI credibility', 'Medium', 'AEO')
-    else add('aeo_citations', 'error', 'No authoritative outbound links found — linking to trusted sources signals credibility to AI engines', 'Medium', 'AEO')
+    if (authLinks.length >= 3) add('aeo_citations', 'pass', authLinks.length + ' authoritative outbound links found - good citation signals for AI engines', 'Medium', 'AEO')
+    else if (authLinks.length >= 1) add('aeo_citations', 'warning', 'Only ' + authLinks.length + ' authoritative outbound link(s) - link to more trusted sources to improve AI credibility', 'Medium', 'AEO')
+    else add('aeo_citations', 'error', 'No authoritative outbound links found - linking to trusted sources signals credibility to AI engines', 'Medium', 'AEO')
 
     // 6. Review Platform Presence
     try {
@@ -347,11 +347,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         reviewPlatforms.map(u => axios.get(u, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' }, maxRedirects: 3 }))
       )
       const found = reviewResults.filter(r => r.status === 'fulfilled' && r.value.status === 200).length
-      if (found >= 2) add('aeo_reviews', 'pass', 'Listed on ' + found + ' review platforms — strong trust signal for AI citation', 'High', 'AEO')
-      else if (found === 1) add('aeo_reviews', 'warning', 'Listed on 1 review platform — get listed on Trustpilot and G2 to improve AI trust signals', 'High', 'AEO')
-      else add('aeo_reviews', 'error', 'Not found on major review platforms (Trustpilot, G2) — AI engines use reviews as trust signals', 'High', 'AEO')
+      if (found >= 2) add('aeo_reviews', 'pass', 'Listed on ' + found + ' review platforms - strong trust signal for AI citation', 'High', 'AEO')
+      else if (found === 1) add('aeo_reviews', 'warning', 'Listed on 1 review platform - get listed on Trustpilot and G2 to improve AI trust signals', 'High', 'AEO')
+      else add('aeo_reviews', 'error', 'Not found on major review platforms (Trustpilot, G2) - AI engines use reviews as trust signals', 'High', 'AEO')
     } catch (e) {
-      add('aeo_reviews', 'warning', 'Could not check review platform listings — verify manually on Trustpilot and G2', 'Medium', 'AEO')
+      add('aeo_reviews', 'warning', 'Could not check review platform listings - verify manually on Trustpilot and G2', 'Medium', 'AEO')
     }
     const seoChecks = checks.filter(c => c.category !== 'AI Snippet' && c.category !== 'AEO')
     const errors = seoChecks.filter(c => c.status === 'error').length
@@ -428,7 +428,7 @@ router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {
       max_tokens: 1000,
       system: `You are an expert SEO engineer. Given an SEO issue, provide:
 1. A 1-sentence plain-English explanation of WHY it matters for rankings
-2. The EXACT fix — specific code, copy, or action steps
+2. The EXACT fix - specific code, copy, or action steps
 3. A "Before" and "After" example if applicable
 4. Estimated time to fix
 

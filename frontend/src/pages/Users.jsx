@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faUserPlus, faEnvelope, faTrash, faRotateRight,
@@ -184,12 +184,12 @@ export default function Users() {
                 borderBottom: i < users.length - 1 ? `1px solid #F3F4F6` : 'none',
               }}>
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{u.email}</div>
-                <div style={{ fontSize: 12, color: T.text2 }}>{u.site_name || '—'}</div>
+                <div style={{ fontSize: 12, color: T.text2 }}>{u.site_name || '-'}</div>
                 <div>
                   <Badge variant={STATUS_VARIANT[u.status] || 'default'}>{u.status}</Badge>
                 </div>
                 <div style={{ fontSize: 12, color: T.muted }}>
-                  {u.invited_at ? new Date(u.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  {u.invited_at ? new Date(u.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   {u.status === 'pending' && (

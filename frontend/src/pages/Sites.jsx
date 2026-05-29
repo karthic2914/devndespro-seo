@@ -313,7 +313,7 @@ export default function Sites() {
                 <span style={{ fontSize: 22 }}>🤖</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AI Snippet Audits are now live!</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews — re-run any site audit to get your AI Snippet score.</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews - re-run any site audit to get your AI Snippet score.</div>
                 </div>
               </div>
               <button onClick={() => { setShowAeoBanner(false); localStorage.setItem('aeo_banner_dismissed', '1') }} style={{
@@ -452,8 +452,8 @@ export default function Sites() {
                       <div className="project-row__dash" style={{
                         color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : 'var(--muted)',
                         fontWeight: site.ai_snippet_score ? 700 : 400,
-                      }}>{site.ai_snippet_score ?? '—'}</div>
-                      <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '—'}</div>
+                      }}>{site.ai_snippet_score ?? '-'}</div>
+                      <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '-'}</div>
                       <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">
@@ -492,7 +492,7 @@ export default function Sites() {
                 </div>
                 <p className="da-goal-card__tip">
                   {summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.'
-                    : summary?.max_dr >= 10 ? 'Good progress — keep building backlinks to hit DR 20.'
+                    : summary?.max_dr >= 10 ? 'Good progress - keep building backlinks to hit DR 20.'
                     : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}
                 </p>
               </div>

@@ -1,5 +1,5 @@
-/**
- * Navbar — top navigation bar
+﻿/**
+ * Navbar - top navigation bar
  * Usage:
  *   <Navbar user={user} onSignOut={logout} onAddSite={() => setShowAdd(true)} activePage="Projects" />
  */
@@ -24,7 +24,7 @@ export default function Navbar({ user, onSignOut, onAddSite, activePage = 'Proje
       fontFamily: 'inherit',
     }}>
 
-      {/* Left — logo + nav links */}
+      {/* Left - logo + nav links */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
         <Logo size="md" />
 
@@ -47,7 +47,7 @@ export default function Navbar({ user, onSignOut, onAddSite, activePage = 'Proje
         </div>
       </div>
 
-      {/* Right — actions + user */}
+      {/* Right - actions + user */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {/* Custom actions slot */}
         {actions}

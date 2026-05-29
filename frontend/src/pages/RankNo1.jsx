@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -38,7 +38,7 @@ function StatPill({ icon, label, value, accent = T.orange }) {
       <div style={{ color: accent, fontSize: 17 }}>
         <FontAwesomeIcon icon={icon} />
       </div>
-      <div style={{ fontSize: 20, fontWeight: 800, color: '#111827', lineHeight: 1 }}>{value || '—'}</div>
+      <div style={{ fontSize: 20, fontWeight: 800, color: '#111827', lineHeight: 1 }}>{value || '-'}</div>
       <div style={{ fontSize: 11, color: '#6B7280', fontWeight: 500, textAlign: 'center' }}>{label}</div>
     </div>
   )
@@ -100,7 +100,7 @@ export default function RankNo1() {
     <div className="fade-in" style={{ maxWidth: 860, margin: '0 auto' }}>
       <PageHeader
         title="Rank #1 by Search Engine"
-        subtitle="See who is on page 1 for any keyword in Google, Bing, or DuckDuckGo — and get a step-by-step plan"
+        subtitle="See who is on page 1 for any keyword in Google, Bing, or DuckDuckGo - and get a step-by-step plan"
       />
 
       {/* Search bar */}
@@ -237,7 +237,7 @@ export default function RankNo1() {
               <FontAwesomeIcon icon={faBolt} style={{ color: T.orange, fontSize: 16, marginTop: 1, flexShrink: 0 }} />
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
-                  Quick Win — Do this week
+                  Quick Win - Do this week
                 </div>
                 <div style={{ fontSize: 13, color: '#78350F', lineHeight: 1.6 }}>{data.plan.quickWin}</div>
               </div>
@@ -254,7 +254,7 @@ export default function RankNo1() {
               }}>
                 <FontAwesomeIcon icon={faTrophy} style={{ color: '#D97706', fontSize: 14 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                  {selectedEngine} Page 1 — <span style={{ color: T.orange }}>"{data.keyword}"</span>
+                  {selectedEngine} Page 1 - <span style={{ color: T.orange }}>"{data.keyword}"</span>
                 </span>
               </div>
 

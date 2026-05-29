@@ -47,7 +47,7 @@ function sortByPriority(issues) {
 }
 
 function getSummaryEmailText(lang, tone, auditData, allIssues) {
-  const score    = auditData?.score ?? '—'
+  const score    = auditData?.score ?? '-'
   const critical = (allIssues || []).filter((i) => i.status === 'error').length
   const warnings = (allIssues || []).filter((i) => i.status === 'warning').length
   const url      = auditData?.url || 'nettstedet'
@@ -64,8 +64,8 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
       }
     }
   }
-  techScore    = techScore ?? '—'
-  contentScore = contentScore ?? '—'
+  techScore    = techScore ?? '-'
+  contentScore = contentScore ?? '-'
   const techTick    = techScore === 100 ? ' &#10003;' : ''
   const contentTick = contentScore === 100 ? ' &#10003;' : ''
 
@@ -97,7 +97,7 @@ Jeg har kjørt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av fun
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
 De kritiske problemene påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
 Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
-Jeg har en fullstendig rapport klar med konkrete forslag til utbedring — gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
+Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
 Med vennlig hilsen,<br>
 <b>Mahadevan</b><br>
 Devndespro – Webutvikling &amp; SEO<br>
@@ -155,7 +155,7 @@ function EmptyAudit({ onRun, running, error }) {
         </div>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: '0 0 8px' }}>No audit run yet</h2>
         <p style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.7, margin: '0 0 24px' }}>
-          Run a full site audit to get a real-time health check — title tags, meta descriptions,
+          Run a full site audit to get a real-time health check - title tags, meta descriptions,
           H1s, canonicals, structured data, Core Web Vitals, and more.
         </p>
         {error && (
@@ -361,7 +361,7 @@ export default function SiteAudit() {
       setAuditData(r.data); setActiveTab('all'); setExpandedIdx(null)
       showSnackbar('Audit completed successfully!', 'success')
     } catch (e) {
-      setRunError(e.response?.data?.error || 'Audit failed — check the site URL is accessible')
+      setRunError(e.response?.data?.error || 'Audit failed - check the site URL is accessible')
     }
     setRunning(false)
   }
@@ -417,10 +417,10 @@ export default function SiteAudit() {
     ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : 'Unknown'
   const crawl    = auditData.crawl || null
-  const fmtMs    = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '—')
+  const fmtMs    = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '-')
   const fmtBytes = (n) => {
     const b = Number(n)
-    if (!Number.isFinite(b) || b <= 0) return '—'
+    if (!Number.isFinite(b) || b <= 0) return '-'
     if (b >= 1024 * 1024) return `${(b / (1024 * 1024)).toFixed(2)} MB`
     return `${(b / 1024).toFixed(2)} KB`
   }
@@ -558,8 +558,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? '📋 Formal — suited for corporate and enterprise prospects'
-                  : '💬 Casual — suited for SMB and local businesses'}
+                  ? '📋 Formal - suited for corporate and enterprise prospects'
+                  : '💬 Casual - suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
@@ -614,10 +614,10 @@ export default function SiteAudit() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
               {[
-                { label: 'Status code',    value: crawl.statusCode || '—' },
+                { label: 'Status code',    value: crawl.statusCode || '-' },
                 { label: 'Response time',  value: fmtMs(crawl.responseTimeMs) },
                 { label: 'File size',      value: fmtBytes(crawl.fileSizeBytes) },
-                { label: 'Language',       value: crawl.language || '—' },
+                { label: 'Language',       value: crawl.language || '-' },
                 { label: 'Word count',     value: Number(crawl.wordCount || 0).toLocaleString() },
                 { label: 'Internal links', value: Number(crawl.internalLinks || 0).toLocaleString() },
                 { label: 'External links', value: Number(crawl.externalLinks || 0).toLocaleString() },
@@ -630,7 +630,7 @@ export default function SiteAudit() {
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#9CA3AF' }}>Final URL</div>
                 <div style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={crawl.finalUrl || ''}>
-                  {crawl.finalUrl || '—'}
+                  {crawl.finalUrl || '-'}
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '10px 12px' }}>

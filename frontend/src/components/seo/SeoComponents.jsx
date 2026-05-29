@@ -1,4 +1,4 @@
-/**
+﻿/**
  * SEO Components
  * import { HealthScore, SiteCard, RankBadge, DifficultyBar, KeywordRow, BacklinkRow, ActionItem, ScoreGauge } from '../components/seo/SeoComponents'
  */
@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { Badge, Button, ProgressBar, T } from '../UI'
 
 // ─────────────────────────────────────────────
-// HEALTH SCORE — circular gauge 0-100
+// HEALTH SCORE - circular gauge 0-100
 // Usage: <HealthScore score={74} size="lg" />
 // ─────────────────────────────────────────────
 export function HealthScore({ score = 0, size = 'md', showLabel = true }) {
@@ -51,7 +51,7 @@ export function HealthScore({ score = 0, size = 'md', showLabel = true }) {
 }
 
 // ─────────────────────────────────────────────
-// SITE CARD — project card on sites listing
+// SITE CARD - project card on sites listing
 // Usage: <SiteCard site={site} onClick={() => enter(site)} onDelete={() => remove(site.id)} />
 // ─────────────────────────────────────────────
 export function SiteCard({ site, onClick, onDelete, healthScore, keywords, backlinks }) {
@@ -90,9 +90,9 @@ export function SiteCard({ site, onClick, onDelete, healthScore, keywords, backl
 
       {/* Metrics */}
       {[
-        { label: 'Health', value: healthScore !== undefined ? `${healthScore}/100` : '—' },
-        { label: 'Keywords', value: keywords ?? '—' },
-        { label: 'Backlinks', value: backlinks ?? '—' },
+        { label: 'Health', value: healthScore !== undefined ? `${healthScore}/100` : '-' },
+        { label: 'Keywords', value: keywords ?? '-' },
+        { label: 'Backlinks', value: backlinks ?? '-' },
       ].map(m => (
         <div key={m.label} style={{ textAlign: 'center', minWidth: 70 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: T.text, fontFamily: 'DM Mono, monospace' }}>{m.value}</div>
@@ -102,7 +102,7 @@ export function SiteCard({ site, onClick, onDelete, healthScore, keywords, backl
 
       {/* Added date */}
       <div style={{ fontSize: 11, color: T.muted, minWidth: 80, textAlign: 'right' }}>
-        {site.created_at ? new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+        {site.created_at ? new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
       </div>
 
       {/* Actions */}
@@ -124,11 +124,11 @@ export function SiteCard({ site, onClick, onDelete, healthScore, keywords, backl
 }
 
 // ─────────────────────────────────────────────
-// RANK BADGE — position display
+// RANK BADGE - position display
 // Usage: <RankBadge position={1} /> <RankBadge position={14} prev={18} />
 // ─────────────────────────────────────────────
 export function RankBadge({ position, prev }) {
-  if (!position) return <span style={{ color: T.muted, fontSize: 13 }}>—</span>
+  if (!position) return <span style={{ color: T.muted, fontSize: 13 }}>-</span>
 
   const improved = prev && position < prev
   const dropped  = prev && position > prev
@@ -159,7 +159,7 @@ export function RankBadge({ position, prev }) {
 }
 
 // ─────────────────────────────────────────────
-// DIFFICULTY BAR — keyword difficulty 0-100
+// DIFFICULTY BAR - keyword difficulty 0-100
 // Usage: <DifficultyBar value={42} />
 // ─────────────────────────────────────────────
 export function DifficultyBar({ value = 0 }) {
@@ -177,7 +177,7 @@ export function DifficultyBar({ value = 0 }) {
 }
 
 // ─────────────────────────────────────────────
-// KEYWORD ROW — single keyword in table
+// KEYWORD ROW - single keyword in table
 // Usage: inside <Table /> or standalone
 // ─────────────────────────────────────────────
 export function KeywordRow({ keyword, position, prevPosition, volume, difficulty, url, onClick }) {
@@ -210,7 +210,7 @@ export function KeywordRow({ keyword, position, prevPosition, volume, difficulty
 
       {/* Volume */}
       <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: 'DM Mono, monospace' }}>
-        {volume ? volume.toLocaleString() : '—'}
+        {volume ? volume.toLocaleString() : '-'}
       </div>
 
       {/* Difficulty */}
@@ -230,7 +230,7 @@ export function KeywordRow({ keyword, position, prevPosition, volume, difficulty
 }
 
 // ─────────────────────────────────────────────
-// BACKLINK ROW — single backlink in table
+// BACKLINK ROW - single backlink in table
 // Usage: inside <Table /> or standalone
 // ─────────────────────────────────────────────
 export function BacklinkRow({ domain, dr, type = 'dofollow', anchor, date, status = 'active', onClick }) {
@@ -278,12 +278,12 @@ export function BacklinkRow({ domain, dr, type = 'dofollow', anchor, date, statu
 
       {/* Anchor text */}
       <div style={{ fontSize: 13, color: T.text2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {anchor || '—'}
+        {anchor || '-'}
       </div>
 
       {/* Date */}
       <div style={{ fontSize: 12, color: T.muted }}>
-        {date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+        {date ? new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
       </div>
 
       {/* Status */}
@@ -295,7 +295,7 @@ export function BacklinkRow({ domain, dr, type = 'dofollow', anchor, date, statu
 }
 
 // ─────────────────────────────────────────────
-// ACTION ITEM — single SEO task card
+// ACTION ITEM - single SEO task card
 // Usage: <ActionItem action={action} onComplete={handleComplete} />
 // ─────────────────────────────────────────────
 const IMPACT_CONFIG = {
@@ -377,7 +377,7 @@ export function ActionItem({ action, onComplete, onDismiss }) {
 }
 
 // ─────────────────────────────────────────────
-// SCORE GAUGE — horizontal gauge with label
+// SCORE GAUGE - horizontal gauge with label
 // Usage: <ScoreGauge label="SEO Score" value={68} max={100} />
 // ─────────────────────────────────────────────
 export function ScoreGauge({ label, value, max = 100, color }) {
@@ -396,7 +396,7 @@ export function ScoreGauge({ label, value, max = 100, color }) {
 }
 
 // ─────────────────────────────────────────────
-// NEXT BEST ACTION CARD — homepage priority banner
+// NEXT BEST ACTION CARD - homepage priority banner
 // Usage: <NextBestAction action="Submit sitemap to GSC" impact="high" />
 // ─────────────────────────────────────────────
 export function NextBestAction({ action, impact = 'high', onDone, onSkip }) {

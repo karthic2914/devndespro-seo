@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import api from '../utils/api'
 
@@ -13,7 +13,7 @@ export default function AcceptInvite() {
     const token = searchParams.get('token')
     if (!token) {
       setStatus('error')
-      setError('Invalid invite link — no token found.')
+      setError('Invalid invite link - no token found.')
       return
     }
     api.get(`/users/accept?token=${token}`)

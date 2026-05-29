@@ -1,5 +1,5 @@
-/**
- * PageWrapper — wraps every dashboard page
+﻿/**
+ * PageWrapper - wraps every dashboard page
  * Usage:
  *   <PageWrapper title="Keywords" subtitle="Track your search rankings">
  *     <YourContent />

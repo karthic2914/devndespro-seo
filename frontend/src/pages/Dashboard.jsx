@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -155,7 +155,7 @@ export default function Dashboard() {
       <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
-            Overview {site && <span style={{ color: T.muted, fontWeight: 400 }}>— {site.name}</span>}
+            Overview {site && <span style={{ color: T.muted, fontWeight: 400 }}>- {site.name}</span>}
           </h1>
           <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
         </div>
@@ -218,7 +218,7 @@ export default function Dashboard() {
                   </div>
                   <div style={{ fontSize: 11, color: T.muted }}>
                     {isClientSiteError
-                      ? 'This is a client site — GSC data requires the client to connect their own Google account via Integrations'
+                      ? 'This is a client site - GSC data requires the client to connect their own Google account via Integrations'
                       : 'Reconnect Google Search Console if the problem continues'}
                   </div>
                   {!isClientSiteError && (
@@ -237,7 +237,7 @@ export default function Dashboard() {
                       : 'No traffic recorded in the last 28 days'}
                   </div>
                   <div style={{ fontSize: 11, color: T.muted }}>
-                    Google anonymises daily data for low-traffic sites — check back as traffic grows
+                    Google anonymises daily data for low-traffic sites - check back as traffic grows
                   </div>
                 </div>
 
@@ -274,7 +274,7 @@ export default function Dashboard() {
                   <div key={kw.keyword + i} style={{ display: 'grid', gridTemplateColumns: '2fr 80px 80px 80px', padding: '11px 20px', alignItems: 'center', borderBottom: i < previewKeywords.length - 1 ? `1px solid #F3F4F6` : 'none' }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{kw.keyword}</div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: currentPos <= 3 ? T.green : currentPos <= 10 ? T.orange : T.text, fontFamily: 'DM Mono, monospace' }}>
-                      {Number.isFinite(currentPos) && currentPos > 0 ? `#${currentPos}` : '—'}
+                      {Number.isFinite(currentPos) && currentPos > 0 ? `#${currentPos}` : '-'}
                     </div>
                     <div>
                       {Number.isFinite(change) && change !== 0 && (
@@ -403,7 +403,7 @@ export default function Dashboard() {
               ) : gscData?.error ? (
                 <div style={{ fontSize: 12, color: T.amber, background: T.amberDim, borderRadius: 7, padding: '8px 12px' }}>
                   {isClientSiteError
-                    ? 'Client site — ask the client to connect their GSC via Integrations'
+                    ? 'Client site - ask the client to connect their GSC via Integrations'
                     : gscData.error}
                 </div>
               ) : (
@@ -425,7 +425,7 @@ export default function Dashboard() {
                       <div style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>Top Queries</div>
                       {gscData.queries.slice(0, 3).map((q, i) => (
                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: `1px solid #F3F4F6`, fontSize: 12 }}>
-                          <span style={{ color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>{q.keys?.[0] || '—'}</span>
+                          <span style={{ color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 8 }}>{q.keys?.[0] || '-'}</span>
                           <span style={{ color: T.muted, flexShrink: 0 }}>{q.clicks} clicks</span>
                         </div>
                       ))}

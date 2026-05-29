@@ -1,4 +1,4 @@
-  import { useState, useEffect } from 'react'
+﻿  import { useState, useEffect } from 'react'
   import { useParams } from 'react-router-dom'
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
   import {
@@ -360,11 +360,11 @@
                       <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{s.keyword}</div>
                       <div><OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} /></div>
                       <div style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: T.text2, fontWeight: 700 }}>
-                        {s.volume?.toLocaleString() || '—'}
+                        {s.volume?.toLocaleString() || '-'}
                       </div>
                       <DifficultyBar score={s.difficultyScore || 0} />
                       <div style={{ fontSize: 12, color: T.text2 }}>${s.cpc?.toFixed(2) || '0.00'}</div>
-                      <div style={{ fontSize: 12, color: T.text2 }}>{s.competition ? (s.competition * 100).toFixed(0) + '%' : '—'}</div>
+                      <div style={{ fontSize: 12, color: T.text2 }}>{s.competition ? (s.competition * 100).toFixed(0) + '%' : '-'}</div>
                       <div>
                         {isAdded ? (
                           <span style={{ fontSize: 11, color: T.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -528,7 +528,7 @@
                     <div><OpportunityTag volume={k.volume} difficulty={k.difficulty} /></div>
                     <span style={{ fontSize: 13, textAlign: 'right', fontFamily: 'DM Mono, monospace', color: T.text2 }}>{k.volume?.toLocaleString()}</span>
                     <div style={{ textAlign: 'center' }}><Badge status={k.difficulty} /></div>
-                    <input type="number" placeholder="—" defaultValue={k.position || ''} onBlur={e => updatePos(k.id, e.target.value)} style={{ width: '100%', textAlign: 'center', padding: '5px 8px', fontSize: 13 }} min="1" max="100" />
+                    <input type="number" placeholder="-" defaultValue={k.position || ''} onBlur={e => updatePos(k.id, e.target.value)} style={{ width: '100%', textAlign: 'center', padding: '5px 8px', fontSize: 13 }} min="1" max="100" />
                     <div style={{ textAlign: 'center' }}>
                       {page1Map[k.id]
                         ? page1Map[k.id].inFirstPage ? <Badge variant="success">Yes</Badge> : <Badge variant="danger">No</Badge>

@@ -31,7 +31,7 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
       {/* Background track */}
       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#F3F4F6" strokeWidth={7} />
 
-      {/* Score arc — starts from top (rotated -90deg via transform attribute) */}
+      {/* Score arc - starts from top (rotated -90deg via transform attribute) */}
       <circle
         cx={cx} cy={cy} r={r}
         fill="none"
@@ -44,7 +44,7 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
         style={{ transition: noAnimation ? 'none' : 'stroke-dashoffset 0.8s ease' }}
       />
 
-      {/* Score text — centered, no CSS transform needed */}
+      {/* Score text - centered, no CSS transform needed */}
       <text
         x={cx}
         y={cy}

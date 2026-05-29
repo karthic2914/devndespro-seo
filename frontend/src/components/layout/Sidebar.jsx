@@ -1,5 +1,5 @@
-/**
- * Sidebar — left navigation for site dashboard
+﻿/**
+ * Sidebar - left navigation for site dashboard
  */
 import { NavLink, useNavigate } from 'react-router-dom'
 import { Logo, ProgressBar, T } from '../UI'
