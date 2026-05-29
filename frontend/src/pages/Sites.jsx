@@ -410,7 +410,7 @@ export default function Sites() {
 
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
-                  {['Project', 'Health', 'AI Snippet', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                  {['Project', 'Health', 'AI Snippet', 'AEO', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
                     <div key={h} className="projects-table__head-cell">{h}</div>
                   ))}
                 </div>
@@ -453,6 +453,7 @@ export default function Sites() {
                         color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : 'var(--muted)',
                         fontWeight: site.ai_snippet_score ? 700 : 400,
                       }}>{site.ai_snippet_score ?? '—'}</div>
+                      <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '—'}</div>
                       <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">

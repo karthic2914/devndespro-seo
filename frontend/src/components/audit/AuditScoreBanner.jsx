@@ -1,5 +1,5 @@
 ﻿import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain } from '@fortawesome/free-solid-svg-icons'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
@@ -7,6 +7,7 @@ const CAT_ICONS = {
   'Content Quality': faFileLines,
   'Page Speed': faBolt,
   'AI Snippet': faRobot,
+  'AEO': faBrain,
 }
 
 function scoreColor(s) {
