@@ -479,6 +479,9 @@ router.post('/:siteId/ai-visibility/test', auth, verifySite, async (req, res) =>
     }
   }
   await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [req.siteId, JSON.stringify(results)]).catch(() => {})
+  const citedCount = results.filter(r => r.cited).length
+  const citedStr = citedCount + '/' + results.length
+  await pool.query('INSERT INTO seo_metrics (site_id, chatgpt_cited) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET chatgpt_cited=$2', [req.siteId, citedStr]).catch(() => {})
   res.json({ results, domain })
 })
 
