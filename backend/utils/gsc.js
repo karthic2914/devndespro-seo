@@ -1,4 +1,4 @@
-const axios = require('axios')
+﻿const axios = require('axios')
 const { pool } = require('../clients')
 
 async function getGscAccessToken(refreshToken) {
@@ -12,12 +12,12 @@ async function getGscAccessToken(refreshToken) {
 }
 
 async function ensureSiteIsVerifiedInGsc(userId, siteUrl) {
-  // GSC verification is advisory only — any site can be added
+  // GSC verification is advisory only - any site can be added
   // If user has GSC connected, we check and log but never block
   try {
     const { rows: userRows } = await pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1', [userId])
     const refreshToken = userRows[0]?.gsc_refresh_token
-    if (!refreshToken) return // No GSC connected — allow anyway
+    if (!refreshToken) return // No GSC connected - allow anyway
 
     const accessToken = await getGscAccessToken(refreshToken)
     const { data } = await axios.get('https://www.googleapis.com/webmasters/v3/sites', {
@@ -43,11 +43,11 @@ async function ensureSiteIsVerifiedInGsc(userId, siteUrl) {
     })
 
     if (!isVerified) {
-      console.log(`[GSC] Site ${siteUrl} not in GSC — added anyway`)
+      console.log(`[GSC] Site ${siteUrl} not in GSC - added anyway`)
     }
   } catch (e) {
     console.log('[GSC] Verification skipped:', e.message)
-    // Never block — just log and continue
+    // Never block - just log and continue
   }
 }
 

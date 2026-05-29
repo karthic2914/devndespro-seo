@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer')
+﻿const nodemailer = require('nodemailer')
 const { pool } = require('../clients')
 const { engineLabel } = require('./helpers')
 
@@ -99,7 +99,7 @@ async function sendRankScanReportEmail(recipients, report) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM || `"SEO Reports" <${process.env.SMTP_USER}>`,
     to: recipients.join(', '),
-    subject: `Weekly Rank Scan — ${report.siteName} (${new Date().toLocaleDateString('en-GB')})`,
+    subject: `Weekly Rank Scan - ${report.siteName} (${new Date().toLocaleDateString('en-GB')})`,
     html: buildRankScanEmailHtml(report),
   })
 }
@@ -273,12 +273,12 @@ async function sendSiteReport(siteId, recipients) {
   await transporter.sendMail({
     from: process.env.SMTP_FROM || `"SEO Reports" <${process.env.SMTP_USER}>`,
     to: recipients.join(', '),
-    subject: `Daily SEO Report — ${site.name} (${new Date().toLocaleDateString('en-GB')})`,
+    subject: `Daily SEO Report - ${site.name} (${new Date().toLocaleDateString('en-GB')})`,
     html,
   })
 }
 
-// ─── ZeptoMail HTTP API (works on Railway — no SMTP port issues) ───────────────
+// ─── ZeptoMail HTTP API (works on Railway - no SMTP port issues) ───────────────
 async function sendSummaryEmail({ to, subject, message, fullReport }) {
   const htmlBody = `<!DOCTYPE html>
 <html>
