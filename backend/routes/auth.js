@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const jwt = require('jsonwebtoken')
 const { pool } = require('../clients')
@@ -49,7 +49,7 @@ router.post('/google', async (req, res) => {
     )
     const user = rows[0]
 
-    // If invited user — grant site_access for their assigned site
+    // If invited user - grant site_access for their assigned site
     if (isInvited) {
       for (const invite of inviteRows) {
         if (invite.site_id) {
@@ -61,7 +61,7 @@ router.post('/google', async (req, res) => {
       }
     }
 
-    // If admin — ensure they have access to all their own sites
+    // If admin - ensure they have access to all their own sites
     if (isAdmin) {
       await pool.query(
         `INSERT INTO site_access (site_id, user_id)

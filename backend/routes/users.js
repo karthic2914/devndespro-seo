@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const crypto = require('crypto')
 const axios = require('axios')
 const { pool } = require('../clients')
@@ -75,7 +75,7 @@ router.post('/invite', auth, async (req, res) => {
       return res.status(409).json({ error: `${normalizedEmail} is already invited to this project (status: ${existing[0].status})` })
     }
 
-    // Check if already a registered user — grant access directly
+    // Check if already a registered user - grant access directly
     const { rows: users } = await pool.query('SELECT id FROM users WHERE email=$1', [normalizedEmail])
     if (users.length > 0) {
       await pool.query(
@@ -111,7 +111,7 @@ router.post('/invite', auth, async (req, res) => {
             You've been given access to the SEO dashboard for <strong>${siteName}</strong>.
           </p>
           <p style="color:#555;line-height:1.6;margin:0 0 24px">
-            Track keywords, backlinks, site health and more — all in one place.
+            Track keywords, backlinks, site health and more - all in one place.
           </p>
           <a href="${inviteUrl}" style="display:inline-block;background:#E66A39;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:15px">
             Accept Invitation →
@@ -201,7 +201,7 @@ router.delete('/:id', auth, async (req, res) => {
   res.json({ ok: true })
 })
 
-// Accept invite (public — no auth)
+// Accept invite (public - no auth)
 router.get('/accept', async (req, res) => {
   const { token } = req.query
   if (!token) return res.status(400).json({ error: 'Token required' })

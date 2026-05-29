@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 
@@ -43,11 +43,11 @@ router.post('/audit', async (req, res) => {
 
     const h1s = $('h1')
     if (h1s.length === 0) add('h1', 'error', 'No H1 heading found', 'High', 'On-Page SEO')
-    else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found — keep only one`, 'Medium', 'On-Page SEO')
+    else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found - keep only one`, 'Medium', 'On-Page SEO')
     else add('h1', 'pass', `H1: "${h1s.first().text().trim().substring(0, 55)}"`, 'High', 'On-Page SEO')
 
     const ogTitle = $('meta[property="og:title"]').attr('content') || ''
-    if (!ogTitle) add('og', 'warning', 'Missing og:title — poor social media preview', 'Low', 'On-Page SEO')
+    if (!ogTitle) add('og', 'warning', 'Missing og:title - poor social media preview', 'Low', 'On-Page SEO')
     else add('og', 'pass', 'Open Graph (og:title) present', 'Low', 'On-Page SEO')
 
     const imgCount = $('img').length
@@ -61,20 +61,20 @@ router.post('/audit', async (req, res) => {
     else add('content', 'pass', `Good content volume: ~${wordCount} words`, 'Medium', 'Content Quality')
 
     const h2Count = $('h2').length
-    if (h2Count === 0) add('structure', 'warning', 'No H2 subheadings — poor content hierarchy', 'Low', 'Content Quality')
-    else add('structure', 'pass', `${h2Count} H2 subheadings — good structure`, 'Low', 'Content Quality')
+    if (h2Count === 0) add('structure', 'warning', 'No H2 subheadings - poor content hierarchy', 'Low', 'Content Quality')
+    else add('structure', 'pass', `${h2Count} H2 subheadings - good structure`, 'Low', 'Content Quality')
 
     const canonical = $('link[rel="canonical"]').attr('href') || ''
-    if (!canonical) add('canonical', 'warning', 'No canonical URL — risk of duplicate content', 'Medium', 'Technical SEO')
+    if (!canonical) add('canonical', 'warning', 'No canonical URL - risk of duplicate content', 'Medium', 'Technical SEO')
     else add('canonical', 'pass', `Canonical set`, 'High', 'Technical SEO')
 
     const viewport = $('meta[name="viewport"]').attr('content') || ''
-    if (!viewport) add('viewport', 'error', 'Missing viewport meta — fails mobile-friendly test', 'High', 'Technical SEO')
+    if (!viewport) add('viewport', 'error', 'Missing viewport meta - fails mobile-friendly test', 'High', 'Technical SEO')
     else add('viewport', 'pass', 'Viewport meta present (mobile-ready)', 'High', 'Technical SEO')
 
     const robotsContent = $('meta[name="robots"]').attr('content') || ''
     if (robotsContent.toLowerCase().includes('noindex'))
-      add('robots', 'error', `Page set to noindex — Google won't index this`, 'High', 'Technical SEO')
+      add('robots', 'error', `Page set to noindex - Google won't index this`, 'High', 'Technical SEO')
     else add('robots', 'pass', 'Page is indexable', 'High', 'Technical SEO')
 
     const hasSchema = html.includes('"@context"') || html.includes("'@context'")

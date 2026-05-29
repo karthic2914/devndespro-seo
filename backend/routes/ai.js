@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
@@ -248,8 +248,8 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
   let plan = null
   try {
     const competitorList = serpResults.length
-      ? serpResults.map(r => `${r.position}. ${r.domain} — "${r.title}"`).join('\n')
-      : '(SERP data unavailable — generate plan based on keyword only)'
+      ? serpResults.map(r => `${r.position}. ${r.domain} - "${r.title}"`).join('\n')
+      : '(SERP data unavailable - generate plan based on keyword only)'
     const engLabel = engine === 'duckduckgo' ? 'DuckDuckGo' : engine[0].toUpperCase() + engine.slice(1)
     const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2–4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2–3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
     const r = await anthropic.messages.create({

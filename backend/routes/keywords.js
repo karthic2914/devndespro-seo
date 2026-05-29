@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
@@ -102,7 +102,7 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req
       trend: (item.keyword_info?.monthly_searches || []).slice(-6).map(m => m.search_volume),
     }))
 
-    // Save search to DB (upsert — keep only latest per site)
+    // Save search to DB (upsert - keep only latest per site)
     await pool.query(
       `INSERT INTO keyword_searches (site_id, query, results)
        VALUES ($1, $2, $3)
