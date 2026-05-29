@@ -317,7 +317,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     const aeoChecksAll = checks.filter(c => c.category === 'AI Snippet')
     const trueAeoChecks = checks.filter(c => c.category === 'AEO')
     const aeoScore = trueAeoChecks.length ? Math.round(trueAeoChecks.reduce((s, i) => s + (i.status === 'pass' ? 100 : i.status === 'warning' ? 55 : 15), 0) / trueAeoChecks.length) : 100
-    const aeoScore = aeoChecksAll.length ? Math.round(aeoChecksAll.reduce((s, i) => s + (i.status === 'pass' ? 100 : i.status === 'warning' ? 55 : 15), 0) / aeoChecksAll.length) : 100
+    const aiSnippetScore = aeoChecksAll.length ? Math.round(aeoChecksAll.reduce((s, i) => s + (i.status === 'pass' ? 100 : i.status === 'warning' ? 55 : 15), 0) / aeoChecksAll.length) : 100
     await pool.query('INSERT INTO seo_metrics (site_id, health, ai_snippet_score, aeo_score) VALUES ($1,$2,$3,$4) ON CONFLICT (site_id) DO UPDATE SET health=$2, ai_snippet_score=$3, aeo_score=$4, updated_at=NOW()', [req.siteId, score, aiSnippetScore, aeoScore])
     for (const c of checks.filter(x => x.status === 'error')) {
       await pool.query('INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)', [req.siteId, 'audit', c.message, 'error'])
