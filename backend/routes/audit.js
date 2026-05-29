@@ -269,6 +269,47 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (shortAnswerCount < 2) add('snippet_answer_density', 'warning', `Only ${shortAnswerCount} concise answer paragraphs (20-60 words) found — add more direct answer blocks`, 'Medium', 'AI Snippet')
     else add('snippet_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found — good answer density for AI engines`, 'Medium', 'AI Snippet')
 
+
+    // ── AEO (True Answer Engine Optimization) ────────────────────────────────
+
+    // 1. Author Entity
+    const hasAuthorSchema = html.includes('"author"') || html.includes("'author'")
+    const hasAuthorByline = /\b(by|written by|author:)\s+[A-Z][a-z]+/i.test($('body').text())
+    if (hasAuthorSchema) add('aeo_author_entity', 'pass', 'Author entity found in schema — AI engines can attribute content correctly', 'High', 'AEO')
+    else if (hasAuthorByline) add('aeo_author_entity', 'warning', 'Author byline found but no author schema — add author JSON-LD for better AI attribution', 'High', 'AEO')
+    else add('aeo_author_entity', 'error', 'No author entity found — AI engines cannot attribute this content, reducing citation likelihood', 'High', 'AEO')
+
+    // 2. E-E-A-T Signals
+    const pageText = $('body').text().toLowerCase()
+    const allLinks = []
+    $('a[href]').each((_, el) => allLinks.push($(el).attr('href') || ''))
+    const eatSignals = [
+      allLinks.some(h => /\/(about|about-us|our-story|who-we-are)/.test(h)),
+      allLinks.some(h => /\/(team|our-team|people|staff|founders)/.test(h)),
+      allLinks.some(h => /\/(contact|contact-us)/.test(h)),
+      /certif|accredit|award|recogni|member of|associat/i.test(pageText),
+      /\d+\s*\+?\s*years?\s*(of\s*)?(experience|expertise)/i.test(pageText),
+    ]
+    const eatCount = eatSignals.filter(Boolean).length
+    if (eatCount >= 3) add('aeo_eeat', 'pass', eatCount + ' E-E-A-T signals found — strong authority for AI citation', 'High', 'AEO')
+    else if (eatCount >= 1) add('aeo_eeat', 'warning', 'Only ' + eatCount + ' E-E-A-T signal(s) found — add About, Team pages and credentials', 'High', 'AEO')
+    else add('aeo_eeat', 'error', 'No E-E-A-T signals found — AI engines will not trust or cite this content', 'High', 'AEO')
+
+    // 3. Bing Indexing
+    try {
+      const bingDomain = new URL(url).hostname
+      const bingUrl = 'https://www.bing.com/search?q=site:' + bingDomain + '&count=1'
+      const bingRes = await axios.get(bingUrl, { timeout: 8000, headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DevndeSproBot/1.0)' } })
+      const bingHtml = bingRes.data
+      const noResults = /no results|There are no results/i.test(bingHtml)
+      const countMatch = bingHtml.match(/[\d,]+ results/)
+      const resultCount = countMatch ? parseInt(countMatch[0].replace(/[^0-9]/g, '')) : 0
+      if (noResults || resultCount === 0) add('aeo_bing_index', 'error', 'Site not indexed on Bing — ChatGPT uses Bing; fix this to improve AI citation chances', 'High', 'AEO')
+      else if (resultCount < 10) add('aeo_bing_index', 'warning', 'Only ' + resultCount + ' page(s) indexed on Bing — submit sitemap to Bing Webmaster Tools', 'Medium', 'AEO')
+      else add('aeo_bing_index', 'pass', resultCount + '+ pages indexed on Bing — good coverage for ChatGPT and AI search engines', 'High', 'AEO')
+    } catch (e) {
+      add('aeo_bing_index', 'warning', 'Could not check Bing indexing — verify manually at bing.com/webmaster', 'Medium', 'AEO')
+    }
     const seoChecks = checks.filter(c => c.category !== 'AI Snippet')
     const errors = seoChecks.filter(c => c.status === 'error').length
     const warnings = seoChecks.filter(c => c.status === 'warning').length
