@@ -100,7 +100,7 @@ router.post('/:siteId/ai/action-plan', auth, verifySite, async (req, res) => {
     ])
     const checks = Array.isArray(aR.rows[0]?.results?.checks) ? aR.rows[0].results.checks : [];
     const issues = checks
-      .filter(c => c.status !== 'pass')
+      .filter(c => c && c.status !== 'pass')
       .map(c => '- ' + c.message)
       .join('\n') || 'No audit run yet';
     const prompt = `You are a senior SEO strategist. Build a prioritized 6-task action plan.\nSite: ${sR.rows[0]?.name} (${sR.rows[0]?.url})\nDR: ${mR.rows[0]?.dr || 0}, Health: ${mR.rows[0]?.health || 0}, Clicks: ${mR.rows[0]?.clicks || 0}\nKeywords: ${kR.rows.map(k => `${k.keyword} pos${k.position || '?'}`).join(', ') || 'none'}\nBacklinks: ${bR.rows.length} total, ${bR.rows.filter(b => b.status === 'Live').length} live\nAudit issues:\n${issues}\n\nReturn ONLY a JSON array:\n[{"text":"...","impact":"High|Medium|Low","category":"On-Page|Technical|Content|Backlinks|Speed"}]`
@@ -305,7 +305,7 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
     const keywords = kR.rows.map(k => k.keyword).join(', ') || 'none'
     const checks = Array.isArray(aR.rows[0]?.results?.checks) ? aR.rows[0].results.checks : [];
     const issues = checks
-      .filter(c => c.status !== 'pass')
+      .filter(c => c && c.status !== 'pass')
       .slice(0, 8)
       .map(c => '- ' + c.message)
       .join('\n') || 'No audit data';
