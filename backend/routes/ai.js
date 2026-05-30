@@ -300,8 +300,12 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
     if (!site) return res.status(404).json({ error: 'Site not found' })
     const metrics = mR.rows[0] || {}
     const keywords = kR.rows.map(k => k.keyword).join(', ') || 'none'
-    const issues = (aR.rows[0]?.results?.checks || [])
-      .filter(c => c.status !== 'pass').slice(0, 8).map(c => '- ' + c.message).join('\n') || 'No audit data'
+    const checks = Array.isArray(aR.rows[0]?.results?.checks) ? aR.rows[0].results.checks : [];
+    const issues = checks
+      .filter(c => c.status !== 'pass')
+      .slice(0, 8)
+      .map(c => '- ' + c.message)
+      .join('\n') || 'No audit data';
 
     const prompt = `You are an AI visibility expert. Analyse this site and return 5 actionable recommendations to improve how often AI engines (ChatGPT, Claude, Perplexity) cite it.
 
