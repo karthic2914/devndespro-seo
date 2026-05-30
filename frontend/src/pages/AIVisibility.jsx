@@ -183,12 +183,12 @@ export default function AIVisibility() {
           ))}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <button onClick={runTest} disabled={loading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runTest} disabled={loading || claudeLoading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
           <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run - GPT-4o mini</span>
-          <button onClick={runClaudeTest} disabled={claudeLoading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runClaudeTest} disabled={claudeLoading || loading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
           </button>
@@ -208,7 +208,7 @@ export default function AIVisibility() {
                 </div>
                 {r.excerpt && (
                   <div style={{ fontSize: 12, color: '#6B7280', background: '#F9FAFB', borderRadius: 6, padding: '8px 12px', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11, display: 'block', marginBottom: 3 }}>ChatGPT said:</span>
+                    <span style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11, display: 'block', marginBottom: 3 }}>AI said:</span>
                     {r.excerpt}
                   </div>
                 )}
