@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -211,7 +211,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     }
 
 
-    // ── AEO (Answer Engine Optimization) ─────────────────────────────────────
+    // -- AEO (Answer Engine Optimization) -------------------------------------
     // 1. FAQ Schema
     const faqSchema = html.includes('"FAQPage"') || html.includes("'FAQPage'")
     if (!faqSchema) add('snippet_faq_schema', 'warning', 'No FAQPage schema - add FAQ JSON-LD to appear in AI answer boxes', 'High', 'AI Snippet')
@@ -270,7 +270,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     else add('snippet_answer_density', 'pass', `${shortAnswerCount} concise answer paragraphs found - good answer density for AI engines`, 'Medium', 'AI Snippet')
 
 
-    // ── AEO (True Answer Engine Optimization) ────────────────────────────────
+    // -- AEO (True Answer Engine Optimization) --------------------------------
 
     // 1. Author Entity
     const hasAuthorSchema = html.includes('"author"') || html.includes("'author'")
@@ -663,3 +663,4 @@ Return ONLY the JSON array, no other text.`
 })
 
 module.exports = router
+
