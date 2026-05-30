@@ -632,7 +632,7 @@ Return ONLY the JSON array, no other text.`
         messages: [{ role: 'user', content: prompt }],
       })
       const text = msg.content[0]?.text || '[]'
-      const clean = text.replace(/\\\json|\\\/g, '').trim()
+      const clean = text.split('`').filter(s => !s.startsWith('json')).join('').trim()
       recommendations = JSON.parse(clean)
     }
 
@@ -645,7 +645,7 @@ Return ONLY the JSON array, no other text.`
         messages: [{ role: 'user', content: prompt }],
       })
       const gptText = completion.choices[0]?.message?.content || '[]'
-      const gptClean = gptText.replace(/\\\json|\\\/g, '').trim()
+      const gptClean = gptText.split('`').filter(s => !s.startsWith('json')).join('').trim()
       gptRecommendations = JSON.parse(gptClean)
     }
 
