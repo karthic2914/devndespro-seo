@@ -574,7 +574,8 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
 // AI Visibility - Claude site analysis for specific recommendations
 router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res) => {
   try {
-    const { rows: s } = await pool.query('SELECT url, name FROM sites WHERE id=$1', [req.siteId])
+    const { engine = 'Claude' } = req.body
+  const { rows: s } = await pool.query('SELECT url, name FROM sites WHERE id=$1', [req.siteId])
     if (!s.length) return res.status(404).json({ error: 'Site not found' })
     const siteUrl = s[0].url
     const siteName = s[0].name || siteUrl
@@ -622,16 +623,33 @@ Give exactly 5 recommendations. For each:
 Format as JSON array: [{"title": "...", "action": "...", "priority": "High|Medium|Low"}]
 Return ONLY the JSON array, no other text.`
 
-    const msg = await anthropic.messages.create({
-      model: 'claude-haiku-4-5',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: prompt }],
-    })
+        let recommendations = [], gptRecommendations = []
 
-    const text = msg.content[0]?.text || '[]'
-    const clean = text.replace(/```json|```/g, '').trim()
-    const recommendations = JSON.parse(clean)
-    res.json({ recommendations, site: siteName, url: siteUrl })
+    if (engine === 'Claude' || engine === 'Both') {
+      const msg = await anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const text = msg.content[0]?.text || '[]'
+      const clean = text.replace(/\\\json|\\\/g, '').trim()
+      recommendations = JSON.parse(clean)
+    }
+
+    if (engine === 'ChatGPT' || engine === 'Both') {
+      const { OpenAI } = require('openai')
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      })
+      const gptText = completion.choices[0]?.message?.content || '[]'
+      const gptClean = gptText.replace(/\\\json|\\\/g, '').trim()
+      gptRecommendations = JSON.parse(gptClean)
+    }
+
+    res.json({ recommendations, gptRecommendations, engine, site: siteName, url: siteUrl })
   } catch (e) {
     res.status(500).json({ error: e.message })
   }

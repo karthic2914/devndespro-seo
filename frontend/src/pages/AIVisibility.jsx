@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 
@@ -15,10 +15,17 @@ const SCORE_LABEL = s => s >= 80 ? 'Excellent' : s >= 50 ? 'Average' : s > 0 ? '
 const SCORE_COLOR = s => s >= 80 ? '#16A34A' : s >= 50 ? '#D97706' : '#DC2626'
 const SCORE_BG = s => s >= 80 ? '#DCFCE7' : s >= 50 ? '#FEF3C7' : '#FEE2E2'
 
+const ENGINES = [
+  { key: 'Claude', label: 'Claude (Anthropic)', desc: 'Fast, accurate, reads your site content', color: '#D85A30' },
+  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~$0.02 per analysis', color: '#10A37F' },
+  { key: 'Both', label: 'Both engines', desc: 'Compare recommendations side by side', color: '#6366F1' },
+]
+
 export default function AIVisibility() {
   const { siteId } = useParams()
   const showSnackbar = useSnackbar()
   const reportRef = useRef(null)
+  const menuRef = useRef(null)
   const [site, setSite] = useState(null)
   const [queries, setQueries] = useState(['', '', ''])
   const [results, setResults] = useState(null)
@@ -31,6 +38,14 @@ export default function AIVisibility() {
   const [aiRecommendations, setAiRecommendations] = useState(null)
   const [sharing, setSharing] = useState(false)
   const [domain, setDomain] = useState('')
+  const [showEngineMenu, setShowEngineMenu] = useState(false)
+  const [selectedEngine, setSelectedEngine] = useState('Claude')
+
+  useEffect(() => {
+    const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   useEffect(() => {
     api.get('/sites').then(res => {
@@ -51,7 +66,7 @@ export default function AIVisibility() {
     api.get('/sites/' + siteId + '/ai-visibility/history').then(res => {
       const h = res.data || []
       setHistory(h)
-      if (h.length > 0) { setResults(h[0].results || []) }
+      if (h.length > 0) setResults(h[0].results || [])
     }).catch(() => {})
   }, [siteId])
 
@@ -64,9 +79,7 @@ export default function AIVisibility() {
       setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
       showSnackbar('Test completed!', 'success')
-    } catch (e) {
-      showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-    }
+    } catch (e) { showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setLoading(false)
   }
 
@@ -78,21 +91,19 @@ export default function AIVisibility() {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
       setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
       showSnackbar('Claude test completed!', 'success')
-    } catch (e) {
-      showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-    }
+    } catch (e) { showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setClaudeLoading(false)
   }
 
-  async function analyseWithClaude() {
+  async function analyseWithEngine(engine) {
+    setSelectedEngine(engine)
+    setShowEngineMenu(false)
     setAnalyseLoading(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/analyse', {})
-      setAiRecommendations(res.data)
-      showSnackbar('Analysis complete!', 'success')
-    } catch (e) {
-      showSnackbar('Analysis failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-    }
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/analyse', { engine })
+      setAiRecommendations({ ...res.data, engine })
+      showSnackbar(engine + ' analysis complete!', 'success')
+    } catch (e) { showSnackbar('Analysis failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setAnalyseLoading(false)
   }
 
@@ -130,14 +141,14 @@ export default function AIVisibility() {
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
 
-  const defaultTips = [
-    { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High', status: 'error' },
-    { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High', status: 'error' },
-    { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium', status: 'warning' },
-    { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium', status: 'warning' },
+  const tipsToShow = improvements.length > 0 ? improvements : [
+    { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High' },
+    { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High' },
+    { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium' },
+    { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium' },
   ]
 
-  const tipsToShow = improvements.length > 0 ? improvements : defaultTips
+  const selectedEngineObj = ENGINES.find(e => e.key === selectedEngine) || ENGINES[0]
 
   return (
     <div ref={reportRef} style={{ padding: '1.5rem 2rem', maxWidth: 860 }}>
@@ -168,10 +179,10 @@ export default function AIVisibility() {
               <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{e.label}</span>
             </div>
             {e.soon ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Coming soon</div>
-            : e.pending ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Run ChatGPT test first</div>
+            : e.pending ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>
             : e.score != null ? (
               <>
-                <div style={{ fontSize: 28, fontWeight: 800, color: SCORE_COLOR(e.score), marginBottom: 2 }}>{e.score}<span style={{ fontSize: 14, fontWeight: 400 }}>/100</span></div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: SCORE_COLOR(e.score) }}>{e.score}<span style={{ fontSize: 14, fontWeight: 400 }}>/100</span></div>
                 <div style={{ background: '#F3F4F6', borderRadius: 3, height: 4, overflow: 'hidden', margin: '8px 0 6px' }}>
                   <div style={{ width: e.score + '%', height: '100%', background: SCORE_COLOR(e.score), borderRadius: 3 }} />
                 </div>
@@ -236,20 +247,59 @@ export default function AIVisibility() {
         </div>
       )}
 
+      {/* AI Site Analysis with VS Code-style engine picker */}
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
           <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#D85A30' }} />
           AI-powered site analysis
         </div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>Claude reads your actual site content and gives specific recommendations — not generic advice.</div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>Choose an AI engine to analyse your site content and get specific recommendations.</div>
+
         {!aiRecommendations ? (
-          <button onClick={analyseWithClaude} disabled={analyseLoading} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: analyseLoading ? '#D1D5DB' : '#D85A30', color: '#fff', fontWeight: 700, fontSize: 14, cursor: analyseLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={analyseLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: analyseLoading ? 'spin 1s linear infinite' : 'none' }} />
-            {analyseLoading ? 'Claude is reading your site...' : 'Analyse my site with Claude'}
-          </button>
+          <div ref={menuRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <div style={{ display: 'flex', borderRadius: 8, overflow: 'visible', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+              <button
+                onClick={() => analyseWithEngine(selectedEngine)}
+                disabled={analyseLoading}
+                style={{ padding: '10px 18px', border: 'none', background: analyseLoading ? '#D1D5DB' : selectedEngineObj.color, color: '#fff', fontWeight: 700, fontSize: 13, cursor: analyseLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '8px 0 0 8px', whiteSpace: 'nowrap' }}>
+                <FontAwesomeIcon icon={analyseLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: analyseLoading ? 'spin 1s linear infinite' : 'none' }} />
+                {analyseLoading ? 'Analysing with ' + selectedEngine + '...' : 'Analyse with ' + selectedEngine}
+              </button>
+              <button
+                onClick={() => setShowEngineMenu(m => !m)}
+                disabled={analyseLoading}
+                style={{ padding: '10px 12px', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.25)', background: analyseLoading ? '#D1D5DB' : selectedEngineObj.color, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', borderRadius: '0 8px 8px 0', display: 'flex', alignItems: 'center' }}>
+                <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 11, transition: 'transform 0.15s', transform: showEngineMenu ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+              </button>
+            </div>
+
+            {showEngineMenu && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 200, minWidth: 260, overflow: 'hidden' }}>
+                <div style={{ padding: '8px 12px 6px', fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #F3F4F6' }}>Select AI engine</div>
+                {ENGINES.map((eng, i) => (
+                  <div
+                    key={eng.key}
+                    onClick={() => { setSelectedEngine(eng.key); setShowEngineMenu(false) }}
+                    style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < ENGINES.length - 1 ? '1px solid #F9FAFB' : 'none', background: selectedEngine === eng.key ? '#F9FAFB' : '#fff', display: 'flex', alignItems: 'center', gap: 12 }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
+                    onMouseLeave={e => e.currentTarget.style.background = selectedEngine === eng.key ? '#F9FAFB' : '#fff'}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: eng.color, flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: selectedEngine === eng.key ? 700 : 500, color: '#111827' }}>{eng.label}</div>
+                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{eng.desc}</div>
+                    </div>
+                    {selectedEngine === eng.key && <span style={{ fontSize: 11, color: eng.color, fontWeight: 700 }}>selected</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
           <div>
-            <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Based on analysis of <strong>{aiRecommendations.url}</strong>:</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: ENGINES.find(e => e.key === aiRecommendations.engine)?.color || '#D85A30' }} />
+              <span style={{ fontSize: 12, color: '#6B7280' }}>Analysis by <strong>{aiRecommendations.engine}</strong> for <strong>{aiRecommendations.url}</strong></span>
+            </div>
             {(aiRecommendations.recommendations || []).map((r, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
                 <div style={{ width: 24, height: 24, borderRadius: 5, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280' }}>{i+1}</div>
@@ -262,7 +312,7 @@ export default function AIVisibility() {
                 </div>
               </div>
             ))}
-            <button onClick={() => setAiRecommendations(null)} style={{ marginTop: 12, fontSize: 12, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Re-analyse</button>
+            <button onClick={() => setAiRecommendations(null)} style={{ marginTop: 12, fontSize: 12, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Re-analyse with different engine</button>
           </div>
         )}
       </div>
