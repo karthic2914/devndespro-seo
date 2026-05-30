@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -6,9 +6,9 @@ import api from '../utils/api'
 import { useSnackbar } from '../App'
 
 function genQueries(domain, brand, keywords) {
-  const kw1 = keywords[0] || 'web developer'
-  const kw2 = keywords[1] || 'web design'
-  return [brand + ' review', 'best ' + kw1 + ' ' + brand, brand + ' ' + kw2 + ' agency']
+  const kw1 = keywords[0] || (brand + ' software')
+  const kw2 = keywords[1] || (brand + ' tool')
+  return [brand + ' review', 'best ' + kw1, brand + ' vs alternatives']
 }
 
 const SCORE_LABEL = s => s >= 80 ? 'Excellent' : s >= 50 ? 'Average' : s > 0 ? 'Below average' : 'Poor'
@@ -217,7 +217,7 @@ export default function AIVisibility() {
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
           <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run</span>
-          <button onClick={runClaudeTest} disabled={claudeLoading || loading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runClaudeTest} disabled={claudeLoading || loading || analyseLoading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
           </button>
