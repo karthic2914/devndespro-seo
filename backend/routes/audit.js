@@ -543,4 +543,31 @@ router.post('/:siteId/ai-visibility/test-claude', auth, verifySite, async (req, 
   res.json({ results, domain, score: claudeScore })
 })
 
+
+// AI Visibility - Get site-specific improvement tips from last audit
+router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    'SELECT results FROM audit_results WHERE site_id=$1 ORDER BY id DESC LIMIT 1',
+    [req.siteId]
+  )
+  if (!rows.length) return res.json({ tips: [] })
+  const checks = rows[0].results || []
+  const failing = checks.filter(c =>
+    (c.category === 'AEO' || c.category === 'AI Snippet') &&
+    (c.status === 'error' || c.status === 'warning')
+  ).sort((a, b) => {
+    const order = { error: 0, warning: 1 }
+    const pri = { High: 0, Medium: 1, Low: 2 }
+    return (order[a.status] - order[b.status]) || (pri[a.impact] - pri[b.impact])
+  }).slice(0, 6)
+  const tips = failing.map(c => ({
+    title: c.check.replace(/_/g, ' ').replace(/aeo |snippet /, ''),
+    message: c.message,
+    priority: c.impact || 'Medium',
+    status: c.status,
+    category: c.category,
+  }))
+  res.json({ tips })
+})
+
 module.exports = router

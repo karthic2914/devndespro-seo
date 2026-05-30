@@ -26,6 +26,7 @@ export default function AIVisibility() {
   const [loading, setLoading] = useState(false)
   const [claudeLoading, setClaudeLoading] = useState(false)
   const [claudeResults, setClaudeResults] = useState(null)
+  const [improvements, setImprovements] = useState([])
   const [sharing, setSharing] = useState(false)
   const [domain, setDomain] = useState('')
 
@@ -44,6 +45,7 @@ export default function AIVisibility() {
         }).catch(() => setQueries(genQueries(d, brand, [])))
       }
     }).catch(() => {})
+    api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/history').then(res => {
       const h = res.data || []
       setHistory(h)
@@ -57,7 +59,7 @@ export default function AIVisibility() {
     setLoading(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
-      setResults(res.data.results)
+      setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
       showSnackbar('Test completed!', 'success')
     } catch (e) {
@@ -72,7 +74,7 @@ export default function AIVisibility() {
     setClaudeLoading(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
-      setClaudeResults({ score: res.data.score, results: res.data.results })
+      setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
       showSnackbar('Claude test completed!', 'success')
     } catch (e) {
       showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
@@ -208,7 +210,7 @@ export default function AIVisibility() {
                 </div>
                 {r.excerpt && (
                   <div style={{ fontSize: 12, color: '#6B7280', background: '#F9FAFB', borderRadius: 6, padding: '8px 12px', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11, display: 'block', marginBottom: 3 }}>AI said:</span>
+                    <span style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11, display: 'block', marginBottom: 3 }}>{r.engine || 'AI'} said:</span>
                     {r.excerpt}
                   </div>
                 )}
@@ -221,12 +223,12 @@ export default function AIVisibility() {
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>How to improve {domain} AI visibility</div>
         <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.</div>
-        {[
-          { title: 'Submit sitemap to Bing Webmaster Tools', desc: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High' },
-          { title: 'Get listed on Trustpilot or G2', desc: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High' },
-          { title: 'Add author schema to content pages', desc: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium' },
-          { title: 'Build Reddit presence', desc: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium' },
-        ].map((tip, i) => (
+        {(improvements.length > 0 ? improvements : [
+          { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High', status: 'error' },
+          { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High', status: 'error' },
+          { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium', status: 'warning' },
+          { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium', status: 'warning' },
+        ]).map((tip, i) => (
           <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 3 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
               <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 12 }} />
@@ -236,7 +238,7 @@ export default function AIVisibility() {
                 <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{tip.title}</span>
                 <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: tip.priority === 'High' ? '#FEE2E2' : '#FEF3C7', color: tip.priority === 'High' ? '#DC2626' : '#D97706', fontWeight: 600 }}>{tip.priority}</span>
               </div>
-              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{tip.desc}</div>
+              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{tip.message}</div>
             </div>
           </div>
         ))}
