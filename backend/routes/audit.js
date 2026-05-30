@@ -585,7 +585,8 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
       'SELECT results FROM audit_results WHERE site_id=$1 ORDER BY id DESC LIMIT 1',
       [req.siteId]
     )
-    const checks = ar[0]?.results || []
+    const rawResults = ar[0]?.results || []
+    const checks = Array.isArray(rawResults) ? rawResults : (typeof rawResults === 'string' ? JSON.parse(rawResults) : Object.values(rawResults))
     const failingChecks = checks
       .filter(c => c.status === 'error' || c.status === 'warning')
       .map(c => `${c.status.toUpperCase()} [${c.category}] ${c.check}: ${c.message}`)
