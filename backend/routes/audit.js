@@ -551,7 +551,8 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
     [req.siteId]
   )
   if (!rows.length) return res.json({ tips: [] })
-  const checks = rows[0].results || []
+  const rawChecks = rows[0].results || []
+  const checks = Array.isArray(rawChecks) ? rawChecks : (typeof rawChecks === 'string' ? JSON.parse(rawChecks) : [])
   const failing = checks.filter(c =>
     (c.category === 'AEO' || c.category === 'AI Snippet') &&
     (c.status === 'error' || c.status === 'warning')
