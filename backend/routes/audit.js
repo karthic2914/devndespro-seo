@@ -594,12 +594,17 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
       .join('\n')
 
     // Crawl the site
-    const crawlRes = await axios.get(siteUrl, {
-      timeout: 10000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DevndeSproBot/1.0)' },
-      maxRedirects: 3,
-    })
-    const html = crawlRes.data || ''
+    let html = ''
+    try {
+      const crawlRes = await axios.get(siteUrl, {
+        timeout: 10000,
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DevndeSproBot/1.0)' },
+        maxRedirects: 5,
+      })
+      html = crawlRes.data || ''
+    } catch (crawlErr) {
+      html = ''
+    }
     const $ = require('cheerio').load(html)
     const title = $('title').text().trim().slice(0, 100)
     const metaDesc = $('meta[name="description"]').attr('content') || ''
