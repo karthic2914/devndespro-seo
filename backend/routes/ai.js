@@ -99,7 +99,7 @@ router.post('/:siteId/ai/action-plan', auth, verifySite, async (req, res) => {
       pool.query('SELECT results FROM audit_results WHERE site_id=$1 ORDER BY created_at DESC LIMIT 1', [req.siteId]),
     ])
     const issues = (aR.rows[0]?.results?.checks || [])
-      .filter(c => c.status !== 'pass').map(c => `• ${c.message}`).join('\n') || 'No audit run yet'
+      .filter(c => c.status !== 'pass').map(c => '- ' + c.message).join('\n') || 'No audit run yet'
     const prompt = `You are a senior SEO strategist. Build a prioritized 6-task action plan.\nSite: ${sR.rows[0]?.name} (${sR.rows[0]?.url})\nDR: ${mR.rows[0]?.dr || 0}, Health: ${mR.rows[0]?.health || 0}, Clicks: ${mR.rows[0]?.clicks || 0}\nKeywords: ${kR.rows.map(k => `${k.keyword} pos${k.position || '?'}`).join(', ') || 'none'}\nBacklinks: ${bR.rows.length} total, ${bR.rows.filter(b => b.status === 'Live').length} live\nAudit issues:\n${issues}\n\nReturn ONLY a JSON array:\n[{"text":"...","impact":"High|Medium|Low","category":"On-Page|Technical|Content|Backlinks|Speed"}]`
     const r = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     let tasks = []
@@ -251,7 +251,7 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
       ? serpResults.map(r => `${r.position}. ${r.domain} - "${r.title}"`).join('\n')
       : '(SERP data unavailable - generate plan based on keyword only)'
     const engLabel = engine === 'duckduckgo' ? 'DuckDuckGo' : engine[0].toUpperCase() + engine.slice(1)
-    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2–4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2–3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
+    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2ï¿½4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2ï¿½3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
     const r = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514', max_tokens: 1800,
       messages: [{ role: 'user', content: prompt }]
@@ -301,7 +301,7 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
     const metrics = mR.rows[0] || {}
     const keywords = kR.rows.map(k => k.keyword).join(', ') || 'none'
     const issues = (aR.rows[0]?.results?.checks || [])
-      .filter(c => c.status !== 'pass').slice(0, 8).map(c => `• ${c.message}`).join('\n') || 'No audit data'
+      .filter(c => c.status !== 'pass').slice(0, 8).map(c => `ï¿½ ${c.message}`).join('\n') || 'No audit data'
 
     const prompt = `You are an AI visibility expert. Analyse this site and return 5 actionable recommendations to improve how often AI engines (ChatGPT, Claude, Perplexity) cite it.
 
