@@ -570,4 +570,71 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
   res.json({ tips })
 })
 
+
+// AI Visibility - Claude site analysis for specific recommendations
+router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res) => {
+  try {
+    const { rows: s } = await pool.query('SELECT url, name FROM sites WHERE id=$1', [req.siteId])
+    if (!s.length) return res.status(404).json({ error: 'Site not found' })
+    const siteUrl = s[0].url
+    const siteName = s[0].name || siteUrl
+
+    // Get last audit checks
+    const { rows: ar } = await pool.query(
+      'SELECT results FROM audit_results WHERE site_id=$1 ORDER BY id DESC LIMIT 1',
+      [req.siteId]
+    )
+    const checks = ar[0]?.results || []
+    const failingChecks = checks
+      .filter(c => c.status === 'error' || c.status === 'warning')
+      .map(c => `${c.status.toUpperCase()} [${c.category}] ${c.check}: ${c.message}`)
+      .join('\n')
+
+    // Crawl the site
+    const crawlRes = await axios.get(siteUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DevndeSproBot/1.0)' },
+      maxRedirects: 3,
+    })
+    const html = crawlRes.data || ''
+    const $ = require('cheerio').load(html)
+    const title = $('title').text().trim().slice(0, 100)
+    const metaDesc = $('meta[name="description"]').attr('content') || ''
+    const h1 = $('h1').first().text().trim().slice(0, 200)
+    const bodyText = $('body').text().replace(/\s+/g, ' ').trim().slice(0, 2000)
+
+    const prompt = `You are an AI visibility expert. Analyze this website and give 5 SPECIFIC, ACTIONABLE recommendations to help it get cited by ChatGPT, Claude, Perplexity and other AI engines.
+
+Website: ${siteName} (${siteUrl})
+Title: ${title}
+Meta description: ${metaDesc}
+H1: ${h1}
+Page content excerpt: ${bodyText}
+
+Current audit issues found:
+${failingChecks || 'No issues found'}
+
+Give exactly 5 recommendations. For each:
+- Be specific to THIS website (mention their actual content, services, or industry)
+- Explain exactly what to do and why it helps AI citation
+- Keep each recommendation under 60 words
+
+Format as JSON array: [{"title": "...", "action": "...", "priority": "High|Medium|Low"}]
+Return ONLY the JSON array, no other text.`
+
+    const msg = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const text = msg.content[0]?.text || '[]'
+    const clean = text.replace(/```json|```/g, '').trim()
+    const recommendations = JSON.parse(clean)
+    res.json({ recommendations, site: siteName, url: siteUrl })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 module.exports = router

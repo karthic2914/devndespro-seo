@@ -8,7 +8,7 @@ import { useSnackbar } from '../App'
 function genQueries(domain, brand, keywords) {
   const kw1 = keywords[0] || 'web developer'
   const kw2 = keywords[1] || 'web design'
-  return [`${brand} review`, `best ${kw1} ${brand}`, `${brand} ${kw2} agency`]
+  return [brand + ' review', 'best ' + kw1 + ' ' + brand, brand + ' ' + kw2 + ' agency']
 }
 
 const SCORE_LABEL = s => s >= 80 ? 'Excellent' : s >= 50 ? 'Average' : s > 0 ? 'Below average' : 'Poor'
@@ -27,6 +27,8 @@ export default function AIVisibility() {
   const [claudeLoading, setClaudeLoading] = useState(false)
   const [claudeResults, setClaudeResults] = useState(null)
   const [improvements, setImprovements] = useState([])
+  const [analyseLoading, setAnalyseLoading] = useState(false)
+  const [aiRecommendations, setAiRecommendations] = useState(null)
   const [sharing, setSharing] = useState(false)
   const [domain, setDomain] = useState('')
 
@@ -34,11 +36,11 @@ export default function AIVisibility() {
     api.get('/sites').then(res => {
       const s = (res.data || []).find(x => String(x.id) === String(siteId))
       if (s) {
-        if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
         setSite(s)
         const d = (() => { try { return new URL(s.url).hostname.replace('www.', '') } catch { return s.url } })()
         setDomain(d)
         const brand = d.split('.')[0]
+        if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
         api.get('/sites/' + siteId + '/keywords').then(kr => {
           const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
           setQueries(genQueries(d, brand, kws))
@@ -82,6 +84,18 @@ export default function AIVisibility() {
     setClaudeLoading(false)
   }
 
+  async function analyseWithClaude() {
+    setAnalyseLoading(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/analyse', {})
+      setAiRecommendations(res.data)
+      showSnackbar('Analysis complete!', 'success')
+    } catch (e) {
+      showSnackbar('Analysis failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setAnalyseLoading(false)
+  }
+
   async function shareReport() {
     setSharing(true)
     try {
@@ -96,8 +110,7 @@ export default function AIVisibility() {
   async function downloadImage() {
     try {
       const html2canvas = (await import('html2canvas')).default
-      const el = reportRef.current
-      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' })
+      const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' })
       const link = document.createElement('a')
       link.download = 'ai-visibility-' + (domain || 'report') + '.png'
       link.href = canvas.toDataURL('image/png')
@@ -117,6 +130,15 @@ export default function AIVisibility() {
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
 
+  const defaultTips = [
+    { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High', status: 'error' },
+    { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High', status: 'error' },
+    { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium', status: 'warning' },
+    { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium', status: 'warning' },
+  ]
+
+  const tipsToShow = improvements.length > 0 ? improvements : defaultTips
+
   return (
     <div ref={reportRef} style={{ padding: '1.5rem 2rem', maxWidth: 860 }}>
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
@@ -126,9 +148,7 @@ export default function AIVisibility() {
             AI Visibility
             {site && <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', marginLeft: 4 }}>- {domain}</span>}
           </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>
-            Find out if AI engines cite <strong>{domain || 'this site'}</strong> when people ask relevant questions.
-          </p>
+          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Find out if AI engines cite <strong>{domain || 'this site'}</strong> when people ask relevant questions.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
           <button onClick={downloadImage} style={{ padding: '8px 14px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#374151', fontFamily: 'inherit' }}>
@@ -147,21 +167,17 @@ export default function AIVisibility() {
               <div style={{ width: 28, height: 28, borderRadius: 6, background: e.bg, color: e.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{e.initial}</div>
               <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{e.label}</span>
             </div>
-            {e.soon ? (
-              <div style={{ fontSize: 12, color: '#9CA3AF' }}>Coming soon</div>
-            ) : e.pending ? (
-              <div style={{ fontSize: 12, color: '#9CA3AF' }}>Run ChatGPT test first</div>
-            ) : score != null ? (
+            {e.soon ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Coming soon</div>
+            : e.pending ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Run ChatGPT test first</div>
+            : e.score != null ? (
               <>
-                <div style={{ fontSize: 28, fontWeight: 800, color: SCORE_COLOR(score), marginBottom: 2 }}>{score}<span style={{ fontSize: 14, fontWeight: 400 }}>/100</span></div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: SCORE_COLOR(e.score), marginBottom: 2 }}>{e.score}<span style={{ fontSize: 14, fontWeight: 400 }}>/100</span></div>
                 <div style={{ background: '#F3F4F6', borderRadius: 3, height: 4, overflow: 'hidden', margin: '8px 0 6px' }}>
-                  <div style={{ width: score + '%', height: '100%', background: SCORE_COLOR(score), borderRadius: 3 }} />
+                  <div style={{ width: e.score + '%', height: '100%', background: SCORE_COLOR(e.score), borderRadius: 3 }} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5, background: SCORE_BG(score), color: SCORE_COLOR(score) }}>{SCORE_LABEL(score)}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5, background: SCORE_BG(e.score), color: SCORE_COLOR(e.score) }}>{SCORE_LABEL(e.score)}</span>
               </>
-            ) : (
-              <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>
-            )}
+            ) : <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>}
           </div>
         ))}
       </div>
@@ -184,12 +200,12 @@ export default function AIVisibility() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <button onClick={runTest} disabled={loading || claudeLoading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
-          <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run - GPT-4o mini</span>
+          <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run</span>
           <button onClick={runClaudeTest} disabled={claudeLoading || loading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
@@ -221,15 +237,41 @@ export default function AIVisibility() {
       )}
 
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#D85A30' }} />
+          AI-powered site analysis
+        </div>
+        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>Claude reads your actual site content and gives specific recommendations — not generic advice.</div>
+        {!aiRecommendations ? (
+          <button onClick={analyseWithClaude} disabled={analyseLoading} style={{ padding: '10px 20px', borderRadius: 8, border: 'none', background: analyseLoading ? '#D1D5DB' : '#D85A30', color: '#fff', fontWeight: 700, fontSize: 14, cursor: analyseLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FontAwesomeIcon icon={analyseLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: analyseLoading ? 'spin 1s linear infinite' : 'none' }} />
+            {analyseLoading ? 'Claude is reading your site...' : 'Analyse my site with Claude'}
+          </button>
+        ) : (
+          <div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 12 }}>Based on analysis of <strong>{aiRecommendations.url}</strong>:</div>
+            {(aiRecommendations.recommendations || []).map((r, i) => (
+              <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
+                <div style={{ width: 24, height: 24, borderRadius: 5, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280' }}>{i+1}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.title}</span>
+                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280', fontWeight: 600 }}>{r.priority}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.action}</div>
+                </div>
+              </div>
+            ))}
+            <button onClick={() => setAiRecommendations(null)} style={{ marginTop: 12, fontSize: 12, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Re-analyse</button>
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>How to improve {domain} AI visibility</div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.</div>
-        {(improvements.length > 0 ? improvements : [
-          { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High', status: 'error' },
-          { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High', status: 'error' },
-          { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium', status: 'warning' },
-          { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium', status: 'warning' },
-        ]).map((tip, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 3 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
+        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>{improvements.length > 0 ? 'Based on your actual audit results:' : 'Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.'}</div>
+        {tipsToShow.map((tip, i) => (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
               <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 12 }} />
             </div>
