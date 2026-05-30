@@ -43,7 +43,7 @@ export default function AIVisibility() {
         }).catch(() => setQueries(genQueries(d, brand, [])))
       }
     }).catch(() => {})
-    api.get(`/sites/${siteId}/ai-visibility/history`).then(res => setHistory(res.data || [])).catch(() => {})
+    api.get(`/sites/${siteId}/ai-visibility/history`).then(res => { const h = res.data || []; setHistory(h); if (h.length > 0) { setResults(h[0].results || []) } }).catch(() => {})
   }, [siteId])
 
   async function runTest() {
