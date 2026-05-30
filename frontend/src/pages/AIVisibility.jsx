@@ -24,6 +24,8 @@ export default function AIVisibility() {
   const [results, setResults] = useState(null)
   const [history, setHistory] = useState([])
   const [loading, setLoading] = useState(false)
+  const [claudeLoading, setClaudeLoading] = useState(false)
+  const [claudeResults, setClaudeResults] = useState(null)
   const [sharing, setSharing] = useState(false)
   const [domain, setDomain] = useState('')
 
@@ -31,6 +33,7 @@ export default function AIVisibility() {
     api.get('/sites').then(res => {
       const s = (res.data || []).find(x => String(x.id) === String(siteId))
       if (s) {
+        if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
         setSite(s)
         const d = (() => { try { return new URL(s.url).hostname.replace('www.', '') } catch { return s.url } })()
         setDomain(d)
@@ -63,6 +66,20 @@ export default function AIVisibility() {
     setLoading(false)
   }
 
+  async function runClaudeTest() {
+    const q = queries.filter(q => q.trim())
+    if (!q.length) { showSnackbar('Enter at least one query', 'error'); return }
+    setClaudeLoading(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
+      setClaudeResults({ score: res.data.score, results: res.data.results })
+      showSnackbar('Claude test completed!', 'success')
+    } catch (e) {
+      showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setClaudeLoading(false)
+  }
+
   async function shareReport() {
     setSharing(true)
     try {
@@ -93,7 +110,7 @@ export default function AIVisibility() {
 
   const engines = [
     { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: null, pending: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: claudeResults?.score ?? null, pending: claudeResults === null },
     { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
@@ -171,6 +188,10 @@ export default function AIVisibility() {
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
           <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run - GPT-4o mini</span>
+          <button onClick={runClaudeTest} disabled={claudeLoading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
+            {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
+          </button>
         </div>
       </div>
 

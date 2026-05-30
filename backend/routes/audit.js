@@ -511,4 +511,36 @@ router.get('/public/ai-visibility/:token', async (req, res) => {
   res.json(rows[0])
 })
 
+
+// AI Visibility - Claude Citation Check
+router.post('/:siteId/ai-visibility/test-claude', auth, verifySite, async (req, res) => {
+  const { queries } = req.body
+  if (!Array.isArray(queries) || queries.length === 0) return res.status(400).json({ error: 'queries required' })
+  const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
+  const siteUrl = s[0]?.url || ''
+  const domain = (() => { try { return new URL(siteUrl).hostname.replace('www.', '') } catch { return siteUrl } })()
+  const results = []
+  for (const query of queries.slice(0, 5)) {
+    try {
+      const msg = await anthropic.messages.create({
+        model: 'claude-opus-4-5',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: query }],
+      })
+      const response = msg.content[0]?.text || ''
+      const cited = response.toLowerCase().includes(domain.toLowerCase())
+      const lines = response.split('\n').filter(l => l.toLowerCase().includes(domain.toLowerCase()))
+      const excerpt = lines[0] || response.slice(0, 200)
+      results.push({ query, response, cited, excerpt, domain })
+    } catch (e) {
+      results.push({ query, response: '', cited: false, excerpt: '', error: e.message, domain })
+    }
+  }
+  const citedCount = results.filter(r => r.cited).length
+  const claudeScore = results.length > 0 ? Math.round((citedCount / results.length) * 100) : 0
+  await pool.query('INSERT INTO seo_metrics (site_id, claude_cited) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET claude_cited=$2', [req.siteId, claudeScore]).catch(() => {})
+  await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [req.siteId, JSON.stringify(results)]).catch(() => {})
+  res.json({ results, domain, score: claudeScore })
+})
+
 module.exports = router
