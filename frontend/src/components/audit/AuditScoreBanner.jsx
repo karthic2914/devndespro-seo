@@ -1,5 +1,6 @@
-﻿import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain } from '@fortawesome/free-solid-svg-icons'
+﻿import { useNavigate, useParams } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
@@ -61,7 +62,9 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
   )
 }
 
-export default function AuditScoreBanner({ auditData, categories, isScreenshot = false }) {
+export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {} }) {
+  const navigate = useNavigate()
+  const { siteId } = useParams()
   const checks = auditData.checks || []
   const errorCount = checks.filter(i => i.status === 'error').length
   const warnCount  = checks.filter(i => i.status === 'warning').length
@@ -143,6 +146,55 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             </div>
           </div>
         )}
+      </div>
+      {/* AI Engine Visibility */}
+      <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 14, marginTop: 4 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>AI Engine Visibility</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+          {[
+            { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: '🤖' },
+            { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: '✨' },
+            { key: 'perplexity', label: 'Perplexity', score: null, soon: true },
+            { key: 'gemini', label: 'Gemini', score: null, soon: true },
+          ].map(({ key, label, score, bg, icon, soon }) => (
+            <div
+              key={key}
+              onClick={() => !soon && navigate('ai-visibility')}
+              style={{
+                background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10,
+                padding: '10px 12px', cursor: soon ? 'default' : 'pointer',
+                opacity: soon ? 0.5 : 1, transition: 'border-color 0.15s',
+              }}
+              onMouseEnter={e => { if (!soon) e.currentTarget.style.borderColor = '#F97316' }}
+              onMouseLeave={e => { if (!soon) e.currentTarget.style.borderColor = '#E5E7EB' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <div style={{ width: 26, height: 26, background: bg || '#E5E7EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
+                  {icon || '?'}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</span>
+                {!soon && <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginLeft: 'auto', fontSize: 10, color: '#9CA3AF' }} />}
+              </div>
+              {soon ? (
+                <div style={{ fontSize: 11, color: '#9CA3AF' }}>Coming soon</div>
+              ) : score != null ? (
+                <>
+                  <div style={{ background: '#E5E7EB', borderRadius: 3, height: 4, overflow: 'hidden', marginBottom: 5 }}>
+                    <div style={{ width: score + '%', height: '100%', background: score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626', borderRadius: 3 }} />
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626' }}>{score}/100</span>
+                    <span style={{ fontSize: 10, color: score >= 80 ? '#16A34A' : score >= 50 ? '#D97706' : '#DC2626' }}>
+                      {score >= 80 ? 'Excellent' : score >= 50 ? 'Average' : score > 0 ? 'Below avg' : 'Poor'}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: '#9CA3AF', cursor: 'pointer' }} onClick={() => navigate('ai-visibility')}>Click to test →</div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
