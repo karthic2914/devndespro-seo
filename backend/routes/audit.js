@@ -586,11 +586,25 @@ router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res)
       'SELECT results FROM audit_results WHERE site_id=$1 ORDER BY id DESC LIMIT 1',
       [req.siteId]
     )
-    const rawResults = ar[0]?.results || []
-    const checks = Array.isArray(rawResults) ? rawResults : (typeof rawResults === 'string' ? JSON.parse(rawResults) : Object.values(rawResults))
+    const rawResults = ar[0]?.results || {}
+
+    let checks = []
+    if (Array.isArray(rawResults)) {
+      checks = rawResults
+    } else if (typeof rawResults === 'string') {
+      const parsed = JSON.parse(rawResults)
+      checks = Array.isArray(parsed) ? parsed : (parsed?.checks || [])
+    } else {
+      checks = rawResults?.checks || []
+    }
+
     const failingChecks = checks
-      .filter(c => c.status === 'error' || c.status === 'warning')
-      .map(c => `${c.status.toUpperCase()} [${c.category}] ${c.check}: ${c.message}`)
+      .filter(c =>
+        c &&
+        typeof c === 'object' &&
+        (c.status === 'error' || c.status === 'warning')
+      )
+      .map(c => `${String(c.status || '').toUpperCase()} [${c.category || 'General'}] ${c.check || 'check'}: ${c.message || ''}`)
       .join('\n')
 
     // Crawl the site
@@ -663,6 +677,7 @@ Return ONLY the JSON array, no other text.`
 })
 
 module.exports = router
+
 
 
 
