@@ -159,7 +159,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
           ].map(({ key, label, score, bg, icon, soon }) => (
             <div
               key={key}
-              onClick={() => !soon && navigate('ai-visibility')}
+              onClick={() => !soon && navigate(`/site/${siteId}/ai-visibility`)}
               style={{
                 background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10,
                 padding: '10px 12px', cursor: soon ? 'default' : 'pointer',
