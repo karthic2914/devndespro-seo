@@ -492,7 +492,7 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} />
+      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} />
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
