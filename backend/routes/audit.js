@@ -654,7 +654,17 @@ Return ONLY the JSON array, no other text.`
       })
       const text = msg.content[0]?.text || '[]'
       const clean = text.split('`').filter(s => !s.startsWith('json')).join('').trim()
-      recommendations = JSON.parse(clean)
+      try {
+        const start = clean.indexOf('[')
+        const end = clean.lastIndexOf(']')
+        recommendations = JSON.parse(start >= 0 ? clean.slice(start, end + 1) : clean)
+      } catch {
+        recommendations = [{
+          title: 'Improve AI visibility basics',
+          action: 'Add clear service pages, FAQ schema, author details, and trusted external references so AI engines can understand and cite this website.',
+          priority: 'High'
+        }]
+      }
     }
 
     if (engine === 'ChatGPT' || engine === 'Both') {
@@ -677,6 +687,7 @@ Return ONLY the JSON array, no other text.`
 })
 
 module.exports = router
+
 
 
 
