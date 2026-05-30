@@ -490,4 +490,25 @@ router.get('/:siteId/ai-visibility/history', auth, verifySite, async (req, res) 
   res.json(rows)
 })
 
+
+// AI Visibility Share
+router.get('/:siteId/ai-visibility/share', auth, verifySite, async (req, res) => {
+  const crypto = require('crypto')
+  const { rows } = await pool.query('SELECT token FROM ai_visibility_shares WHERE site_id=$1', [req.siteId])
+  if (rows.length > 0) return res.json({ token: rows[0].token })
+  const token = crypto.randomBytes(32).toString('hex')
+  await pool.query('INSERT INTO ai_visibility_shares (site_id, token) VALUES ($1,$2)', [req.siteId, token])
+  res.json({ token })
+})
+
+router.get('/public/ai-visibility/:token', async (req, res) => {
+  const { token } = req.params
+  const { rows } = await pool.query(
+    'SELECT s.url, s.name, avt.results, avt.created_at, sm.chatgpt_cited FROM ai_visibility_shares sh JOIN sites s ON s.id = sh.site_id LEFT JOIN ai_visibility_tests avt ON avt.site_id = sh.site_id LEFT JOIN seo_metrics sm ON sm.site_id = sh.site_id WHERE sh.token=$1 ORDER BY avt.created_at DESC LIMIT 1',
+    [token]
+  )
+  if (!rows.length) return res.status(404).json({ error: 'Not found' })
+  res.json(rows[0])
+})
+
 module.exports = router

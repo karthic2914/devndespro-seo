@@ -10,6 +10,7 @@ import Competitors from './pages/Competitors'
 import Actions from './pages/Actions'
 import AiAssistant from './pages/AiAssistant'
 import AIVisibility from './pages/AIVisibility'
+import PublicAIVisibility from './pages/PublicAIVisibility'
 import SiteAudit from './pages/SiteAudit'
 import Alerts from './pages/Alerts'
 import Integrations from './pages/Integrations'
@@ -95,7 +96,8 @@ export default function App() {
       <GlobalSnackbar snackbar={snackbar} onClose={closeSnackbar} />
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<Login />} />
+          <Route path="/public/ai-visibility/:token" element={<PublicAIVisibility />} />
+        <Route path="/login" element={<Login />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/" element={<ProtectedRoute><Sites /></ProtectedRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
