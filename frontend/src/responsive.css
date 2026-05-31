@@ -1,0 +1,35 @@
+/* SEO TOOL RESPONSIVE STYLESHEET */
+/* Breakpoints: 480px mobile, 768px tablet, 1024px desktop, 1440px large */
+
+@media (max-width: 768px) {
+  .app-shell { flex-direction: column !important; }
+  .sidebar { width: 100% !important; flex-direction: row !important; height: auto !important; padding: 8px 12px !important; border-right: none !important; border-bottom: 1px solid #E5E7EB !important; overflow-x: auto !important; }
+  .sidebar__header, .sidebar__site-section, .sidebar__footer { display: none !important; }
+  .sidebar__nav, .sidebar__nav nav { display: flex !important; flex-direction: row !important; gap: 4px !important; overflow-x: auto !important; }
+  .nav-item { flex-direction: column !important; padding: 6px 10px !important; font-size: 10px !important; white-space: nowrap !important; min-width: 56px !important; align-items: center !important; }
+  .nav-item__icon { margin-right: 0 !important; margin-bottom: 2px !important; }
+  .nav-tooltip { display: none !important; }
+  .app-main { width: 100% !important; }
+}
+
+.ai-vis-engines-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-bottom: 24px; }
+.ai-engines-grid { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; }
+
+@media (max-width: 900px) {
+  .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .audit-cats-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .grid-sidebar-layout { grid-template-columns: 1fr !important; }
+  .grid-4col { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 480px) {
+  .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; }
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .audit-cats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-4col { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (min-width: 1440px) {
+  .app-main { max-width: 1400px; }
+}

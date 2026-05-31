@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
@@ -23,7 +23,7 @@ import AcceptInvite from './pages/AcceptInvite'
 import AdminSettings from './components/admin/AdminSettings'
 import Reports from './pages/Reports'
 
-// ── Global Snackbar context ──────────────────────────────────────────────────
+// -- Global Snackbar context --------------------------------------------------
 export const SnackbarContext = createContext(null)
 
 export function useSnackbar() {
@@ -60,10 +60,10 @@ function GlobalSnackbar({ snackbar, onClose }) {
         cursor: 'pointer', background: c.background, color: c.color,
       }}
     >
-      {snackbar.type === 'success' && <span>✔️</span>}
-      {snackbar.type === 'error'   && <span>❌</span>}
-      {snackbar.type === 'warning' && <span>⚠️</span>}
-      {snackbar.type === 'info'    && <span>ℹ️</span>}
+      {snackbar.type === 'success' && <span>??</span>}
+      {snackbar.type === 'error'   && <span>?</span>}
+      {snackbar.type === 'warning' && <span>??</span>}
+      {snackbar.type === 'info'    && <span>??</span>}
       <span>{snackbar.message}</span>
     </div>
   )
