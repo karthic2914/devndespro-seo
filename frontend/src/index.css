@@ -1347,7 +1347,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
   .nav-item__icon { font-size: 15px; margin-right: 10px; }
   .sidebar__footer { display: flex; }
   
-  .app-main { flex: 1; }
+  .app-main { flex: 1; padding-top: 56px; overflow-x: hidden; }
   .topbar { flex-direction: column; height: auto; padding: 0.75rem 1rem; gap: 10px; }
   .topbar__title { font-size: 13px; }
   

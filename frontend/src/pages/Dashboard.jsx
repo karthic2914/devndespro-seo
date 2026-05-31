@@ -1,4 +1,4 @@
-ï»¿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -165,7 +165,7 @@ export default function Dashboard() {
           </Button>
           <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning}>
             <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            {auditRunning ? 'Scanningâ€¦' : 'Run Full Audit'}
+            {auditRunning ? 'Scanning…' : 'Run Full Audit'}
           </Button>
         </div>
       </div>
@@ -185,7 +185,7 @@ export default function Dashboard() {
         )}
 
         {/* Top stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 12, marginBottom: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(120px, 1fr))', gap: 12, marginBottom: '1.5rem', overflowX: 'auto' }}>
           <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop />
           <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
           <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
@@ -223,7 +223,7 @@ export default function Dashboard() {
                   </div>
                   {!isClientSiteError && (
                     <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                      {gscConnecting ? 'Connectingâ€¦' : 'Reconnect GSC'}
+                      {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
                     </Button>
                   )}
                 </div>
@@ -233,7 +233,7 @@ export default function Dashboard() {
                   {gscAccountEmail && <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>}
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>
                     {gscClicks > 0
-                      ? `${gscClicks} clicks Â· ${gscImpressions} impressions over 28 days`
+                      ? `${gscClicks} clicks · ${gscImpressions} impressions over 28 days`
                       : 'No traffic recorded in the last 28 days'}
                   </div>
                   <div style={{ fontSize: 11, color: T.muted }}>
@@ -245,7 +245,7 @@ export default function Dashboard() {
                 <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: T.surface2, borderRadius: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>Connect Google Search Console to see traffic</div>
                   <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                    {gscConnecting ? 'Connectingâ€¦' : 'Connect GSC'}
+                    {gscConnecting ? 'Connecting…' : 'Connect GSC'}
                   </Button>
                 </div>
               )}
@@ -397,7 +397,7 @@ export default function Dashboard() {
                     Connect Google Search Console to see real clicks, impressions, and top queries.
                   </div>
                   <Button variant="primary" size="sm" onClick={connectGSC} disabled={gscConnecting} fullWidth>
-                    {gscConnecting ? 'Openingâ€¦' : 'Connect Google Search Console'}
+                    {gscConnecting ? 'Opening…' : 'Connect Google Search Console'}
                   </Button>
                 </div>
               ) : gscData?.error ? (

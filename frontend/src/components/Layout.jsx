@@ -48,7 +48,6 @@ export default function Layout() {
   return (
     <div className="app-shell">
 
-      {/* Mobile topbar */}
       <div className="mobile-topbar">
         <button className="hamburger-btn" onClick={() => setMobileOpen(p => !p)} aria-label="Menu">
           <span /><span /><span />
@@ -57,13 +56,10 @@ export default function Layout() {
         <div style={{ width: 40 }} />
       </div>
 
-      {/* Backdrop */}
       {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
 
-      {/* Sidebar */}
       <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--open' : ''}`}>
 
-        {/* Logo + collapse */}
         <div className="sidebar__header">
           {!collapsed && <Logo size="md" />}
           <button className="sidebar__collapse-btn" onClick={() => setCollapsed(p => !p)}>
@@ -71,7 +67,6 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Active site card */}
         {!collapsed && site && (
           <div className="sidebar__site-section">
             <div className="label-xs mb-8">Active Project</div>
@@ -92,14 +87,12 @@ export default function Layout() {
           </div>
         )}
 
-        {/* Collapsed site dot */}
         {collapsed && site && (
           <div className="site-dot-section">
             <div className="site-dot" title={site.name}>{site.name?.[0]?.toUpperCase()}</div>
           </div>
         )}
 
-        {/* Nav links */}
         <nav className="sidebar__nav">
           {NAV.map(({ to, label, icon, end }) => (
             to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)
@@ -127,23 +120,19 @@ export default function Layout() {
               )
           ))}
 
-          {/* Admin-only: Users */}
           {user?.email === 'karthic2914@gmail.com' && (
             <NavLink
               to={`/site/${siteId}/users`}
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
               onClick={() => setMobileOpen(false)}
             >
-              <span className="nav-item__icon">
-                <FontAwesomeIcon icon={faUserGroup} />
-              </span>
+              <span className="nav-item__icon"><FontAwesomeIcon icon={faUserGroup} /></span>
               {!collapsed && 'Users'}
               {collapsed && <span className="nav-tooltip">Users</span>}
             </NavLink>
           )}
         </nav>
 
-        {/* User footer */}
         <div className="sidebar__footer">
           {!collapsed && user && (
             <div className="user-row">
@@ -165,7 +154,6 @@ export default function Layout() {
 
       </aside>
 
-      {/* Main */}
       <div className="app-main">
         <Outlet />
       </div>
