@@ -48,6 +48,8 @@ app.use('/api/public', publicAuditRouter)
 const cron = require('node-cron')
 cron.schedule('0 8 * * *', async () => {
   console.log('Running daily AI visibility tests...')
+    const { rows: alreadyRan } = await pool.query("SELECT COUNT(*) FROM ai_visibility_tests WHERE created_at > NOW() - INTERVAL '20 hours'")
+    if (parseInt(alreadyRan[0].count) > 0) { console.log('Already ran today, skipping'); return }
   try {
     const { pool, anthropic } = require('./clients')
     const { rows: sites } = await pool.query('SELECT id, url FROM sites')
@@ -59,7 +61,7 @@ cron.schedule('0 8 * * *', async () => {
         for (const query of queries) {
           try {
             const msg = await anthropic.messages.create({
-              model: 'claude-haiku-4-5', max_tokens: 300,
+              model: 'claude-haiku-4-5', max_tokens: 150,
               messages: [{ role: 'user', content: query }],
             })
             const response = msg.content[0]?.text || ''
