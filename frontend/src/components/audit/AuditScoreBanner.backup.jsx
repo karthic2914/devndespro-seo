@@ -1,4 +1,4 @@
-﻿import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
 
@@ -149,25 +149,11 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
       </div>
       {/* AI Engine Visibility */}
       <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 14, marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            AI Engine Visibility
-          </div>
-
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
-            AI Cron
-            <input
-              type="checkbox"
-              checked={!!cronEnabled}
-              onChange={(e) => onCronToggle(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
-          </label>
-        </div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>AI Engine Visibility</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           {[
-            { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: faRobot },
-            { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: faWandMagicSparkles },
+            { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: '??' },
+            { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: '?' },
             { key: 'perplexity', label: 'Perplexity', score: null, soon: true },
             { key: 'gemini', label: 'Gemini', score: null, soon: true },
           ].map(({ key, label, score, bg, icon, soon }) => (
