@@ -218,6 +218,11 @@ export default function SiteAudit() {
 
   const [showEmailModal,    setShowEmailModal]    = useState(false)
   const [auditData,         setAuditData]         = useState(null)
+  const [cronEnabled,       setCronEnabled]       = useState(false)
+  const toggleCron = async (val) => {
+    setCronEnabled(val)
+    await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
+  }
   const [loading,           setLoading]           = useState(true)
   const [running,           setRunning]           = useState(false)
   const [runError,          setRunError]          = useState(null)
