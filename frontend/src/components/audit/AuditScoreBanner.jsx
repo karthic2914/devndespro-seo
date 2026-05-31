@@ -1,4 +1,4 @@
-﻿import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
 
@@ -61,6 +61,18 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
     </svg>
   )
 }
+
+<style>{`
+  @media (max-width: 768px) {
+    .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .audit-cats-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  }
+  @media (max-width: 480px) {
+    .ai-engines-grid { grid-template-columns: repeat(1, 1fr) !important; }
+    .audit-cats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  }
+`}</style>
+
 
 export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {} }) {
   const navigate = useNavigate()
@@ -155,7 +167,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
           </div>
 
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
-            <span>AI Cron</span>
+            <span>Daily Tracking</span>
             <span style={{
               width: 42,
               height: 24,
@@ -186,7 +198,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             </span>
           </label>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+        <div className='ai-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           {[
             { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: faRobot },
             { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: faWandMagicSparkles },
