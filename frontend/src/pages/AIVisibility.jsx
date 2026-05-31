@@ -219,7 +219,7 @@ export default function AIVisibility() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        {!sharing && <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <button onClick={runTest} disabled={loading || claudeLoading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
@@ -229,7 +229,7 @@ export default function AIVisibility() {
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
           </button>
-        </div>
+        </div>}
       </div>
 
       {results && results.length > 0 && (
