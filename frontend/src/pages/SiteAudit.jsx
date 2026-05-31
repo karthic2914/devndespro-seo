@@ -492,7 +492,7 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore } cronEnabled={cronEnabled} onCronToggle={toggleCron}} />
+      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron}} />
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
