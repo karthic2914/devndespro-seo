@@ -48,11 +48,11 @@ app.use('/api/public', publicAuditRouter)
 const cron = require('node-cron')
 cron.schedule('0 8 * * *', async () => {
   console.log('Running daily AI visibility tests...')
-    const { rows: alreadyRan } = await pool.query("SELECT COUNT(*) FROM ai_visibility_tests WHERE created_at > NOW() - INTERVAL '20 hours'")
-    if (parseInt(alreadyRan[0].count) > 0) { console.log('Already ran today, skipping'); return }
   try {
     const { pool, anthropic } = require('./clients')
-    const { rows: sites } = await pool.query('SELECT id, url FROM sites')
+    const { rows: alreadyRan } = await pool.query("SELECT COUNT(*) FROM ai_visibility_tests WHERE created_at > NOW() - INTERVAL '20 hours'")
+    if (parseInt(alreadyRan[0].count) > 0) { console.log('Already ran today, skipping'); return }
+    const { rows: sites } = await pool.query('SELECT id, url FROM sites WHERE enable_ai_cron = true')
     for (const site of sites) {
       try {
         const domain = (() => { try { return new URL(site.url).hostname.replace('www.', '') } catch { return site.url } })()
@@ -82,6 +82,7 @@ initDB().then(() => {
   // Auto-migration
 const { pool: _pool } = require('./clients')
 _pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS aeo_score integer').catch(() => {})
+_pool.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS enable_ai_cron boolean DEFAULT false').catch(() => {})
 
 app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })

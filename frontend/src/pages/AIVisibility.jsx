@@ -40,6 +40,11 @@ export default function AIVisibility() {
   const [domain, setDomain] = useState('')
   const [showEngineMenu, setShowEngineMenu] = useState(false)
   const [selectedEngine, setSelectedEngine] = useState('Claude')
+  const [aiCronEnabled, setAiCronEnabled] = useState(false)
+  const toggleCron = async (val) => {
+    setAiCronEnabled(val)
+    await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
+  }
 
   useEffect(() => {
     const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
@@ -56,6 +61,7 @@ export default function AIVisibility() {
         setDomain(d)
         const brand = d.split('.')[0]
         if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
+        setAiCronEnabled(!!s.enable_ai_cron)
         api.get('/sites/' + siteId + '/keywords').then(kr => {
           const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
           setQueries(genQueries(d, brand, kws))

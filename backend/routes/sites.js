@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeAndVerifyWebsite } = require('../utils/helpers')
@@ -159,7 +159,7 @@ router.post('/', auth, async (req, res) => {
           subject: `New project added: ${rows[0].name}`,
           htmlbody: `
             <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
-              <h2 style="color:#E66A39;margin:0 0 16px">New Project Added ✓</h2>
+              <h2 style="color:#E66A39;margin:0 0 16px">New Project Added ?</h2>
               <p style="color:#555;margin:0 0 8px"><strong>${rows[0].name}</strong> was added.</p>
               <p style="color:#555;margin:0 0 8px">URL: ${rows[0].url}</p>
               <p style="color:#999;font-size:12px;margin:0">DevNdesPro SEO notification.</p>
@@ -295,6 +295,12 @@ router.post('/:siteId/competitors', auth, verifySite, async (req, res) => {
 router.delete('/:siteId/competitors/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM competitors WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
+})
+
+router.patch('/:siteId/ai-cron', auth, verifySite, async (req, res) => {
+  const { enabled } = req.body
+  await pool.query('UPDATE sites SET enable_ai_cron = $1 WHERE id = $2', [!!enabled, req.siteId])
+  res.json({ success: true, enable_ai_cron: !!enabled })
 })
 
 module.exports = router
