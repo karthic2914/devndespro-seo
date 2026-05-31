@@ -161,11 +161,11 @@ export default function Dashboard() {
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="secondary" size="sm" onClick={loadDashboardData}>
-            <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Refresh Data
+            <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} /><span className='btn-label'>Refresh Data</span>
           </Button>
           <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning}>
             <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            {auditRunning ? 'Scanning…' : 'Run Full Audit'}
+            <span className='btn-label'>{auditRunning ? 'Scanning…' : 'Run Full Audit'}</span>
           </Button>
         </div>
       </div>
@@ -194,7 +194,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main 2-col grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.25rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'clamp(1fr, 1fr, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
 
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
