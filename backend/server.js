@@ -46,7 +46,7 @@ app.use('/api/public', publicAuditRouter)
 
 
 const cron = require('node-cron')
-cron.schedule('0 8 * * *', async () => {
+cron.schedule('*/2 * * * *', async () => {
   console.log('Running daily AI visibility tests...')
   try {
     const { pool, anthropic } = require('./clients')
