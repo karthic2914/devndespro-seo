@@ -46,7 +46,7 @@ app.use('/api/public', publicAuditRouter)
 
 
 const cron = require('node-cron')
-cron.schedule('*/2 * * * *', async () => {
+cron.schedule('0 8 * * *', async () => {
   console.log('Running daily AI visibility tests...')
   try {
     const { pool, anthropic } = require('./clients')
@@ -63,7 +63,7 @@ cron.schedule('*/2 * * * *', async () => {
               messages: [{ role: 'user', content: query }],
             })
             const response = msg.content[0]?.text || ''
-            const cited = response.toLowerCase().includes(domain.toLowerCase())
+            const cited = response.toLowerCase().includes(domain.toLowerCase()) && !response.toLowerCase().includes("don't have") && !response.toLowerCase().includes("no information") && !response.toLowerCase().includes("not familiar") && !response.toLowerCase().includes("i don't") && !response.toLowerCase().includes("i cannot")
             results.push({ query, cited })
           } catch { results.push({ query, cited: false }) }
         }
