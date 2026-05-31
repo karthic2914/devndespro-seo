@@ -163,6 +163,7 @@ export default function AIVisibility() {
 
   return (
     <div ref={reportRef} style={{ padding: '1.5rem 2rem', maxWidth: 860 }}>
+      <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -182,7 +183,7 @@ export default function AIVisibility() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 12, marginBottom: 24 }}>
+      <div className='ai-vis-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 12, marginBottom: 24 }}>
         {engines.map(e => (
           <div key={e.key} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 16, opacity: e.soon ? 0.45 : 1 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
