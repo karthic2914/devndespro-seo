@@ -162,7 +162,7 @@ export default function AIVisibility() {
   const selectedEngineObj = ENGINES.find(e => e.key === selectedEngine) || ENGINES[0]
 
   return (
-    <div ref={reportRef} style={{ padding: '1.5rem 2rem', maxWidth: 860 }}>
+    <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
       <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
       <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1 }}>
