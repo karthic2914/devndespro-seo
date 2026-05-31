@@ -182,7 +182,7 @@ function TabBar({ tabs, active, onChange }) {
     <div style={{
       display: 'flex', gap: 2, marginBottom: '1rem',
       background: '#F9FAFB', padding: 4, borderRadius: 10,
-      border: '1px solid #E5E7EB', width: 'fit-content', flexWrap: 'wrap',
+      border: '1px solid #E5E7EB', width: '100%', overflowX: 'auto', flexWrap: 'nowrap',
     }}>
       {tabs.map((tab) => (
         <button key={tab.id} onClick={() => onChange(tab.id)} style={{
@@ -431,7 +431,7 @@ export default function SiteAudit() {
   }
 
   return (
-    <div ref={captureRef} style={{ padding: '1.5rem 2rem' }}>
+    <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
 
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
@@ -451,19 +451,16 @@ export default function SiteAudit() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Button variant="ghost" size="sm" onClick={downloadSnapshot} disabled={exporting}>
-            <FontAwesomeIcon icon={faCamera} style={{ marginRight: 6 }} />
-            {exporting ? 'Capturing...' : 'Download Screenshot'}
+            <FontAwesomeIcon icon={faCamera} style={{ marginRight: 6 }} /><span className='btn-label'>{exporting ? 'Capturing...' : 'Download Screenshot'}</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={shareSnapshot} disabled={exporting}>
-            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight: 6 }} />Share
+            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight: 6 }} /><span className='btn-label'>Share</span>
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
-            <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} />Fix in Actions
+            <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} /><span className='btn-label'>Fix in Actions</span>
           </Button>
           <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting}>
-            <FontAwesomeIcon icon={faArrowsRotate}
-              style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} />
-            {running ? 'Scanning...' : 'Re-run Audit'}
+            <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
           </Button>
           {!!shareMsg && (
             <div style={{ width: '100%', textAlign: 'right', fontSize: 11, color: '#6B7280' }}>{shareMsg}</div>
@@ -617,7 +614,7 @@ export default function SiteAudit() {
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Crawl Snapshot
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
+            <div className='crawl-snapshot-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
               {[
                 { label: 'Status code',    value: crawl.statusCode || '-' },
                 { label: 'Response time',  value: fmtMs(crawl.responseTimeMs) },

@@ -55,3 +55,22 @@
 @media (min-width: 1440px) {
   .app-main { max-width: 1400px; margin: 0 auto; }
 }
+/* -- Site Audit responsive -- */
+.crawl-snapshot-grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; }
+
+@media (max-width: 1024px) {
+  .crawl-snapshot-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 639px) {
+  .crawl-snapshot-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Score banner stacks vertically */
+  .audit-score-banner-cats { flex-direction: column !important; }
+
+  /* TabBar scrolls horizontally */
+  .tab-bar-wrap { overflow-x: auto; width: 100%; }
+  .tab-bar-wrap > div { width: max-content; min-width: 100%; }
+}
