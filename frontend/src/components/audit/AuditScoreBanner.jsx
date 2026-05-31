@@ -154,14 +154,36 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             AI Engine Visibility
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer' }}>
-            AI Cron
-            <input
-              type="checkbox"
-              checked={!!cronEnabled}
-              onChange={(e) => onCronToggle(e.target.checked)}
-              style={{ cursor: 'pointer' }}
-            />
+          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            <span>AI Cron</span>
+            <span style={{
+              width: 42,
+              height: 24,
+              borderRadius: 999,
+              background: cronEnabled ? '#F97316' : '#E5E7EB',
+              position: 'relative',
+              transition: 'background 0.2s ease',
+              boxShadow: cronEnabled ? '0 0 0 3px rgba(249,115,22,0.12)' : 'none'
+            }}>
+              <input
+                type="checkbox"
+                checked={!!cronEnabled}
+                onChange={(e) => onCronToggle(e.target.checked)}
+                style={{ opacity: 0, width: '100%', height: '100%', margin: 0, cursor: 'pointer' }}
+              />
+              <span style={{
+                position: 'absolute',
+                top: 3,
+                left: cronEnabled ? 21 : 3,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                background: '#fff',
+                transition: 'left 0.2s ease',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                pointerEvents: 'none'
+              }} />
+            </span>
           </label>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
@@ -213,3 +235,4 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
     </div>
   )
 }
+
