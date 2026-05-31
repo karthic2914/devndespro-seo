@@ -689,6 +689,24 @@ Return ONLY the JSON array, no other text.`
   }
 })
 
+router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT results, created_at FROM ai_visibility_tests WHERE site_id=$1 ORDER BY created_at DESC LIMIT 30',
+      [req.siteId]
+    )
+    const history = rows.map(r => {
+      const results = Array.isArray(r.results) ? r.results : []
+      const cited = results.filter(x => x && x.cited).length
+      const score = results.length > 0 ? Math.round((cited / results.length) * 100) : 0
+      return { date: r.created_at, score }
+    }).reverse()
+    res.json({ history })
+  } catch (e) {
+    res.status(500).json({ error: e.message })
+  }
+})
+
 module.exports = router
 
 

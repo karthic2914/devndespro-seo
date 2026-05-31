@@ -1,4 +1,4 @@
-﻿import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 
@@ -62,7 +62,7 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
   )
 }
 
-export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {} }) {
+export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {} }) {
   const navigate = useNavigate()
   const { siteId } = useParams()
   const checks = auditData.checks || []
@@ -152,8 +152,8 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
         <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>AI Engine Visibility</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           {[
-            { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: '🤖' },
-            { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: '✨' },
+            { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: '??' },
+            { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: '?' },
             { key: 'perplexity', label: 'Perplexity', score: null, soon: true },
             { key: 'gemini', label: 'Gemini', score: null, soon: true },
           ].map(({ key, label, score, bg, icon, soon }) => (
@@ -190,7 +190,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize: 12, color: '#9CA3AF', cursor: 'pointer' }} onClick={() => navigate('ai-visibility')}>Click to test →</div>
+                <div style={{ fontSize: 12, color: '#9CA3AF', cursor: 'pointer' }} onClick={() => navigate('ai-visibility')}>Click to test ?</div>
               )}
             </div>
           ))}

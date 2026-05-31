@@ -41,6 +41,7 @@ export default function AIVisibility() {
   const [showEngineMenu, setShowEngineMenu] = useState(false)
   const [selectedEngine, setSelectedEngine] = useState('Claude')
   const [aiCronEnabled, setAiCronEnabled] = useState(false)
+  const [scoreHistory, setScoreHistory] = useState([])
   const toggleCron = async (val) => {
     setAiCronEnabled(val)
     await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
@@ -69,6 +70,7 @@ export default function AIVisibility() {
       }
     }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
+    api.get('/sites/' + siteId + '/ai-visibility/score-history').then(res => setScoreHistory(res.data.history || [])).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/history').then(res => {
       const h = res.data || []
       setHistory(h)
