@@ -1,4 +1,4 @@
-﻿require('dotenv').config()
+require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const { initDB } = require('./db')
@@ -44,6 +44,38 @@ app.use('/api/admin-email', adminEmailRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/public', publicAuditRouter)
 
+
+const cron = require('node-cron')
+cron.schedule('0 8 * * *', async () => {
+  console.log('Running daily AI visibility tests...')
+  try {
+    const { pool, anthropic } = require('./clients')
+    const { rows: sites } = await pool.query('SELECT id, url FROM sites')
+    for (const site of sites) {
+      try {
+        const domain = (() => { try { return new URL(site.url).hostname.replace('www.', '') } catch { return site.url } })()
+        const queries = [domain + ' review', 'best ' + domain + ' software', domain + ' vs alternatives']
+        const results = []
+        for (const query of queries) {
+          try {
+            const msg = await anthropic.messages.create({
+              model: 'claude-haiku-4-5', max_tokens: 300,
+              messages: [{ role: 'user', content: query }],
+            })
+            const response = msg.content[0]?.text || ''
+            const cited = response.toLowerCase().includes(domain.toLowerCase())
+            results.push({ query, cited })
+          } catch { results.push({ query, cited: false }) }
+        }
+        const citedCount = results.filter(r => r.cited).length
+        const score = results.length > 0 ? Math.round((citedCount / results.length) * 100) : 0
+        await pool.query('INSERT INTO seo_metrics (site_id, claude_cited) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET claude_cited=$2', [site.id, score])
+        await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [site.id, JSON.stringify(results)])
+        console.log('AI visibility tested for site', site.id, '- score:', score)
+      } catch (e) { console.error('Failed for site', site.id, e.message) }
+    }
+  } catch (e) { console.error('Cron job failed:', e.message) }
+})
 initDB().then(() => {
   // Auto-migration
 const { pool: _pool } = require('./clients')
