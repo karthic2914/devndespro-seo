@@ -1,3 +1,22 @@
+
+/* Mobile topbar + hamburger */
+.mobile-topbar {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 999;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  align-items: center; justify-content: space-between; padding: 0 16px;
+}
+.hamburger-btn {
+  width: 40px; height: 40px; background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border-radius: 8px; padding: 8px;
+}
+.hamburger-btn span {
+  display: block; width: 20px; height: 2px; background: var(--text); border-radius: 2px;
+}
+.sidebar-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999;
+}
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -1306,16 +1325,27 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 }
 
 /* -- Extra Small (under 640px) -- */
+@media (min-width: 640px) and (max-width: 1024px) {
+  .mobile-topbar { display: flex; }
+  .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; z-index: 1000; transition: left 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
+  .sidebar--open { left: 0 !important; }
+  .sidebar-backdrop { display: block; }
+  .app-main { padding-top: 56px; }
+}
+
 @media (max-width: 639px) {
   .app-shell { flex-direction: column; }
-  .sidebar { width: 100%; height: 56px; flex-direction: row; padding: 0 12px; }
-  .sidebar__site-section { display: none; }
-  .sidebar__back-btn { display: none; }
-  .sidebar__header { height: 100%; padding: 0; }
-  .sidebar__nav { flex-direction: row; padding: 0; gap: 2px; flex: 1; }
-  .nav-item { flex: 1; padding: 8px 4px; font-size: 11px; }
-  .nav-item__icon { font-size: 12px; }
-  .sidebar__footer { display: none; }
+  .mobile-topbar { display: flex; }
+  .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; z-index: 1000; flex-direction: column !important; transition: left 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); padding: 0 !important; }
+  .sidebar--open { left: 0 !important; }
+  .sidebar-backdrop { display: block; }
+  .sidebar__header { height: auto; padding: 16px 20px; }
+  .sidebar__site-section { display: block; }
+  .sidebar__back-btn { display: flex; }
+  .sidebar__nav { flex-direction: column !important; padding: 8px 12px; gap: 2px; flex: 1; overflow-y: auto; }
+  .nav-item { flex: unset; padding: 10px 12px; font-size: 13px; justify-content: flex-start; }
+  .nav-item__icon { font-size: 15px; margin-right: 10px; }
+  .sidebar__footer { display: flex; }
   
   .app-main { flex: 1; }
   .topbar { flex-direction: column; height: auto; padding: 0.75rem 1rem; gap: 10px; }

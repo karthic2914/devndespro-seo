@@ -1,41 +1,29 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faChartSimple,
-  faKey,
-  faLink,
-  faMagnifyingGlass,
-  faListCheck,
-  faRobot, faWandMagicSparkles,
-  faUsers,
-  faChevronLeft,
-  faChevronRight,
-  faArrowLeft,
-  faRightFromBracket,
-  faBell,
-  faPlug,
-  faEnvelope,
-  faPaperPlane,
-  faUserGroup,
+  faChartSimple, faKey, faLink, faMagnifyingGlass, faListCheck,
+  faRobot, faWandMagicSparkles, faUsers, faChevronLeft, faChevronRight,
+  faArrowLeft, faRightFromBracket, faBell, faPlug, faEnvelope,
+  faPaperPlane, faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, ProgressBar } from '../components/UI'
 import api from '../utils/api'
 
 const NAV = [
-  { to: '',            label: 'Overview',     icon: faChartSimple, end: true },
-  { to: 'keywords',    label: 'Keywords',     icon: faKey },
-  { to: 'backlinks',   label: 'Backlinks',    icon: faLink },
-  { to: 'audit',       label: 'Site Audit',   icon: faMagnifyingGlass },
-  { to: 'actions',     label: 'Action Plan',  icon: faListCheck },
-  { to: 'ai',          label: 'AI Assistant', icon: faRobot, faWandMagicSparkles },
-    { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles },
-  { to: 'integrations',   label: 'Integrations',  icon: faPlug },
-  { to: 'email-reports',   label: 'Email Reports', icon: faEnvelope },
-  { to: 'cold-emails',     label: 'Cold Email',    icon: faPaperPlane },
-  { to: 'competitors',     label: 'Competitors',   icon: faUsers },
-  { to: 'alerts',          label: 'Alerts',        icon: faBell },
+  { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
+  { to: 'keywords',      label: 'Keywords',      icon: faKey },
+  { to: 'backlinks',     label: 'Backlinks',     icon: faLink },
+  { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
+  { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
+  { to: 'ai',            label: 'AI Assistant',  icon: faRobot },
+  { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles },
+  { to: 'integrations',  label: 'Integrations',  icon: faPlug },
+  { to: 'email-reports', label: 'Email Reports', icon: faEnvelope },
+  { to: 'cold-emails',   label: 'Cold Email',    icon: faPaperPlane },
+  { to: 'competitors',   label: 'Competitors',   icon: faUsers },
+  { to: 'alerts',        label: 'Alerts',        icon: faBell },
 ]
 
 export default function Layout() {
@@ -44,6 +32,7 @@ export default function Layout() {
   const { siteId } = useParams()
   const [site, setSite] = useState(null)
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [unreadAlerts, setUnreadAlerts] = useState(0)
 
   useEffect(() => {
@@ -59,8 +48,20 @@ export default function Layout() {
   return (
     <div className="app-shell">
 
-      {/* â”€â”€ Sidebar â”€â”€ */}
-      <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}`}>
+      {/* Mobile topbar */}
+      <div className="mobile-topbar">
+        <button className="hamburger-btn" onClick={() => setMobileOpen(p => !p)} aria-label="Menu">
+          <span /><span /><span />
+        </button>
+        <Logo size="sm" />
+        <div style={{ width: 40 }} />
+      </div>
+
+      {/* Backdrop */}
+      {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
+
+      {/* Sidebar */}
+      <aside className={`sidebar${collapsed ? ' sidebar--collapsed' : ''}${mobileOpen ? ' sidebar--open' : ''}`}>
 
         {/* Logo + collapse */}
         <div className="sidebar__header">
@@ -86,7 +87,7 @@ export default function Layout() {
               <ProgressBar value={0} max={20} height={3} />
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
-              <FontAwesomeIcon icon={faArrowLeft} />All Projects
+              <FontAwesomeIcon icon={faArrowLeft} /> All Projects
             </button>
           </div>
         )}
@@ -100,47 +101,46 @@ export default function Layout() {
 
         {/* Nav links */}
         <nav className="sidebar__nav">
-          {/* Nav links */}
-          <nav className="sidebar__nav">
-            {NAV.map(({ to, label, icon, end }) => (
-              to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)
-                ? null
-                : (
-              <NavLink
-                key={to}
-                to={`/site/${siteId}${to ? '/' + to : ''}`}
-                end={end}
-                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-              >
-                <span className="nav-item__icon">
-                  <FontAwesomeIcon icon={icon} />
-                  {to === 'alerts' && unreadAlerts > 0 && (
-                    <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
+          {NAV.map(({ to, label, icon, end }) => (
+            to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)
+              ? null
+              : (
+                <NavLink
+                  key={to}
+                  to={`/site/${siteId}${to ? '/' + to : ''}`}
+                  end={end}
+                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span className="nav-item__icon">
+                    <FontAwesomeIcon icon={icon} />
+                    {to === 'alerts' && unreadAlerts > 0 && (
+                      <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
+                    )}
+                  </span>
+                  {!collapsed && label}
+                  {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
+                    <span className="nav-count">{unreadAlerts}</span>
                   )}
-                </span>
-                {!collapsed && label}
-                {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
-                  <span className="nav-count">{unreadAlerts}</span>
-                )}
-                {collapsed && <span className="nav-tooltip">{label}</span>}
-              </NavLink>
-                )
-            ))}
+                  {collapsed && <span className="nav-tooltip">{label}</span>}
+                </NavLink>
+              )
+          ))}
 
-            {/* Admin-only: Users */}
-            {user?.email === 'karthic2914@gmail.com' && (
-              <NavLink
-                to={`/site/${siteId}/users`}
-                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-              >
-                <span className="nav-item__icon">
-                  <FontAwesomeIcon icon={faUserGroup} />
-                </span>
-                {!collapsed && 'Users'}
-                {collapsed && <span className="nav-tooltip">Users</span>}
-              </NavLink>
-            )}
-          </nav>
+          {/* Admin-only: Users */}
+          {user?.email === 'karthic2914@gmail.com' && (
+            <NavLink
+              to={`/site/${siteId}/users`}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              onClick={() => setMobileOpen(false)}
+            >
+              <span className="nav-item__icon">
+                <FontAwesomeIcon icon={faUserGroup} />
+              </span>
+              {!collapsed && 'Users'}
+              {collapsed && <span className="nav-tooltip">Users</span>}
+            </NavLink>
+          )}
         </nav>
 
         {/* User footer */}
@@ -165,7 +165,7 @@ export default function Layout() {
 
       </aside>
 
-      {/* â”€â”€ Main â”€â”€ */}
+      {/* Main */}
       <div className="app-main">
         <Outlet />
       </div>
@@ -173,4 +173,3 @@ export default function Layout() {
     </div>
   )
 }
-
