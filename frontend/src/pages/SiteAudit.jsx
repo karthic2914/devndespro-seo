@@ -434,7 +434,7 @@ export default function SiteAudit() {
     <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
 
       {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
+      <div className='audit-page-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: 0 }}>Site Audit</h1>
           <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -449,7 +449,7 @@ export default function SiteAudit() {
             )}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+        <div className='audit-header-btns' style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Button variant="ghost" size="sm" onClick={downloadSnapshot} disabled={exporting}>
             <FontAwesomeIcon icon={faCamera} style={{ marginRight: 6 }} /><span className='btn-label'>{exporting ? 'Capturing...' : 'Download Screenshot'}</span>
           </Button>
@@ -614,7 +614,7 @@ export default function SiteAudit() {
             <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Crawl Snapshot
             </div>
-            <div className='crawl-snapshot-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(120px, 1fr))', gap: 10 }}>
+            <div className='crawl-snapshot-grid' style={{ display: 'grid', gap: 10 }}>
               {[
                 { label: 'Status code',    value: crawl.statusCode || '-' },
                 { label: 'Response time',  value: fmtMs(crawl.responseTimeMs) },

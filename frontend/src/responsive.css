@@ -89,3 +89,22 @@
 @media (min-width: 640px) and (max-width: 1024px) {
   .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
+/* -- Crawl snapshot grid -- */
+.crawl-snapshot-grid { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+
+@media (max-width: 1024px) {
+  .crawl-snapshot-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 639px) {
+  .crawl-snapshot-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+/* -- Audit header buttons -- */
+@media (max-width: 639px) {
+  .audit-header-btns { width: 100%; justify-content: flex-start !important; }
+  .audit-header-btns button { padding: 7px 10px !important; }
+  .audit-header-btns .btn-label { display: none !important; }
+  
+  /* Site Audit page header stacks */
+  .audit-page-header { flex-direction: column !important; align-items: flex-start !important; }
+}
