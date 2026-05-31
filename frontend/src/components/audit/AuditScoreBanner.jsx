@@ -166,7 +166,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             AI Engine Visibility
           </div>
 
-          <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+          {!isScreenshot && <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
             <span>Daily Tracking</span>
             <span style={{
               width: 42,
@@ -196,7 +196,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                 pointerEvents: 'none'
               }} />
             </span>
-          </label>
+          </label>}
         </div>
         <div className='ai-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
           {[

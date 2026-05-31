@@ -127,6 +127,8 @@ export default function AIVisibility() {
   }
 
   async function downloadImage() {
+    setSharing(true)
+    await new Promise(r => setTimeout(r, 100))
     try {
       const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(reportRef.current, { scale: 2, useCORS: true, backgroundColor: '#f9fafb' })
@@ -136,6 +138,7 @@ export default function AIVisibility() {
       link.click()
       showSnackbar('Image downloaded!', 'success')
     } catch { showSnackbar('Download failed', 'error') }
+    setSharing(false)
   }
 
   const cited = (results || []).filter(r => r.cited).length
