@@ -74,3 +74,18 @@
   .tab-bar-wrap { overflow-x: auto; width: 100%; }
   .tab-bar-wrap > div { width: max-content; min-width: 100%; }
 }
+/* -- AuditScoreBanner AI engines -- */
+@media (max-width: 639px) {
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  
+  /* Score banner: stack ring + cats vertically */
+  .audit-score-banner { flex-direction: column !important; align-items: flex-start !important; }
+  .audit-score-banner > div[style*="height: 60"] { display: none !important; } /* hide divider */
+  
+  /* Category scores: 2-col grid */
+  .audit-cats-flex { display: grid !important; grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+}
+
+@media (min-width: 640px) and (max-width: 1024px) {
+  .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}

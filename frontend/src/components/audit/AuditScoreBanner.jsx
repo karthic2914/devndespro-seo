@@ -62,16 +62,7 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
   )
 }
 
-<style>{`
-  @media (max-width: 768px) {
-    .ai-engines-grid { grid-template-columns: repeat(2, 1fr) !important; }
-    .audit-cats-grid { grid-template-columns: repeat(3, 1fr) !important; }
-  }
-  @media (max-width: 480px) {
-    .ai-engines-grid { grid-template-columns: repeat(1, 1fr) !important; }
-    .audit-cats-grid { grid-template-columns: repeat(2, 1fr) !important; }
-  }
-`}</style>
+
 
 
 export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {} }) {
@@ -83,7 +74,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
   const passCount  = checks.filter(i => i.status === 'pass').length
 
   return (
-    <div style={{
+    <div className='audit-score-banner' style={{
       background: '#fff', borderRadius: 14, border: '1px solid #E5E7EB',
       padding: '1.25rem 1.5rem', marginBottom: '1.25rem',
       display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap',
@@ -91,7 +82,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
     }}>
       {/* Score ring */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-        <ScoreRing score={auditData.score || 0} size={88} noAnimation={isScreenshot} />
+        <ScoreRing score={auditData.score || 0} size={80} noAnimation={isScreenshot} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
             Overall Health Score
@@ -120,9 +111,9 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
       <div style={{ width: 1, height: 60, background: '#F3F4F6', flexShrink: 0 }} />
 
       {/* Category scores */}
-      <div style={{ display: 'flex', gap: 16, flex: 1, flexWrap: 'wrap' }}>
+      <div className='audit-cats-flex' style={{ display: 'flex', gap: 16, flex: 1, flexWrap: 'wrap' }}>
         {categories.map(cat => cat.score !== null && (
-          <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 110 }}>
+          <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90 }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
               background: scoreBg(cat.score),
@@ -142,7 +133,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
 
         {/* PageSpeed */}
         {auditData.speed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 110 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90 }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
               background: scoreBg(auditData.speed.performance),
@@ -198,7 +189,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             </span>
           </label>}
         </div>
-        <div className='ai-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 10 }}>
+        <div className='ai-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
           {[
             { key: 'chatgpt', label: 'ChatGPT', score: aiScores.chatgpt, bg: '#000', icon: faRobot },
             { key: 'claude', label: 'Claude', score: aiScores.claude, bg: '#D85A30', icon: faWandMagicSparkles },
