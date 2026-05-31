@@ -1,6 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
@@ -170,7 +170,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <div style={{ width: 26, height: 26, background: bg || '#E5E7EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
-                  {icon || '?'}
+                  {icon ? <FontAwesomeIcon icon={icon} style={{ color: '#fff', fontSize: 13 }} /> : '?'}
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</span>
                 {!soon && <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginLeft: 'auto', fontSize: 10, color: '#9CA3AF' }} />}
