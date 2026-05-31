@@ -164,20 +164,20 @@ export default function AIVisibility() {
   return (
     <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
       <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
-      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 10 }}>
+      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <h1 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#F97316' }} />
             AI Visibility
-            {site && <span style={{ fontSize: 13, fontWeight: 400, color: '#6B7280', marginLeft: 4 }}>- {domain}</span>}
+            {site && <span style={{ fontSize: 12, fontWeight: 400, color: '#6B7280' }}>- {domain}</span>}
           </h1>
-          <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Find out if AI engines cite <strong>{domain || 'this site'}</strong> when people ask relevant questions.</p>
+          <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>Find out if AI engines cite <strong>{domain || 'this site'}</strong> when people ask relevant questions.</p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button onClick={downloadImage} style={{ padding: '8px 14px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#374151', fontFamily: 'inherit' }}>
+          <button onClick={downloadImage} style={{ padding: '7px 12px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#374151', fontFamily: 'inherit' }}>
             <FontAwesomeIcon icon={faDownload} style={{ fontSize: 11 }} /> Download
           </button>
-          <button onClick={shareReport} disabled={sharing} style={{ padding: '8px 14px', borderRadius: 7, border: 'none', background: '#F97316', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontFamily: 'inherit' }}>
+          <button onClick={shareReport} disabled={sharing} style={{ padding: '7px 12px', borderRadius: 7, border: 'none', background: '#F97316', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontFamily: 'inherit' }}>
             <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: 11 }} /> {sharing ? 'Generating...' : 'Share'}
           </button>
         </div>

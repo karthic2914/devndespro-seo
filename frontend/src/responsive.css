@@ -39,3 +39,7 @@
   .ai-vis-header-btns { width: 100% !important; justify-content: flex-start !important; }
   .ai-vis-header-btns button { flex: 1 !important; justify-content: center !important; }
 }
+@media (max-width: 480px) {
+  .ai-vis-dl-text { display: none; }
+  .ai-vis-share-text { display: none; }
+}
