@@ -320,20 +320,26 @@ export default function AIVisibility() {
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>How to improve {domain} AI visibility</div>
         <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>{improvements.length > 0 ? 'Based on your actual audit results:' : 'Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.'}</div>
-        {tipsToShow.map((tip, i) => (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-              <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 12 }} />
+        {tipsToShow.map((tip, i) => {
+          const isFixed = tip.status === 'pass'
+          return (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start', opacity: isFixed ? 0.7 : 1 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: isFixed ? '#DCFCE7' : '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+              <FontAwesomeIcon icon={isFixed ? faCircleCheck : faArrowRight} style={{ color: isFixed ? '#16A34A' : '#F97316', fontSize: 12 }} />
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{tip.title}</span>
-                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: tip.priority === 'High' ? '#FEE2E2' : '#FEF3C7', color: tip.priority === 'High' ? '#DC2626' : '#D97706', fontWeight: 600 }}>{tip.priority}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: isFixed ? '#16A34A' : '#111827', textDecoration: isFixed ? 'line-through' : 'none' }}>{tip.title}</span>
+                {isFixed
+                  ? <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#DCFCE7', color: '#16A34A', fontWeight: 600 }}>Fixed</span>
+                  : <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: tip.priority === 'High' ? '#FEE2E2' : '#FEF3C7', color: tip.priority === 'High' ? '#DC2626' : '#D97706', fontWeight: 600 }}>{tip.priority}</span>
+                }
               </div>
-              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{tip.message}</div>
+              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{isFixed ? 'Great work! This issue is now resolved.' : tip.message}</div>
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
       {history.length > 0 && (
