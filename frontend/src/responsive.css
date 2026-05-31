@@ -33,3 +33,9 @@
 @media (min-width: 1440px) {
   .app-main { max-width: 1400px; }
 }
+/* AI Visibility header */
+@media (max-width: 480px) {
+  .ai-vis-header { flex-direction: column !important; gap: 8px !important; }
+  .ai-vis-header-btns { width: 100% !important; justify-content: flex-start !important; }
+  .ai-vis-header-btns button { flex: 1 !important; justify-content: center !important; }
+}
