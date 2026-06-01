@@ -194,7 +194,7 @@ export default function Dashboard() {
         </div>
 
         {/* Main 2-col grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'clamp(1fr, 1fr, 1fr)', gap: '1.25rem', alignItems: 'start' }}>
+        <div className='dash-main-grid' style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.25rem', alignItems: 'start' }}>
 
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
