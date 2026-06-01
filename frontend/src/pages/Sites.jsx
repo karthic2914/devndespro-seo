@@ -53,8 +53,7 @@ const getFaviconUrl = (siteUrl) => {
         height={36}
         onError={() => setFaviconError(true)}
         style={{
-          width: 36,
-          height: 60,
+          width: 48,`n          height: 48,
           borderRadius: 8,
           objectFit: 'contain',
           background: '#fff',
@@ -69,8 +68,7 @@ const getFaviconUrl = (siteUrl) => {
 
   return (
     <div style={{
-      width: 36,
-      height: 60,
+      width: 48,`n      height: 48,
       borderRadius: 8,
       flexShrink: 0,
       background: bg,
