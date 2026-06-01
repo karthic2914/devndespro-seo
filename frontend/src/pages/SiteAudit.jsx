@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
-  faCamera, faShareNodes, faEnvelope,
+  faCamera, faShareNodes, faEnvelope, faChevronRight,
   faAlignLeft, faAlignCenter, faAlignRight,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
@@ -224,7 +224,7 @@ function TabBar({ tabs, active, onChange }) {
       background: 'linear-gradient(to right, transparent, #fff 75%)',
       display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
     }}>
-      <span style={{ fontSize: 18, color: '#9CA3AF', fontWeight: 300 }}>›</span>
+      <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: 11, color: '#9CA3AF' }} />
     </div>
     </div>
   )
