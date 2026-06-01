@@ -1,10 +1,10 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+ï»¿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
-  faCamera, faShareNodes, faEnvelope, faChevronRight,
+  faCamera, faShareNodes, faEnvelope, faChevronLeft, faChevronRight,
   faAlignLeft, faAlignCenter, faAlignRight,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
@@ -72,35 +72,35 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   // -- NORWEGIAN ----------------------------------------------------------------
   if (lang === 'no') {
     if (tone === 'formal') {
-      return `Kjære [Navn/Team],<br><br>
-Jeg har nylig gjennomført en teknisk SEO-analyse av <b>${url}</b> og ønsker å dele en oppsummering av funn som kan være relevante for deres digitale synlighet.<br><br>
+      return `KjÃ¦re [Navn/Team],<br><br>
+Jeg har nylig gjennomfÃ¸rt en teknisk SEO-analyse av <b>${url}</b> og Ã¸nsker Ã¥ dele en oppsummering av funn som kan vÃ¦re relevante for deres digitale synlighet.<br><br>
 <b>Revisjonsoppsummering:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
-- Kritiske problemer: <b>${critical}</b> (påvirker direkte Googles indeksering)<br>
+- Kritiske problemer: <b>${critical}</b> (pÃ¥virker direkte Googles indeksering)<br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet ønsker å gjennomgå den.<br><br>
+En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet Ã¸nsker Ã¥ gjennomgÃ¥ den.<br><br>
 Med vennlig hilsen,<br>
 <b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
+Devndespro â€“ Webutvikling &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
     }
     // casual norsk
     return `Hei,<br><br>
-Jeg har kjørt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
+Jeg har kjÃ¸rt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
 - Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-De kritiske problemene påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
-Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
+De kritiske problemene pÃ¥virker direkte hvordan Google crawler og rangerer siden.<br><br>
+Analysen er gjort via mitt eget SEO-verktÃ¸y (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til Ã¥ hjelpe norske bedrifter med Ã¥ forbedre synligheten sin pÃ¥ nett.<br><br>
 Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
 Med vennlig hilsen,<br>
 <b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
+Devndespro â€“ Webutvikling &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
   }
@@ -118,7 +118,7 @@ I recently conducted a technical SEO audit of <b>${url}</b> and wanted to share 
 A full report with actionable recommendations is available at no cost, should your team wish to review it.<br><br>
 Best regards,<br>
 <b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
+Devndespro â€“ Web Development &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
   }
 
@@ -136,7 +136,7 @@ Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.de
 I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
 Best regards,<br>
 <b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
+Devndespro â€“ Web Development &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
 }
@@ -203,9 +203,7 @@ function TabBar({ tabs, active, onChange }) {
           cursor: 'pointer',
           flexShrink: 0
         }}
-      >
-        ‹
-      </button>
+      ><FontAwesomeIcon icon={faChevronLeft} /></button>
 
       <div
         ref={scrollRef}
@@ -280,9 +278,7 @@ function TabBar({ tabs, active, onChange }) {
           cursor: 'pointer',
           flexShrink: 0
         }}
-      >
-        ›
-      </button>
+      ><FontAwesomeIcon icon={faChevronRight} /></button>
     </div>
   )
 }
@@ -752,4 +748,5 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 

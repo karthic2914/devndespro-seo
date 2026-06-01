@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -314,7 +314,7 @@ export default function AIVisibility() {
             </div>
             {(aiRecommendations.recommendations || []).map((r, i) => (
               <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
-                <div style={{ width: 24, height: 24, borderRadius: 5, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280' }}>{i+1}</div>
+                <div style={{ width: 24, height: 42, borderRadius: 5, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280' }}>{i+1}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.title}</span>
@@ -365,7 +365,7 @@ export default function AIVisibility() {
             return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < Math.min(history.length,5)-1 ? '1px solid #F3F4F6' : 'none' }}>
                 <span style={{ fontSize: 11, color: '#9CA3AF', minWidth: 110 }}>{new Date(h.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: c > 0 ? '#16A34A' : '#DC2626', minWidth: 60 }}>{c}/{r.length} cited</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: c > 0 ? '#16A34A' : '#DC2626', minwidth: 110 }}>{c}/{r.length} cited</span>
                 <span style={{ fontSize: 11, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.map(x => x.query).join(', ')}</span>
               </div>
             )

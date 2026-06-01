@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from 'react-router-dom'
+﻿import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
 
@@ -161,7 +161,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
             <span>Daily Tracking</span>
             <span style={{
               width: 42,
-              height: 24,
+              height: 42,
               borderRadius: 999,
               background: cronEnabled ? '#F97316' : '#E5E7EB',
               position: 'relative',
@@ -238,4 +238,5 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
     </div>
   )
 }
+
 

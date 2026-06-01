@@ -91,7 +91,7 @@ export default function PublicAIVisibility() {
             ].map(e => (
               <div key={e.label} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: 14, opacity: e.soon ? 0.5 : 1 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: 5, background: e.bg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{e.initial}</div>
+                  <div style={{ width: 24, height: 42, borderRadius: 5, background: e.bg, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700 }}>{e.initial}</div>
                   <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{e.label}</span>
                 </div>
                 {e.soon ? (

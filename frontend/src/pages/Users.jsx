@@ -146,7 +146,7 @@ export default function Users() {
           { label: 'Active', value: accepted.length, icon: faCircleCheck, color: T.green },
         ].map(s => (
           <Card key={s.label} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 8, background: s.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: 36, height: 60, borderRadius: 8, background: s.color + '18', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <FontAwesomeIcon icon={s.icon} style={{ color: s.color }} />
             </div>
             <div>

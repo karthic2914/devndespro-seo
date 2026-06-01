@@ -94,7 +94,7 @@ export function SiteCard({ site, onClick, onDelete, healthScore, keywords, backl
         { label: 'Keywords', value: keywords ?? '-' },
         { label: 'Backlinks', value: backlinks ?? '-' },
       ].map(m => (
-        <div key={m.label} style={{ textAlign: 'center', minWidth: 70 }}>
+        <div key={m.label} style={{ textAlign: 'center', minwidth: 120 }}>
           <div style={{ fontSize: 15, fontWeight: 700, color: T.text, fontFamily: 'DM Mono, monospace' }}>{m.value}</div>
           <div style={{ fontSize: 11, color: T.muted }}>{m.label}</div>
         </div>
@@ -435,3 +435,4 @@ export function NextBestAction({ action, impact = 'high', onDone, onSkip }) {
     </div>
   )
 }
+

@@ -325,7 +325,7 @@ export default function RankNo1() {
                     return (
                       <div key={i} style={{ padding: '12px 18px', borderBottom: '1px solid #F9FAFB', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                         <div style={{
-                          width: 24, height: 24, borderRadius: '50%', flexShrink: 0,
+                          width: 24, height: 42, borderRadius: '50%', flexShrink: 0,
                           background: T.orangeDim, color: T.orange,
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           fontSize: 11, fontWeight: 800,
@@ -381,3 +381,4 @@ export default function RankNo1() {
     </div>
   )
 }
+

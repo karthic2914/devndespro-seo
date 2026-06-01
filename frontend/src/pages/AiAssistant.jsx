@@ -230,7 +230,7 @@ function OpportunitiesTab({ siteId }) {
           {opps.map((opp, i) => (
             <Card key={i} padding="1rem">
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 9, background: `${(typeColor[opp.type] || T.orange)}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 60, borderRadius: 9, background: `${(typeColor[opp.type] || T.orange)}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <FontAwesomeIcon icon={faLink} style={{ color: typeColor[opp.type] || T.orange, fontSize: 14 }} />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -386,7 +386,7 @@ function ActionPlanTab({ siteId }) {
                   onChange={() => toggleTask(i)}
                   style={{ marginTop: 4, width: 16, height: 16, accentColor: 'var(--orange)' }}
                 />
-                <div style={{ width: 24, height: 24, borderRadius: '50%', background: `${catColors[task.category] || T.orange}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 800, color: catColors[task.category] || T.orange, marginTop: 1 }}>
+                <div style={{ width: 24, height: 42, borderRadius: '50%', background: `${catColors[task.category] || T.orange}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 800, color: catColors[task.category] || T.orange, marginTop: 1 }}>
                   {i + 1}
                 </div>
                 <div style={{ flex: 1 }}>
@@ -447,3 +447,4 @@ export default function AiAssistant() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -53,7 +53,7 @@ export default function Competitors() {
       <Card>
         <SectionLabel>Your DR vs competitors</SectionLabel>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: '1px solid var(--dark4)' }}>
-          <div style={{ width: 36, height: 36, background: 'var(--orange)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff', flexShrink: 0 }}>
+          <div style={{ width: 36, height: 60, background: 'var(--orange)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 14, color: '#fff', flexShrink: 0 }}>
             {site?.name?.[0]?.toUpperCase() || 'Y'}
           </div>
           <div style={{ flex: 1 }}>
@@ -67,7 +67,7 @@ export default function Competitors() {
             const diff = c.dr - metrics.dr
             return (
               <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: '1px solid var(--dark4)' }}>
-                <div style={{ width: 36, height: 36, background: 'var(--dark4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--text2)', flexShrink: 0 }}>{c.name[0].toUpperCase()}</div>
+                <div style={{ width: 36, height: 60, background: 'var(--dark4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--text2)', flexShrink: 0 }}>{c.name[0].toUpperCase()}</div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 500 }}>{c.name}</div>
                   {c.notes && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.notes}</div>}
@@ -85,3 +85,4 @@ export default function Competitors() {
     </div>
   )
 }
+
