@@ -2,10 +2,13 @@
 /* Mobile topbar + hamburger */
 .mobile-topbar {
   display: none;
-  position: fixed; top: 0; left: 0; right: 0; height: 56px; z-index: 1001;
+  position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 1001;
   background: var(--surface); border-bottom: 1px solid var(--border);
   align-items: center; justify-content: space-between; padding: 0 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.mobile-topbar img, .mobile-topbar .logo-img, .mobile-topbar svg {
+  height: 36px !important; width: auto !important;
 }
 .hamburger-btn {
   width: 40px; height: 40px; background: none; border: none; cursor: pointer;
@@ -1350,7 +1353,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
   .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; z-index: 1000; flex-direction: column !important; transition: left 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); padding: 0 !important; }
   .sidebar--open { left: 0 !important; }
   .sidebar-backdrop { display: block; }
-  .sidebar__header { height: auto; padding: 16px 20px; }
+  .sidebar__header { height: auto; padding: 16px 20px; border-bottom: none !important; }
   .sidebar__header .logo { display: none; }
   .sidebar__collapse-btn { display: none; }
   .sidebar__site-section { display: block; }

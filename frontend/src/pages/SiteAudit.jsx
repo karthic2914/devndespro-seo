@@ -180,10 +180,11 @@ function TabBar({ tabs, active, onChange }) {
   const tabColor = { errors: '#DC2626', warnings: '#D97706', passed: '#16A34A' }
   const tabBg    = { errors: '#FEF2F2', warnings: '#FFFBEB', passed: '#F0FDF4' }
   return (
+    <div style={{ position: 'relative', marginBottom: '1rem' }}>
     <div style={{
-      display: 'flex', gap: 6, marginBottom: '1rem',
-      overflowX: 'auto', paddingBottom: 4,
-      scrollbarWidth: 'none', msOverflowStyle: 'none',
+      display: 'flex', gap: 6, paddingBottom: 4,
+      overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
+      paddingRight: 32,
     }}>
       {tabs.map((tab) => {
         const isActive = active === tab.id
