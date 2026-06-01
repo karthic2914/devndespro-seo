@@ -445,7 +445,7 @@ export default function Sites() {
                         <SiteAvatar name={site.name || '?'} url={site.url} />
                         <div>
                           <div className="project-row__name">{site.name}</div>
-                          <div className="project-row__url">{site.url}</div>
+        
                         </div>
                       </div>
                       <div className="project-row__dash">{site.health ?? '-'}</div>
