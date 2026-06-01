@@ -152,7 +152,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
       </div>
       {/* AI Engine Visibility */}
       <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 14, marginTop: 4 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div className='ai-visibility-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
             AI Engine Visibility
           </div>
@@ -238,5 +238,6 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
     </div>
   )
 }
+
 
 

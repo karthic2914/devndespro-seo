@@ -1487,3 +1487,39 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
   body { background: white; }
   * { box-shadow: none !important; }
 }
+/* Mobile audit page improvements */
+@media (max-width: 767px) {
+  .audit-page-header {
+    align-items: flex-start !important;
+  }
+
+  .audit-header-btns {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    justify-content: stretch !important;
+  }
+
+  .audit-header-btns button {
+    height: 54px !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    border-radius: 12px !important;
+  }
+
+  .audit-header-btns .btn-label {
+    display: none !important;
+  }
+
+  .ai-visibility-header {
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .ai-engine-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
