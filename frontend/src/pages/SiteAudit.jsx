@@ -177,35 +177,45 @@ function EmptyAudit({ onRun, running, error }) {
 
 function TabBar({ tabs, active, onChange }) {
   const tabIcon = { errors: faCircleXmark, warnings: faTriangleExclamation, passed: faCircleCheck }
-  const tabIconColor = { errors: '#DC2626', warnings: '#D97706', passed: '#16A34A' }
+  const tabColor = { errors: '#DC2626', warnings: '#D97706', passed: '#16A34A' }
+  const tabBg    = { errors: '#FEF2F2', warnings: '#FFFBEB', passed: '#F0FDF4' }
   return (
     <div style={{
-      display: 'flex', gap: 2, marginBottom: '1rem',
-      background: '#F9FAFB', padding: 4, borderRadius: 10,
-      border: '1px solid #E5E7EB', width: '100%', overflowX: 'auto', flexWrap: 'nowrap',
+      display: 'flex', gap: 6, marginBottom: '1rem',
+      overflowX: 'auto', paddingBottom: 4,
+      scrollbarWidth: 'none', msOverflowStyle: 'none',
     }}>
-      {tabs.map((tab) => (
-        <button key={tab.id} onClick={() => onChange(tab.id)} style={{
-          background: active === tab.id ? '#fff' : 'transparent',
-          border: 'none', padding: '6px 14px', borderRadius: 7, fontSize: 12,
-          fontWeight: active === tab.id ? 600 : 400,
-          color: active === tab.id ? '#111827' : '#6B7280',
-          cursor: 'pointer', fontFamily: 'inherit',
-          boxShadow: active === tab.id ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-          transition: 'all 0.15s',
-        }}>
-          {tabIcon[tab.id] && (
-            <FontAwesomeIcon icon={tabIcon[tab.id]} style={{ marginRight: 6, color: tabIconColor[tab.id] }} />
-          )}
-          {tab.label}
-          {tab.count > 0 && (
-            <span style={{
-              marginLeft: 6, background: active === tab.id ? '#F3F4F6' : '#E5E7EB',
-              borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700, color: '#6B7280',
-            }}>{tab.count}</span>
-          )}
-        </button>
-      ))}
+      {tabs.map((tab) => {
+        const isActive = active === tab.id
+        const color = tabColor[tab.id]
+        const bg = tabBg[tab.id]
+        return (
+          <button key={tab.id} onClick={() => onChange(tab.id)} style={{
+            flexShrink: 0,
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '7px 14px', borderRadius: 20,
+            border: isActive ? '1.5px solid ' + (color || '#F97316') : '1.5px solid #E5E7EB',
+            background: isActive ? (bg || '#FFF4ED') : '#fff',
+            fontSize: 12, fontWeight: isActive ? 700 : 500,
+            color: isActive ? (color || '#F97316') : '#6B7280',
+            cursor: 'pointer', fontFamily: 'inherit',
+            transition: 'all 0.15s',
+            whiteSpace: 'nowrap',
+          }}>
+            {tabIcon[tab.id] && (
+              <FontAwesomeIcon icon={tabIcon[tab.id]} style={{ fontSize: 11, color: color }} />
+            )}
+            {tab.label}
+            {tab.count > 0 && (
+              <span style={{
+                background: isActive ? (color || '#F97316') : '#E5E7EB',
+                color: isActive ? '#fff' : '#6B7280',
+                borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700,
+              }}>{tab.count}</span>
+            )}
+          </button>
+        )
+      })}
     </div>
   )
 }

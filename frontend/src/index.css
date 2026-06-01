@@ -1351,6 +1351,8 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
   .sidebar--open { left: 0 !important; }
   .sidebar-backdrop { display: block; }
   .sidebar__header { height: auto; padding: 16px 20px; }
+  .sidebar__header .logo { display: none; }
+  .sidebar__collapse-btn { display: none; }
   .sidebar__site-section { display: block; }
   .sidebar__back-btn { display: flex; }
   .sidebar__nav { flex-direction: column !important; padding: 8px 12px; gap: 2px; flex: 1; overflow-y: auto; }
