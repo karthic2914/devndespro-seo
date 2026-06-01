@@ -83,6 +83,7 @@ initDB().then(() => {
 const { pool: _pool } = require('./clients')
 _pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS aeo_score integer').catch(() => {})
 _pool.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS enable_ai_cron boolean DEFAULT false').catch(() => {})
+_pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS bing_score integer').catch(() => {})
 
 app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })

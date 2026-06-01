@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -310,7 +310,7 @@ export default function Sites() {
               gap: 12, flexWrap: 'wrap', boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 22 }}>🤖</span>
+                <span style={{ fontSize: 22 }}>??</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AI Snippet Audits are now live!</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews - re-run any site audit to get your AI Snippet score.</div>
@@ -410,7 +410,7 @@ export default function Sites() {
 
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
-                  {['Project', 'Health', 'AI Snippet', 'AEO', 'ChatGPT', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                  {['Project', 'Health', 'AI Snippet', 'AEO', 'ChatGPT', 'Bing', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
                     <div key={h} className="projects-table__head-cell">{h}</div>
                   ))}
                 </div>
@@ -455,7 +455,8 @@ export default function Sites() {
                       }}>{site.ai_snippet_score ?? '-'}</div>
                       <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '-'}</div>
                       <div className="project-row__dash" style={{ color: site.chatgpt_cited >= 80 ? '#16A34A' : site.chatgpt_cited >= 50 ? '#D97706' : site.chatgpt_cited > 0 ? '#DC2626' : site.chatgpt_cited === 0 ? '#DC2626' : 'var(--muted)', fontWeight: site.chatgpt_cited != null ? 700 : 400 }}>{site.chatgpt_cited != null ? site.chatgpt_cited + '/100' : '-'}</div>
-                      <div className="project-row__dash">{site.keyword_count ?? 0}</div>
+                      <div className="project-row__dash" style={{ color: site.bing_score >= 80 ? '#16A34A' : site.bing_score >= 50 ? '#D97706' : site.bing_score > 0 ? '#DC2626' : 'var(--muted)', fontWeight: site.bing_score ? 700 : 400 }}>{site.bing_score != null ? site.bing_score + '/100' : '-'}</div>
+                <div className="project-row__dash">{site.keyword_count ?? 0}</div>
                       <div className="project-row__dash">{site.backlink_count ?? 0}</div>
                       <div className="project-row__date">
                         {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
