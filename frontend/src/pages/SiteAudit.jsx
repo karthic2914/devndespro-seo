@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+ï»¿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -72,35 +72,35 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   // -- NORWEGIAN ----------------------------------------------------------------
   if (lang === 'no') {
     if (tone === 'formal') {
-      return `Kjære [Navn/Team],<br><br>
-Jeg har nylig gjennomført en teknisk SEO-analyse av <b>${url}</b> og ønsker å dele en oppsummering av funn som kan være relevante for deres digitale synlighet.<br><br>
+      return `KjÃ¦re [Navn/Team],<br><br>
+Jeg har nylig gjennomfÃ¸rt en teknisk SEO-analyse av <b>${url}</b> og Ã¸nsker Ã¥ dele en oppsummering av funn som kan vÃ¦re relevante for deres digitale synlighet.<br><br>
 <b>Revisjonsoppsummering:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
-- Kritiske problemer: <b>${critical}</b> (påvirker direkte Googles indeksering)<br>
+- Kritiske problemer: <b>${critical}</b> (pÃ¥virker direkte Googles indeksering)<br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet ønsker å gjennomgå den.<br><br>
+En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet Ã¸nsker Ã¥ gjennomgÃ¥ den.<br><br>
 Med vennlig hilsen,<br>
 <b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
+Devndespro â€“ Webutvikling &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
     }
     // casual norsk
     return `Hei,<br><br>
-Jeg har kjørt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
+Jeg har kjÃ¸rt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
 - Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-De kritiske problemene påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
-Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
+De kritiske problemene pÃ¥virker direkte hvordan Google crawler og rangerer siden.<br><br>
+Analysen er gjort via mitt eget SEO-verktÃ¸y (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til Ã¥ hjelpe norske bedrifter med Ã¥ forbedre synligheten sin pÃ¥ nett.<br><br>
 Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
 Med vennlig hilsen,<br>
 <b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
+Devndespro â€“ Webutvikling &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
   }
@@ -118,7 +118,7 @@ I recently conducted a technical SEO audit of <b>${url}</b> and wanted to share 
 A full report with actionable recommendations is available at no cost, should your team wish to review it.<br><br>
 Best regards,<br>
 <b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
+Devndespro â€“ Web Development &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
   }
 
@@ -136,7 +136,7 @@ Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.de
 I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
 Best regards,<br>
 <b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
+Devndespro â€“ Web Development &amp; SEO<br>
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a>`
 }
@@ -179,53 +179,110 @@ function TabBar({ tabs, active, onChange }) {
   const tabIcon = { errors: faCircleXmark, warnings: faTriangleExclamation, passed: faCircleCheck }
   const tabColor = { errors: '#DC2626', warnings: '#D97706', passed: '#16A34A' }
   const tabBg    = { errors: '#FEF2F2', warnings: '#FFFBEB', passed: '#F0FDF4' }
+  const scrollRef = useRef(null)
+
+  const scrollTabs = (dir) => {
+    if (!scrollRef.current) return
+    scrollRef.current.scrollBy({
+      left: dir === 'right' ? 180 : -180,
+      behavior: 'smooth'
+    })
+  }
+
   return (
-    <div style={{ position: 'relative', marginBottom: '1rem' }}>
-    <div style={{
-      display: 'flex', gap: 6, paddingBottom: 4,
-      overflowX: 'auto', scrollbarWidth: 'none', msOverflowStyle: 'none',
-      paddingRight: 32,
-    }}>
-      {tabs.map((tab) => {
-        const isActive = active === tab.id
-        const color = tabColor[tab.id]
-        const bg = tabBg[tab.id]
-        return (
-          <button key={tab.id} onClick={() => onChange(tab.id)} style={{
-            flexShrink: 0,
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            padding: '7px 14px', borderRadius: 20,
-            border: isActive ? '1.5px solid ' + (color || '#F97316') : '1.5px solid #E5E7EB',
-            background: isActive ? (bg || '#FFF4ED') : '#fff',
-            fontSize: 12, fontWeight: isActive ? 700 : 500,
-            color: isActive ? (color || '#F97316') : '#6B7280',
-            cursor: 'pointer', fontFamily: 'inherit',
-            transition: 'all 0.15s',
-            whiteSpace: 'nowrap',
-          }}>
-            {tabIcon[tab.id] && (
-              <FontAwesomeIcon icon={tabIcon[tab.id]} style={{ fontSize: 11, color: color }} />
-            )}
-            {tab.label}
-            {tab.count > 0 && (
-              <span style={{
-                background: isActive ? (color || '#F97316') : '#E5E7EB',
-                color: isActive ? '#fff' : '#6B7280',
-                borderRadius: 10, padding: '1px 6px', fontSize: 10, fontWeight: 700,
-              }}>{tab.count}</span>
-            )}
-          </button>
-        )
-      })}
-    </div>
-    <div style={{
-      position: 'absolute', right: 0, top: 0, bottom: 4, width: 48,
-      pointerEvents: 'none',
-      background: 'linear-gradient(to right, transparent, #fff 75%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
-    }}>
-      <FontAwesomeIcon icon={faChevronRight} style={{ fontSize: 11, color: '#9CA3AF' }} />
-    </div>
+    <div style={{ position: 'relative', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <button
+        onClick={() => scrollTabs('left')}
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          border: '1px solid #E5E7EB',
+          background: '#fff',
+          color: '#6B7280',
+          cursor: 'pointer',
+          flexShrink: 0
+        }}
+      >
+        â€¹
+      </button>
+
+      <div
+        ref={scrollRef}
+        style={{
+          display: 'flex',
+          gap: 6,
+          overflowX: 'auto',
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+          scrollBehavior: 'smooth',
+          flex: 1,
+          paddingBottom: 4
+        }}
+      >
+        {tabs.map((tab) => {
+          const isActive = active === tab.id
+          const color = tabColor[tab.id]
+          const bg = tabBg[tab.id]
+
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onChange(tab.id)}
+              style={{
+                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '7px 14px',
+                borderRadius: 20,
+                border: isActive ? '1.5px solid ' + (color || '#F97316') : '1.5px solid #E5E7EB',
+                background: isActive ? (bg || '#FFF4ED') : '#fff',
+                fontSize: 12,
+                fontWeight: isActive ? 700 : 500,
+                color: isActive ? (color || '#F97316') : '#6B7280',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                transition: 'all 0.15s',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {tabIcon[tab.id] && (
+                <FontAwesomeIcon icon={tabIcon[tab.id]} style={{ fontSize: 11, color }} />
+              )}
+              {tab.label}
+              {tab.count > 0 && (
+                <span style={{
+                  background: isActive ? (color || '#F97316') : '#E5E7EB',
+                  color: isActive ? '#fff' : '#6B7280',
+                  borderRadius: 10,
+                  padding: '1px 6px',
+                  fontSize: 10,
+                  fontWeight: 700
+                }}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      <button
+        onClick={() => scrollTabs('right')}
+        style={{
+          width: 30,
+          height: 30,
+          borderRadius: '50%',
+          border: '1px solid #E5E7EB',
+          background: '#fff',
+          color: '#6B7280',
+          cursor: 'pointer',
+          flexShrink: 0
+        }}
+      >
+        â€º
+      </button>
     </div>
   )
 }
