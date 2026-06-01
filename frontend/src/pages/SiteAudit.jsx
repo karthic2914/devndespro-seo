@@ -218,6 +218,15 @@ function TabBar({ tabs, active, onChange }) {
         )
       })}
     </div>
+    <div style={{
+      position: 'absolute', right: 0, top: 0, bottom: 4, width: 48,
+      pointerEvents: 'none',
+      background: 'linear-gradient(to right, transparent, #fff 75%)',
+      display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingRight: 6,
+    }}>
+      <span style={{ fontSize: 18, color: '#9CA3AF', fontWeight: 300 }}>›</span>
+    </div>
+    </div>
   )
 }
 
