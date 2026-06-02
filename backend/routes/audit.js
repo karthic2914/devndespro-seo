@@ -325,7 +325,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     }
 
     // 5. External Citations (outbound links to authoritative domains)
-    const authDomains = ['wikipedia.org', 'gov', 'edu', 'forbes.com', 'bbc.com', 'reuters.com', 'techcrunch.com', 'wired.com', 'medium.com', 'linkedin.com']
+    const authDomains = ['wikipedia.org', 'gov', 'edu', 'forbes.com', 'bbc.com', 'reuters.com', 'techcrunch.com', 'wired.com', 'medium.com', 'linkedin.com', 'web.dev', 'google.com', 'w3.org', 'mdn.web.docs', 'developer.mozilla.org']
     const extLinks = []
     $('a[href]').each((_, el) => {
       const href = $(el).attr('href') || ''
