@@ -531,8 +531,9 @@ router.post('/:siteId/ai-visibility/test-claude', auth, verifySite, async (req, 
         messages: [{ role: 'user', content: query }],
       })
       const response = msg.content[0]?.text || ''
-      const cited = response.toLowerCase().includes(domain.toLowerCase())
-      const lines = response.split('\n').filter(l => l.toLowerCase().includes(domain.toLowerCase()))
+      const brandName = domain.split('.')[0].toLowerCase()
+      const cited = response.toLowerCase().includes(domain.toLowerCase()) || response.toLowerCase().includes(brandName)
+      const lines = response.split('\n').filter(l => l.toLowerCase().includes(domain.toLowerCase()) || l.toLowerCase().includes(brandName))
       const excerpt = lines[0] || response.slice(0, 200)
       results.push({ query, response, cited, excerpt, domain })
     } catch (e) {
