@@ -482,20 +482,20 @@ export default function Sites() {
             <div className="right-rail">
               <div className="da-goal-card">
                 <div className="da-goal-card__label">
-                  <FontAwesomeIcon icon={faBullseye} />Domain Authority Goal
+                  <FontAwesomeIcon icon={faBullseye} />AI Visibility Goal
                 </div>
                 <div className="da-goal-card__nums">
-                  <span className="da-goal-card__num">{summary?.max_dr ?? 0}</span>
+                  <span className="da-goal-card__num">{Math.round(summary?.avg_ai_snippet ?? 0)}</span>
                   <span className="da-goal-card__arrow"><FontAwesomeIcon icon={faArrowRight} /></span>
-                  <span className="da-goal-card__num">20</span>
+                  <span className="da-goal-card__num">70</span>
                 </div>
                 <div className="da-goal-card__bar">
                   <div className="da-goal-card__fill" style={{ width: `${Math.min(((summary?.max_dr ?? 0) / 20) * 100, 100)}%` }} />
                 </div>
                 <p className="da-goal-card__tip">
-                  {summary?.max_dr >= 20 ? 'Goal reached! Target DR 40+ next.'
-                    : summary?.max_dr >= 10 ? 'Good progress - keep building backlinks to hit DR 20.'
-                    : 'Focus this week on niche-relevant outreach, unlinked mention reclamation, and contextual backlinks.'}
+                  {(summary?.avg_ai_snippet ?? 0) >= 70 ? 'Goal reached! Target AI Snippet score 90+ next.'
+                    : (summary?.avg_ai_snippet ?? 0) >= 50 ? 'Good progress - fix remaining AI snippet issues to hit 70+.'
+                    : 'Run site audits and fix AI snippet issues to improve visibility in ChatGPT and AI search.'}
                 </p>
               </div>
 
