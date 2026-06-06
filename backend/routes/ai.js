@@ -254,7 +254,7 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
       ? serpResults.map(r => `${r.position}. ${r.domain} - "${r.title}"`).join('\n')
       : '(SERP data unavailable - generate plan based on keyword only)'
     const engLabel = engine === 'duckduckgo' ? 'DuckDuckGo' : engine[0].toUpperCase() + engine.slice(1)
-    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2�4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2�3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
+    const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2-4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2-3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
     const r = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514', max_tokens: 1800,
       messages: [{ role: 'user', content: prompt }]
@@ -288,7 +288,6 @@ router.post('/:siteId/ai/link-opportunities', auth, verifySite, async (req, res)
     res.json(analysis.opportunities)
   } catch (e) { console.error(e); res.status(500).json({ error: 'Link opportunities failed' }) }
 })
-
 
 router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res) => {
   try {
@@ -343,6 +342,7 @@ Return ONLY a JSON array, no markdown:
     res.status(500).json({ error: 'Analysis failed' })
   }
 })
+
 router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (req, res) => {
   try {
     const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
@@ -353,18 +353,29 @@ router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (r
     const brand = site.name
     const domain = site.url.replace(/https?:\/\/(www\.)?/, '').split('/')[0]
 
-    const prompt = `Generate 3 search queries that a potential customer would type into ChatGPT to find this specific business.
-Site: ${brand} (${site.url})
-Tracked keywords: ${keywords || 'none'}
+    const axios = require('axios')
+    let siteSnippet = ''
+    try {
+      const resp = await axios.get(site.url, { timeout: 5000, headers: { 'User-Agent': 'Mozilla/5.0' } })
+      const html = String(resp.data || '')
+      siteSnippet = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 800)
+    } catch (fetchErr) {}
 
-Rules:
-- Queries must be specific enough that THIS site could appear in AI results
-- Include brand name OR location OR specific niche in each query
-- No generic queries like "web design" or "best software"
-- Think: what would someone ask ChatGPT to find this exact business or service?
-- If location is in the URL or keywords, use it
-
-Return ONLY a JSON array of 3 strings, no markdown: ["query1","query2","query3"]`
+    const prompt = [
+      'Generate 3 search queries that a real customer would type into ChatGPT to find this specific business.',
+      'Site: ' + brand + ' (' + site.url + ')',
+      'Tracked keywords: ' + (keywords || 'none'),
+      'Site content snippet: ' + (siteSnippet || 'not available'),
+      '',
+      'Rules:',
+      '- Use the actual business type, location and niche from the site content',
+      '- Include brand name OR city/location in at least 2 queries',
+      '- No generic queries - must be specific enough that THIS business could appear',
+      '- Good examples: web developer stavanger norway, devndespro web design, seo agency stavanger',
+      '- Bad examples: web design company, best software tool, mobile app development',
+      '',
+      'Return ONLY a JSON array of 3 strings, no markdown: ["query1","query2","query3"]'
+    ].join('\n')
 
     const r = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -383,4 +394,3 @@ Return ONLY a JSON array of 3 strings, no markdown: ["query1","query2","query3"]
 })
 
 module.exports = router
-
