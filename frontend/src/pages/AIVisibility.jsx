@@ -102,7 +102,7 @@ export default function AIVisibility() {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
       setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar('Test completed!', 'success')
+      showSnackbar('ChatGPT test complete!', 'success')
     } catch (e) { showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setLoading(false)
   }
@@ -114,7 +114,7 @@ export default function AIVisibility() {
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
       setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
-      showSnackbar('Claude test completed!', 'success')
+      showSnackbar('Claude test complete!', 'success')
     } catch (e) { showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setClaudeLoading(false)
   }
