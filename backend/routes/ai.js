@@ -343,5 +343,44 @@ Return ONLY a JSON array, no markdown:
     res.status(500).json({ error: 'Analysis failed' })
   }
 })
+router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (req, res) => {
+  try {
+    const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
+    const { rows: k } = await pool.query('SELECT keyword FROM keywords WHERE site_id=$1', [req.siteId])
+    const site = s[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+    const keywords = k.map(r => r.keyword).join(', ')
+    const brand = site.name
+    const domain = site.url.replace(/https?:\/\/(www\.)?/, '').split('/')[0]
+
+    const prompt = `Generate 3 search queries that a potential customer would type into ChatGPT to find this specific business.
+Site: ${brand} (${site.url})
+Tracked keywords: ${keywords || 'none'}
+
+Rules:
+- Queries must be specific enough that THIS site could appear in AI results
+- Include brand name OR location OR specific niche in each query
+- No generic queries like "web design" or "best software"
+- Think: what would someone ask ChatGPT to find this exact business or service?
+- If location is in the URL or keywords, use it
+
+Return ONLY a JSON array of 3 strings, no markdown: ["query1","query2","query3"]`
+
+    const r = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      messages: [{ role: 'user', content: prompt }]
+    })
+    const text = r.content[0].text.trim()
+    const start = text.indexOf('[')
+    const end = text.lastIndexOf(']')
+    const queries = JSON.parse(text.slice(start, end + 1))
+    res.json({ queries })
+  } catch (e) {
+    console.error('suggest-queries error:', e)
+    res.status(500).json({ error: 'Failed to suggest queries' })
+  }
+})
+
 module.exports = router
 

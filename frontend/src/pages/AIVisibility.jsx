@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -6,9 +6,12 @@ import api from '../utils/api'
 import { useSnackbar } from '../App'
 
 function genQueries(domain, brand, keywords) {
-  const kw1 = keywords[0] || (brand + ' software')
+  const kw1 = keywords[0] || (brand + ' services')
   const kw2 = keywords[1] || (brand + ' tool')
-  return [brand + ' review', 'best ' + kw1, brand + ' vs alternatives']
+  if (keywords.length > 0) {
+    return [kw1, brand + ' ' + (keywords[1] || 'review'), 'best ' + kw1]
+  }
+  return [brand, brand + ' review', 'best ' + brand + ' alternatives']
 }
 
 const SCORE_LABEL = s => s >= 80 ? 'Excellent' : s >= 50 ? 'Average' : s > 0 ? 'Below average' : 'Poor'
@@ -63,10 +66,23 @@ export default function AIVisibility() {
         const brand = d.split('.')[0]
         if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
         setAiCronEnabled(!!s.enable_ai_cron)
-        api.get('/sites/' + siteId + '/keywords').then(kr => {
-          const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
-          setQueries(genQueries(d, brand, kws))
-        }).catch(() => setQueries(genQueries(d, brand, [])))
+        api.post('/sites/' + siteId + '/ai-visibility/suggest-queries', {})
+          .then(r => {
+            if (r.data.queries && r.data.queries.length > 0) {
+              setQueries(r.data.queries)
+            } else {
+              api.get('/sites/' + siteId + '/keywords').then(kr => {
+                const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
+                setQueries(genQueries(d, brand, kws))
+              }).catch(() => setQueries(genQueries(d, brand, [])))
+            }
+          })
+          .catch(() => {
+            api.get('/sites/' + siteId + '/keywords').then(kr => {
+              const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
+              setQueries(genQueries(d, brand, kws))
+            }).catch(() => setQueries(genQueries(d, brand, [])))
+          })
       }
     }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
