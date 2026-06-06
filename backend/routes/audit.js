@@ -681,7 +681,7 @@ Return ONLY the JSON array, no other text.`
       })
       const gptText = completion.choices[0]?.message?.content || '[]'
       const gptClean = gptText.split('`').filter(s => !s.startsWith('json')).join('').trim()
-      gptRecommendations = JSON.parse(gptClean)
+      try { gptRecommendations = JSON.parse(gptClean) } catch { gptRecommendations = [] }
     }
 
     res.json({ recommendations, gptRecommendations, engine, site: siteName, url: siteUrl })
