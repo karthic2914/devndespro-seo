@@ -580,7 +580,7 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
 router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT results, created_at FROM ai_visibility_tests WHERE site_id=\ ORDER BY created_at DESC LIMIT 30',
+      'SELECT results, created_at FROM ai_visibility_tests WHERE site_id=$1 ORDER BY created_at DESC LIMIT 30',
       [req.siteId]
     )
     const history = rows.map(r => {
