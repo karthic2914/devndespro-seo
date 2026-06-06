@@ -371,8 +371,8 @@ router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (r
       '- Use the actual business type, location and niche from the site content',
       '- Include brand name OR city/location in at least 2 queries',
       '- No generic queries - must be specific enough that THIS business could appear',
-      '- Good examples: web developer stavanger norway, devndespro web design, seo agency stavanger',
-      '- Bad examples: web design company, best software tool, mobile app development',
+      '- Good examples: web design agency stavanger, devndespro seo tool, ui ux design studio norway',
+      '- Avoid generic queries that could match thousands of businesses',
       '',
       'Return ONLY a JSON array of 3 strings, no markdown: ["query1","query2","query3"]'
     ].join('\n')
