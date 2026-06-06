@@ -56,7 +56,11 @@ cron.schedule('0 8 * * *', async () => {
     for (const site of sites) {
       try {
         const domain = (() => { try { return new URL(site.url).hostname.replace('www.', '') } catch { return site.url } })()
-        const queries = [domain + ' review', 'best ' + domain + ' software', domain + ' vs alternatives']
+        const { rows: kRows } = await pool.query('SELECT keyword FROM keywords WHERE site_id=', [site.id])
+        const keywords = kRows.map(r => r.keyword).filter(Boolean)
+        const kw1 = keywords[0] || (domain + ' services')
+        const kw2 = keywords[1] || (domain + ' agency')
+        const queries = [domain, kw1, kw2]
         const results = []
         for (const query of queries) {
           try {
