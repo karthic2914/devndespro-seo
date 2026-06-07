@@ -1,5 +1,7 @@
-import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Sites from './pages/Sites'
@@ -47,6 +49,15 @@ function GlobalSnackbar({ snackbar, onClose }) {
   }
   const c = colorMap[snackbar.type] || colorMap.info
 
+  const iconMap = {
+    success: faCircleCheck,
+    error: faCircleXmark,
+    warning: faTriangleExclamation,
+    info: faCircleInfo,
+  }
+
+  const icon = iconMap[snackbar.type] || faCircleInfo
+
   return (
     <div
       onClick={onClose}
@@ -60,10 +71,7 @@ function GlobalSnackbar({ snackbar, onClose }) {
         cursor: 'pointer', background: c.background, color: c.color,
       }}
     >
-      {snackbar.type === 'success' && <span>??</span>}
-      {snackbar.type === 'error'   && <span>?</span>}
-      {snackbar.type === 'warning' && <span>??</span>}
-      {snackbar.type === 'info'    && <span>??</span>}
+      <FontAwesomeIcon icon={icon} style={{ fontSize: 16, flexShrink: 0 }} />
       <span>{snackbar.message}</span>
     </div>
   )
