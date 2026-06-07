@@ -87,7 +87,13 @@ export default function AIVisibility() {
   useEffect(() => {
     const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
+    const engines = [
+    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
+    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
+    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
+  ]
+  return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   useEffect(() => {
@@ -282,6 +288,12 @@ function getLatestEngineScore(history, engineName) {
   }
   const isTesting = loading || claudeLoading || analyseLoading
 
+  const engines = [
+    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
+    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
+    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
+  ]
   return (
     <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
       <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
@@ -455,7 +467,13 @@ function getLatestEngineScore(history, engineName) {
         <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>{improvements.length > 0 ? 'Based on your actual audit results:' : 'Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.'}</div>
         {tipsToShow.map((tip, i) => {
           const isFixed = tip.status === 'pass'
-          return (
+          const engines = [
+    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
+    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
+    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
+  ]
+  return (
           <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start', opacity: isFixed ? 0.7 : 1 }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, background: isFixed ? '#DCFCE7' : '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
               <FontAwesomeIcon icon={isFixed ? faCircleCheck : faArrowRight} style={{ color: isFixed ? '#16A34A' : '#F97316', fontSize: 12 }} />
@@ -483,7 +501,13 @@ function getLatestEngineScore(history, engineName) {
           {history.slice(0, 5).map((h, i) => {
             const r = h.results || []
             const c = r.filter(x => x.cited).length
-            return (
+            const engines = [
+    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
+    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
+    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
+  ]
+  return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < Math.min(history.length,5)-1 ? '1px solid #F3F4F6' : 'none' }}>
                 <span style={{ fontSize: 11, color: '#9CA3AF', minWidth: 110 }}>{new Date(h.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: c > 0 ? '#16A34A' : '#DC2626', minwidth: 110 }}>{c}/{r.length} cited</span>
@@ -497,6 +521,8 @@ function getLatestEngineScore(history, engineName) {
     </div>
   )
 }
+
+
 
 
 
