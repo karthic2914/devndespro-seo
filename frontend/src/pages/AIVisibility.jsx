@@ -36,6 +36,7 @@ export default function AIVisibility() {
   const [loading, setLoading] = useState(false)
   const [claudeLoading, setClaudeLoading] = useState(false)
   const [claudeResults, setClaudeResults] = useState(null)
+  const [engineScores, setEngineScores] = useState({ chatgpt: null, claude: null })
   const [improvements, setImprovements] = useState([])
   const [analyseLoading, setAnalyseLoading] = useState(false)
   const [aiRecommendations, setAiRecommendations] = useState(null)
@@ -104,7 +105,9 @@ export default function AIVisibility() {
     setLoading(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
-      setResults(res.data.results || [])
+      const chatgptItems = res.data.results || []
+      setResults(chatgptItems)
+      setEngineScores(prev => ({ ...prev, chatgpt: calcEngineScore(chatgptItems) }))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
       showSnackbar('ChatGPT Analysis Complete', 'success', 3500, { engine: 'chatgpt' })
     } catch (e) {
@@ -123,7 +126,9 @@ export default function AIVisibility() {
     setClaudeLoading(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q, engine: 'claude' })
-      setResults((res.data.results || []).map(r => ({ ...r, engine: 'Claude' })))
+      const claudeItems = (res.data.results || []).map(r => ({ ...r, engine: 'Claude' }))
+      setResults(claudeItems)
+      setEngineScores(prev => ({ ...prev, claude: calcEngineScore(claudeItems) }))
       setClaudeResults({ score: res.data.score ?? 0 })
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
       showSnackbar('Claude Analysis Complete', 'success', 3500, { engine: 'claude' })
@@ -175,8 +180,8 @@ export default function AIVisibility() {
   const score = total > 0 ? Math.round((cited / total) * 100) : null
 
   const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: claudeResults?.score ?? null, pending: claudeResults === null },
+    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
+    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
     { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
@@ -189,6 +194,14 @@ export default function AIVisibility() {
   ]
 
   const selectedEngineObj = ENGINES.find(e => e.key === selectedEngine) || ENGINES[0]
+
+  const calcEngineScore = (items) => {
+    const arr = Array.isArray(items) ? items : []
+    if (arr.length === 0) return 0
+    const citedCount = arr.filter(x => x.cited).length
+    return Math.round((citedCount / arr.length) * 100)
+  }
+  const isTesting = loading || claudeLoading || analyseLoading
 
   return (
     <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
@@ -253,12 +266,12 @@ export default function AIVisibility() {
           ))}
         </div>
         {!sharing && <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <button onClick={runTest} disabled={loading || claudeLoading} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runTest} disabled={isTesting} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
           <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run</span>
-          <button onClick={runClaudeTest} disabled={claudeLoading || loading || analyseLoading} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: claudeLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runClaudeTest} disabled={isTesting} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
           </button>
@@ -405,6 +418,8 @@ export default function AIVisibility() {
     </div>
   )
 }
+
+
 
 
 
