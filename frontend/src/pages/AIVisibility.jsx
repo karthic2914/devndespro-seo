@@ -102,9 +102,9 @@ export default function AIVisibility() {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
       setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar(ChatGPT Analysis Complete
+      showSnackbar(`ChatGPT Analysis Complete
 Score: /100
-/ queries cited, 'success', 4500, { engine: 'chatgpt' })
+/ queries cited`, 'success', 4500, { engine: 'chatgpt' })
     } catch (e) { showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setLoading(false)
   }
@@ -116,9 +116,9 @@ Score: /100
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
       setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
-      showSnackbar(Claude Analysis Complete
+      showSnackbar(`Claude Analysis Complete
 Score: /100
-/ queries cited, 'success', 4500, { engine: 'claude' })
+/ queries cited`, 'success', 4500, { engine: 'claude' })
     } catch (e) { showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setClaudeLoading(false)
   }
@@ -396,4 +396,5 @@ Score: /100
     </div>
   )
 }
+
 
