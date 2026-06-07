@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -481,7 +481,10 @@ router.post('/:siteId/ai-visibility/test', auth, verifySite, async (req, res) =>
       results.push({ query, response: '', cited: false, excerpt: '', error: e.message, domain })
     }
   }
-  await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [req.siteId, JSON.stringify(results)]).catch(() => {})
+  await pool.query(
+  `INSERT INTO ai_visibility_tests (site_id, results, engine, created_at) VALUES ($1,$2,'claude',NOW())`,
+  [req.siteId, JSON.stringify(results)]
+).catch(() => {})
   const citedCount = results.filter(r => r.cited).length
   const chatgptScore = results.length > 0 ? Math.round((citedCount / results.length) * 100) : 0
   await pool.query('INSERT INTO seo_metrics (site_id, chatgpt_cited) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET chatgpt_cited=$2', [req.siteId, chatgptScore]).catch(() => {})
@@ -543,7 +546,7 @@ router.post('/:siteId/ai-visibility/test-claude', auth, verifySite, async (req, 
   const citedCount = results.filter(r => r.cited).length
   const claudeScore = results.length > 0 ? Math.round((citedCount / results.length) * 100) : 0
   await pool.query('INSERT INTO seo_metrics (site_id, claude_cited) VALUES ($1,$2) ON CONFLICT (site_id) DO UPDATE SET claude_cited=$2', [req.siteId, claudeScore]).catch(() => {})
-  await pool.query('INSERT INTO ai_visibility_tests (site_id, results, created_at) VALUES ($1,$2,NOW())', [req.siteId, JSON.stringify(results)]).catch(() => {})
+  await pool.query("INSERT INTO ai_visibility_tests (site_id, results, engine, created_at) VALUES ($1,$2,'claude',NOW())", [req.siteId, JSON.stringify(results)]).catch(() => {})
   res.json({ results, domain, score: claudeScore })
 })
 
@@ -580,14 +583,14 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
 router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT results, created_at FROM ai_visibility_tests WHERE site_id=$1 ORDER BY created_at DESC LIMIT 30',
+      'SELECT results, created_at, engine FROM ai_visibility_tests WHERE site_id=$1 ORDER BY created_at DESC LIMIT 30',
       [req.siteId]
     )
     const history = rows.map(r => {
       const results = Array.isArray(r.results) ? r.results : []
       const cited = results.filter(x => x && x.cited).length
       const score = results.length > 0 ? Math.round((cited / results.length) * 100) : 0
-      return { date: r.created_at, score }
+      return { date: r.created_at, score, engine: r.engine || 'chatgpt' }
     }).reverse()
     res.json({ history })
   } catch (e) {
@@ -596,6 +599,8 @@ router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req,
 })
 
 module.exports = router
+
+
 
 
 
