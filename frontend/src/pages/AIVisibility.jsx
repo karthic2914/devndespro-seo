@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -102,7 +102,9 @@ export default function AIVisibility() {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
       setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar('ChatGPT test complete!', 'success')
+      showSnackbar(ChatGPT Analysis Complete
+Score: /100
+/ queries cited, 'success', 4500, { engine: 'chatgpt' })
     } catch (e) { showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setLoading(false)
   }
@@ -114,7 +116,9 @@ export default function AIVisibility() {
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
       setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
-      showSnackbar('Claude test complete!', 'success')
+      showSnackbar(Claude Analysis Complete
+Score: /100
+/ queries cited, 'success', 4500, { engine: 'claude' })
     } catch (e) { showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setClaudeLoading(false)
   }
@@ -392,3 +396,4 @@ export default function AIVisibility() {
     </div>
   )
 }
+

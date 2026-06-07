@@ -49,6 +49,15 @@ function GlobalSnackbar({ snackbar, onClose }) {
   }
   const c = colorMap[snackbar.type] || colorMap.info
 
+  const engineColorMap = {
+    chatgpt: '#000000',
+    claude: '#D97706',
+    perplexity: '#14B8A6',
+    gemini: '#4285F4',
+  }
+
+  const engineColor = snackbar.engine ? engineColorMap[snackbar.engine] : null
+
   const iconMap = {
     success: faCircleCheck,
     error: faCircleXmark,
@@ -67,12 +76,13 @@ function GlobalSnackbar({ snackbar, onClose }) {
         zIndex: 999999, minWidth: 220, maxWidth: 420,
         padding: '14px 28px', borderRadius: 8, fontSize: 15, fontWeight: 500,
         boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        borderLeft: engineColor ? `5px solid ${engineColor}` : 'none',
         display: 'flex', alignItems: 'center', gap: 12,
         cursor: 'pointer', background: c.background, color: c.color,
       }}
     >
       <FontAwesomeIcon icon={icon} style={{ fontSize: 16, flexShrink: 0 }} />
-      <span>{snackbar.message}</span>
+      <span style={{ whiteSpace: 'pre-line', lineHeight: 1.4 }}>{snackbar.message}</span>
     </div>
   )
 }
@@ -89,10 +99,10 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
-  const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500 })
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
 
-  function showSnackbar(message, type = 'info', duration = 3500) {
-    setSnackbar({ open: true, message, type, duration })
+  function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
+    setSnackbar({ open: true, message, type, duration, ...options })
   }
 
   function closeSnackbar() {
@@ -133,3 +143,4 @@ export default function App() {
     </SnackbarContext.Provider>
   )
 }
+
