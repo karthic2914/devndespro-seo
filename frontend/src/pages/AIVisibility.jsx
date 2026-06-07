@@ -96,6 +96,7 @@ export default function AIVisibility() {
   }, [siteId])
 
   async function runTest() {
+    if (isTesting) return
     const q = queries.filter(q => q.trim())
     if (!q.length) {
       showSnackbar('Please enter at least one query', 'warning')
@@ -117,6 +118,7 @@ export default function AIVisibility() {
   }
 
   async function runClaudeTest() {
+    if (isTesting) return
     const q = queries.filter(q => q.trim())
     if (!q.length) {
       showSnackbar('Please enter at least one query', 'warning')
@@ -271,7 +273,7 @@ export default function AIVisibility() {
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
           <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run</span>
-          <button onClick={runClaudeTest} disabled={isTesting} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: '#fff', color: '#D85A30', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runClaudeTest} disabled={isTesting} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: isTesting ? '#F3F4F6' : '#fff', color: isTesting ? '#9CA3AF' : '#D85A30', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
             {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
           </button>
@@ -418,6 +420,7 @@ export default function AIVisibility() {
     </div>
   )
 }
+
 
 
 
