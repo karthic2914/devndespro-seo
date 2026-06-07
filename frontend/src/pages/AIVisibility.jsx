@@ -122,7 +122,7 @@ export default function AIVisibility() {
 
     setClaudeLoading(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/claude-test', { queries: q })
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q, engine: 'claude' })
       setResults((res.data.results || []).map(r => ({ ...r, engine: 'Claude' })))
       setClaudeResults({ score: res.data.score ?? 0 })
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
@@ -405,6 +405,7 @@ export default function AIVisibility() {
     </div>
   )
 }
+
 
 
 
