@@ -20,9 +20,42 @@ const SCORE_BG = s => s >= 80 ? '#DCFCE7' : s >= 50 ? '#FEF3C7' : '#FEE2E2'
 
 const ENGINES = [
   { key: 'Claude', label: 'Claude (Anthropic)', desc: 'Fast, accurate, reads your site content', color: '#D85A30' },
-  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~$0.02 per analysis', color: '#10A37F' },
+  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~.02 per analysis', color: '#10A37F' },
   { key: 'Both', label: 'Both engines', desc: 'Compare recommendations side by side', color: '#6366F1' },
 ]
+
+function calculateScoreFromResults(results) {
+  const arr = Array.isArray(results) ? results : []
+  if (arr.length === 0) return null
+  const cited = arr.filter(r => r.cited).length
+  return Math.round((cited / arr.length) * 100)
+}
+
+function getLatestEngineScore(history, engineName) {
+  const engine = engineName.toLowerCase()
+  const rows = Array.isArray(history) ? history : []
+
+  for (const row of rows) {
+    const rowEngine = String(row.engine || row.provider || row.ai_engine || '').toLowerCase()
+
+    if (rowEngine === engine && row.score != null) return Number(row.score)
+
+    if (rowEngine === engine && Array.isArray(row.results)) {
+      const score = calculateScoreFromResults(row.results)
+      if (score != null) return score
+    }
+
+    if (!rowEngine && Array.isArray(row.results)) {
+      const hasEngine = row.results.some(r => String(r.engine || '').toLowerCase() === engine)
+      if (hasEngine) {
+        const score = calculateScoreFromResults(row.results)
+        if (score != null) return score
+      }
+    }
+  }
+
+  return null
+}
 
 export default function AIVisibility() {
   const { siteId } = useParams()
@@ -65,7 +98,7 @@ export default function AIVisibility() {
         const d = (() => { try { return new URL(s.url).hostname.replace('www.', '') } catch { return s.url } })()
         setDomain(d)
         const brand = d.split('.')[0]
-        if (s.claude_cited != null) setClaudeResults({ score: s.claude_cited })
+        // Claude score is loaded from score-history, not old site field
         setAiCronEnabled(!!s.enable_ai_cron)
         api.post('/sites/' + siteId + '/ai-visibility/suggest-queries', {})
           .then(r => {
@@ -87,7 +120,19 @@ export default function AIVisibility() {
       }
     }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
-    api.get('/sites/' + siteId + '/ai-visibility/score-history').then(res => setScoreHistory(res.data.history || [])).catch(() => {})
+    api.get('/sites/' + siteId + '/ai-visibility/score-history').then(res => {
+      const h = res.data.history || []
+      setScoreHistory(h)
+
+      const latestChatGPT = getLatestEngineScore(h, 'chatgpt')
+      const latestClaude = getLatestEngineScore(h, 'claude')
+
+      setEngineScores(prev => ({
+        ...prev,
+        chatgpt: latestChatGPT,
+        claude: latestClaude
+      }))
+    }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/history').then(res => {
       const h = res.data || []
       setHistory(h)
@@ -181,12 +226,44 @@ export default function AIVisibility() {
   const total = (results || []).length
   const score = total > 0 ? Math.round((cited / total) * 100) : null
 
-  const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
-    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
-    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
-  ]
+  const ENGINES = [
+  { key: 'Claude', label: 'Claude (Anthropic)', desc: 'Fast, accurate, reads your site content', color: '#D85A30' },
+  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~.02 per analysis', color: '#10A37F' },
+  { key: 'Both', label: 'Both engines', desc: 'Compare recommendations side by side', color: '#6366F1' },
+]
+
+function calculateScoreFromResults(results) {
+  const arr = Array.isArray(results) ? results : []
+  if (arr.length === 0) return null
+  const cited = arr.filter(r => r.cited).length
+  return Math.round((cited / arr.length) * 100)
+}
+
+function getLatestEngineScore(history, engineName) {
+  const engine = engineName.toLowerCase()
+  const rows = Array.isArray(history) ? history : []
+
+  for (const row of rows) {
+    const rowEngine = String(row.engine || row.provider || row.ai_engine || '').toLowerCase()
+
+    if (rowEngine === engine && row.score != null) return Number(row.score)
+
+    if (rowEngine === engine && Array.isArray(row.results)) {
+      const score = calculateScoreFromResults(row.results)
+      if (score != null) return score
+    }
+
+    if (!rowEngine && Array.isArray(row.results)) {
+      const hasEngine = row.results.some(r => String(r.engine || '').toLowerCase() === engine)
+      if (hasEngine) {
+        const score = calculateScoreFromResults(row.results)
+        if (score != null) return score
+      }
+    }
+  }
+
+  return null
+}
 
   const tipsToShow = improvements.length > 0 ? improvements : [
     { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High' },
@@ -420,6 +497,7 @@ export default function AIVisibility() {
     </div>
   )
 }
+
 
 
 
