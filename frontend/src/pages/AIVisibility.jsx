@@ -96,33 +96,42 @@ export default function AIVisibility() {
 
   async function runTest() {
     const q = queries.filter(q => q.trim())
-    if (!q.length) { showSnackbar('Enter at least one query', 'error'); return }
+    if (!q.length) {
+      showSnackbar('Please enter at least one query', 'warning')
+      return
+    }
+
     setLoading(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
-      setResults(res.data.results.map(r => ({ ...r, engine: 'ChatGPT' })))
+      setResults(res.data.results || [])
       setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar(`ChatGPT Analysis Complete
-Score: /100
-/ queries cited`, 'success', 4500, { engine: 'chatgpt' })
-    } catch (e) { showSnackbar('Test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
+      showSnackbar('ChatGPT Analysis Complete', 'success', 3500, { engine: 'chatgpt' })
+    } catch (e) {
+      showSnackbar('ChatGPT test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
     setLoading(false)
   }
 
   async function runClaudeTest() {
     const q = queries.filter(q => q.trim())
-    if (!q.length) { showSnackbar('Enter at least one query', 'error'); return }
+    if (!q.length) {
+      showSnackbar('Please enter at least one query', 'warning')
+      return
+    }
+
     setClaudeLoading(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/test-claude', { queries: q })
-      setClaudeResults({ score: res.data.score, results: res.data.results.map(r => ({ ...r, engine: 'Claude' })) })
-      showSnackbar(`Claude Analysis Complete
-Score: /100
-/ queries cited`, 'success', 4500, { engine: 'claude' })
-    } catch (e) { showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/claude-test', { queries: q })
+      setResults((res.data.results || []).map(r => ({ ...r, engine: 'Claude' })))
+      setClaudeResults({ score: res.data.score ?? 0 })
+      setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
+      showSnackbar('Claude Analysis Complete', 'success', 3500, { engine: 'claude' })
+    } catch (e) {
+      showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
     setClaudeLoading(false)
   }
-
   async function analyseWithEngine(engine) {
     setSelectedEngine(engine)
     setShowEngineMenu(false)
@@ -396,5 +405,9 @@ Score: /100
     </div>
   )
 }
+
+
+
+
 
 

@@ -47,7 +47,21 @@ function GlobalSnackbar({ snackbar, onClose }) {
     warning: { background: '#D97706', color: '#fff' },
     info:    { background: '#1D4ED8', color: '#fff' },
   }
-  const c = colorMap[snackbar.type] || colorMap.info
+  let c = colorMap[snackbar.type] || colorMap.info
+
+if (snackbar.engine === 'chatgpt') {
+  c = {
+    background: '#111827',
+    color: '#ffffff'
+  }
+}
+
+if (snackbar.engine === 'claude') {
+  c = {
+    background: '#D97706',
+    color: '#ffffff'
+  }
+}
 
   const engineColorMap = {
     chatgpt: '#000000',
@@ -143,4 +157,5 @@ export default function App() {
     </SnackbarContext.Provider>
   )
 }
+
 
