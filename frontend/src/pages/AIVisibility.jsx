@@ -266,7 +266,7 @@ export default function AIVisibility() {
           ))}
         </div>
         {!sharing && <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <button onClick={runTest} disabled={isTesting} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: loading ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={runTest} disabled={isTesting} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: isTesting ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
             {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
           </button>
@@ -418,6 +418,7 @@ export default function AIVisibility() {
     </div>
   )
 }
+
 
 
 
