@@ -317,6 +317,9 @@ export default function SiteAudit() {
   const emailBodyRef = useRef(null)
   const isProgrammatic = useRef(false)
   const [logoAlign, setLogoAlign] = useState('center')
+  const [authorityScore, setAuthorityScore] = useState(null)
+  const [authorityUpdatedAt, setAuthorityUpdatedAt] = useState(null)
+  const [refreshingAuthority, setRefreshingAuthority] = useState(false)
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -333,6 +336,8 @@ export default function SiteAudit() {
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
       else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
+      if (siteRes?.data?.authority_score !== undefined) setAuthorityScore(siteRes.data.authority_score)
+      if (siteRes?.data?.authority_updated_at) setAuthorityUpdatedAt(siteRes.data.authority_updated_at)
     }).finally(() => setLoading(false))
   }, [siteId])
 
@@ -442,6 +447,19 @@ export default function SiteAudit() {
       setRunError(e.response?.data?.error || 'Audit failed - check the site URL is accessible')
     }
     setRunning(false)
+  }
+
+  async function refreshAuthorityScore() {
+    setRefreshingAuthority(true)
+    try {
+      const r = await api.post(`/sites/${siteId}/authority-score`)
+      setAuthorityScore(r.data.authority_score)
+      setAuthorityUpdatedAt(r.data.authority_updated_at)
+      showSnackbar('Authority score updated!', 'success')
+    } catch (e) {
+      showSnackbar('Failed to update authority score', 'error')
+    }
+    setRefreshingAuthority(false)
   }
 
   async function sendSummaryEmail() {
@@ -567,7 +585,7 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} />
+      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} />
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
@@ -678,6 +696,33 @@ export default function SiteAudit() {
               </label>
             </div>
           </Modal>
+
+          {/* Authority Score */}
+          <div style={{
+            background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '1rem',
+            padding: 'clamp(10px, 3vw, 14px) clamp(10px, 3vw, 16px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            flexWrap: 'wrap', gap: 10,
+          }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                Authority Score
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
+                {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
+              </div>
+              {authorityUpdatedAt && (
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                  Updated: {new Date(authorityUpdatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                </div>
+              )}
+            </div>
+            <Button variant="ghost" size="sm" onClick={refreshAuthorityScore} disabled={refreshingAuthority}>
+              <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: refreshingAuthority ? 'spin 1s linear infinite' : 'none' }} />
+              <span className='btn-label'>{refreshingAuthority ? 'Calculating...' : 'Refresh Score'}</span>
+            </Button>
+          </div>
 
           {/* Crawl snapshot */}
           <div style={{

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -202,6 +202,7 @@ export default function Sites() {
 
   const SORT_COLS = [
     { key: 'health',         label: 'Health' },
+    { key: 'authority_score', label: 'Authority' },
     { key: 'ai_snippet_score',      label: 'AI Snippet Score' },
     { key: 'keyword_count',  label: 'Keywords' },
     { key: 'backlink_count', label: 'Backlinks' },
@@ -410,7 +411,7 @@ export default function Sites() {
 
               <div style={{ maxHeight: 480, overflowY: 'auto' }}>
                 <div className="projects-table__head">
-                  {['Project', 'Health', 'AI Snippet', 'AEO', 'ChatGPT', 'Bing', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
+                  {['Project', 'Health', 'Authority', 'AI Snippet', 'AEO', 'ChatGPT', 'Bing', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
                     <div key={h} className="projects-table__head-cell">{h}</div>
                   ))}
                 </div>
@@ -449,6 +450,10 @@ export default function Sites() {
                         </div>
                       </div>
                       <div className="project-row__dash">{site.health ?? '-'}</div>
+                      <div className="project-row__dash" style={{
+                        color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : 'var(--muted)',
+                        fontWeight: site.authority_score ? 700 : 400,
+                      }}>{site.authority_score ?? '-'}</div>
                       <div className="project-row__dash" style={{
                         color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : 'var(--muted)',
                         fontWeight: site.ai_snippet_score ? 700 : 400,
