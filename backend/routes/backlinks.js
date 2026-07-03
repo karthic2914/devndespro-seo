@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { firstValueByKey, parseCsvRows, toInt } = require('../utils/helpers')
@@ -118,6 +118,29 @@ router.post('/:siteId/backlinks/crawl', auth, verifySite, async (req, res) => {
     stats: analysis.stats,
     errors: analysis.errors,
   })
+})
+
+router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    `SELECT 
+       COUNT(DISTINCT name) AS referring_domains,
+       COALESCE(AVG(dr), 0) AS avg_dr,
+       COUNT(*) FILTER (WHERE type = 'dofollow') AS dofollow_count
+     FROM backlinks
+     WHERE site_id = $1 AND status = 'Live'`,
+    [req.siteId]
+  )
+  const row = rows[0]
+  const score = Math.min(100, Math.round(
+    (parseInt(row.referring_domains) * 2) +
+    (parseFloat(row.avg_dr) * 0.5) +
+    (parseInt(row.dofollow_count) * 0.3)
+  ))
+  const { rows: updated } = await pool.query(
+    'UPDATE sites SET authority_score=$1, authority_updated_at=NOW() WHERE id=$2 RETURNING authority_score, authority_updated_at',
+    [score, req.siteId]
+  )
+  res.json(updated[0])
 })
 
 module.exports = router
