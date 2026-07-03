@@ -112,7 +112,7 @@
 @media (max-width: 639px) {
   .audit-header-btns { gap: 6px !important; }
   .audit-header-btns button {
-    width: 40px; height: 40px; padding: 0 !important;
+    width: 44px; height: 44px; aspect-ratio: 1 / 1; padding: 0 !important;
     border-radius: 10px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
   }
