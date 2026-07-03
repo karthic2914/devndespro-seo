@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    GLOBAL RESPONSIVE GRID OVERRIDES
    Covers all pages: mobile/tablet/desktop/large
    ============================================ */
@@ -116,11 +116,6 @@
     border-radius: 10px !important;
     display: flex !important; align-items: center !important; justify-content: center !important;
   }
-  .audit-header-btns button:last-child {
-    width: auto; padding: 0 14px !important;
-  }
-  .audit-header-btns .btn-label { display: none !important; }
   .audit-header-btns button svg { margin-right: 0 !important; font-size: 14px; }
-  .audit-header-btns button:last-child svg { margin-right: 6px !important; }
-  .audit-header-btns button:last-child .btn-label { display: inline !important; }
+  .audit-header-btns .btn-label { display: none !important; }
 }
