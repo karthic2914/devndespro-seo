@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -78,8 +78,8 @@ export default function Layout() {
                   <div className="site-card__url">{site.url}</div>
                 </div>
               </div>
-              <div className="site-card__da">DA 0 / 20 goal</div>
-              <ProgressBar value={0} max={20} height={3} />
+              <div className="site-card__da">Authority {site.authority_score ?? 0} / 20 goal</div>
+              <ProgressBar value={site.authority_score ?? 0} max={20} height={3} />
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
               <FontAwesomeIcon icon={faArrowLeft} /> All Projects
