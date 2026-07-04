@@ -442,51 +442,65 @@ export default function Sites() {
                   </div>
                 ) : (
                   <>
-                    {filteredSites.slice(0, visibleCount).map((site) => (
-                      <div
-                        key={site.id}
-                        onClick={() => enter(site)}
-                        style={{
-                          background: '#fff', border: '1px solid var(--dark4)', borderRadius: 10,
-                          padding: '12px 14px', marginBottom: 8, cursor: 'pointer', transition: 'box-shadow 0.15s',
-                        }}
-                        onMouseOver={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
-                        onMouseOut={e => (e.currentTarget.style.boxShadow = 'none')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                            <SiteAvatar name={site.name || '?'} url={site.url} />
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
-                              <div style={{ fontSize: 11, color: 'var(--muted)' }}>
-                                Added {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                      {filteredSites.slice(0, visibleCount).map((site) => (
+                        <div
+                          key={site.id}
+                          onClick={() => enter(site)}
+                          style={{
+                            background: '#fff', border: '1px solid var(--dark4)', borderRadius: 12,
+                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.15s',
+                          }}
+                          onMouseOver={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.08)')}
+                          onMouseOut={e => (e.currentTarget.style.boxShadow = 'none')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                              <SiteAvatar name={site.name || '?'} url={site.url} />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
+                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                                  {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                                </div>
                               </div>
                             </div>
+                            {user?.id === 1 && (
+                              <button
+                                onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 14, color: '#9CA3AF', flexShrink: 0 }}
+                                title="Delete project"
+                              >
+                                <FontAwesomeIcon icon={faTrash} />
+                              </button>
+                            )}
                           </div>
-                          {user?.id === 1 && (
-                            <button
-                              onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
-                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 4, fontSize: 16, color: '#9CA3AF', flexShrink: 0 }}
-                              title="Delete project"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          )}
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
+                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
+                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>Health</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#D97706' : site.health != null ? '#DC2626' : '#9CA3AF' }}>{site.health ?? '-'}</div>
+                            </div>
+                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
+                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>Authority</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : '#9CA3AF' }}>{site.authority_score ?? '-'}</div>
+                            </div>
+                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
+                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>AI Snippet</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : '#9CA3AF' }}>{site.ai_snippet_score ?? '-'}</div>
+                            </div>
+                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
+                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>AEO</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : '#9CA3AF' }}>{site.aeo_score ?? '-'}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 8, marginTop: 8, fontSize: 10, color: '#9CA3AF' }}>
+                            <span>KW {site.keyword_count ?? 0}</span>
+                            <span>BL {site.backlink_count ?? 0}</span>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.health >= 80 ? '#F0FDF4' : site.health >= 55 ? '#FFFBEB' : site.health != null ? '#FEF2F2' : '#F3F4F6', color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#D97706' : site.health != null ? '#DC2626' : '#9CA3AF' }}>Health {site.health ?? '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.authority_score >= 50 ? '#F0FDF4' : site.authority_score >= 25 ? '#FFFBEB' : site.authority_score ? '#FEF2F2' : '#F3F4F6', color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : '#9CA3AF' }}>Authority {site.authority_score ?? '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.ai_snippet_score >= 80 ? '#F0FDF4' : site.ai_snippet_score >= 55 ? '#FFFBEB' : site.ai_snippet_score ? '#FEF2F2' : '#F3F4F6', color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : '#9CA3AF' }}>AI Snippet {site.ai_snippet_score ?? '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.aeo_score >= 80 ? '#F0FDF4' : site.aeo_score >= 55 ? '#FFFBEB' : site.aeo_score ? '#FEF2F2' : '#F3F4F6', color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : '#9CA3AF' }}>AEO {site.aeo_score ?? '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>ChatGPT {site.chatgpt_cited != null ? site.chatgpt_cited + '/100' : '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Bing {site.bing_score != null ? site.bing_score + '/100' : '-'}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Keywords {site.keyword_count ?? 0}</span>
-                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Backlinks {site.backlink_count ?? 0}</span>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                     {visibleCount < filteredSites.length && (
-                      <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                      <div style={{ textAlign: 'center', padding: '14px 0 4px' }}>
                         <Button variant="secondary" size="sm" onClick={() => setVisibleCount(v => v + 20)}>
                           Load more ({filteredSites.length - visibleCount} remaining)
                         </Button>
