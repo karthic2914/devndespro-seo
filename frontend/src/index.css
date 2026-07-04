@@ -350,9 +350,9 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 
 /* -- Projects Table -- */
 .projects-table { background: #fff; border: 1px solid var(--dark4); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow); }
-.projects-table__head { display: grid; grid-template-columns: 2fr 75px 75px 75px 75px 75px 75px 85px 85px 75px 48px; padding: 10px 20px; background: #F9FAFB; border-bottom: 1px solid var(--dark4); }
+.projects-table__head { display: grid; grid-template-columns: 2fr 75px 75px 75px 75px 75px 75px 85px 85px 75px 48px; padding: 10px 20px; background: #F9FAFB; border-bottom: 1px solid var(--dark4); gap: 12px; }
 .projects-table__head-cell { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.project-row { display: grid; grid-template-columns: minmax(0, 2fr) 75px 75px 75px 75px 75px 75px 85px 85px 75px 48px; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.12s; }
+.project-row { display: grid; grid-template-columns: minmax(0, 2fr) 75px 75px 75px 75px 75px 75px 85px 85px 75px 48px; align-items: center; padding: 14px 20px; cursor: pointer; transition: background 0.12s; gap: 12px; }
 .project-row > div:first-child { min-width: 0; overflow: hidden; }
 .project-row:hover { background: #FAFAFA; }
 .project-row + .project-row { border-top: 1px solid #F3F4F6; }
