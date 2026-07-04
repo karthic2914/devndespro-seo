@@ -425,6 +425,8 @@ export default function Sites() {
                       </div>
                     )}
                   </div>
+              </div>
+            </div>
               <div style={{ padding: '4px 4px 12px' }}>
                 {loading ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
@@ -491,9 +493,6 @@ export default function Sites() {
                       </div>
                     )}
                   </>
-                )}
-              </div>
-                  ))
                 )}
               </div>
             </div>
