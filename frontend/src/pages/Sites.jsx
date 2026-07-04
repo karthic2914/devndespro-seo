@@ -109,6 +109,7 @@ export default function Sites() {
   const [search, setSearch] = useState('')
   const [sortCol, setSortCol] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
+  const [visibleCount, setVisibleCount] = useState(20)
 
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
@@ -143,6 +144,8 @@ export default function Sites() {
       else { av = Number(av ?? 0); bv = Number(bv ?? 0) }
       return sortDir === 'asc' ? av - bv : bv - av
     })
+
+  useEffect(() => { setVisibleCount(20) }, [search])
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -422,16 +425,7 @@ export default function Sites() {
                       </div>
                     )}
                   </div>
-                </div>
-              </div>
-
-              <div style={{ maxHeight: 480, overflowY: 'auto' }}>
-                <div className="projects-table__head">
-                  {['Project', 'Health', 'Authority', 'AI Snippet', 'AEO', 'ChatGPT', 'Bing', 'Keywords', 'Backlinks', 'Added', ''].map(h => (
-                    <div key={h} className="projects-table__head-cell">{h}</div>
-                  ))}
-                </div>
-
+              <div style={{ padding: '4px 4px 12px' }}>
                 {loading ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
                     <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
@@ -445,56 +439,60 @@ export default function Sites() {
                     </Button>
                   </div>
                 ) : (
-                  filteredSites.map((site, idx) => (
-                    <div
-                      key={site.id}
-                      className="project-row"
-                      onClick={() => enter(site)}
-                      style={{
-                        background: idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff',
-                        cursor: 'pointer', transition: 'background 0.15s',
-                        position: 'relative', borderRadius: 8, marginBottom: 4,
-                      }}
-                      onMouseOver={e => (e.currentTarget.style.background = '#f3f4f6')}
-                      onMouseOut={e => (e.currentTarget.style.background = idx % 2 === 0 ? 'rgba(244,246,249,0.7)' : '#fff')}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <SiteAvatar name={site.name || '?'} url={site.url} />
-                        <div>
-                          <div className="project-row__name">{site.name}</div>
-        
+                  <>
+                    {filteredSites.slice(0, visibleCount).map((site) => (
+                      <div
+                        key={site.id}
+                        onClick={() => enter(site)}
+                        style={{
+                          background: '#fff', border: '1px solid var(--dark4)', borderRadius: 10,
+                          padding: '12px 14px', marginBottom: 8, cursor: 'pointer', transition: 'box-shadow 0.15s',
+                        }}
+                        onMouseOver={e => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)')}
+                        onMouseOut={e => (e.currentTarget.style.boxShadow = 'none')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                            <SiteAvatar name={site.name || '?'} url={site.url} />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
+                              <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                                Added {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                              </div>
+                            </div>
+                          </div>
+                          {user?.id === 1 && (
+                            <button
+                              onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 4, fontSize: 16, color: '#9CA3AF', flexShrink: 0 }}
+                              title="Delete project"
+                            >
+                              <FontAwesomeIcon icon={faTrash} />
+                            </button>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.health >= 80 ? '#F0FDF4' : site.health >= 55 ? '#FFFBEB' : site.health != null ? '#FEF2F2' : '#F3F4F6', color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#D97706' : site.health != null ? '#DC2626' : '#9CA3AF' }}>Health {site.health ?? '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.authority_score >= 50 ? '#F0FDF4' : site.authority_score >= 25 ? '#FFFBEB' : site.authority_score ? '#FEF2F2' : '#F3F4F6', color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : '#9CA3AF' }}>Authority {site.authority_score ?? '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.ai_snippet_score >= 80 ? '#F0FDF4' : site.ai_snippet_score >= 55 ? '#FFFBEB' : site.ai_snippet_score ? '#FEF2F2' : '#F3F4F6', color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : '#9CA3AF' }}>AI Snippet {site.ai_snippet_score ?? '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: site.aeo_score >= 80 ? '#F0FDF4' : site.aeo_score >= 55 ? '#FFFBEB' : site.aeo_score ? '#FEF2F2' : '#F3F4F6', color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : '#9CA3AF' }}>AEO {site.aeo_score ?? '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>ChatGPT {site.chatgpt_cited != null ? site.chatgpt_cited + '/100' : '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Bing {site.bing_score != null ? site.bing_score + '/100' : '-'}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Keywords {site.keyword_count ?? 0}</span>
+                          <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6, background: '#F3F4F6', color: '#6B7280' }}>Backlinks {site.backlink_count ?? 0}</span>
                         </div>
                       </div>
-                      <div className="project-row__dash">{site.health ?? '-'}</div>
-                      <div className="project-row__dash" style={{
-                        color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : 'var(--muted)',
-                        fontWeight: site.authority_score ? 700 : 400,
-                      }}>{site.authority_score ?? '-'}</div>
-                      <div className="project-row__dash" style={{
-                        color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : 'var(--muted)',
-                        fontWeight: site.ai_snippet_score ? 700 : 400,
-                      }}>{site.ai_snippet_score ?? '-'}</div>
-                      <div className="project-row__dash" style={{ color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : 'var(--muted)', fontWeight: site.aeo_score ? 700 : 400 }}>{site.aeo_score ?? '-'}</div>
-                      <div className="project-row__dash" style={{ color: site.chatgpt_cited >= 80 ? '#16A34A' : site.chatgpt_cited >= 50 ? '#D97706' : site.chatgpt_cited > 0 ? '#DC2626' : site.chatgpt_cited === 0 ? '#DC2626' : 'var(--muted)', fontWeight: site.chatgpt_cited != null ? 700 : 400 }}>{site.chatgpt_cited != null ? site.chatgpt_cited + '/100' : '-'}</div>
-                      <div className="project-row__dash" style={{ color: site.bing_score >= 80 ? '#16A34A' : site.bing_score >= 50 ? '#D97706' : site.bing_score > 0 ? '#DC2626' : 'var(--muted)', fontWeight: site.bing_score ? 700 : 400 }}>{site.bing_score != null ? site.bing_score + '/100' : '-'}</div>
-                <div className="project-row__dash">{site.keyword_count ?? 0}</div>
-                      <div className="project-row__dash">{site.backlink_count ?? 0}</div>
-                      <div className="project-row__date">
-                        {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                    ))}
+                    {visibleCount < filteredSites.length && (
+                      <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                        <Button variant="secondary" size="sm" onClick={() => setVisibleCount(v => v + 20)}>
+                          Load more ({filteredSites.length - visibleCount} remaining)
+                        </Button>
                       </div>
-                      <div
-                        style={{ position: 'absolute', right: 10, top: 10, zIndex: 2, display: user?.id === 1 ? 'block' : 'none' }}
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <button
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 18, color: '#9CA3AF' }}
-                          title="Delete project"
-                          onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-                    </div>
+                    )}
+                  </>
+                )}
+              </div>
                   ))
                 )}
               </div>
