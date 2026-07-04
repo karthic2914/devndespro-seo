@@ -171,10 +171,26 @@ export default function Sites() {
         const e = await res.json().catch(() => ({}))
         throw new Error(e.error || 'Failed to add site. Try again.')
       }
+      const newSite = await res.json().catch(() => null)
       setForm({ name: '', url: '', contactEmail: '', notifyAdmin: true })
       setShowAdd(false)
       toast.success('Project added successfully')
       load()
+
+      if (newSite?.id && (user?.is_paid || user?.id === 1)) {
+        toast('Discovering backlinks in the background...', { icon: '' })
+        fetch(`/api/sites/${newSite.id}/backlinks/crawl`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders },
+          body: JSON.stringify({}),
+        })
+          .then(r => r.json())
+          .then(data => {
+            const count = data?.saved ?? 0
+            toast.success(`Found ${count} backlink${count === 1 ? '' : 's'} for ${newSite.name}`)
+          })
+          .catch(() => toast.error('Backlink discovery failed - you can retry from the Backlinks tab'))
+      }
     } catch (e) {
       const msg = e?.message || 'Failed to add site. Try again.'
       setErrors({ url: msg })

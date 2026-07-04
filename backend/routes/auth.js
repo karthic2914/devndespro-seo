@@ -80,7 +80,7 @@ router.post('/google', async (req, res) => {
 })
 
 router.get('/me', auth, async (req, res) => {
-  const { rows } = await pool.query('SELECT id, email, name, photo FROM users WHERE id=$1', [req.user.id])
+  const { rows } = await pool.query('SELECT id, email, name, photo, is_paid FROM users WHERE id=$1', [req.user.id])
   if (!rows[0]) return res.status(404).json({ error: 'Not found' })
   res.json(rows[0])
 })

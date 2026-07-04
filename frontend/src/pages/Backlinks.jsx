@@ -1,14 +1,17 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar, faLock } from '@fortawesome/free-solid-svg-icons'
+import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import api from '../utils/api'
 
 export default function Backlinks() {
   const { siteId } = useParams()
+  const { user } = useAuth()
+  const canDiscover = user?.is_paid || user?.id === 1
   const [backlinks, setBacklinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name: '', dr: '', status: 'Todo', url: '', anchor: '', type: 'dofollow' })
@@ -145,6 +148,7 @@ export default function Backlinks() {
   }
 
   const discoverFromProject = async () => {
+    if (!canDiscover) { toast('Upgrade to unlock automatic backlink discovery', { icon: '?' }); return }
     setQuickDiscovering(true)
     try {
       const stored = localStorage.getItem('activeSite')
@@ -246,10 +250,12 @@ export default function Backlinks() {
               </div>
             </div>
             <div className="bl-intake-actions">
-              <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering}>
+              <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering} title={!canDiscover ? 'Upgrade to unlock' : ''}>
                 {quickDiscovering
                   ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering…</>
-                  : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
+                  : !canDiscover
+                    ? <><FontAwesomeIcon icon={faLock} style={{ marginRight: 6 }} />Discover from project</>
+                    : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
                 }
               </OrangeBtn>
               <GhostBtn onClick={loadAiOpportunities} style={{ height: 38 }}>
