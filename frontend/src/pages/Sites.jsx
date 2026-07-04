@@ -443,16 +443,17 @@ export default function Sites() {
                 ) : (
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-                      {filteredSites.slice(0, visibleCount).map((site) => (
+                      {filteredSites.slice(0, visibleCount).map((site, idx) => (
                         <div
                           key={site.id}
                           onClick={() => enter(site)}
+                        className="fade-in"
                           style={{
-                            background: '#fff', border: '1px solid var(--dark4)', borderRadius: 12,
-                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.15s',
+                            background: '#fff', border: '1px solid var(--dark4)', borderRadius: 12, animationDelay: `ms`, animationFillMode: 'both',
+                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.25s ease, transform 0.25s ease',
                           }}
-                          onMouseOver={e => (e.currentTarget.style.boxShadow = '0 4px 14px rgba(0,0,0,0.08)')}
-                          onMouseOut={e => (e.currentTarget.style.boxShadow = 'none')}
+                          onMouseOver={e => { e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
+                          onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
