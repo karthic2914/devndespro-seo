@@ -110,6 +110,7 @@ export default function Sites() {
   const [sortCol, setSortCol] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
   const [visibleCount, setVisibleCount] = useState(20)
+  const [pendingProjects, setPendingProjects] = useState([])
 
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
@@ -132,6 +133,24 @@ export default function Sites() {
     didLoadRef.current = true
     load()
   }, [])
+
+  useEffect(() => {
+    if (user?.id === 1) {
+      fetch('/api/sites/pending/all', { headers: authHeaders })
+        .then(r => r.ok ? r.json() : [])
+        .then(setPendingProjects)
+        .catch(() => {})
+    }
+  }, [user])
+
+  const approveProject = async (id) => {
+    try {
+      await fetch(`/api/sites/${id}/approve`, { method: 'PATCH', headers: authHeaders })
+      toast.success('Project approved')
+      setPendingProjects(p => p.filter(s => s.id !== id))
+      load()
+    } catch { toast.error('Failed to approve project') }
+  }
 
   const filteredSites = safeSites
     .filter(s => {
@@ -172,7 +191,9 @@ export default function Sites() {
       if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
       if (!res.ok) {
         const e = await res.json().catch(() => ({}))
-        throw new Error(e.error || 'Failed to add site. Try again.')
+        const err = new Error(e.error || 'Failed to add site. Try again.')
+        err.locked = e.locked
+        throw err
       }
       const newSite = await res.json().catch(() => null)
       setForm({ name: '', url: '', contactEmail: '', notifyAdmin: true })
@@ -197,7 +218,7 @@ export default function Sites() {
     } catch (e) {
       const msg = e?.message || 'Failed to add site. Try again.'
       setErrors({ url: msg })
-      toast.error(msg)
+      toast.error(msg, e?.locked ? { icon: 'u{1F512}', duration: 5000 } : undefined)
     }
     setAdding(false)
   }
@@ -234,11 +255,9 @@ export default function Sites() {
       <div className="app-main">
         <div className="topbar">
           <span className="topbar__title">Projects</span>
-          {user?.id === 1 && (
-            <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>
-              <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />New Project
-            </Button>
-          )}
+          <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>
+            <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />New Project
+          </Button>
         </div>
 
         <Modal
@@ -321,6 +340,31 @@ export default function Sites() {
               </p>
             </div>
           </div>
+
+          {user?.id === 1 && pendingProjects.length > 0 && (
+            <div style={{
+              background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 12,
+              padding: '14px 16px', marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#92400E', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 10 }}>
+                Pending Approval ({pendingProjects.length})
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {pendingProjects.map(p => (
+                  <div key={p.id} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    background: '#fff', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 12px',
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: '#6B7280' }}>{p.url} &middot; submitted by {p.owner_name || p.owner_email}</div>
+                    </div>
+                    <Button variant="primary" size="sm" onClick={() => approveProject(p.id)}>Approve</Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {showAeoBanner && (
             <div style={{
@@ -459,7 +503,12 @@ export default function Sites() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                               <SiteAvatar name={site.name || '?'} url={site.url} />
                               <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
+                                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {site.name}
+                                {site.status === 'pending' && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap' }}>PENDING</span>
+                                )}
+                              </div>
                                 <div style={{ fontSize: 11, color: 'var(--muted)' }}>
                                   {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
                                 </div>

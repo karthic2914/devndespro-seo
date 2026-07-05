@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeAndVerifyWebsite } = require('../utils/helpers')
@@ -122,11 +122,23 @@ router.post('/', auth, async (req, res) => {
   if (!name || !url) return res.status(400).json({ error: 'name and url required' })
   if (!String(name).trim()) return res.status(400).json({ error: 'Project name is required' })
   try {
+    const isAdmin = req.user.id === 1
+    const { rows: userRows } = await pool.query('SELECT is_paid FROM users WHERE id=$1', [req.user.id])
+    const isPaid = Boolean(userRows[0]?.is_paid)
+    if (!isAdmin && !isPaid) {
+      const { rows: countRows } = await pool.query(
+        'SELECT COUNT(*)::int AS count FROM sites s INNER JOIN site_access sa ON sa.site_id = s.id WHERE sa.user_id = $1',
+        [req.user.id]
+      )
+      if (countRows[0].count >= 1) {
+        return res.status(403).json({ error: 'Free plan allows 1 project. Upgrade to add more.', locked: true })
+      }
+    }
     const verifiedUrl = await normalizeAndVerifyWebsite(url)
     await ensureSiteIsVerifiedInGsc(req.user.id, verifiedUrl)
     const { rows } = await pool.query(
-      'INSERT INTO sites (user_id, name, url) VALUES ($1,$2,$3) RETURNING *',
-      [req.user.id, String(name).trim(), verifiedUrl]
+      'INSERT INTO sites (user_id, name, url, status) VALUES ($1,$2,$3,$4) RETURNING *',
+      [req.user.id, String(name).trim(), verifiedUrl, isAdmin ? 'approved' : 'pending']
     )
     await pool.query('INSERT INTO seo_metrics (site_id) VALUES ($1)', [rows[0].id])
     await pool.query('INSERT INTO site_access (site_id, user_id) VALUES ($1,$2)', [rows[0].id, req.user.id])
@@ -305,6 +317,30 @@ router.patch('/:siteId/ai-cron', auth, verifySite, async (req, res) => {
   const { enabled } = req.body
   await pool.query('UPDATE sites SET enable_ai_cron = $1 WHERE id = $2', [!!enabled, req.siteId])
   res.json({ success: true, enable_ai_cron: !!enabled })
+})
+
+// Admin: approve a pending project
+router.patch('/:siteId/approve', auth, verifySite, async (req, res) => {
+  if (req.user.id !== 1) return res.status(403).json({ error: 'Admin only' })
+  const { rows } = await pool.query(
+    "UPDATE sites SET status='approved' WHERE id=$1 RETURNING *",
+    [req.siteId]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'Site not found' })
+  res.json(rows[0])
+})
+
+// Admin: list pending projects awaiting approval
+router.get('/pending/all', auth, async (req, res) => {
+  if (req.user.id !== 1) return res.status(403).json({ error: 'Admin only' })
+  const { rows } = await pool.query(
+    `SELECT s.*, u.email AS owner_email, u.name AS owner_name
+     FROM sites s
+     LEFT JOIN users u ON u.id = s.user_id
+     WHERE s.status = 'pending'
+     ORDER BY s.created_at ASC`
+  )
+  res.json(rows)
 })
 
 module.exports = router
