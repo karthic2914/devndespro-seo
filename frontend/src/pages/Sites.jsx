@@ -471,7 +471,7 @@ export default function Sites() {
                   </div>
               </div>
             </div>
-              <div style={{ padding: '4px 4px 12px' }}>
+              <div style={{ padding: '4px 4px 12px', maxHeight: 640, overflowY: 'auto' }}>
                 {loading ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
                     <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
