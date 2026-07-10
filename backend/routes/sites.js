@@ -1,7 +1,7 @@
 const express = require('express')
-const { pool } = require('../clients')
+const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
-const { normalizeAndVerifyWebsite } = require('../utils/helpers')
+const { normalizeAndVerifyWebsite, extractDomain } = require('../utils/helpers')
 const { ensureSiteIsVerifiedInGsc } = require('../utils/gsc')
 
 const router = express.Router()
@@ -312,6 +312,114 @@ router.post('/:siteId/competitors', auth, verifySite, async (req, res) => {
 router.delete('/:siteId/competitors/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM competitors WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
+})
+
+function getDataForSEOAuthSites() {
+  const login = process.env.DATAFORSEO_LOGIN
+  const password = process.env.DATAFORSEO_PASSWORD
+  if (!login || !password) return null
+  return Buffer.from(`${login}:${password}`).toString('base64')
+}
+
+// Auto-discover competitors: real ranking-overlap data from DataForSEO first, AI suggestions as fallback
+router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, res) => {
+  const axios = require('axios')
+  try {
+    const { rows: siteRows } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
+    const site = siteRows[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const targetDomain = extractDomain(site.url)
+    const { rows: existingRows } = await pool.query('SELECT name FROM competitors WHERE site_id=$1', [req.siteId])
+    const existingDomains = new Set(existingRows.map(r => String(r.name || '').toLowerCase().trim()))
+
+    let discovered = []
+    let source = 'dataforseo'
+
+    const authHeader = getDataForSEOAuthSites()
+    if (authHeader) {
+      try {
+        const { data } = await axios.post(
+          'https://api.dataforseo.com/v3/dataforseo_labs/google/competitors_domain/live',
+          [{
+            target: targetDomain,
+            language_name: 'English',
+            location_code: 2840,
+            limit: 8,
+            exclude_top_domains: true,
+          }],
+          { headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' }, timeout: 20000 }
+        )
+        const items = data?.tasks?.[0]?.result?.[0]?.items || []
+        discovered = items
+          .filter(item => item?.domain && item.domain.toLowerCase() !== targetDomain.toLowerCase())
+          .map(item => {
+            const etv = Number(item?.full_domain_metrics?.organic?.etv || item?.metrics?.organic?.etv || 0)
+            const keywordCount = Number(item?.full_domain_metrics?.organic?.count || item?.metrics?.organic?.count || 0)
+            const estAuthority = Math.max(1, Math.min(100, Math.round(Math.log10(etv + 1) * 18 + Math.log10(keywordCount + 1) * 6)))
+            return {
+              name: item.domain,
+              dr: estAuthority,
+              notes: `Auto-discovered (DataForSEO): ${keywordCount} shared ranking keywords, est. traffic value ${Math.round(etv)}`,
+            }
+          })
+      } catch (e) {
+        console.error('DataForSEO competitors_domain failed:', e.response?.data || e.message)
+      }
+    }
+
+    if (!discovered.length) {
+      source = 'ai'
+      try {
+        const prompt = `You are an SEO/market research analyst.
+Business name: ${site.name}
+Website: ${site.url}
+
+List up to 6 real, plausible direct competitors for this business (same industry/niche). For each, give just the competitor's domain name (e.g. "example.com") and one short reason it competes.
+
+Return ONLY valid JSON:
+{ "competitors": [ { "domain": "...", "reason": "..." } ] }`
+
+        const r = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 700,
+          messages: [{ role: 'user', content: prompt }],
+        })
+        const text = r.content?.[0]?.text?.trim() || '{}'
+        const jsonStart = text.indexOf('{')
+        const jsonEnd = text.lastIndexOf('}')
+        let parsed = { competitors: [] }
+        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch { parsed = { competitors: [] } }
+
+        discovered = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
+          .map(c => ({
+            name: String(c?.domain || '').trim(),
+            dr: 0,
+            notes: `AI-suggested (no live ranking data available): ${String(c?.reason || '').trim()}`,
+          }))
+          .filter(c => c.name)
+      } catch (e) {
+        console.error('AI competitor fallback failed:', e.message)
+      }
+    }
+
+    const toInsert = discovered.filter(c => c.name && !existingDomains.has(c.name.toLowerCase()))
+    let inserted = 0
+    for (const c of toInsert) {
+      await pool.query(
+        'INSERT INTO competitors (site_id, name, dr, notes) VALUES ($1,$2,$3,$4)',
+        [req.siteId, c.name, c.dr, c.notes]
+      )
+      existingDomains.add(c.name.toLowerCase())
+      inserted++
+    }
+
+    const { rows: allRows } = await pool.query('SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC', [req.siteId])
+    res.json({ inserted, skipped: discovered.length - inserted, source, competitors: allRows })
+  } catch (e) {
+    console.error('Auto-discover competitors failed:', e.response?.data || e.message)
+    res.status(500).json({ error: 'Could not auto-discover competitors' })
+  }
 })
 
 router.patch('/:siteId/ai-cron', auth, verifySite, async (req, res) => {

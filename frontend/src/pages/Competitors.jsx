@@ -1,7 +1,7 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faXmark, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
 import api from '../utils/api'
 
@@ -12,6 +12,7 @@ export default function Competitors() {
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name: '', dr: '', notes: '' })
   const [adding, setAdding] = useState(false)
+  const [discovering, setDiscovering] = useState(false)
   const [site, setSite] = useState(null)
 
   const load = () => {
@@ -32,6 +33,12 @@ export default function Competitors() {
     setAdding(false)
   }
 
+  const autoDiscover = async () => {
+    setDiscovering(true)
+    try { await api.post(`/sites/${siteId}/competitors/auto-discover`); load() } catch {}
+    setDiscovering(false)
+  }
+
   const remove = async (id) => {
     try { await api.delete(`/sites/${siteId}/competitors/${id}`); load() } catch {}
   }
@@ -48,6 +55,12 @@ export default function Competitors() {
           <OrangeBtn onClick={add} disabled={adding}>
             {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add</>}
           </OrangeBtn>
+        </div>
+        <div style={{ marginTop: 10 }}>
+          <OrangeBtn onClick={autoDiscover} disabled={discovering}>
+            {discovering ? 'Discovering...' : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Auto-Discover Competitors</>}
+          </OrangeBtn>
+          <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>Uses real ranking data (DataForSEO), with AI as a fallback if none is found.</span>
         </div>
       </Card>
       <Card>
