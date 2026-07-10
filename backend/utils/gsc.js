@@ -1,4 +1,4 @@
-﻿const axios = require('axios')
+const axios = require('axios')
 const { pool } = require('../clients')
 
 async function getGscAccessToken(refreshToken) {
@@ -51,4 +51,40 @@ async function ensureSiteIsVerifiedInGsc(userId, siteUrl) {
   }
 }
 
-module.exports = { getGscAccessToken, ensureSiteIsVerifiedInGsc }
+async function resolveGscPropertyUrl(accessToken, siteUrl) {
+  // Finds the exact GSC property string (sc-domain:... or https://.../) that matches siteUrl.
+  // Falls back to the raw siteUrl if no match is found, so behavior is unchanged when unresolved.
+  try {
+    const { data } = await axios.get('https://www.googleapis.com/webmasters/v3/sites', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 12000,
+    })
+    const entries = data?.siteEntry || []
+    const targetHost = new URL(siteUrl).hostname.toLowerCase().replace(/^www\./, '')
+
+    for (const entry of entries) {
+      const property = String(entry?.siteUrl || '').trim()
+      const permission = String(entry?.permissionLevel || '').trim()
+      if (!property || permission === 'siteUnverifiedUser') continue
+
+      if (property.toLowerCase().startsWith('sc-domain:')) {
+        const domain = property.toLowerCase().replace('sc-domain:', '').replace(/^www\./, '')
+        if (targetHost === domain || targetHost.endsWith(`.${domain}`)) return property
+      } else {
+        try {
+          const propertyHost = new URL(property).hostname.toLowerCase().replace(/^www\./, '')
+          if (targetHost === propertyHost || targetHost.endsWith(`.${propertyHost}`) || propertyHost.endsWith(`.${targetHost}`)) {
+            return property
+          }
+        } catch { /* skip malformed property entry */ }
+      }
+    }
+    console.log(`[GSC] No matching property found for ${siteUrl} - using raw URL as fallback`)
+    return siteUrl
+  } catch (e) {
+    console.log('[GSC] Property resolution failed, using raw URL as fallback:', e.message)
+    return siteUrl
+  }
+}
+
+module.exports = { getGscAccessToken, ensureSiteIsVerifiedInGsc, resolveGscPropertyUrl }

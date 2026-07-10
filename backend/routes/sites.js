@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeAndVerifyWebsite } = require('../utils/helpers')
@@ -226,14 +226,15 @@ router.put('/:siteId/metrics', auth, verifySite, async (req, res) => {
 // GSC data for a site
 router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
   const axios = require('axios')
-  const { getGscAccessToken } = require('../utils/gsc')
+  const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
   try {
     const { rows: u } = await pool.query('SELECT email, gsc_refresh_token FROM users WHERE id=$1', [req.user.id])
     const accountEmail = u[0]?.email || null
     if (!u[0]?.gsc_refresh_token) return res.json({ connected: false, accountEmail })
     const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
-    const siteUrl = s[0].url
+    const rawSiteUrl = s[0].url
     const accessToken = await getGscAccessToken(u[0].gsc_refresh_token)
+    const siteUrl = await resolveGscPropertyUrl(accessToken, rawSiteUrl)
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 28 * 864e5).toISOString().split('T')[0]
     const headers = { Authorization: `Bearer ${accessToken}` }
