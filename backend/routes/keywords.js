@@ -1,11 +1,11 @@
-﻿const express = require('express')
+const express = require('express')
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, isDomainMatch, SUPPORTED_ENGINES, buildHeuristicKeywordSuggestions } = require('../utils/helpers')
 const { fetchSerpResults, scanSiteKeywordTransitions } = require('../utils/serp')
 const { sendRankScanReportEmail } = require('../utils/email')
-const { getGscAccessToken } = require('../utils/gsc')
+const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
 
 const router = express.Router()
 
@@ -175,8 +175,9 @@ router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, r
       return res.status(400).json({ error: 'Connect Google Search Console first' })
     }
 
-    const siteUrl = siteR.rows[0].url
+    const rawSiteUrl = siteR.rows[0].url
     const accessToken = await getGscAccessToken(userR.rows[0].gsc_refresh_token)
+    const siteUrl = await resolveGscPropertyUrl(accessToken, rawSiteUrl)
     const endDate = new Date().toISOString().split('T')[0]
     const startDate = new Date(Date.now() - 90 * 864e5).toISOString().split('T')[0]
     const base = `https://www.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`
