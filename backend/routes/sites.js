@@ -398,20 +398,23 @@ Return ONLY valid JSON:
 
         const r = await anthropic.messages.create({
           model: 'claude-sonnet-5',
-          max_tokens: 500,
+          max_tokens: 1200,
           messages: [{ role: 'user', content: relevancePrompt }],
         })
         const text = r.content?.[0]?.text?.trim() || '{}'
         const jsonStart = text.indexOf('{')
         const jsonEnd = text.lastIndexOf('}')
         let parsed = { relevant: null }
-        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch { parsed = { relevant: null } }
+        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch (parseErr) {
+          console.error('Relevance filter JSON parse failed:', parseErr.message, '| raw response:', text)
+          parsed = { relevant: null }
+        }
 
         if (Array.isArray(parsed.relevant)) {
           const relevantSet = new Set(parsed.relevant.map(d => String(d || '').toLowerCase().trim()))
           discovered = discovered.filter(d => relevantSet.has(d.name.toLowerCase()))
         } else {
-          console.error('Relevance filter returned no usable list, dropping all DataForSEO candidates to be safe')
+          console.error('Relevance filter returned no usable list, dropping all DataForSEO candidates to be safe. Raw response was:', text)
           discovered = []
         }
       } catch (e) {
@@ -442,7 +445,10 @@ Return ONLY valid JSON:
         const jsonStart = text.indexOf('{')
         const jsonEnd = text.lastIndexOf('}')
         let parsed = { competitors: [] }
-        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch { parsed = { competitors: [] } }
+        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch (parseErr) {
+          console.error('AI fallback JSON parse failed:', parseErr.message, '| raw response:', text)
+          parsed = { competitors: [] }
+        }
 
         discovered = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
           .map(c => ({

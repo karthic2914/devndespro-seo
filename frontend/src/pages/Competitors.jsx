@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faXmark, faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faXmark, faWandMagicSparkles, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
 import api from '../utils/api'
+import toast from 'react-hot-toast'
 
 export default function Competitors() {
   const { siteId } = useParams()
@@ -33,24 +34,48 @@ export default function Competitors() {
   const add = async () => {
     if (!form.name.trim()) return
     setAdding(true)
-    try { await api.post(`/sites/${siteId}/competitors`, { name: form.name.trim(), dr: parseInt(form.dr) || 0, notes: form.notes }); setForm({ name: '', dr: '', notes: '' }); load() } catch {}
+    try {
+      await api.post(`/sites/${siteId}/competitors`, { name: form.name.trim(), dr: parseInt(form.dr) || 0, notes: form.notes })
+      setForm({ name: '', dr: '', notes: '' })
+      load()
+      toast.success('Competitor added')
+    } catch {
+      toast.error('Failed to add competitor')
+    }
     setAdding(false)
   }
 
   const autoDiscover = async () => {
     setDiscovering(true)
-    try { await api.post(`/sites/${siteId}/competitors/auto-discover`); load() } catch {}
+    try {
+      const res = await api.post(`/sites/${siteId}/competitors/auto-discover`)
+      load()
+      const inserted = res?.data?.inserted ?? 0
+      const src = res?.data?.source === 'ai' ? ' (AI suggestions, no ranking-overlap match found)' : ''
+      if (inserted > 0) {
+        toast.success(`Found ${inserted} new competitor${inserted === 1 ? '' : 's'}${src}`)
+      } else {
+        toast('No new relevant competitors found this time', { icon: 'â„¹ï¸' })
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.error || 'Auto-discover failed')
+    }
     setDiscovering(false)
   }
 
   const saveDescription = async () => {
     setSavingDescription(true)
-    try { await api.patch(`/sites/${siteId}/description`, { description }) } catch {}
+    try {
+      await api.patch(`/sites/${siteId}/description`, { description })
+      toast.success('Description saved')
+    } catch {
+      toast.error('Failed to save description')
+    }
     setSavingDescription(false)
   }
 
   const remove = async (id) => {
-    try { await api.delete(`/sites/${siteId}/competitors/${id}`); load() } catch {}
+    try { await api.delete(`/sites/${siteId}/competitors/${id}`); load(); toast.success('Competitor removed') } catch { toast.error('Failed to remove competitor') }
   }
 
   return (
@@ -86,7 +111,9 @@ export default function Competitors() {
         </div>
         <div style={{ marginTop: 10 }}>
           <OrangeBtn onClick={autoDiscover} disabled={discovering}>
-            {discovering ? 'Discovering...' : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Auto-Discover Competitors</>}
+            {discovering
+              ? <><FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: 6 }} />Discovering...</>
+              : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Auto-Discover Competitors</>}
           </OrangeBtn>
           <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>Uses real ranking data (DataForSEO), with AI as a fallback if none is found.</span>
         </div>
