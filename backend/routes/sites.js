@@ -336,7 +336,7 @@ function getDataForSEOAuthSites() {
 router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, res) => {
   const axios = require('axios')
   try {
-    const { rows: siteRows } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
+    const { rows: siteRows } = await pool.query('SELECT name, url, description FROM sites WHERE id=$1', [req.siteId])
     const site = siteRows[0]
     if (!site) return res.status(404).json({ error: 'Site not found' })
 
@@ -379,12 +379,54 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
       }
     }
 
+    if (discovered.length) {
+      try {
+        const candidateList = discovered.map(d => `${d.name} (${d.notes})`).join('\n')
+        const relevancePrompt = `You are an SEO/market analyst checking a list of candidate competitors for genuine industry relevance.
+
+Business: ${site.name}
+Website: ${site.url}
+${site.description ? `What this business does: ${site.description}` : ''}
+
+Candidate domains found via keyword-ranking overlap (some may be coincidental matches unrelated to the actual industry, e.g. sharing a similar-sounding brand suffix but operating in a totally different space):
+${candidateList}
+
+Return ONLY the domains that are plausible genuine competitors or adjacent players in the same or a closely related industry as the business above. Exclude any domain that appears to be an unrelated company that only coincidentally overlaps on generic or brand-like keywords. Be strict - if in doubt, exclude it.
+
+Return ONLY valid JSON:
+{ "relevant": ["domain1.com", "domain2.com"] }`
+
+        const r = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 500,
+          messages: [{ role: 'user', content: relevancePrompt }],
+        })
+        const text = r.content?.[0]?.text?.trim() || '{}'
+        const jsonStart = text.indexOf('{')
+        const jsonEnd = text.lastIndexOf('}')
+        let parsed = { relevant: null }
+        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch { parsed = { relevant: null } }
+
+        if (Array.isArray(parsed.relevant)) {
+          const relevantSet = new Set(parsed.relevant.map(d => String(d || '').toLowerCase().trim()))
+          discovered = discovered.filter(d => relevantSet.has(d.name.toLowerCase()))
+        } else {
+          console.error('Relevance filter returned no usable list, dropping all DataForSEO candidates to be safe')
+          discovered = []
+        }
+      } catch (e) {
+        console.error('Competitor relevance filter failed, dropping DataForSEO candidates to be safe:', e.message)
+        discovered = []
+      }
+    }
+
     if (!discovered.length) {
       source = 'ai'
       try {
         const prompt = `You are an SEO/market research analyst.
 Business name: ${site.name}
 Website: ${site.url}
+${site.description ? `What this business does: ${site.description}` : ''}
 
 List up to 6 real, plausible direct competitors for this business (same industry/niche). For each, give just the competitor's domain name (e.g. "example.com") and one short reason it competes.
 
