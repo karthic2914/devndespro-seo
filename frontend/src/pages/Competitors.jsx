@@ -13,11 +13,15 @@ export default function Competitors() {
   const [form, setForm] = useState({ name: '', dr: '', notes: '' })
   const [adding, setAdding] = useState(false)
   const [discovering, setDiscovering] = useState(false)
+  const [description, setDescription] = useState('')
+  const [savingDescription, setSavingDescription] = useState(false)
+  const [siteData, setSiteData] = useState(null)
   const [site, setSite] = useState(null)
 
   const load = () => {
     api.get(`/sites/${siteId}/competitors`).then(r => setCompetitors(r.data)).finally(() => setLoading(false))
     api.get(`/sites/${siteId}/metrics`).then(r => setMetrics(r.data)).catch(() => {})
+    api.get(`/sites/${siteId}`).then(r => { setSiteData(r.data); setDescription(r.data?.description || '') }).catch(() => {})
   }
 
   useEffect(() => {
@@ -39,6 +43,12 @@ export default function Competitors() {
     setDiscovering(false)
   }
 
+  const saveDescription = async () => {
+    setSavingDescription(true)
+    try { await api.patch(`/sites/${siteId}/description`, { description }) } catch {}
+    setSavingDescription(false)
+  }
+
   const remove = async (id) => {
     try { await api.delete(`/sites/${siteId}/competitors/${id}`); load() } catch {}
   }
@@ -46,6 +56,24 @@ export default function Competitors() {
   return (
     <div className="fade-in page-content">
       <PageHeader title="Competitors" subtitle="Track competitor Domain Ratings and benchmark" />
+      <Card style={{ marginBottom: 14 }}>
+        <SectionLabel>Business description</SectionLabel>
+        <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
+          Briefly describe what this specific business actually does. This is used to keep Auto-Discover and AI suggestions relevant to this project (not generic).
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+          <textarea
+            placeholder="e.g. Deploys agentic AI systems - AI agent governance and security orchestration platform for enterprises"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            rows={2}
+            style={{ flex: 1, minWidth: 200, resize: 'vertical', fontFamily: 'inherit' }}
+          />
+          <OrangeBtn onClick={saveDescription} disabled={savingDescription}>
+            {savingDescription ? 'Saving...' : 'Save'}
+          </OrangeBtn>
+        </div>
+      </Card>
       <Card style={{ marginBottom: 14 }}>
         <SectionLabel>Add competitor</SectionLabel>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

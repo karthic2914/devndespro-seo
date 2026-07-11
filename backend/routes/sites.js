@@ -117,6 +117,17 @@ router.get('/:siteId', auth, verifySite, async (req, res) => {
   res.json(rows[0])
 })
 
+// Update a project's business description (used for AI competitor relevance, AI keyword suggestions, etc.)
+router.patch('/:siteId/description', auth, verifySite, async (req, res) => {
+  const description = String(req.body?.description || '').trim().slice(0, 1000)
+  const { rows } = await pool.query(
+    'UPDATE sites SET description=$1 WHERE id=$2 RETURNING *',
+    [description, req.siteId]
+  )
+  if (!rows[0]) return res.status(404).json({ error: 'Site not found' })
+  res.json(rows[0])
+})
+
 router.post('/', auth, async (req, res) => {
   const { name, url, contactEmail, notifyAdmin } = req.body
   if (!name || !url) return res.status(400).json({ error: 'name and url required' })
