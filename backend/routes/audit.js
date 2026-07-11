@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -427,7 +427,7 @@ router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {
   if (!issue || !siteUrl) return res.status(400).json({ error: 'issue and siteUrl required' })
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 1000,
       system: `You are an expert SEO engineer. Given an SEO issue, provide:
 1. A 1-sentence plain-English explanation of WHY it matters for rankings

@@ -397,7 +397,7 @@ Return ONLY valid JSON:
 { "relevant": ["domain1.com", "domain2.com"] }`
 
         const r = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-5',
           max_tokens: 500,
           messages: [{ role: 'user', content: relevancePrompt }],
         })
@@ -434,7 +434,7 @@ Return ONLY valid JSON:
 { "competitors": [ { "domain": "...", "reason": "..." } ] }`
 
         const r = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-5',
           max_tokens: 700,
           messages: [{ role: 'user', content: prompt }],
         })

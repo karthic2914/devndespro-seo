@@ -43,7 +43,7 @@ Give specific, actionable SEO advice. Be concise and practical.`
       .map(m => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: trimText(m.content, 420) }))
 
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', max_tokens: 500,
+      model: 'claude-sonnet-5', max_tokens: 500,
       system: trimText(systemPrompt, 1800),
       messages: promptMessages,
     })
@@ -58,7 +58,7 @@ router.post('/:siteId/ai/visibility', auth, verifySite, async (req, res) => {
   const site = s[0]
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', max_tokens: 700,
+      model: 'claude-sonnet-5', max_tokens: 700,
       messages: [{ role: 'user', content: q }],
     })
     const answer = response.content[0].text
@@ -104,7 +104,7 @@ router.post('/:siteId/ai/action-plan', auth, verifySite, async (req, res) => {
       .map(c => '- ' + c.message)
       .join('\n') || 'No audit run yet';
     const prompt = `You are a senior SEO strategist. Build a prioritized 6-task action plan.\nSite: ${sR.rows[0]?.name} (${sR.rows[0]?.url})\nDR: ${mR.rows[0]?.dr || 0}, Health: ${mR.rows[0]?.health || 0}, Clicks: ${mR.rows[0]?.clicks || 0}\nKeywords: ${kR.rows.map(k => `${k.keyword} pos${k.position || '?'}`).join(', ') || 'none'}\nBacklinks: ${bR.rows.length} total, ${bR.rows.filter(b => b.status === 'Live').length} live\nAudit issues:\n${issues}\n\nReturn ONLY a JSON array:\n[{"text":"...","impact":"High|Medium|Low","category":"On-Page|Technical|Content|Backlinks|Speed"}]`
-    const r = await anthropic.messages.create({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    const r = await anthropic.messages.create({ model: 'claude-sonnet-5', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
     let tasks = []
     try {
       const raw = r.content[0].text.trim()
@@ -256,7 +256,7 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
     const engLabel = engine === 'duckduckgo' ? 'DuckDuckGo' : engine[0].toUpperCase() + engine.slice(1)
     const prompt = `You are a world-class SEO strategist. A site owner wants to rank #1 on ${engLabel} for: "${kw}"\n\nTheir site: ${site.name} (${site.url})\n\nCurrent ${engLabel} Page 1 results:\n${competitorList}\n\nCreate a concrete ranking plan. Return ONLY valid JSON, no markdown, no explanation:\n{"difficulty":"Easy|Medium|Hard|Very Hard","timeEstimate":"e.g. 2-4 months","whyItMatters":"one sentence on why this keyword drives business value","contentAngle":"the specific content angle / unique spin to beat the #1 result","backlinkTarget":"rough number of backlinks needed","quickWin":"one action they can do this week","steps":[{"step":1,"title":"...","description":"2-3 sentence action description","timeframe":"e.g. Week 1","priority":"High|Medium|Low"}]}`
     const r = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514', max_tokens: 1800,
+      model: 'claude-sonnet-5', max_tokens: 1800,
       messages: [{ role: 'user', content: prompt }]
     })
     const text = r.content[0].text.trim()
@@ -321,7 +321,7 @@ Return ONLY a JSON array, no markdown:
 [{"title":"...","action":"2-sentence specific action","priority":"High|Medium|Low"}]`
 
     const r = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 1000,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -378,7 +378,7 @@ router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (r
     ].join('\n')
 
     const r = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-5',
       max_tokens: 200,
       messages: [{ role: 'user', content: prompt }]
     })
