@@ -27,8 +27,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 borderRadius: '10px',
                 fontSize: '13px',
               },
-              success: { iconTheme: { primary: '#16A34A', secondary: '#fff' } },
-              error: { iconTheme: { primary: '#DC2626', secondary: '#fff' } },
+              success: {
+                iconTheme: { primary: '#16A34A', secondary: '#fff' },
+                style: { borderLeft: '4px solid #16A34A' },
+              },
+              error: {
+                iconTheme: { primary: '#DC2626', secondary: '#fff' },
+                style: { borderLeft: '4px solid #DC2626' },
+              },
             }}
           />
         </AuthProvider>
