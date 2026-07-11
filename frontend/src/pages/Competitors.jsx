@@ -55,7 +55,7 @@ export default function Competitors() {
       if (inserted > 0) {
         toast.success(`Found ${inserted} new competitor${inserted === 1 ? '' : 's'}${src}`)
       } else {
-        toast('No new relevant competitors found this time', { icon: 'â„¹ï¸' })
+        toast('No new relevant competitors found this time')
       }
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
