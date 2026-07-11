@@ -80,6 +80,18 @@ export default function Competitors() {
 
   return (
     <div className="fade-in page-content">
+      {discovering && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(255,255,255,0.75)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 14,
+        }}>
+          <FontAwesomeIcon icon={faSpinner} spin style={{ fontSize: 36, color: 'var(--orange)' }} />
+          <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--text)' }}>Discovering competitors...</div>
+          <div style={{ fontSize: 13, color: 'var(--muted)' }}>Checking real ranking data and filtering for relevance</div>
+        </div>
+      )}
       <PageHeader title="Competitors" subtitle="Track competitor Domain Ratings and benchmark" />
       <Card style={{ marginBottom: 14 }}>
         <SectionLabel>Business description</SectionLabel>
