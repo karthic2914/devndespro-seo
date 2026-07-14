@@ -1,4 +1,4 @@
-﻿const nodemailer = require('nodemailer')
+const nodemailer = require('nodemailer')
 const { pool } = require('../clients')
 const { engineLabel } = require('./helpers')
 
@@ -290,6 +290,12 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
 </body>
 </html>`
 
+  const recipientList = (Array.isArray(to) ? to : String(to || '').split(/[,;]/))
+    .map((addr) => String(addr || '').trim())
+    .filter(Boolean)
+
+  if (!recipientList.length) throw new Error('No valid recipient email address provided')
+
   const response = await fetch('https://api.zeptomail.com/v1.1/email', {
     method: 'POST',
     headers: {
@@ -298,7 +304,7 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
     },
     body: JSON.stringify({
       from: { address: 'hello@devndespro.com', name: 'devndespro' },
-      to: [{ email_address: { address: to } }],
+      to: recipientList.map((addr) => ({ email_address: { address: addr } })),
       subject,
       htmlbody: htmlBody,
     }),

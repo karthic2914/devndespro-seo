@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -620,12 +620,17 @@ export default function SiteAudit() {
                 Project: <span style={{ fontWeight: 400 }}>{siteName || siteUrl || `Site #${siteId}`}</span>
               </div>
               <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>
-                Recipient Email:
+                Recipient Email(s):
                 {loadingRecipient ? (
                   <span style={{ fontWeight: 400, marginLeft: 8, color: '#6B7280' }}>Loading...</span>
                 ) : (
-                  <Input style={{ marginLeft: 8, width: '100%' }} value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)} placeholder="No email found" label="" />
+                  <>
+                    <Input style={{ marginLeft: 8, width: '100%' }} value={recipientEmail}
+                      onChange={(e) => setRecipientEmail(e.target.value)} placeholder="e.g. info@site.com, owner@site.com" label="" />
+                    <div style={{ fontSize: 11, fontWeight: 400, color: '#6B7280', marginTop: 4 }}>
+                      Separate multiple addresses with a comma
+                    </div>
+                  </>
                 )}
               </div>
               <Input label="Subject" value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)} />
