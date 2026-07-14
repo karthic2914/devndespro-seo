@@ -46,6 +46,21 @@ function sortByPriority(issues) {
   })
 }
 
+function extractDomain(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return (url || "").replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0]
+  }
+}
+
+function getSummarySubject(lang, url) {
+  const domain = extractDomain(url) || "your website"
+  return lang === "no"
+    ? domain + " \u2013 fant noen SEO-forbedringer"
+    : domain + " \u2013 found a few SEO improvements"
+}
+
 function getSummaryEmailText(lang, tone, auditData, allIssues) {
   const score    = auditData?.score ?? '-'
   const critical = (allIssues || []).filter((i) => i.status === 'error').length
@@ -351,6 +366,7 @@ export default function SiteAudit() {
     if (!auditData) return
     const html = getSummaryEmailText(emailLang, emailTone, auditData, allIssues)
     setEmailMessage(html)
+    setEmailSubject(getSummarySubject(emailLang, siteUrl || auditData?.url))
     isProgrammatic.current = true
     if (emailBodyRef.current) emailBodyRef.current.innerHTML = html
     isProgrammatic.current = false
