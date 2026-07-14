@@ -373,14 +373,6 @@ export default function SiteAudit() {
   }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
 
   useEffect(() => {
-    if (emailBodyRef.current) {
-      isProgrammatic.current = true
-      emailBodyRef.current.innerHTML = emailMessage
-      isProgrammatic.current = false
-    }
-  }, [emailLang, emailTone, showEmailModal])
-
-  useEffect(() => {
     if (showEmailModal && siteId) {
       setLoadingRecipient(true)
       api.get(`/sites/${siteId}/cold-emails`)
