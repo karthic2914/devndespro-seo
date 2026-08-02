@@ -84,9 +84,10 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
   const navigate = useNavigate()
   const { siteId } = useParams()
   const checks = auditData.checks || []
-  const errorCount = checks.filter(i => i.status === 'error').length
-  const warnCount  = checks.filter(i => i.status === 'warning').length
-  const passCount  = checks.filter(i => i.status === 'pass').length
+  const seoChecks = checks.filter(i => i.category !== 'AI Snippet' && i.category !== 'AEO')
+  const errorCount = seoChecks.filter(i => i.status === 'error').length
+  const warnCount  = seoChecks.filter(i => i.status === 'warning').length
+  const passCount  = seoChecks.filter(i => i.status === 'pass').length
 
   return (
     <div className='audit-score-banner' style={{
