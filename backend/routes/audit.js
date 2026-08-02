@@ -421,7 +421,29 @@ router.get('/:siteId/audit/latest', auth, verifySite, async (req, res) => {
   if (!rows[0]) return res.json(null)
   const previousScore = rows[1] ? rows[1].score : null
   const scoreChange = previousScore !== null ? rows[0].score - previousScore : null
-  res.json({ ...rows[0].results, score: rows[0].score, previousScore, scoreChange, scannedAt: rows[0].created_at, chatgptScore: rows[0].chatgpt_cited, claudeScore: rows[0].claude_cited })
+
+  let changedChecks = []
+  if (rows[1]) {
+    const sevRank = { pass: 0, warning: 1, error: 2 }
+    const currentChecks = rows[0].results?.checks || []
+    const previousChecksArr = rows[1].results?.checks || []
+    const prevMap = new Map(previousChecksArr.map(c => [c.check, c]))
+    currentChecks.forEach(c => {
+      const prev = prevMap.get(c.check)
+      if (prev && prev.status !== c.status) {
+        changedChecks.push({
+          check: c.check,
+          category: c.category,
+          message: c.message,
+          previousStatus: prev.status,
+          currentStatus: c.status,
+          direction: sevRank[c.status] > sevRank[prev.status] ? 'regressed' : 'improved',
+        })
+      }
+    })
+  }
+
+  res.json({ ...rows[0].results, score: rows[0].score, previousScore, scoreChange, changedChecks, scannedAt: rows[0].created_at, chatgptScore: rows[0].chatgpt_cited, claudeScore: rows[0].claude_cited })
 })
 
 router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {

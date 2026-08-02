@@ -166,6 +166,25 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
           </div>
         )}
       </div>
+      {/* What Changed */}
+      {Array.isArray(auditData.changedChecks) && auditData.changedChecks.length > 0 && (
+        <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 14, marginTop: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+            What Changed Since Last Audit
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {auditData.changedChecks.map((c, idx) => (
+              <div key={c.check + idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
+                <span style={{ color: c.direction === 'regressed' ? '#DC2626' : '#16A34A', fontWeight: 700, width: 14, flexShrink: 0 }}>
+                  {c.direction === 'regressed' ? '\u25BC' : '\u25B2'}
+                </span>
+                <span style={{ color: '#6B7280', minWidth: 90, flexShrink: 0 }}>{c.category}</span>
+                <span style={{ color: '#374151' }}>{c.message}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {/* AI Engine Visibility */}
       <div style={{ width: '100%', borderTop: '1px solid #F3F4F6', paddingTop: 14, marginTop: 4 }}>
         <div className='ai-visibility-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
