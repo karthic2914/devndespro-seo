@@ -677,7 +677,7 @@ router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req,
 // STAGE 1 PILOT: Multi-page site crawl (sitemap + link discovery)
 // ============================================================
 
-const MULTIPAGE_PAGE_LIMIT = Number(process.env.AUDIT_PAGE_LIMIT) || 15
+const MULTIPAGE_PAGE_LIMIT = Number(process.env.AUDIT_PAGE_LIMIT) || 100
 
 async function discoverPageUrls(baseUrl, limit) {
   const origin = new URL(baseUrl).origin

@@ -635,7 +635,7 @@ export default function SiteAudit() {
                     style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
                   >
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 15 pages - 1-2 minutes</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - a few minutes</div>
                   </button>
                 </div>
               </>
