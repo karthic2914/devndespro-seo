@@ -72,7 +72,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
     const isHttps = /^https:\/\//i.test(finalUrl)
 
-    const robots = { status: null, valid: null, issues: [], url: null }
+    const robots = { status: null, valid: null, issues: [], url: null, aiBots: [] }
     try {
       const origin = new URL(finalUrl).origin
       const robotsUrl = `${origin}/robots.txt`
@@ -106,6 +106,56 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         })
 
         robots.valid = robots.issues.length === 0
+
+        const AI_BOTS = [
+          { name: 'gptbot', label: 'GPTBot (ChatGPT training)' },
+          { name: 'chatgpt-user', label: 'ChatGPT-User (ChatGPT browsing)' },
+          { name: 'oai-searchbot', label: 'OAI-SearchBot (ChatGPT search)' },
+          { name: 'perplexitybot', label: 'PerplexityBot' },
+          { name: 'claudebot', label: 'ClaudeBot (Claude AI)' },
+          { name: 'google-extended', label: 'Google-Extended (Gemini training)' },
+          { name: 'googlebot', label: 'Googlebot' },
+          { name: 'bingbot', label: 'Bingbot' },
+          { name: 'ccbot', label: 'CCBot (Common Crawl)' },
+        ]
+        const botDirectives = {}
+        let currentAgents = []
+        let sawDirectiveSinceUserAgent = false
+        lines.forEach((raw) => {
+          const line2 = String(raw || '').trim()
+          if (!line2 || line2.startsWith('#')) return
+          const sep2 = line2.indexOf(':')
+          if (sep2 < 0) return
+          const directive2 = line2.slice(0, sep2).trim().toLowerCase()
+          const value2 = line2.slice(sep2 + 1).trim()
+          if (directive2 === 'user-agent') {
+            if (sawDirectiveSinceUserAgent) {
+              currentAgents = []
+              sawDirectiveSinceUserAgent = false
+            }
+            currentAgents.push(value2.toLowerCase())
+          } else if (directive2 === 'allow' || directive2 === 'disallow') {
+            sawDirectiveSinceUserAgent = true
+            currentAgents.forEach((agent) => {
+              if (!botDirectives[agent]) botDirectives[agent] = []
+              botDirectives[agent].push({ type: directive2, path: value2 })
+            })
+          }
+        })
+        const isBotBlocked = (botKey) => {
+          const rules = (botDirectives[botKey] && botDirectives[botKey].length) ? botDirectives[botKey] : botDirectives['*']
+          if (!rules || !rules.length) return false
+          const blockAll = rules.some((r) => r.type === 'disallow' && (r.path === '/' || r.path === ''))
+          const allowAll = rules.some((r) => r.type === 'allow' && (r.path === '/' || r.path === ''))
+          return blockAll && !allowAll
+        }
+        robots.aiBots = AI_BOTS.map(({ name, label }) => ({ name, label, blocked: isBotBlocked(name) }))
+        const blockedAiBots = robots.aiBots.filter((b) => b.blocked)
+        if (blockedAiBots.length > 0) {
+          add('ai_bot_access', 'warning', `${blockedAiBots.length} AI bot(s) blocked in robots.txt: ${blockedAiBots.map((b) => b.label).join(', ')}`, 'High', 'AEO')
+        } else {
+          add('ai_bot_access', 'pass', `All ${robots.aiBots.length} major AI bots (ChatGPT, Claude, Perplexity, Google) are allowed to crawl this site`, 'High', 'AEO')
+        }
       } else {
         robots.valid = false
         robots.issues.push({ line: 0, message: `robots.txt returned HTTP ${robotsRes.status}` })
