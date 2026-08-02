@@ -928,6 +928,21 @@ router.get('/:siteId/audit/multipage-progress/:auditRunId', auth, verifySite, as
   })
 })
 
+router.get('/:siteId/audit/multipage-latest', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT id, status, results, site_health_pct, created_at FROM audit_results WHERE site_id=$1 AND (results->>'multipage') = 'true' AND status='complete' ORDER BY created_at DESC LIMIT 1",
+    [req.siteId]
+  )
+  if (!rows.length) return res.json(null)
+  res.json({
+    auditRunId: rows[0].id,
+    status: rows[0].status,
+    results: rows[0].results,
+    siteHealthPct: rows[0].site_health_pct,
+    scannedAt: rows[0].created_at,
+  })
+})
+
 module.exports = router
 
 

@@ -353,13 +353,18 @@ export default function SiteAudit() {
     Promise.all([
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
       api.get(`/sites/${siteId}`).catch(() => null),
-    ]).then(([auditRes, siteRes]) => {
+      api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
+    ]).then(([auditRes, siteRes, multipageRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
       else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
       if (siteRes?.data?.authority_score !== undefined) setAuthorityScore(siteRes.data.authority_score)
       if (siteRes?.data?.authority_updated_at) setAuthorityUpdatedAt(siteRes.data.authority_updated_at)
+      if (multipageRes?.data && multipageRes.data.status === 'complete' && multipageRes.data.results) {
+        setMultipageResults(multipageRes.data.results)
+        setMultipageStatus('complete')
+      }
     }).finally(() => setLoading(false))
   }, [siteId])
 
