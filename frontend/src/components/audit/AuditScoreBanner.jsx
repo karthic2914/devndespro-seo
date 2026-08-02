@@ -101,7 +101,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
         <ScoreRing score={auditData.score || 0} size={80} noAnimation={isScreenshot} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            Overall Health Score
+            Homepage Health Score
             <ScoreDelta change={auditData.scoreChange} />
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
