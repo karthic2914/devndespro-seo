@@ -775,6 +775,8 @@ export default function SiteAudit() {
               <div style={{ fontSize: 11, color: '#9CA3AF' }}>Site Health</div>
             </div>
             <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
+              <div>{multipageResults.totalErrors ?? 0} total error(s) across all pages</div>
+              <div>{multipageResults.totalWarnings ?? 0} total warning(s) across all pages</div>
               <div>{multipageResults.healthyCount} healthy page(s)</div>
               <div>{multipageResults.brokenCount} broken page(s)</div>
               <div>{multipageResults.duplicateTitles?.length || 0} duplicate title group(s)</div>

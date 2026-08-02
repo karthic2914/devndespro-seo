@@ -823,11 +823,16 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       .filter(([, urlsArr]) => urlsArr.length > 1)
       .map(([desc, urlsArr]) => ({ metaDescription: desc, pages: urlsArr }))
 
+    const duplicateTitleUrls = new Set(duplicateTitles.flatMap(d => d.pages))
+    const duplicateMetaUrls = new Set(duplicateMetaDescriptions.flatMap(d => d.pages))
     const healthyCount = pages.filter(p =>
-      p.statusCode === 200 && p.title && p.metaDescription && p.h1 && !p.error
+      p.statusCode === 200 && !p.error && (p.errorCount || 0) === 0 &&
+      !duplicateTitleUrls.has(p.url) && !duplicateMetaUrls.has(p.url)
     ).length
     const brokenCount = pages.filter(p => p.error || (p.statusCode && p.statusCode >= 400)).length
     const siteHealthPct = pages.length > 0 ? Math.round((healthyCount / pages.length) * 100) : 0
+    const totalErrors = pages.reduce((s, p) => s + (p.errorCount || 0), 0)
+    const totalWarnings = pages.reduce((s, p) => s + (p.warningCount || 0), 0)
 
     const results = {
       multipage: true,
@@ -836,6 +841,8 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       siteHealthPct,
       healthyCount,
       brokenCount,
+      totalErrors,
+      totalWarnings,
       duplicateTitles,
       duplicateMetaDescriptions,
       pages,
