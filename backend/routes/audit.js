@@ -878,6 +878,23 @@ router.get('/:siteId/audit/multipage-progress/:auditRunId', auth, verifySite, as
   )
   if (!rows.length) return res.status(404).json({ error: 'Not found' })
   const row = rows[0]
+
+  const { rows: latestPages } = await pool.query(
+    'SELECT url, status_code, error_count, warning_count, crawled_at FROM audit_pages WHERE audit_run_id=$1 ORDER BY crawled_at DESC LIMIT 10',
+    [auditRunId]
+  )
+  const { rows: bucketRows } = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE status_code >= 200 AND status_code < 300) AS c2xx,
+       COUNT(*) FILTER (WHERE status_code >= 300 AND status_code < 400) AS c3xx,
+       COUNT(*) FILTER (WHERE status_code >= 400 AND status_code < 500) AS c4xx,
+       COUNT(*) FILTER (WHERE status_code >= 500) AS c5xx,
+       COUNT(*) FILTER (WHERE status_code IS NULL) AS cerror
+     FROM audit_pages WHERE audit_run_id=$1`,
+    [auditRunId]
+  )
+  const buckets = bucketRows[0] || {}
+
   res.json({
     auditRunId: row.id,
     status: row.status,
@@ -885,6 +902,14 @@ router.get('/:siteId/audit/multipage-progress/:auditRunId', auth, verifySite, as
     pagesTotal: row.pages_total,
     siteHealthPct: row.site_health_pct,
     results: row.status === 'complete' ? row.results : null,
+    latestPages,
+    statusBuckets: {
+      c2xx: Number(buckets.c2xx || 0),
+      c3xx: Number(buckets.c3xx || 0),
+      c4xx: Number(buckets.c4xx || 0),
+      c5xx: Number(buckets.c5xx || 0),
+      cerror: Number(buckets.cerror || 0),
+    },
   })
 })
 

@@ -340,6 +340,8 @@ export default function SiteAudit() {
   const [multipageStatus, setMultipageStatus] = useState(null)
   const [multipageProgress, setMultipageProgress] = useState(null)
   const [multipageResults, setMultipageResults] = useState(null)
+  const [multipageLatestPages, setMultipageLatestPages] = useState([])
+  const [multipageBuckets, setMultipageBuckets] = useState(null)
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -473,6 +475,8 @@ export default function SiteAudit() {
         try {
           const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
           setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
+          setMultipageLatestPages(p.data.latestPages || [])
+          setMultipageBuckets(p.data.statusBuckets || null)
           if (p.data.status === 'complete') {
             setMultipageStatus('complete')
             setMultipageResults(p.data.results)
@@ -672,22 +676,83 @@ export default function SiteAudit() {
       {multipageStatus === 'running' && (
         <div style={{
           background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10,
-          padding: '12px 16px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 12,
+          padding: '12px 16px', marginBottom: '1rem',
         }}>
-          <FontAwesomeIcon icon={faArrowsRotate} style={{ color: '#2563EB', animation: 'spin 1s linear infinite' }} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#1E3A8A' }}>
-              Running full site audit{multipageProgress?.pagesTotal ? ` (${multipageProgress.pagesCrawled}/${multipageProgress.pagesTotal} pages)` : ' (discovering pages...)'}
-            </div>
-            {multipageProgress?.pagesTotal > 0 && (
-              <div style={{ background: '#DBEAFE', borderRadius: 4, height: 6, marginTop: 6, overflow: 'hidden' }}>
-                <div style={{
-                  width: `${Math.round((multipageProgress.pagesCrawled / multipageProgress.pagesTotal) * 100)}%`,
-                  height: '100%', background: '#2563EB', transition: 'width 0.3s',
-                }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <FontAwesomeIcon icon={faArrowsRotate} style={{ color: '#2563EB', animation: 'spin 1s linear infinite' }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: '#1E3A8A' }}>
+                Running full site audit{multipageProgress?.pagesTotal ? ` (${multipageProgress.pagesCrawled}/${multipageProgress.pagesTotal} pages)` : ' (discovering pages...)'}
               </div>
-            )}
+              {multipageProgress?.pagesTotal > 0 && (
+                <div style={{ background: '#DBEAFE', borderRadius: 4, height: 6, marginTop: 6, overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${Math.round((multipageProgress.pagesCrawled / multipageProgress.pagesTotal) * 100)}%`,
+                    height: '100%', background: '#2563EB', transition: 'width 0.3s',
+                  }} />
+                </div>
+              )}
+            </div>
           </div>
+
+          {multipageBuckets && (multipageBuckets.c2xx + multipageBuckets.c3xx + multipageBuckets.c4xx + multipageBuckets.c5xx + multipageBuckets.cerror) > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ display: 'flex', height: 8, borderRadius: 4, overflow: 'hidden' }}>
+                {['c2xx', 'c3xx', 'c4xx', 'c5xx', 'cerror'].map((key) => {
+                  const total = multipageBuckets.c2xx + multipageBuckets.c3xx + multipageBuckets.c4xx + multipageBuckets.c5xx + multipageBuckets.cerror
+                  const val = multipageBuckets[key]
+                  if (!val) return null
+                  const colors = { c2xx: '#16A34A', c3xx: '#D97706', c4xx: '#DC2626', c5xx: '#991B1B', cerror: '#6B7280' }
+                  return <div key={key} style={{ width: `${(val / total) * 100}%`, background: colors[key] }} />
+                })}
+              </div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: '#6B7280', flexWrap: 'wrap' }}>
+                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#16A34A', marginRight: 4 }} />2xx: {multipageBuckets.c2xx}</span>
+                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#D97706', marginRight: 4 }} />3xx: {multipageBuckets.c3xx}</span>
+                <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#DC2626', marginRight: 4 }} />4xx: {multipageBuckets.c4xx}</span>
+                {multipageBuckets.c5xx > 0 && <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#991B1B', marginRight: 4 }} />5xx: {multipageBuckets.c5xx}</span>}
+                {multipageBuckets.cerror > 0 && <span><span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#6B7280', marginRight: 4 }} />Failed: {multipageBuckets.cerror}</span>}
+              </div>
+            </div>
+          )}
+
+          {multipageLatestPages.length > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#1E3A8A', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 6 }}>
+                Latest URLs Crawled
+              </div>
+              <div style={{ border: '1px solid #DBEAFE', borderRadius: 8, overflow: 'hidden', background: '#fff' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: '#F9FAFB' }}>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6B7280', fontWeight: 600 }}>Time</th>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6B7280', fontWeight: 600 }}>Status</th>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6B7280', fontWeight: 600 }}>URL</th>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6B7280', fontWeight: 600 }}>Errors</th>
+                      <th style={{ textAlign: 'left', padding: '6px 10px', color: '#6B7280', fontWeight: 600 }}>Warnings</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {multipageLatestPages.map((p, i) => (
+                      <tr key={p.url + i} style={{ borderTop: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '6px 10px', color: '#9CA3AF' }}>{new Date(p.crawled_at).toLocaleTimeString()}</td>
+                        <td style={{ padding: '6px 10px' }}>
+                          <span style={{
+                            padding: '1px 6px', borderRadius: 4, fontSize: 10, fontWeight: 700,
+                            background: p.status_code >= 200 && p.status_code < 300 ? '#F0FDF4' : p.status_code >= 400 ? '#FEF2F2' : '#FFFBEB',
+                            color: p.status_code >= 200 && p.status_code < 300 ? '#16A34A' : p.status_code >= 400 ? '#DC2626' : '#D97706',
+                          }}>{p.status_code || 'Err'}</span>
+                        </td>
+                        <td style={{ padding: '6px 10px', color: '#2563EB', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.url}</td>
+                        <td style={{ padding: '6px 10px', color: p.error_count > 0 ? '#DC2626' : '#9CA3AF' }}>{p.error_count}</td>
+                        <td style={{ padding: '6px 10px', color: p.warning_count > 0 ? '#D97706' : '#9CA3AF' }}>{p.warning_count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
