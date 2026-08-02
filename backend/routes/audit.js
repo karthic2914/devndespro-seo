@@ -415,11 +415,13 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
 router.get('/:siteId/audit/latest', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query(
-    'SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited FROM audit_results ar LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id WHERE ar.site_id=$1 ORDER BY ar.created_at DESC LIMIT 1',
+    'SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited FROM audit_results ar LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id WHERE ar.site_id=$1 ORDER BY ar.created_at DESC LIMIT 2',
     [req.siteId]
   )
   if (!rows[0]) return res.json(null)
-  res.json({ ...rows[0].results, score: rows[0].score, scannedAt: rows[0].created_at, chatgptScore: rows[0].chatgpt_cited, claudeScore: rows[0].claude_cited })
+  const previousScore = rows[1] ? rows[1].score : null
+  const scoreChange = previousScore !== null ? rows[0].score - previousScore : null
+  res.json({ ...rows[0].results, score: rows[0].score, previousScore, scoreChange, scannedAt: rows[0].created_at, chatgptScore: rows[0].chatgpt_cited, claudeScore: rows[0].claude_cited })
 })
 
 router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {

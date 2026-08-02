@@ -1,4 +1,4 @@
-﻿import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
 
@@ -65,6 +65,21 @@ function ScoreRing({ score, size = 88, noAnimation = false }) {
 
 
 
+function ScoreDelta({ change }) {
+  if (change === null || change === undefined || change === 0) return null
+  const isUp = change > 0
+  return (
+    <span style={{
+      fontSize: 12, fontWeight: 700,
+      color: isUp ? '#16A34A' : '#DC2626',
+      background: isUp ? '#F0FDF4' : '#FEF2F2',
+      padding: '2px 8px', borderRadius: 5,
+      display: 'inline-flex', alignItems: 'center', gap: 3,
+    }}>
+      {isUp ? '\u25B2' : '\u25BC'} {Math.abs(change)}
+    </span>
+  )
+}
 export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {} }) {
   const navigate = useNavigate()
   const { siteId } = useParams()
@@ -84,8 +99,9 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
       <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
         <ScoreRing score={auditData.score || 0} size={80} noAnimation={isScreenshot} />
         <div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
             Overall Health Score
+            <ScoreDelta change={auditData.scoreChange} />
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {errorCount > 0 && (
