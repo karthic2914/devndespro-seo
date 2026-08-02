@@ -331,6 +331,7 @@ export default function SiteAudit() {
   const captureRef = useRef(null)
   const emailBodyRef = useRef(null)
   const isProgrammatic = useRef(false)
+  const issuesRef = useRef(null)
   const [logoAlign, setLogoAlign] = useState('center')
   const [authorityScore, setAuthorityScore] = useState(null)
   const [authorityUpdatedAt, setAuthorityUpdatedAt] = useState(null)
@@ -488,6 +489,14 @@ export default function SiteAudit() {
     setSendingEmail(false)
   }
 
+  function scrollToCategory(categoryId) {
+    setActiveTab(categoryId)
+    setExpandedIdx(null)
+    requestAnimationFrame(() => {
+      issuesRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   const tabOptions = useMemo(() => [
     { id: 'all',      label: 'All Issues', count: allIssues.filter((i) => i.status !== 'pass').length },
     { id: 'errors',   label: 'Critical',   count: allIssues.filter((i) => i.status === 'error').length },
@@ -593,7 +602,7 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} />
+      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} onCategoryClick={scrollToCategory} />
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
@@ -785,7 +794,7 @@ export default function SiteAudit() {
 
       <TabBar tabs={tabOptions} active={activeTab} onChange={(id) => { setActiveTab(id); setExpandedIdx(null) }} />
 
-      <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div ref={issuesRef} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         {visibleIssues.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
             No issues in this category.

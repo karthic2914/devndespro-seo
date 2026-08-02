@@ -80,7 +80,7 @@ function ScoreDelta({ change }) {
     </span>
   )
 }
-export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {} }) {
+export default function AuditScoreBanner({ auditData, categories, isScreenshot = false, aiScores = {}, cronEnabled = false, onCronToggle = () => {}, onCategoryClick = () => {} }) {
   const navigate = useNavigate()
   const { siteId } = useParams()
   const checks = auditData.checks || []
@@ -129,7 +129,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
       {/* Category scores */}
       <div className='audit-cats-flex' style={{ display: 'flex', gap: 16, flex: 1, flexWrap: 'wrap' }}>
         {categories.map(cat => cat.score !== null && (
-          <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90 }}>
+          <div key={cat.name} onClick={() => onCategoryClick(cat.id)} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90, cursor: 'pointer' }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
               background: scoreBg(cat.score),
@@ -149,7 +149,7 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
 
         {/* PageSpeed */}
         {auditData.speed && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90 }}>
+          <div onClick={() => onCategoryClick('page_speed')} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 90, cursor: 'pointer' }}>
             <div style={{
               width: 40, height: 40, borderRadius: 10,
               background: scoreBg(auditData.speed.performance),
