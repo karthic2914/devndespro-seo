@@ -672,6 +672,222 @@ router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req,
   }
 })
 
+
+// ============================================================
+// STAGE 1 PILOT: Multi-page site crawl (sitemap + link discovery)
+// ============================================================
+
+const MULTIPAGE_PAGE_LIMIT = Number(process.env.AUDIT_PAGE_LIMIT) || 15
+
+async function discoverPageUrls(baseUrl, limit) {
+  const origin = new URL(baseUrl).origin
+  const rootHost = new URL(baseUrl).hostname.toLowerCase().replace(/^www\./, '')
+  const urls = new Set([baseUrl])
+
+  try {
+    const sitemapRes = await axios.get(`${origin}/sitemap.xml`, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
+      validateStatus: () => true,
+    })
+    if (sitemapRes.status >= 200 && sitemapRes.status < 300) {
+      const xml = typeof sitemapRes.data === 'string' ? sitemapRes.data : String(sitemapRes.data || '')
+      const $sm = cheerio.load(xml, { xmlMode: true })
+      $sm('loc').each((_, el) => {
+        const loc = $sm(el).text().trim()
+        if (loc) {
+          try {
+            const h = new URL(loc).hostname.toLowerCase().replace(/^www\./, '')
+            if (h === rootHost) urls.add(loc)
+          } catch {}
+        }
+      })
+    }
+  } catch (e) {
+    // sitemap fetch failed - fall through to link crawling
+  }
+
+  if (urls.size < limit) {
+    const queue = [baseUrl]
+    const visited = new Set()
+    while (queue.length > 0 && urls.size < limit && visited.size < limit * 3) {
+      const current = queue.shift()
+      if (visited.has(current)) continue
+      visited.add(current)
+      try {
+        const pageRes = await axios.get(current, {
+          timeout: 10000,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
+          maxRedirects: 5,
+        })
+        const html = typeof pageRes.data === 'string' ? pageRes.data : String(pageRes.data || '')
+        const $page = cheerio.load(html)
+        $page('a[href]').each((_, el) => {
+          if (urls.size >= limit) return
+          const href = String($page(el).attr('href') || '').trim()
+          if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) return
+          try {
+            const absolute = href.startsWith('http') ? href : new URL(href, current).toString()
+            const h = new URL(absolute).hostname.toLowerCase().replace(/^www\./, '')
+            if (h === rootHost) {
+              urls.add(absolute)
+              if (!visited.has(absolute)) queue.push(absolute)
+            }
+          } catch {}
+        })
+      } catch (e) {
+        // skip pages that fail to load
+      }
+    }
+  }
+
+  return Array.from(urls).slice(0, limit)
+}
+
+async function crawlSinglePageLite(pageUrl) {
+  try {
+    const startedAt = Date.now()
+    const res = await axios.get(pageUrl, {
+      timeout: 12000,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
+      maxRedirects: 5,
+      validateStatus: () => true,
+    })
+    const responseTimeMs = Date.now() - startedAt
+    const html = typeof res.data === 'string' ? res.data : String(res.data || '')
+    const $ = cheerio.load(html)
+    const title = $('title').text().trim() || null
+    const metaDescription = $('meta[name="description"]').attr('content') || null
+    const h1 = $('h1').first().text().trim() || null
+    const canonical = $('link[rel="canonical"]').attr('href') || null
+    const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
+    return {
+      url: pageUrl,
+      statusCode: res.status,
+      title,
+      metaDescription,
+      h1,
+      canonical,
+      wordCount,
+      responseTimeMs,
+      error: null,
+    }
+  } catch (e) {
+    return {
+      url: pageUrl,
+      statusCode: null,
+      title: null,
+      metaDescription: null,
+      h1: null,
+      canonical: null,
+      wordCount: 0,
+      responseTimeMs: null,
+      error: e.message,
+    }
+  }
+}
+
+async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
+  try {
+    const urls = await discoverPageUrls(baseUrl, MULTIPAGE_PAGE_LIMIT)
+    await pool.query('UPDATE audit_results SET pages_total=$1 WHERE id=$2', [urls.length, auditRunId])
+
+    const pages = []
+    for (const pageUrl of urls) {
+      const pageResult = await crawlSinglePageLite(pageUrl)
+      pages.push(pageResult)
+      await pool.query(
+        `INSERT INTO audit_pages (site_id, audit_run_id, url, status_code, title, meta_description, h1, canonical, word_count, error)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [siteId, auditRunId, pageResult.url, pageResult.statusCode, pageResult.title, pageResult.metaDescription, pageResult.h1, pageResult.canonical, pageResult.wordCount, pageResult.error]
+      )
+      await pool.query('UPDATE audit_results SET pages_crawled = pages_crawled + 1 WHERE id=$1', [auditRunId])
+    }
+
+    const titleGroups = {}
+    const metaGroups = {}
+    pages.forEach(p => {
+      if (p.title) {
+        titleGroups[p.title] = titleGroups[p.title] || []
+        titleGroups[p.title].push(p.url)
+      }
+      if (p.metaDescription) {
+        metaGroups[p.metaDescription] = metaGroups[p.metaDescription] || []
+        metaGroups[p.metaDescription].push(p.url)
+      }
+    })
+    const duplicateTitles = Object.entries(titleGroups)
+      .filter(([, urlsArr]) => urlsArr.length > 1)
+      .map(([title, urlsArr]) => ({ title, pages: urlsArr }))
+    const duplicateMetaDescriptions = Object.entries(metaGroups)
+      .filter(([, urlsArr]) => urlsArr.length > 1)
+      .map(([desc, urlsArr]) => ({ metaDescription: desc, pages: urlsArr }))
+
+    const healthyCount = pages.filter(p =>
+      p.statusCode === 200 && p.title && p.metaDescription && p.h1 && !p.error
+    ).length
+    const brokenCount = pages.filter(p => p.error || (p.statusCode && p.statusCode >= 400)).length
+    const siteHealthPct = pages.length > 0 ? Math.round((healthyCount / pages.length) * 100) : 0
+
+    const results = {
+      multipage: true,
+      pagesTotal: pages.length,
+      pagesCrawled: pages.length,
+      siteHealthPct,
+      healthyCount,
+      brokenCount,
+      duplicateTitles,
+      duplicateMetaDescriptions,
+      pages,
+      scannedAt: new Date().toISOString(),
+    }
+
+    await pool.query(
+      'UPDATE audit_results SET results=$1, status=$2, site_health_pct=$3 WHERE id=$4',
+      [JSON.stringify(results), 'complete', siteHealthPct, auditRunId]
+    )
+  } catch (e) {
+    console.error('Multi-page crawl error:', e.message)
+    await pool.query('UPDATE audit_results SET status=$1 WHERE id=$2', ['failed', auditRunId]).catch(() => {})
+  }
+}
+
+router.post('/:siteId/audit/run-multipage', auth, verifySite, async (req, res) => {
+  const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
+  const url = s[0].url
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO audit_results (site_id, results, score, status, pages_crawled, pages_total)
+       VALUES ($1, '{}', 0, 'running', 0, 0) RETURNING id`,
+      [req.siteId]
+    )
+    const auditRunId = rows[0].id
+    res.json({ auditRunId, status: 'running' })
+    runMultiPageCrawl(req.siteId, auditRunId, url)
+  } catch (e) {
+    console.error('run-multipage error:', e.message)
+    res.status(500).json({ error: e.message })
+  }
+})
+
+router.get('/:siteId/audit/multipage-progress/:auditRunId', auth, verifySite, async (req, res) => {
+  const { auditRunId } = req.params
+  const { rows } = await pool.query(
+    'SELECT id, status, pages_crawled, pages_total, results, site_health_pct FROM audit_results WHERE id=$1 AND site_id=$2',
+    [auditRunId, req.siteId]
+  )
+  if (!rows.length) return res.status(404).json({ error: 'Not found' })
+  const row = rows[0]
+  res.json({
+    auditRunId: row.id,
+    status: row.status,
+    pagesCrawled: row.pages_crawled,
+    pagesTotal: row.pages_total,
+    siteHealthPct: row.site_health_pct,
+    results: row.status === 'complete' ? row.results : null,
+  })
+})
+
 module.exports = router
 
 
