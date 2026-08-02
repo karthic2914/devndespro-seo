@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
-  faCamera, faShareNodes, faEnvelope, faChevronLeft, faChevronRight,
+  faCamera, faShareNodes, faEnvelope, faChevronLeft, faChevronRight, faChevronDown,
   faAlignLeft, faAlignCenter, faAlignRight,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
@@ -336,6 +336,10 @@ export default function SiteAudit() {
   const [authorityScore, setAuthorityScore] = useState(null)
   const [authorityUpdatedAt, setAuthorityUpdatedAt] = useState(null)
   const [refreshingAuthority, setRefreshingAuthority] = useState(false)
+  const [showAuditMenu, setShowAuditMenu] = useState(false)
+  const [multipageStatus, setMultipageStatus] = useState(null)
+  const [multipageProgress, setMultipageProgress] = useState(null)
+  const [multipageResults, setMultipageResults] = useState(null)
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -458,6 +462,39 @@ export default function SiteAudit() {
     setRunning(false)
   }
 
+  async function runMultipageAudit() {
+    setMultipageStatus('running')
+    setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
+    setMultipageResults(null)
+    try {
+      const start = await api.post(`/sites/${siteId}/audit/run-multipage`)
+      const auditRunId = start.data.auditRunId
+      const poll = async () => {
+        try {
+          const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
+          setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
+          if (p.data.status === 'complete') {
+            setMultipageStatus('complete')
+            setMultipageResults(p.data.results)
+            showSnackbar('Full site audit completed!', 'success')
+          } else if (p.data.status === 'failed') {
+            setMultipageStatus('failed')
+            showSnackbar('Full site audit failed', 'error')
+          } else {
+            setTimeout(poll, 2000)
+          }
+        } catch (e) {
+          setMultipageStatus('failed')
+          showSnackbar('Lost connection while checking audit progress', 'error')
+        }
+      }
+      poll()
+    } catch (e) {
+      setMultipageStatus('failed')
+      showSnackbar('Failed to start full site audit', 'error')
+    }
+  }
+
   async function refreshAuthorityScore() {
     setRefreshingAuthority(true)
     try {
@@ -567,9 +604,39 @@ export default function SiteAudit() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
             <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} /><span className='btn-label'>Fix in Actions</span>
           </Button>
-          <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting}>
+          <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting || multipageStatus === 'running'}>
             <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
           </Button>
+          <div style={{ position: 'relative' }}>
+            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={running || exporting || multipageStatus === 'running'}>
+              <FontAwesomeIcon icon={faChevronDown} />
+            </Button>
+            {showAuditMenu && (
+              <>
+                <div onClick={() => setShowAuditMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 6,
+                  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 240, zIndex: 40, overflow: 'hidden',
+                }}>
+                  <button
+                    onClick={() => { setShowAuditMenu(false); runAudit() }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', borderBottom: '1px solid #F3F4F6', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Quick Audit</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Homepage only - a few seconds</div>
+                  </button>
+                  <button
+                    onClick={() => { setShowAuditMenu(false); runMultipageAudit() }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 15 pages - 1-2 minutes</div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
           {!!shareMsg && (
             <div style={{ width: '100%', textAlign: 'right', fontSize: 11, color: '#6B7280' }}>{shareMsg}</div>
           )}
@@ -597,6 +664,56 @@ export default function SiteAudit() {
             <div style={{ fontSize: 12, color: '#92400E', marginTop: 3, lineHeight: 1.6 }}>
               The crawler received no content (0 words, status {auditData.crawl?.statusCode}).
               Audit scores may be inaccurate. The site owner should check if their host is blocking automated crawlers.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {multipageStatus === 'running' && (
+        <div style={{
+          background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10,
+          padding: '12px 16px', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 12,
+        }}>
+          <FontAwesomeIcon icon={faArrowsRotate} style={{ color: '#2563EB', animation: 'spin 1s linear infinite' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#1E3A8A' }}>
+              Running full site audit{multipageProgress?.pagesTotal ? ` (${multipageProgress.pagesCrawled}/${multipageProgress.pagesTotal} pages)` : ' (discovering pages...)'}
+            </div>
+            {multipageProgress?.pagesTotal > 0 && (
+              <div style={{ background: '#DBEAFE', borderRadius: 4, height: 6, marginTop: 6, overflow: 'hidden' }}>
+                <div style={{
+                  width: `${Math.round((multipageProgress.pagesCrawled / multipageProgress.pagesTotal) * 100)}%`,
+                  height: '100%', background: '#2563EB', transition: 'width 0.3s',
+                }} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {multipageStatus === 'complete' && multipageResults && (
+        <div style={{
+          background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
+          padding: '16px 18px', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+            Full Site Audit Results (Beta) - {multipageResults.pagesTotal} pages crawled
+          </div>
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+            <div>
+              <div style={{
+                fontSize: 30, fontWeight: 800,
+                color: multipageResults.siteHealthPct >= 80 ? '#16A34A' : multipageResults.siteHealthPct >= 55 ? '#D97706' : '#DC2626',
+              }}>
+                {multipageResults.siteHealthPct}%
+              </div>
+              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Site Health</div>
+            </div>
+            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
+              <div>{multipageResults.healthyCount} healthy page(s)</div>
+              <div>{multipageResults.brokenCount} broken page(s)</div>
+              <div>{multipageResults.duplicateTitles?.length || 0} duplicate title group(s)</div>
+              <div>{multipageResults.duplicateMetaDescriptions?.length || 0} duplicate meta description group(s)</div>
             </div>
           </div>
         </div>
