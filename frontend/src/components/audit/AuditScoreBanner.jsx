@@ -180,6 +180,11 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                 </span>
                 <span style={{ color: '#6B7280', minWidth: 90, flexShrink: 0 }}>{c.category}</span>
                 <span style={{ color: '#374151' }}>{c.message}</span>
+                {(c.category === 'AI Snippet' || c.category === 'AEO') && (
+                  <span style={{ fontSize: 10, color: '#9CA3AF', fontStyle: 'italic', flexShrink: 0 }}>
+                    (doesn't affect score)
+                  </span>
+                )}
               </div>
             ))}
           </div>
