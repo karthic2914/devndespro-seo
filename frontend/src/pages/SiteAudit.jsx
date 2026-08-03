@@ -543,10 +543,16 @@ export default function SiteAudit() {
       const r = await api.post(`/sites/${siteId}/audit/ai-fix`, {
         issue: { message: issue.sampleMessage, category: issue.category, impact: issue.impact, status: issue.status },
         siteUrl: siteUrl || auditData?.url,
-      })
+      }, { timeout: 30000 })
       setIssueFixes(prev => ({ ...prev, [key]: r.data }))
     } catch (e) {
-      setIssueFixes(prev => ({ ...prev, [key]: { fix: 'Could not generate fix suggestion. Please try again.' } }))
+      const isTimeout = e.code === 'ECONNABORTED' || /timeout/i.test(e.message || '')
+      setIssueFixes(prev => ({
+        ...prev,
+        [key]: { fix: isTimeout
+          ? 'The AI took too long to respond. Please try again.'
+          : 'Could not generate fix suggestion. Please try again.' },
+      }))
     }
     setLoadingFixKey(null)
   }
