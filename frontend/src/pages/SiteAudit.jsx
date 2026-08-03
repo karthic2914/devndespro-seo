@@ -298,6 +298,24 @@ function TabBar({ tabs, active, onChange }) {
   )
 }
 
+function IssueSparkline({ checkId, history }) {
+  const points = (history || []).map(h => {
+    const found = (h.issueSummary || []).find(i => i.check === checkId)
+    return found ? found.count : 0
+  })
+  if (points.length < 2) return null
+  const max = Math.max(...points, 1)
+  const w = 60, h = 20
+  const stepX = w / (points.length - 1)
+  const path = points.map((v, i) => `${i === 0 ? 'M' : 'L'} ${i * stepX} ${h - (v / max) * h}`).join(' ')
+  const trendUp = points[points.length - 1] > points[0]
+  return (
+    <svg width={w} height={h} style={{ flexShrink: 0 }}>
+      <path d={path} fill="none" stroke={trendUp ? '#DC2626' : '#16A34A'} strokeWidth="1.5" />
+    </svg>
+  )
+}
+
 export default function SiteAudit() {
   const showSnackbar = useSnackbar()
   const { siteId }   = useParams()
@@ -344,6 +362,10 @@ export default function SiteAudit() {
   const [multipageBuckets, setMultipageBuckets] = useState(null)
   const [showDupTitles, setShowDupTitles] = useState(false)
   const [showDupMeta, setShowDupMeta] = useState(false)
+  const [issueHistory, setIssueHistory] = useState([])
+  const [expandedIssueKey, setExpandedIssueKey] = useState(null)
+  const [issueFixes, setIssueFixes] = useState({})
+  const [loadingFixKey, setLoadingFixKey] = useState(null)
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -356,7 +378,8 @@ export default function SiteAudit() {
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
       api.get(`/sites/${siteId}`).catch(() => null),
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
-    ]).then(([auditRes, siteRes, multipageRes]) => {
+      api.get(`/sites/${siteId}/audit/multipage-history`).catch(() => null),
+    ]).then(([auditRes, siteRes, multipageRes, historyRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
@@ -367,6 +390,7 @@ export default function SiteAudit() {
         setMultipageResults(multipageRes.data.results)
         setMultipageStatus('complete')
       }
+      if (historyRes?.data?.history) setIssueHistory(historyRes.data.history)
     }).finally(() => setLoading(false))
   }, [siteId])
 
@@ -488,6 +512,7 @@ export default function SiteAudit() {
             setMultipageStatus('complete')
             setMultipageResults(p.data.results)
             showSnackbar('Full site audit completed!', 'success')
+            api.get(`/sites/${siteId}/audit/multipage-history`).then(h => { if (h?.data?.history) setIssueHistory(h.data.history) }).catch(() => {})
           } else if (p.data.status === 'failed') {
             setMultipageStatus('failed')
             showSnackbar('Full site audit failed', 'error')
@@ -504,6 +529,26 @@ export default function SiteAudit() {
       setMultipageStatus('failed')
       showSnackbar('Failed to start full site audit', 'error')
     }
+  }
+
+  async function fetchIssueFix(issue) {
+    const key = issue.check
+    if (issueFixes[key]) {
+      setExpandedIssueKey(expandedIssueKey === key ? null : key)
+      return
+    }
+    setLoadingFixKey(key)
+    setExpandedIssueKey(key)
+    try {
+      const r = await api.post(`/sites/${siteId}/audit/ai-fix`, {
+        issue: { message: issue.sampleMessage, category: issue.category, impact: issue.impact, status: issue.status },
+        siteUrl: siteUrl || auditData?.url,
+      })
+      setIssueFixes(prev => ({ ...prev, [key]: r.data }))
+    } catch (e) {
+      setIssueFixes(prev => ({ ...prev, [key]: { fix: 'Could not generate fix suggestion. Please try again.' } }))
+    }
+    setLoadingFixKey(null)
   }
 
   async function refreshAuthorityScore() {
@@ -840,6 +885,58 @@ export default function SiteAudit() {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {multipageResults.issueSummary?.length > 0 && (
+            <div style={{ marginTop: 20, borderTop: '1px solid #F3F4F6', paddingTop: 16 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
+                Top Issues Across All Pages
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {multipageResults.issueSummary.slice(0, 15).map((issue) => {
+                  const key = issue.check
+                  const isExpanded = expandedIssueKey === key
+                  const fix = issueFixes[key]
+                  const isLoadingFix = loadingFixKey === key
+                  return (
+                    <div key={key} style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#fff' }}>
+                        <span style={{
+                          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                          background: issue.status === 'error' ? '#DC2626' : '#D97706',
+                        }} />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                            {issue.count} page{issue.count === 1 ? '' : 's'} - {issue.sampleMessage}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>{issue.category}</div>
+                        </div>
+                        <IssueSparkline checkId={key} history={issueHistory} />
+                        <button
+                          onClick={() => fetchIssueFix(issue)}
+                          style={{
+                            fontSize: 11, fontWeight: 600, color: '#F97316', background: '#FFF7ED',
+                            border: '1px solid #FED7AA', borderRadius: 6, padding: '5px 10px',
+                            cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {isLoadingFix ? 'Loading...' : 'How to fix'}
+                        </button>
+                      </div>
+                      {isExpanded && fix && (
+                        <div style={{ padding: '12px 14px', background: '#F9FAFB', borderTop: '1px solid #E5E7EB', fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
+                          {fix.why && <div style={{ marginBottom: 8 }}><strong>Why it matters:</strong> {fix.why}</div>}
+                          {fix.fix && <div style={{ marginBottom: 8 }}><strong>Fix:</strong> {fix.fix}</div>}
+                          {fix.before && <div style={{ marginBottom: 4 }}><strong>Before:</strong> <code style={{ background: '#FEF2F2', padding: '1px 5px', borderRadius: 4 }}>{fix.before}</code></div>}
+                          {fix.after && <div style={{ marginBottom: 8 }}><strong>After:</strong> <code style={{ background: '#F0FDF4', padding: '1px 5px', borderRadius: 4 }}>{fix.after}</code></div>}
+                          {fix.timeToFix && <div style={{ fontSize: 11, color: '#9CA3AF' }}>Estimated time: {fix.timeToFix}</div>}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           )}
         </div>

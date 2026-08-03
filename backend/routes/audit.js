@@ -842,6 +842,26 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
     })
     const siteHealthPct = pageScores.length > 0 ? Math.round(pageScores.reduce((s, v) => s + v, 0) / pageScores.length) : 0
 
+    const issueSummaryMap = {}
+    pages.forEach(p => {
+      ;(p.checks || []).forEach(c => {
+        if (c.status === 'pass') return
+        const key = c.check
+        if (!issueSummaryMap[key]) {
+          issueSummaryMap[key] = { check: key, category: c.category, status: c.status, impact: c.impact, count: 0, sampleMessage: c.message }
+        }
+        issueSummaryMap[key].count += 1
+        if (c.status === 'error') issueSummaryMap[key].status = 'error'
+      })
+    })
+    if (duplicateTitleUrls.size > 0) {
+      issueSummaryMap['duplicate_titles'] = { check: 'duplicate_titles', category: 'On-Page SEO', status: 'warning', impact: 'High', count: duplicateTitleUrls.size, sampleMessage: 'Pages share a title with at least one other page on the site' }
+    }
+    if (duplicateMetaUrls.size > 0) {
+      issueSummaryMap['duplicate_meta'] = { check: 'duplicate_meta', category: 'On-Page SEO', status: 'warning', impact: 'High', count: duplicateMetaUrls.size, sampleMessage: 'Pages share a meta description with at least one other page on the site' }
+    }
+    const issueSummary = Object.values(issueSummaryMap).sort((a, b) => b.count - a.count)
+
     const results = {
       multipage: true,
       pagesTotal: pages.length,
@@ -851,6 +871,7 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       brokenCount,
       totalErrors,
       totalWarnings,
+      issueSummary,
       duplicateTitles,
       duplicateMetaDescriptions,
       pages,
@@ -941,6 +962,19 @@ router.get('/:siteId/audit/multipage-latest', auth, verifySite, async (req, res)
     siteHealthPct: rows[0].site_health_pct,
     scannedAt: rows[0].created_at,
   })
+})
+
+router.get('/:siteId/audit/multipage-history', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT id, results, created_at FROM audit_results WHERE site_id=$1 AND (results->>'multipage')='true' AND status='complete' ORDER BY created_at DESC LIMIT 10",
+    [req.siteId]
+  )
+  const history = rows.map(r => ({
+    auditRunId: r.id,
+    scannedAt: r.created_at,
+    issueSummary: r.results?.issueSummary || [],
+  })).reverse()
+  res.json({ history })
 })
 
 module.exports = router
