@@ -15,6 +15,7 @@ import api from '../utils/api'
 import AuditScoreBanner from '../components/audit/AuditScoreBanner'
 import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
+import MultipageScoreBanner from '../components/audit/MultipageScoreBanner'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
 
@@ -828,45 +829,7 @@ export default function SiteAudit() {
           <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
             Full Site Audit Results (Beta) - {multipageResults.pagesTotal} pages crawled
           </div>
-          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div>
-              <div style={{
-                fontSize: 30, fontWeight: 800,
-                color: multipageResults.siteHealthPct >= 80 ? '#16A34A' : multipageResults.siteHealthPct >= 55 ? '#D97706' : '#DC2626',
-              }}>
-                {multipageResults.siteHealthPct}%
-              </div>
-              <div style={{ fontSize: 11, color: '#9CA3AF' }}>Site Health</div>
-            </div>
-            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
-              <div>{multipageResults.totalErrors ?? 0} total error(s) across all pages</div>
-              <div>{multipageResults.totalWarnings ?? 0} total warning(s) across all pages</div>
-              <div>{multipageResults.healthyCount} healthy page(s)</div>
-              <div>{multipageResults.brokenCount} broken page(s)</div>
-              <div>{multipageResults.duplicateTitles?.length || 0} duplicate title group(s)</div>
-              <div>{multipageResults.duplicateMetaDescriptions?.length || 0} duplicate meta description group(s)</div>
-            </div>
-          </div>
-
-          {multipageResults.categoryScores && Object.keys(multipageResults.categoryScores).length > 0 && (
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
-              {Object.entries(multipageResults.categoryScores).map(([cat, score]) => {
-                const color = score >= 80 ? '#16A34A' : score >= 55 ? '#D97706' : '#DC2626'
-                const bg = score >= 80 ? '#F0FDF4' : score >= 55 ? '#FFFBEB' : '#FEF2F2'
-                return (
-                  <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 100 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <span style={{ fontSize: 16, fontWeight: 700, color }}>{'\u25CF'}</span>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }}>{cat} (site-wide)</div>
-                      <div style={{ fontSize: 18, fontWeight: 700, color }}>{score}</div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+          <MultipageScoreBanner results={multipageResults} history={issueHistory} onCategoryClick={scrollToCategory} />
 
           {multipageResults.duplicateTitles?.length > 0 && (
             <div style={{ marginTop: 16 }}>
