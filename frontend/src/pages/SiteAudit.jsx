@@ -342,6 +342,8 @@ export default function SiteAudit() {
   const [multipageResults, setMultipageResults] = useState(null)
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
+  const [showDupTitles, setShowDupTitles] = useState(false)
+  const [showDupMeta, setShowDupMeta] = useState(false)
 
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
@@ -788,6 +790,58 @@ export default function SiteAudit() {
               <div>{multipageResults.duplicateMetaDescriptions?.length || 0} duplicate meta description group(s)</div>
             </div>
           </div>
+
+          {multipageResults.duplicateTitles?.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                onClick={() => setShowDupTitles(v => !v)}
+                style={{ fontSize: 12, fontWeight: 600, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+              >
+                <FontAwesomeIcon icon={showDupTitles ? faChevronDown : faChevronRight} style={{ fontSize: 10 }} />
+                {showDupTitles ? 'Hide' : 'View'} duplicate title groups ({multipageResults.duplicateTitles.length})
+              </button>
+              {showDupTitles && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {multipageResults.duplicateTitles.map((g, i) => (
+                    <div key={i} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 12px' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#92400E', marginBottom: 4 }}>&quot;{g.title}&quot; ({g.pages.length} pages)</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {g.pages.map((url, j) => (
+                          <a key={j} href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563EB', textDecoration: 'none' }}>{url}</a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {multipageResults.duplicateMetaDescriptions?.length > 0 && (
+            <div style={{ marginTop: 16 }}>
+              <button
+                onClick={() => setShowDupMeta(v => !v)}
+                style={{ fontSize: 12, fontWeight: 600, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit' }}
+              >
+                <FontAwesomeIcon icon={showDupMeta ? faChevronDown : faChevronRight} style={{ fontSize: 10 }} />
+                {showDupMeta ? 'Hide' : 'View'} duplicate meta description groups ({multipageResults.duplicateMetaDescriptions.length})
+              </button>
+              {showDupMeta && (
+                <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {multipageResults.duplicateMetaDescriptions.map((g, i) => (
+                    <div key={i} style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '8px 12px' }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#92400E', marginBottom: 4 }}>&quot;{g.metaDescription}&quot; ({g.pages.length} pages)</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {g.pages.map((url, j) => (
+                          <a key={j} href={url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 11, color: '#2563EB', textDecoration: 'none' }}>{url}</a>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
