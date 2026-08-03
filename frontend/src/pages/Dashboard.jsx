@@ -13,6 +13,7 @@ import {
   faArrowTrendDown,
   faListCheck,
   faArrowRight,
+  faChevronDown,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
 import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../components/seo/SeoComponents'
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [gscData, setGscData] = useState(null)
   const [auditRunning, setAuditRunning] = useState(false)
   const [gscConnecting, setGscConnecting] = useState(false)
+  const [showAuditMenu, setShowAuditMenu] = useState(false)
 
   const loadDashboardData = () => {
     const stored = localStorage.getItem('activeSite')
@@ -59,6 +61,13 @@ export default function Dashboard() {
     try { await api.post(`/sites/${siteId}/audit/run`) } catch {}
     loadDashboardData()
     setAuditRunning(false)
+  }
+
+  const runFullSiteAudit = async () => {
+    try {
+      await api.post(`/sites/${siteId}/audit/run-multipage`)
+    } catch {}
+    navigate(`/site/${siteId}/audit`)
   }
 
   const connectGSC = async () => {
@@ -165,8 +174,38 @@ export default function Dashboard() {
           </Button>
           <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning}>
             <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            <span className='btn-label'>{auditRunning ? 'Scanning…' : 'Run Full Audit'}</span>
+            <span className='btn-label'>{auditRunning ? 'Scanningï¿½' : 'Run Full Audit'}</span>
           </Button>
+          <div style={{ position: 'relative' }}>
+            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={auditRunning}>
+              <FontAwesomeIcon icon={faChevronDown} />
+            </Button>
+            {showAuditMenu && (
+              <>
+                <div onClick={() => setShowAuditMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
+                <div style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 6,
+                  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 260, zIndex: 40, overflow: 'hidden',
+                }}>
+                  <button
+                    onClick={() => { setShowAuditMenu(false); handleRunAudit() }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', borderBottom: '1px solid #F3F4F6', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Quick Audit</div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Homepage only - a few seconds</div>
+                  </button>
+                  <button
+                    onClick={() => { setShowAuditMenu(false); runFullSiteAudit() }}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - opens Site Audit to watch progress</div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
@@ -223,7 +262,7 @@ export default function Dashboard() {
                   </div>
                   {!isClientSiteError && (
                     <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                      {gscConnecting ? 'Connecting…' : 'Reconnect GSC'}
+                      {gscConnecting ? 'Connectingï¿½' : 'Reconnect GSC'}
                     </Button>
                   )}
                 </div>
@@ -233,7 +272,7 @@ export default function Dashboard() {
                   {gscAccountEmail && <div style={{ fontSize: 11, color: T.muted }}>Connected as {gscAccountEmail}</div>}
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>
                     {gscClicks > 0
-                      ? `${gscClicks} clicks · ${gscImpressions} impressions over 28 days`
+                      ? `${gscClicks} clicks ï¿½ ${gscImpressions} impressions over 28 days`
                       : 'No traffic recorded in the last 28 days'}
                   </div>
                   <div style={{ fontSize: 11, color: T.muted }}>
@@ -245,7 +284,7 @@ export default function Dashboard() {
                 <div style={{ height: 140, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, background: T.surface2, borderRadius: 8 }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: T.muted }}>Connect Google Search Console to see traffic</div>
                   <Button variant="secondary" size="sm" onClick={connectGSC} disabled={gscConnecting}>
-                    {gscConnecting ? 'Connecting…' : 'Connect GSC'}
+                    {gscConnecting ? 'Connectingï¿½' : 'Connect GSC'}
                   </Button>
                 </div>
               )}
@@ -397,7 +436,7 @@ export default function Dashboard() {
                     Connect Google Search Console to see real clicks, impressions, and top queries.
                   </div>
                   <Button variant="primary" size="sm" onClick={connectGSC} disabled={gscConnecting} fullWidth>
-                    {gscConnecting ? 'Opening…' : 'Connect Google Search Console'}
+                    {gscConnecting ? 'Openingï¿½' : 'Connect Google Search Console'}
                   </Button>
                 </div>
               ) : gscData?.error ? (
