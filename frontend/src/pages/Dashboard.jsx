@@ -37,6 +37,7 @@ export default function Dashboard() {
   const [keywords, setKeywords] = useState([])
   const [backlinks, setBacklinks] = useState([])
   const [latestAudit, setLatestAudit] = useState(null)
+  const [multipageLatest, setMultipageLatest] = useState(null)
   const [gscData, setGscData] = useState(null)
   const [auditRunning, setAuditRunning] = useState(false)
   const [gscConnecting, setGscConnecting] = useState(false)
@@ -51,6 +52,7 @@ export default function Dashboard() {
     api.get(`/sites/${siteId}/keywords`).then(r => { if (Array.isArray(r.data)) setKeywords(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/backlinks`).then(r => { if (Array.isArray(r.data)) setBacklinks(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/audit/latest`).then(r => setLatestAudit(r.data || null)).catch(() => {})
+    api.get(`/sites/${siteId}/audit/multipage-latest`).then(r => setMultipageLatest(r.data || null)).catch(() => {})
     api.get(`/sites/${siteId}/gsc`).then(r => { if (r.data) setGscData(r.data) }).catch(() => {})
   }
 
@@ -123,8 +125,11 @@ export default function Dashboard() {
 
   const toNum = (v, fallback = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fallback }
 
+  const hasMultipageAudit = !!(multipageLatest && multipageLatest.status === 'complete' && multipageLatest.results)
+  const siteWideHealth = hasMultipageAudit ? multipageLatest.results.siteHealthPct : null
   const hasLatestAudit = !!latestAudit
-  const healthValue = hasLatestAudit ? overallScore : (metrics.health != null ? toNum(metrics.health, 0) : overallScore)
+  const homepageHealthValue = hasLatestAudit ? overallScore : (metrics.health != null ? toNum(metrics.health, 0) : overallScore)
+  const healthValue = hasMultipageAudit ? siteWideHealth : homepageHealthValue
   const gscError = String(gscData?.error || '')
   const gscErrorCode = String(gscData?.errorCode || '')
   const gscAccountEmail = String(gscData?.accountEmail || '')
@@ -355,10 +360,28 @@ export default function Dashboard() {
 
             {/* Health score */}
             <Card padding="1.25rem">
-              <SectionLabel action={<Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/audit`)}>Open Audit</Button>}>Site Health Score</SectionLabel>
+              <SectionLabel action={<Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/audit`)}>Open Audit</Button>}>{hasMultipageAudit ? `Site Health Score (${multipageLatest.results.pagesTotal} pages)` : 'Site Health Score'}</SectionLabel>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem 0' }}>
-                <HealthScore score={overallScore} size="lg" />
-                {auditChecks.length > 0 && (
+                <HealthScore score={healthValue} size="lg" />
+                {hasMultipageAudit ? (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+                    {multipageLatest.results.totalErrors > 0 && (
+                      <span style={{ fontSize: 11, color: '#DC2626', background: '#FEF2F2', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {multipageLatest.results.totalErrors} errors
+                      </span>
+                    )}
+                    {multipageLatest.results.totalWarnings > 0 && (
+                      <span style={{ fontSize: 11, color: '#D97706', background: '#FFFBEB', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {multipageLatest.results.totalWarnings} warnings
+                      </span>
+                    )}
+                    {multipageLatest.results.healthyCount > 0 && (
+                      <span style={{ fontSize: 11, color: '#16A34A', background: '#F0FDF4', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
+                        {multipageLatest.results.healthyCount} healthy pages
+                      </span>
+                    )}
+                  </div>
+                ) : auditChecks.length > 0 && (
                   <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {auditErrorCount > 0 && (
                       <span style={{ fontSize: 11, color: '#DC2626', background: '#FEF2F2', padding: '2px 8px', borderRadius: 999, fontWeight: 600 }}>
