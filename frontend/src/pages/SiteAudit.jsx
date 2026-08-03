@@ -379,7 +379,8 @@ export default function SiteAudit() {
       api.get(`/sites/${siteId}`).catch(() => null),
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
       api.get(`/sites/${siteId}/audit/multipage-history`).catch(() => null),
-    ]).then(([auditRes, siteRes, multipageRes, historyRes]) => {
+      api.get(`/sites/${siteId}/audit/multipage-running`).catch(() => null),
+    ]).then(([auditRes, siteRes, multipageRes, historyRes, runningRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
@@ -391,6 +392,11 @@ export default function SiteAudit() {
         setMultipageStatus('complete')
       }
       if (historyRes?.data?.history) setIssueHistory(historyRes.data.history)
+      if (runningRes?.data?.auditRunId) {
+        setMultipageStatus('running')
+        setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
+        pollMultipageProgress(runningRes.data.auditRunId)
+      }
     }).finally(() => setLoading(false))
   }, [siteId])
 
@@ -495,36 +501,36 @@ export default function SiteAudit() {
     setRunning(false)
   }
 
+  async function pollMultipageProgress(auditRunId) {
+    try {
+      const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
+      setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
+      setMultipageLatestPages(p.data.latestPages || [])
+      setMultipageBuckets(p.data.statusBuckets || null)
+      if (p.data.status === 'complete') {
+        setMultipageStatus('complete')
+        setMultipageResults(p.data.results)
+        showSnackbar('Full site audit completed!', 'success')
+        api.get(`/sites/${siteId}/audit/multipage-history`).then(h => { if (h?.data?.history) setIssueHistory(h.data.history) }).catch(() => {})
+      } else if (p.data.status === 'failed') {
+        setMultipageStatus('failed')
+        showSnackbar('Full site audit failed', 'error')
+      } else {
+        setTimeout(() => pollMultipageProgress(auditRunId), 2000)
+      }
+    } catch (e) {
+      setMultipageStatus('failed')
+      showSnackbar('Lost connection while checking audit progress', 'error')
+    }
+  }
+
   async function runMultipageAudit() {
     setMultipageStatus('running')
     setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
     setMultipageResults(null)
     try {
       const start = await api.post(`/sites/${siteId}/audit/run-multipage`)
-      const auditRunId = start.data.auditRunId
-      const poll = async () => {
-        try {
-          const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
-          setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
-          setMultipageLatestPages(p.data.latestPages || [])
-          setMultipageBuckets(p.data.statusBuckets || null)
-          if (p.data.status === 'complete') {
-            setMultipageStatus('complete')
-            setMultipageResults(p.data.results)
-            showSnackbar('Full site audit completed!', 'success')
-            api.get(`/sites/${siteId}/audit/multipage-history`).then(h => { if (h?.data?.history) setIssueHistory(h.data.history) }).catch(() => {})
-          } else if (p.data.status === 'failed') {
-            setMultipageStatus('failed')
-            showSnackbar('Full site audit failed', 'error')
-          } else {
-            setTimeout(poll, 2000)
-          }
-        } catch (e) {
-          setMultipageStatus('failed')
-          showSnackbar('Lost connection while checking audit progress', 'error')
-        }
-      }
-      poll()
+      pollMultipageProgress(start.data.auditRunId)
     } catch (e) {
       setMultipageStatus('failed')
       showSnackbar('Failed to start full site audit', 'error')

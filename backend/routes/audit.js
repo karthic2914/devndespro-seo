@@ -465,7 +465,7 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
 router.get('/:siteId/audit/latest', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query(
-    'SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited FROM audit_results ar LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id WHERE ar.site_id=$1 AND (ar.results->>\'multipage\') IS NULL ORDER BY ar.created_at DESC LIMIT 2',
+    "SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited FROM audit_results ar LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id WHERE ar.site_id=$1 AND (ar.results->>'multipage') IS NULL AND ar.status = 'complete' ORDER BY ar.created_at DESC LIMIT 2",
     [req.siteId]
   )
   if (!rows[0]) return res.json(null)
@@ -975,6 +975,14 @@ router.get('/:siteId/audit/multipage-history', auth, verifySite, async (req, res
     issueSummary: r.results?.issueSummary || [],
   })).reverse()
   res.json({ history })
+})
+
+router.get('/:siteId/audit/multipage-running', auth, verifySite, async (req, res) => {
+  const { rows } = await pool.query(
+    "SELECT id FROM audit_results WHERE site_id=$1 AND status='running' ORDER BY created_at DESC LIMIT 1",
+    [req.siteId]
+  )
+  res.json({ auditRunId: rows.length ? rows[0].id : null })
 })
 
 module.exports = router
