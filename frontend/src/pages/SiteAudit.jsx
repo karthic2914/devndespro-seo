@@ -954,7 +954,7 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} onCategoryClick={scrollToCategory} compact={multipageStatus === 'complete' && !!multipageResults} />
+      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} onCategoryClick={scrollToCategory} compact={multipageStatus === 'running' || (multipageStatus === 'complete' && !!multipageResults)} />
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
