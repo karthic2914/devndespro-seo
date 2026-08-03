@@ -848,6 +848,26 @@ export default function SiteAudit() {
             </div>
           </div>
 
+          {multipageResults.categoryScores && Object.keys(multipageResults.categoryScores).length > 0 && (
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 16, paddingTop: 16, borderTop: '1px solid #F3F4F6' }}>
+              {Object.entries(multipageResults.categoryScores).map(([cat, score]) => {
+                const color = score >= 80 ? '#16A34A' : score >= 55 ? '#D97706' : '#DC2626'
+                const bg = score >= 80 ? '#F0FDF4' : score >= 55 ? '#FFFBEB' : '#FEF2F2'
+                return (
+                  <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 100 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color }}>{'\u25CF'}</span>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }}>{cat} (site-wide)</div>
+                      <div style={{ fontSize: 18, fontWeight: 700, color }}>{score}</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
           {multipageResults.duplicateTitles?.length > 0 && (
             <div style={{ marginTop: 16 }}>
               <button

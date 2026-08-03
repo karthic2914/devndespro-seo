@@ -862,6 +862,19 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
     }
     const issueSummary = Object.values(issueSummaryMap).sort((a, b) => b.count - a.count)
 
+    const categoryChecksMap = {}
+    pages.forEach(p => {
+      ;(p.checks || []).forEach(c => {
+        if (!categoryChecksMap[c.category]) categoryChecksMap[c.category] = []
+        categoryChecksMap[c.category].push(c.status)
+      })
+    })
+    const categoryScores = {}
+    Object.entries(categoryChecksMap).forEach(([cat, statuses]) => {
+      const total = statuses.reduce((s, st) => s + (st === 'pass' ? 100 : st === 'warning' ? 55 : 15), 0)
+      categoryScores[cat] = Math.round(total / statuses.length)
+    })
+
     const results = {
       multipage: true,
       pagesTotal: pages.length,
@@ -871,6 +884,7 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       brokenCount,
       totalErrors,
       totalWarnings,
+      categoryScores,
       issueSummary,
       duplicateTitles,
       duplicateMetaDescriptions,
