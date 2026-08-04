@@ -393,30 +393,30 @@ export default function Landing() {
         </section>
 
         {/* Problem statement */}
-<section id="platform" style={{ padding: '44px 0 72px' }}>
+<section id="platform" style={{ padding: '48px 0 76px' }}>
   <div style={styles.container}>
     <div
-      className="landing-search-shift"
+      className="landing-platform-section"
       style={{
         position: 'relative',
         overflow: 'hidden',
-        borderRadius: 24,
-        padding: '64px 52px',
+        borderRadius: 28,
+        padding: '68px 56px',
         background:
-          'linear-gradient(135deg, #292296 0%, #4338CA 52%, #5B50E6 100%)',
-        boxShadow: '0 30px 80px rgba(67,56,202,0.22)',
+          'linear-gradient(145deg, #171923 0%, #252941 58%, #3028A8 100%)',
+        boxShadow: '0 30px 80px rgba(23,25,35,0.20)',
       }}
     >
       <div
         style={{
           position: 'absolute',
-          width: 460,
-          height: 460,
-          top: -270,
-          right: -120,
+          width: 520,
+          height: 520,
+          top: -330,
+          right: -150,
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 68%)',
+            'radial-gradient(circle, rgba(115,103,255,0.34) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -424,181 +424,116 @@ export default function Landing() {
       <div
         style={{
           position: 'absolute',
-          width: 360,
-          height: 360,
-          bottom: -220,
-          left: -130,
+          width: 420,
+          height: 420,
+          bottom: -260,
+          left: -160,
           borderRadius: '50%',
           background:
-            'radial-gradient(circle, rgba(255,163,120,0.18) 0%, transparent 68%)',
+            'radial-gradient(circle, rgba(234,106,59,0.18) 0%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
 
       <div
-        className="landing-search-shift-grid"
+        style={{
+          position: 'relative',
+          maxWidth: 760,
+          margin: '0 auto 42px',
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            margin: '0 0 14px',
+            fontFamily: monoFont,
+            color: '#AFA9FF',
+            fontSize: 11,
+            fontWeight: 700,
+            letterSpacing: '0.14em',
+          }}
+        >
+          ONE PLATFORM. THREE SIGNALS.
+        </p>
+
+        <h2
+          style={{
+            margin: '0 0 18px',
+            color: '#fff',
+            fontSize: 'clamp(36px, 4.4vw, 54px)',
+            lineHeight: 1.08,
+            letterSpacing: '-0.04em',
+          }}
+        >
+          Understand exactly how your business is discovered.
+        </h2>
+
+        <p
+          style={{
+            maxWidth: 650,
+            margin: '0 auto',
+            color: '#C9CBD8',
+            fontSize: 16,
+            lineHeight: 1.75,
+          }}
+        >
+          Combine technical SEO, AI visibility and Nordic search intelligence
+          in one clear view.
+        </p>
+      </div>
+
+      <div
+        className="landing-platform-cards"
         style={{
           position: 'relative',
           display: 'grid',
-          gridTemplateColumns: '0.95fr 1.05fr',
-          gap: 46,
-          alignItems: 'center',
+          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+          gap: 16,
         }}
       >
-        <div>
-          <p
-            style={{
-              margin: '0 0 16px',
-              fontFamily: monoFont,
-              color: '#C9C6FF',
-              fontSize: 11,
-              fontWeight: 650,
-              letterSpacing: '0.12em',
-            }}
-          >
-            SEARCH HAS CHANGED
+        <div className="landing-platform-card">
+          <div className="landing-platform-icon">
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+          </div>
+
+          <p className="landing-platform-label">TECHNICAL SEO</p>
+          <h3>Fix what blocks growth</h3>
+          <p>
+            Find crawl errors, broken links, weak metadata and performance
+            issues that limit search visibility.
           </p>
 
-          <h2
-            style={{
-              margin: '0 0 18px',
-              color: '#fff',
-              fontSize: 'clamp(34px, 4vw, 50px)',
-              lineHeight: 1.08,
-              letterSpacing: '-0.04em',
-            }}
-          >
-            Visibility now goes beyond traditional search.
-          </h2>
-
-          <p
-            style={{
-              maxWidth: 560,
-              margin: 0,
-              color: '#DDD9FF',
-              fontSize: 16,
-              lineHeight: 1.72,
-            }}
-          >
-            Customers ask Google, ChatGPT and Claude for recommendations.
-            Your website needs to be technically strong, clearly understood
-            and trusted across all of them.
-          </p>
+          <span>Site health and crawl signals</span>
         </div>
 
-        <div
-          className="landing-search-cards"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            gap: 14,
-          }}
-        >
-          <div
-            style={{
-              gridColumn: '1 / -1',
-              padding: 22,
-              borderRadius: 16,
-              background: 'rgba(255,255,255,0.13)',
-              border: '1px solid rgba(255,255,255,0.18)',
-              backdropFilter: 'blur(14px)',
-            }}
-          >
-            <p
-              style={{
-                margin: '0 0 8px',
-                color: '#C9C6FF',
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.08em',
-              }}
-            >
-              ONE PLATFORM
-            </p>
-
-            <p
-              style={{
-                margin: 0,
-                color: '#fff',
-                fontSize: 18,
-                fontWeight: 650,
-                lineHeight: 1.45,
-              }}
-            >
-              Technical SEO, AI citations and Nordic search intelligence
-              working together.
-            </p>
+        <div className="landing-platform-card landing-platform-card-featured">
+          <div className="landing-platform-icon">
+            <FontAwesomeIcon icon={faComments} />
           </div>
 
-          <div
-            style={{
-              padding: 20,
-              borderRadius: 16,
-              background: 'rgba(255,255,255,0.09)',
-              border: '1px solid rgba(255,255,255,0.15)',
-            }}
-          >
-            <p
-              style={{
-                margin: '0 0 12px',
-                color: '#C9C6FF',
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            >
-              SEARCH ENGINES
-            </p>
+          <p className="landing-platform-label">AI VISIBILITY</p>
+          <h3>See where AI cites you</h3>
+          <p>
+            Check whether ChatGPT and Claude mention, understand or recommend
+            your business.
+          </p>
 
-            <strong
-              style={{
-                display: 'block',
-                color: '#fff',
-                fontSize: 28,
-                marginBottom: 5,
-              }}
-            >
-              Google
-            </strong>
+          <span>Mentions, citations and trust</span>
+        </div>
 
-            <span style={{ color: '#DDD9FF', fontSize: 12 }}>
-              Rankings, crawlability and local discovery
-            </span>
+        <div className="landing-platform-card">
+          <div className="landing-platform-icon">
+            <FontAwesomeIcon icon={faLocationDot} />
           </div>
 
-          <div
-            style={{
-              padding: 20,
-              borderRadius: 16,
-              background: 'rgba(255,255,255,0.09)',
-              border: '1px solid rgba(255,255,255,0.15)',
-            }}
-          >
-            <p
-              style={{
-                margin: '0 0 12px',
-                color: '#C9C6FF',
-                fontSize: 10,
-                fontWeight: 700,
-              }}
-            >
-              AI ANSWERS
-            </p>
+          <p className="landing-platform-label">NORDIC SEARCH</p>
+          <h3>Win your local market</h3>
+          <p>
+            Analyse Norwegian keywords, local intent and search patterns built
+            for Nordic businesses.
+          </p>
 
-            <strong
-              style={{
-                display: 'block',
-                color: '#fff',
-                fontSize: 28,
-                marginBottom: 5,
-              }}
-            >
-              ChatGPT + Claude
-            </strong>
-
-            <span style={{ color: '#DDD9FF', fontSize: 12 }}>
-              Mentions, citations and recommendation signals
-            </span>
-          </div>
+          <span>Keywords and regional signals</span>
         </div>
       </div>
     </div>
@@ -1281,6 +1216,7 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
 
 
