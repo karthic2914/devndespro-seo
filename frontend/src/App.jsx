@@ -1,9 +1,10 @@
-﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
+import Landing from './pages/Landing'
 import Sites from './pages/Sites'
 import Dashboard from './pages/Dashboard'
 import Keywords from './pages/Keywords'
@@ -112,6 +113,17 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function HomeRoute() {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#666', fontFamily: 'Syne,sans-serif' }}>
+      Loading...
+    </div>
+  )
+  if (!user) return <Landing />
+  return <Sites />
+}
+
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
 
@@ -131,7 +143,7 @@ export default function App() {
           <Route path="/public/ai-visibility/:token" element={<PublicAIVisibility />} />
         <Route path="/login" element={<Login />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
-          <Route path="/" element={<ProtectedRoute><Sites /></ProtectedRoute>} />
+          <Route path="/" element={<HomeRoute />} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
