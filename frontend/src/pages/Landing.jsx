@@ -561,11 +561,10 @@ export default function Landing() {
                 <div
                   key={step.number}
                   style={{
-                    background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF8 100%)',
-                    border: '1px solid #E1DED8',
-                    borderRadius: 18,
+                    background: '#F8F7F4',
+                    border: '1px solid #E6E1D7',
+                    borderRadius: 16,
                     padding: 28,
-                    boxShadow: '0 18px 38px rgba(23, 25, 35, 0.05)',
                     minHeight: 230,
                     display: 'flex',
                     flexDirection: 'column',
@@ -574,18 +573,10 @@ export default function Landing() {
                 >
                   <span
                     style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 40,
-                      height: 28,
-                      borderRadius: 999,
+                      display: 'block',
                       fontFamily: monoFont,
-                      fontSize: 11,
-                      fontWeight: 700,
+                      fontSize: 12,
                       color: '#D75F32',
-                      background: '#FFF3EC',
-                      border: '1px solid #F5D6C7',
                       marginBottom: 28,
                     }}
                   >
