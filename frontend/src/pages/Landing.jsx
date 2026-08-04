@@ -249,7 +249,7 @@ export default function Landing() {
               className="landing-hero-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 0.9fr) minmax(520px, 1.1fr)',
+                gridTemplateColumns: 'minmax(620px, 1.05fr) minmax(560px, 0.95fr)',
                 gap: 58,
                 alignItems: 'center',
               }}
@@ -290,7 +290,7 @@ export default function Landing() {
                     maxWidth: 670,
                     margin: '0 0 24px',
                     color: '#171923',
-                    fontSize: 'clamp(46px, 5.2vw, 72px)',
+                    fontSize: 'clamp(44px, 4.7vw, 66px)',
                     fontWeight: 740,
                     lineHeight: 0.99,
                     letterSpacing: '-0.052em',
@@ -303,8 +303,7 @@ export default function Landing() {
                       color: '#5246D9',
                     }}
                   >
-                    Be recommended<br />
-                    by AI.
+                    Be recommended by<br />AI.
                   </span>
                 </h1>
 
@@ -1137,6 +1136,7 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
 
 
