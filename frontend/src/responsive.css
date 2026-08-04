@@ -769,7 +769,13 @@ body {
   margin: 0;
 }
 
-.premium-landing-page,
+.premium-landing-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  padding-top: 72px;
+}
+
 .premium-landing-page main,
 .premium-landing-page section {
   width: 100%;
@@ -888,6 +894,10 @@ body {
 
 /* Mobile */
 @media (max-width: 639px) {
+  .premium-landing-page {
+    padding-top: 62px !important;
+  }
+
   .landing-sticky-header {
     background: rgba(251, 250, 248, 0.96) !important;
   }
@@ -1137,8 +1147,10 @@ html::-webkit-scrollbar-thumb:hover {
    ============================================ */
 
 .landing-site-header {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 3000;
   width: 100%;
   background: rgba(251, 250, 248, 0.86);
