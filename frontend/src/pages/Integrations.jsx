@@ -130,14 +130,41 @@ export default function Integrations() {
     try {
       const r = await api.get('/auth/gsc')
       const popup = window.open(r.data.url, 'gsc_connect', 'width=560,height=700')
+
+      let settled = false
+      const finish = async () => {
+        if (settled) return
+        settled = true
+        popup?.close()
+        await load()
+      }
+
       const onMessage = (e) => {
         if (e.data === 'gsc_connected') {
-          popup?.close()
           window.removeEventListener('message', onMessage)
-          load()
+          finish()
         }
       }
+
       window.addEventListener('message', onMessage)
+
+      const interval = window.setInterval(async () => {
+        try {
+          const status = await api.get('/auth/gsc/status')
+          if (status?.data?.connected) {
+            window.clearInterval(interval)
+            window.removeEventListener('message', onMessage)
+            await finish()
+          }
+        } catch {
+          // Ignore transient polling failures while the popup is still open
+        }
+      }, 1000)
+
+      window.setTimeout(() => {
+        window.clearInterval(interval)
+        window.removeEventListener('message', onMessage)
+      }, 20000)
     } catch {
       toast.error('Failed to start GSC connection')
     }

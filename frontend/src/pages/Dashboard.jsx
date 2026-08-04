@@ -76,14 +76,42 @@ export default function Dashboard() {
     setGscConnecting(true)
     try {
       const r = await api.get('/auth/gsc')
-      window.open(r.data.url, '_blank', 'width=520,height=620,left=200,top=100')
+      const popup = window.open(r.data.url, '_blank', 'width=520,height=620,left=200,top=100')
+
+      let settled = false
+      const finish = () => {
+        if (settled) return
+        settled = true
+        popup?.close()
+        api.get(`/sites/${siteId}/gsc`).then(r2 => { if (r2.data) setGscData(r2.data) }).catch(() => {})
+      }
+
       const handler = (e) => {
         if (e.data === 'gsc_connected') {
           window.removeEventListener('message', handler)
-          api.get(`/sites/${siteId}/gsc`).then(r2 => { if (r2.data) setGscData(r2.data) }).catch(() => {})
+          finish()
         }
       }
+
       window.addEventListener('message', handler)
+
+      const interval = window.setInterval(async () => {
+        try {
+          const status = await api.get('/auth/gsc/status')
+          if (status?.data?.connected) {
+            window.clearInterval(interval)
+            window.removeEventListener('message', handler)
+            finish()
+          }
+        } catch {
+          // Ignore transient polling failures while the popup is still open
+        }
+      }, 1000)
+
+      window.setTimeout(() => {
+        window.clearInterval(interval)
+        window.removeEventListener('message', handler)
+      }, 20000)
     } catch {}
     setGscConnecting(false)
   }
