@@ -303,7 +303,8 @@ export default function Landing() {
                       color: '#5246D9',
                     }}
                   >
-                    Be recommended by AI.
+                    Be recommended<br />
+                    by AI.
                   </span>
                 </h1>
 
@@ -1136,4 +1137,6 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
+
 
