@@ -773,6 +773,7 @@ body {
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
+  padding-top: 72px;
 }
 
 .premium-landing-page main,
@@ -894,7 +895,7 @@ body {
 /* Mobile */
 @media (max-width: 639px) {
   .premium-landing-page {
-    padding-top: 0 !important;
+    padding-top: 62px !important;
   }
 
   .landing-sticky-header {
@@ -1146,7 +1147,7 @@ html::-webkit-scrollbar-thumb:hover {
    ============================================ */
 
 .landing-site-header {
-  position: sticky !important;
+  position: fixed !important;
   top: 0;
   left: 0;
   right: 0;
