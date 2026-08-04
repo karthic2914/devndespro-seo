@@ -322,6 +322,8 @@ export default function SiteAudit() {
   const { siteId }   = useParams()
   const navigate     = useNavigate()
   const { user }     = useAuth()
+  const allowedAuditEmails = new Set(['hello@devndespro.com', 'karthic2914@gmail.com'])
+  const canRunFullAudit = Boolean(user?.is_paid || allowedAuditEmails.has(user?.email))
 
   const [showEmailModal,    setShowEmailModal]    = useState(false)
   const [auditData,         setAuditData]         = useState(null)
@@ -526,6 +528,11 @@ export default function SiteAudit() {
   }
 
   async function runMultipageAudit() {
+    if (!canRunFullAudit) {
+      showSnackbar('Full Site Audit is available only for approved admin accounts', 'error')
+      return
+    }
+
     setMultipageStatus('running')
     setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
     setMultipageResults(null)
@@ -696,10 +703,17 @@ export default function SiteAudit() {
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Homepage only - a few seconds</div>
                   </button>
                   <button
-                    onClick={() => { setShowAuditMenu(false); runMultipageAudit() }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                    onClick={() => { if (!canRunFullAudit) return; setShowAuditMenu(false); runMultipageAudit() }}
+                    disabled={!canRunFullAudit}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none',
+                      background: canRunFullAudit ? '#fff' : '#F9FAFB',
+                      cursor: canRunFullAudit ? 'pointer' : 'not-allowed',
+                      opacity: canRunFullAudit ? 1 : 0.55,
+                      fontFamily: 'inherit',
+                    }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: canRunFullAudit ? '#111827' : '#9CA3AF' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - a few minutes</div>
                   </button>
                 </div>
