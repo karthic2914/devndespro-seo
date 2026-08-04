@@ -752,3 +752,169 @@ body,
   }
 }
 
+/* ============================================
+   LANDING HEADER AND OVERFLOW FIX
+   ============================================ */
+
+/* Prevent the thin horizontal scrollbar */
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip !important;
+}
+
+body {
+  margin: 0;
+}
+
+.premium-landing-page,
+.premium-landing-page main,
+.premium-landing-page section {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+/* Sticky premium header */
+.landing-sticky-header {
+  position: sticky !important;
+  top: 0;
+  z-index: 1000 !important;
+  width: 100%;
+  background: rgba(251, 250, 248, 0.88) !important;
+  border-bottom: 1px solid rgba(220, 217, 211, 0.75);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 1px 0 rgba(23, 25, 35, 0.03);
+}
+
+.landing-header-inner {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* Stop the hero preview from creating page overflow */
+.landing-hero-grid {
+  min-width: 0;
+}
+
+.landing-hero-grid > * {
+  min-width: 0;
+}
+
+.landing-hero-grid > div:last-child {
+  max-width: 100%;
+}
+
+/* Keep the floating metric inside the viewport */
+.landing-hero-grid > div:last-child > div:last-child {
+  max-width: calc(100vw - 32px);
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .landing-header-inner {
+    min-height: 72px !important;
+  }
+
+  .landing-nav-links {
+    display: flex !important;
+  }
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .landing-header-inner {
+    min-height: 68px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .landing-nav-links {
+    gap: 18px !important;
+  }
+
+  .landing-hero-grid > div:last-child {
+    transform: none !important;
+    width: 100%;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .landing-sticky-header {
+    background: rgba(251, 250, 248, 0.96) !important;
+  }
+
+  .landing-header-inner {
+    min-height: 62px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    gap: 10px !important;
+  }
+
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .landing-header-actions {
+    margin-left: auto;
+    gap: 5px !important;
+  }
+
+  .landing-header-actions button:first-child {
+    display: none !important;
+  }
+
+  .landing-header-actions button:last-child {
+    height: 38px !important;
+    padding: 0 13px !important;
+    border-radius: 8px !important;
+    font-size: 12px !important;
+    white-space: nowrap;
+  }
+
+  .landing-header-inner > div:first-child,
+  .landing-header-inner > a:first-child {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  .landing-hero-grid {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .landing-hero-grid > div:last-child {
+    width: 100%;
+    max-width: 100%;
+    transform: none !important;
+  }
+
+  .landing-hero-grid > div:last-child > div:last-child {
+    right: 6px !important;
+    width: 155px !important;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 390px) {
+  .landing-header-actions button:last-child {
+    padding: 0 10px !important;
+    font-size: 11px !important;
+  }
+
+  .landing-header-inner {
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+}
+

@@ -161,8 +161,7 @@ export default function Landing() {
       />
 
       {/* Navigation */}
-      <header
-        style={{
+      <header className="landing-sticky-header"`r`n        style={{
           position: 'relative',
           zIndex: 10,
           borderBottom: '1px solid rgba(220,217,211,0.75)',
@@ -170,10 +169,7 @@ export default function Landing() {
           backdropFilter: 'blur(16px)',
         }}
       >
-        <div
-          style={{
-            ...styles.container,
-            minHeight: 74,
+        <div`r`n          className="landing-header-inner"`r`n          style={{`r`n            ...styles.container,`r`n            minHeight: 74,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -202,7 +198,7 @@ export default function Landing() {
             </a>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div className="landing-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <button
               onClick={goToLogin}
               style={{
@@ -1184,6 +1180,7 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
 
 
