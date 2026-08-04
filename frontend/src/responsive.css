@@ -773,7 +773,6 @@ body {
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
-  padding-top: 72px;
 }
 
 .premium-landing-page main,
@@ -895,7 +894,7 @@ body {
 /* Mobile */
 @media (max-width: 639px) {
   .premium-landing-page {
-    padding-top: 62px !important;
+    padding-top: 0 !important;
   }
 
   .landing-sticky-header {
@@ -1147,7 +1146,7 @@ html::-webkit-scrollbar-thumb:hover {
    ============================================ */
 
 .landing-site-header {
-  position: fixed;
+  position: sticky !important;
   top: 0;
   left: 0;
   right: 0;
@@ -1274,6 +1273,7 @@ html::-webkit-scrollbar-thumb:hover {
 
 .landing-mobile-menu {
   display: none;
+  position: static !important;
 }
 
 #platform,
@@ -1315,10 +1315,11 @@ html::-webkit-scrollbar-thumb:hover {
 
   .landing-mobile-menu {
     display: block;
+    position: static !important;
     padding: 12px;
     border-top: 1px solid rgba(220, 217, 211, 0.75);
     background: rgba(251, 250, 248, 0.98);
-    box-shadow: 0 18px 40px rgba(23, 25, 35, 0.09);
+    box-shadow: none;
   }
 
   .landing-mobile-menu nav {
