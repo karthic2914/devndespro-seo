@@ -296,139 +296,22 @@ export default function Landing() {
                     letterSpacing: '-0.052em',
                   }}
                 >
-                  Be discovered by Google.
-                  <span
-                    style={{
-                      display: 'block',
-                      color: '#5246D9',
-                    }}
-                  >
-                    Be recommended by AI.
-                  </span>
+                  Rank higher.<br />
+Get recommended by AI.
                 </h1>
 
                 <p
-                  style={{
-                    maxWidth: 590,
-                    margin: '0 0 32px',
-                    color: '#5B5E68',
-                    fontSize: 18,
-                    lineHeight: 1.68,
-                  }}
-                >
-                  Understand how visible your business is across search engines
-                  and AI platformsâ€”and get a clear plan to improve it.
-                </p>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                    marginBottom: 28,
-                  }}
-                >
-                  <button onClick={goToLogin} style={styles.primaryButton}>
-                    Analyse your website
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-
-                  <button onClick={goToLogin} style={styles.secondaryButton}>
-                    See live demo
-                  </button>
-                </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 20,
-                    color: '#70737D',
-                    fontSize: 12,
-                  }}
-                >
-                  <TrustItem text="No credit card required" />
-                  <TrustItem text="Instant insights" />
-                  <TrustItem text="Nordic focused" />
-                </div>
-              </div>
-
-              <DashboardPreview />
-            </div>
-          </div>
-        </section>
-
-        {/* Trust strip */}
-        <section
-          style={{
-            padding: '10px 0 38px',
-          }}
-        >
-          <div style={styles.container}>
-            <div
-              style={{
-                borderTop: '1px solid #E5E2DC',
-                borderBottom: '1px solid #E5E2DC',
-                padding: '24px 0',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 38,
-                color: '#7A7D86',
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-              }}
-            >
-              <span>TECHNICAL SEO</span>
-              <span>AI CITATION TRACKING</span>
-              <span>NORDIC KEYWORDS</span>
-              <span>LOCAL SEARCH</span>
-              <span>ACTIONABLE REPORTING</span>
-            </div>
-          </div>
-        </section>
-
-        {/* Problem statement */}
-        <section id="platform" style={{ padding: '42px 0 68px' }}>
-          <div style={styles.container}>
-            <div
-              style={{
-                background: '#3028A8',
-                borderRadius: 24,
-                padding: '70px 50px',
-                position: 'relative',
-                overflow: 'hidden',
-                textAlign: 'center',
-              }}
-            >
-              <div
-                style={{
-                  position: 'absolute',
-                  width: 420,
-                  height: 420,
-                  borderRadius: '50%',
-                  top: -270,
-                  right: -80,
-                  background:
-                    'radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)',
-                }}
-              />
-
-              <p
-                style={{
-                  fontFamily: monoFont,
-                  color: '#C9C6FF',
-                  fontSize: 11,
-                  letterSpacing: '0.12em',
-                  margin: '0 0 20px',
-                }}
-              >
-                SEARCH HAS CHANGED
-              </p>
+  style={{
+    maxWidth: 590,
+    margin: '0 0 32px',
+    color: '#5B5E68',
+    fontSize: 18,
+    lineHeight: 1.68,
+  }}
+>
+  See exactly how Google, ChatGPT and Claude understand your business —
+  and what to improve next.
+</p>
 
               <h2
                 style={{
@@ -458,7 +341,8 @@ export default function Landing() {
               </p>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
         {/* Features */}
         <section id="features" style={{ padding: '64px 0 76px' }}>
@@ -841,7 +725,7 @@ function DashboardPreview() {
                     margin: '0 0 13px',
                   }}
                 >
-                  â€œBest CRM platform for shipping companies in Norwayâ€
+                  "Best CRM platform for shipping companies in Norwayâ€
                 </p>
 
                 <span
@@ -1136,4 +1020,5 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
