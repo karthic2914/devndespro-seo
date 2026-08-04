@@ -18,6 +18,7 @@ import {
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
 import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../components/seo/SeoComponents'
 import { BarChart } from '../components/charts/Charts'
+import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 
 const AUDIT_CATEGORIES = [
@@ -31,6 +32,7 @@ const AUDIT_CATEGORIES = [
 export default function Dashboard() {
   const { siteId } = useParams()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [site, setSite] = useState(null)
   const [actions, setActions] = useState([])
   const [metrics, setMetrics] = useState({ dr: 0, clicks: 0, impressions: 0, health: 0 })
@@ -189,6 +191,9 @@ export default function Dashboard() {
 
   const hasTrafficData = weeklyTraffic.length > 0
   const isClientSiteError = gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
+  const isSiteOwner = Number(site?.user_id) === Number(user?.id)
+  const allowedAuditEmails = new Set(['hello@devndespro.com', 'karthic2914@gmail.com'])
+  const canRunFullAudit = Boolean((user?.is_paid || allowedAuditEmails.has(user?.email)) && isSiteOwner)
 
   return (
     <div style={{ flex: 1 }}>
@@ -229,10 +234,17 @@ export default function Dashboard() {
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Homepage only - a few seconds</div>
                   </button>
                   <button
-                    onClick={() => { setShowAuditMenu(false); runFullSiteAudit() }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
+                    onClick={() => { if (!canRunFullAudit) return; setShowAuditMenu(false); runFullSiteAudit() }}
+                    disabled={!canRunFullAudit}
+                    style={{
+                      display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none',
+                      background: canRunFullAudit ? '#fff' : '#F9FAFB',
+                      cursor: canRunFullAudit ? 'pointer' : 'not-allowed',
+                      opacity: canRunFullAudit ? 1 : 0.55,
+                      fontFamily: 'inherit',
+                    }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: canRunFullAudit ? '#111827' : '#9CA3AF' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - opens Site Audit to watch progress</div>
                   </button>
                 </div>
