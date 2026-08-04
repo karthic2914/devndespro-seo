@@ -9,7 +9,7 @@ import {
   faLocationDot,
   faMagnifyingGlass,
   faShieldHalved,
-  faSparkles,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../components/UI'
 
@@ -268,7 +268,7 @@ export default function Landing() {
                   }}
                 >
                   <FontAwesomeIcon
-                    icon={faSparkles}
+                    icon={faStar}
                     style={{ color: '#D95527', fontSize: 12 }}
                   />
 
