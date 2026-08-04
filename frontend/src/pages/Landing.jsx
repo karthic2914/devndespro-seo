@@ -130,7 +130,7 @@ export default function Landing() {
   const goToLogin = () => navigate('/login')
 
   return (
-    <div style={styles.page}>
+    <div className="premium-landing-page" style={styles.page}>
       {/* Background decoration */}
       <div
         style={{
@@ -235,7 +235,7 @@ export default function Landing() {
                 fontFamily: 'inherit',
               }}
             >
-              Request access
+              Start free audit
             </button>
           </div>
         </div>
@@ -243,14 +243,14 @@ export default function Landing() {
 
       <main style={{ position: 'relative', zIndex: 1 }}>
         {/* Hero */}
-        <section style={{ padding: '92px 0 68px' }}>
+        <section style={{ padding: '70px 0 46px' }}>
           <div style={styles.container}>
             <div
               className="landing-hero-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1fr) minmax(480px, 0.9fr)',
-                gap: 70,
+                gridTemplateColumns: 'minmax(0, 0.9fr) minmax(520px, 1.1fr)',
+                gap: 58,
                 alignItems: 'center',
               }}
             >
@@ -335,7 +335,7 @@ export default function Landing() {
                   </button>
 
                   <button onClick={goToLogin} style={styles.secondaryButton}>
-                    View sample report
+                    See live demo
                   </button>
                 </div>
 
@@ -350,8 +350,8 @@ export default function Landing() {
                   }}
                 >
                   <TrustItem text="No credit card required" />
-                  <TrustItem text="Private reports" />
-                  <TrustItem text="Built in Norway" />
+                  <TrustItem text="Instant insights" />
+                  <TrustItem text="Nordic focused" />
                 </div>
               </div>
 
@@ -363,7 +363,7 @@ export default function Landing() {
         {/* Trust strip */}
         <section
           style={{
-            padding: '18px 0 64px',
+            padding: '10px 0 38px',
           }}
         >
           <div style={styles.container}>
@@ -393,7 +393,7 @@ export default function Landing() {
         </section>
 
         {/* Problem statement */}
-        <section id="platform" style={{ padding: '54px 0 90px' }}>
+        <section id="platform" style={{ padding: '42px 0 68px' }}>
           <div style={styles.container}>
             <div
               style={{
@@ -461,7 +461,7 @@ export default function Landing() {
         </section>
 
         {/* Features */}
-        <section id="features" style={{ padding: '80px 0 100px' }}>
+        <section id="features" style={{ padding: '64px 0 76px' }}>
           <div style={styles.container}>
             <SectionHeader
               eyebrow="ONE PLATFORM"
@@ -489,7 +489,7 @@ export default function Landing() {
         <section
           id="how-it-works"
           style={{
-            padding: '100px 0',
+            padding: '72px 0',
             background: '#F2F1ED',
           }}
         >
@@ -558,7 +558,7 @@ export default function Landing() {
         </section>
 
         {/* Final CTA */}
-        <section style={{ padding: '100px 0' }}>
+        <section style={{ padding: '72px 0' }}>
           <div style={styles.container}>
             <div
               style={{
@@ -618,7 +618,7 @@ export default function Landing() {
                   fontSize: 12,
                 }}
               >
-                Currently available through private access
+                Private beta - Limited early access
               </p>
             </div>
           </div>
@@ -1136,3 +1136,4 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
