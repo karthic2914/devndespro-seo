@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -13,6 +13,7 @@ import {
   faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../components/UI'
+import LandingHeader from '../components/LandingHeader'
 
 const FEATURES = [
   {
@@ -191,88 +192,10 @@ export default function Landing() {
           pointerEvents: 'none',
         }}
       />
-
-      {/* Navigation */}
-      <header className="landing-sticky-header"
-        style={{
-          position: 'relative',
-          zIndex: 10,
-          borderBottom: '1px solid rgba(220,217,211,0.75)',
-          background: 'rgba(251,250,248,0.82)',
-          backdropFilter: 'blur(16px)',
-        }}
-      >
-        <div
-          className="landing-header-inner"
-          style={{
-            ...styles.container,
-            minHeight: 74,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <Logo size="md" variant="transparent" />
-
-          <div
-            className="landing-nav-links"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 30,
-            }}
-          >
-            <a href="#features" className={`landing-nav-link ${activeSection === 'features' ? 'is-active' : ''}`} aria-current={activeSection === 'features' ? 'page' : undefined} style={navLinkStyle}>
-              Features
-            </a>
-
-            <a href="#how-it-works" className={`landing-nav-link ${activeSection === 'how-it-works' ? 'is-active' : ''}`} aria-current={activeSection === 'how-it-works' ? 'page' : undefined} style={navLinkStyle}>
-              How it works
-            </a>
-
-            <a href="#platform" className={`landing-nav-link ${activeSection === 'platform' ? 'is-active' : ''}`} aria-current={activeSection === 'platform' ? 'page' : undefined} style={navLinkStyle}>
-              Platform
-            </a>
-          </div>
-
-          <div className="landing-header-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button
-              onClick={goToLogin}
-              style={{
-                background: 'transparent',
-                color: '#333640',
-                border: 'none',
-                height: 40,
-                padding: '0 14px',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Sign in
-            </button>
-
-            <button
-              onClick={goToLogin}
-              style={{
-                background: '#171923',
-                color: '#fff',
-                border: 'none',
-                height: 40,
-                padding: '0 18px',
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Start free audit
-            </button>
-          </div>
-        </div>
-      </header>
+      <LandingHeader
+        onLogin={goToLogin}
+        onStart={goToLogin}
+      />
 
       <main style={{ position: 'relative', zIndex: 1 }}>
         {/* Hero */}
@@ -350,7 +273,7 @@ export default function Landing() {
                   }}
                 >
                   Understand how visible your business is across search engines
-                  and AI platformsÃ¢â‚¬â€and get a clear plan to improve it.
+                  and AI platformsÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Âand get a clear plan to improve it.
                 </p>
 
                 <div
@@ -763,7 +686,7 @@ export default function Landing() {
               fontSize: 12,
             }}
           >
-            Ã‚Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
+            Ãƒâ€šÃ‚Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
           </p>
         </div>
       </footer>
@@ -954,7 +877,7 @@ function DashboardPreview() {
                     margin: '0 0 13px',
                   }}
                 >
-                  Ã¢â‚¬Å“Best CRM platform for shipping companies in NorwayÃ¢â‚¬Â
+                  ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œBest CRM platform for shipping companies in NorwayÃƒÂ¢Ã¢â€šÂ¬Ã‚Â
                 </p>
 
                 <span
@@ -1217,6 +1140,8 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
+
 
 
 
