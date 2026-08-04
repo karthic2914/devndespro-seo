@@ -36,6 +36,15 @@ export function AuthProvider({ children }) {
     return user
   }
 
+  const loginWithEmail = async (email) => {
+    const res = await api.post('/auth/email', { email })
+    const { token, user } = res.data
+    localStorage.setItem('seo_token', token)
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+    setUser(user)
+    return user
+  }
+
   const logout = () => {
     localStorage.removeItem('seo_token')
     localStorage.removeItem('token')
@@ -43,7 +52,7 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+  return <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout }}>{children}</AuthContext.Provider>
 }
 
 export function useAuth() {
