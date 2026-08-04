@@ -16,39 +16,39 @@ import { Logo, T } from '../components/UI'
 const FEATURES = [
   {
     icon: faComments,
-    title: 'AI visibility tracking',
+    title: 'AI citation monitoring',
     description:
-      'Discover whether ChatGPT, Claude and other AI platforms mention or recommend your business.',
+      'Track whether ChatGPT and Claude mention, understand or recommend your business.',
   },
   {
     icon: faMagnifyingGlass,
-    title: 'Technical SEO audit',
+    title: 'Technical website intelligence',
     description:
-      'Crawl your website and uncover indexing, performance, metadata and content issues.',
+      'Find crawl errors, indexing problems, broken links and performance issues across your site.',
   },
   {
     icon: faLocationDot,
-    title: 'Nordic search intelligence',
+    title: 'Nordic market insights',
     description:
-      'Analyse Norwegian keywords, local intent and regional search patterns ignored by generic tools.',
+      'Analyse Norwegian search intent, regional keywords and local discovery opportunities.',
   },
   {
     icon: faChartLine,
-    title: 'Prioritised recommendations',
+    title: 'Impact-based action plan',
     description:
-      'See what to fix first, why it matters and how each improvement can affect visibility.',
+      'Prioritise improvements by visibility impact instead of working through generic checklists.',
   },
   {
     icon: faGlobe,
-    title: 'Google and AI readiness',
+    title: 'Search and AI readiness',
     description:
-      'Optimise your website for traditional search engines and the new generation of answer engines.',
+      'Prepare your content for Google rankings, AI answers and modern recommendation engines.',
   },
   {
     icon: faShieldHalved,
-    title: 'Private reporting',
+    title: 'Secure private workspace',
     description:
-      'Your website reports and business data remain private and securely accessible.',
+      'Keep website analysis, reports and business visibility data protected in one private workspace.',
   },
 ]
 
@@ -544,9 +544,9 @@ export default function Landing() {
         <section id="features" style={{ padding: '64px 0 76px' }}>
           <div style={styles.container}>
             <SectionHeader
-              eyebrow="ONE PLATFORM"
-              title="Everything required to improve your online visibility"
-              description="Find technical problems, understand your search presence and measure whether AI platforms recognise your business."
+              eyebrow="PLATFORM CAPABILITIES"
+              title="One platform for search and AI visibility"
+              description="Understand how search engines and AI platforms see your business, then act on the opportunities that matter most."
             />
 
             <div
@@ -575,9 +575,9 @@ export default function Landing() {
         >
           <div style={styles.container}>
             <SectionHeader
-              eyebrow="HOW IT WORKS"
-              title="From website address to clear actions"
-              description="No complicated setup, large spreadsheets or unclear technical reports."
+              eyebrow="SIMPLE WORKFLOW"
+              title="From domain to decisions in three steps"
+              description="Run the analysis, understand the signals and follow a prioritised plan for improvement."
             />
 
             <div
@@ -1101,47 +1101,15 @@ function TrustItem({ text }) {
 
 function SectionHeader({ eyebrow, title, description }) {
   return (
-    <div
-      style={{
-        maxWidth: 700,
-      }}
-    >
-      <p
-        style={{
-          fontFamily: monoFont,
-          color: '#D75F32',
-          fontSize: 11,
-          fontWeight: 650,
-          letterSpacing: '0.12em',
-          margin: '0 0 16px',
-        }}
-      >
+    <div className="landing-section-header">
+      <div className="landing-section-eyebrow">
+        <span className="landing-section-eyebrow-dot" />
         {eyebrow}
-      </p>
+      </div>
 
-      <h2
-        style={{
-          margin: '0 0 17px',
-          color: '#171923',
-          fontSize: 'clamp(32px, 4vw, 48px)',
-          lineHeight: 1.1,
-          letterSpacing: '-0.035em',
-        }}
-      >
-        {title}
-      </h2>
+      <h2>{title}</h2>
 
-      <p
-        style={{
-          maxWidth: 620,
-          margin: 0,
-          color: '#676A73',
-          fontSize: 16,
-          lineHeight: 1.7,
-        }}
-      >
-        {description}
-      </p>
+      <p>{description}</p>
     </div>
   )
 }
@@ -1216,6 +1184,7 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
 
 
