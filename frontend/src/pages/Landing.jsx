@@ -393,74 +393,219 @@ export default function Landing() {
         </section>
 
         {/* Problem statement */}
-        <section id="platform" style={{ padding: '42px 0 68px' }}>
-          <div style={styles.container}>
-            <div
+<section id="platform" style={{ padding: '44px 0 72px' }}>
+  <div style={styles.container}>
+    <div
+      className="landing-search-shift"
+      style={{
+        position: 'relative',
+        overflow: 'hidden',
+        borderRadius: 24,
+        padding: '64px 52px',
+        background:
+          'linear-gradient(135deg, #292296 0%, #4338CA 52%, #5B50E6 100%)',
+        boxShadow: '0 30px 80px rgba(67,56,202,0.22)',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          width: 460,
+          height: 460,
+          top: -270,
+          right: -120,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(255,255,255,0.18) 0%, transparent 68%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          width: 360,
+          height: 360,
+          bottom: -220,
+          left: -130,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(255,163,120,0.18) 0%, transparent 68%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        className="landing-search-shift-grid"
+        style={{
+          position: 'relative',
+          display: 'grid',
+          gridTemplateColumns: '0.95fr 1.05fr',
+          gap: 46,
+          alignItems: 'center',
+        }}
+      >
+        <div>
+          <p
+            style={{
+              margin: '0 0 16px',
+              fontFamily: monoFont,
+              color: '#C9C6FF',
+              fontSize: 11,
+              fontWeight: 650,
+              letterSpacing: '0.12em',
+            }}
+          >
+            SEARCH HAS CHANGED
+          </p>
+
+          <h2
+            style={{
+              margin: '0 0 18px',
+              color: '#fff',
+              fontSize: 'clamp(34px, 4vw, 50px)',
+              lineHeight: 1.08,
+              letterSpacing: '-0.04em',
+            }}
+          >
+            Visibility now goes beyond traditional search.
+          </h2>
+
+          <p
+            style={{
+              maxWidth: 560,
+              margin: 0,
+              color: '#DDD9FF',
+              fontSize: 16,
+              lineHeight: 1.72,
+            }}
+          >
+            Customers ask Google, ChatGPT and Claude for recommendations.
+            Your website needs to be technically strong, clearly understood
+            and trusted across all of them.
+          </p>
+        </div>
+
+        <div
+          className="landing-search-cards"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            gap: 14,
+          }}
+        >
+          <div
+            style={{
+              gridColumn: '1 / -1',
+              padding: 22,
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.13)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              backdropFilter: 'blur(14px)',
+            }}
+          >
+            <p
               style={{
-                background: '#3028A8',
-                borderRadius: 24,
-                padding: '70px 50px',
-                position: 'relative',
-                overflow: 'hidden',
-                textAlign: 'center',
+                margin: '0 0 8px',
+                color: '#C9C6FF',
+                fontSize: 10,
+                fontWeight: 700,
+                letterSpacing: '0.08em',
               }}
             >
-              <div
-                style={{
-                  position: 'absolute',
-                  width: 420,
-                  height: 420,
-                  borderRadius: '50%',
-                  top: -270,
-                  right: -80,
-                  background:
-                    'radial-gradient(circle, rgba(255,255,255,0.16), transparent 68%)',
-                }}
-              />
+              ONE PLATFORM
+            </p>
 
-              <p
-                style={{
-                  fontFamily: monoFont,
-                  color: '#C9C6FF',
-                  fontSize: 11,
-                  letterSpacing: '0.12em',
-                  margin: '0 0 20px',
-                }}
-              >
-                SEARCH HAS CHANGED
-              </p>
-
-              <h2
-                style={{
-                  maxWidth: 820,
-                  margin: '0 auto 20px',
-                  color: '#fff',
-                  fontSize: 'clamp(32px, 4vw, 50px)',
-                  lineHeight: 1.12,
-                  letterSpacing: '-0.035em',
-                }}
-              >
-                Your customers are no longer searching in only one place.
-              </h2>
-
-              <p
-                style={{
-                  maxWidth: 650,
-                  margin: '0 auto',
-                  color: '#DAD8FF',
-                  fontSize: 16,
-                  lineHeight: 1.7,
-                }}
-              >
-                They ask Google, ChatGPT, Claude and other AI tools for direct
-                recommendations. Your website must be understandable,
-                trustworthy and visible across all of them.
-              </p>
-            </div>
+            <p
+              style={{
+                margin: 0,
+                color: '#fff',
+                fontSize: 18,
+                fontWeight: 650,
+                lineHeight: 1.45,
+              }}
+            >
+              Technical SEO, AI citations and Nordic search intelligence
+              working together.
+            </p>
           </div>
-        </section>
 
-        {/* Features */}
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.09)',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          >
+            <p
+              style={{
+                margin: '0 0 12px',
+                color: '#C9C6FF',
+                fontSize: 10,
+                fontWeight: 700,
+              }}
+            >
+              SEARCH ENGINES
+            </p>
+
+            <strong
+              style={{
+                display: 'block',
+                color: '#fff',
+                fontSize: 28,
+                marginBottom: 5,
+              }}
+            >
+              Google
+            </strong>
+
+            <span style={{ color: '#DDD9FF', fontSize: 12 }}>
+              Rankings, crawlability and local discovery
+            </span>
+          </div>
+
+          <div
+            style={{
+              padding: 20,
+              borderRadius: 16,
+              background: 'rgba(255,255,255,0.09)',
+              border: '1px solid rgba(255,255,255,0.15)',
+            }}
+          >
+            <p
+              style={{
+                margin: '0 0 12px',
+                color: '#C9C6FF',
+                fontSize: 10,
+                fontWeight: 700,
+              }}
+            >
+              AI ANSWERS
+            </p>
+
+            <strong
+              style={{
+                display: 'block',
+                color: '#fff',
+                fontSize: 28,
+                marginBottom: 5,
+              }}
+            >
+              ChatGPT + Claude
+            </strong>
+
+            <span style={{ color: '#DDD9FF', fontSize: 12 }}>
+              Mentions, citations and recommendation signals
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{/* Features */}
         <section id="features" style={{ padding: '64px 0 76px' }}>
           <div style={styles.container}>
             <SectionHeader
@@ -1136,6 +1281,7 @@ const windowDotStyle = {
   borderRadius: '50%',
   background: '#C9C7C2',
 }
+
 
 
 

@@ -370,3 +370,25 @@ body,
   }
 }
 
+
+/* Premium search-shift section */
+@media (max-width: 1024px) {
+  .landing-search-shift-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .landing-search-shift {
+    padding: 40px 22px !important;
+  }
+
+  .landing-search-cards {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-search-cards > div {
+    grid-column: auto !important;
+  }
+}
+
