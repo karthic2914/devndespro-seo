@@ -1,4 +1,4 @@
-﻿import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
@@ -534,7 +534,7 @@ Get recommended by AI.
               fontSize: 12,
             }}
           >
-            Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
+            (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
           </p>
         </div>
       </footer>
@@ -725,7 +725,7 @@ function DashboardPreview() {
                     margin: '0 0 13px',
                   }}
                 >
-                  "Best CRM platform for shipping companies in Norwayâ€
+                  Best CRM platform for shipping companies in Norway
                 </p>
 
                 <span
