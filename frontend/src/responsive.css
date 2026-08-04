@@ -329,6 +329,61 @@ body,
   transform: scale(1.25);
 }
 
+.landing-step-card {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    border-color 200ms ease;
+}
+
+.landing-step-card::after {
+  content: "";
+  position: absolute;
+  width: 170px;
+  height: 170px;
+  top: -105px;
+  right: -95px;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle,
+      rgba(234, 106, 59, 0.12),
+      transparent 70%
+    );
+  transition: transform 220ms ease;
+  pointer-events: none;
+}
+
+.landing-step-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(234, 106, 59, 0.26) !important;
+  box-shadow: 0 22px 50px rgba(23, 25, 35, 0.10);
+}
+
+.landing-step-card:hover::after {
+  transform: scale(1.25);
+}
+
+@media (min-width: 1025px) {
+  .landing-steps-grid {
+    position: relative;
+  }
+
+  .landing-step-card:not(:last-child)::before {
+    content: "";
+    position: absolute;
+    top: 46px;
+    right: -18px;
+    width: 18px;
+    height: 2px;
+    background: linear-gradient(90deg, #e6e3dd 0%, #ea6a3b 100%);
+    z-index: 1;
+    pointer-events: none;
+  }
+}
+
 #features,
 #how-it-works,
 #platform {
@@ -366,6 +421,10 @@ body,
   }
 
   .landing-features-grid > div:hover {
+    transform: none;
+  }
+
+  .landing-step-card:hover {
     transform: none;
   }
 }

@@ -57,16 +57,19 @@ const FEATURES = [
 const STEPS = [
   {
     number: '01',
+    icon: faGlobe,
     title: 'Add your website',
     description: 'Enter your domain and select the market you want to analyse.',
   },
   {
     number: '02',
+    icon: faMagnifyingGlass,
     title: 'Run the analysis',
     description: 'We audit your website, keywords and AI visibility signals.',
   },
   {
     number: '03',
+    icon: faChartLine,
     title: 'Improve your visibility',
     description: 'Follow clear recommendations ordered by business impact.',
   },
@@ -534,13 +537,7 @@ export default function Landing() {
         </section>
 
         {/* How it works */}
-        <section
-          id="how-it-works"
-          style={{
-            padding: '82px 0 90px',
-            background: '#F3F1EC',
-          }}
-        >
+        <section id="how-it-works" style={{ padding: '64px 0 76px' }}>
           <div style={styles.container}>
             <SectionHeader
               eyebrow="SIMPLE WORKFLOW"
@@ -553,59 +550,12 @@ export default function Landing() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 22,
-                marginTop: 48,
+                gap: 18,
+                marginTop: 46,
               }}
             >
               {STEPS.map((step) => (
-                <div
-                  key={step.number}
-                  style={{
-                    background: '#F7F6F2',
-                    border: '1px solid #E4DFD6',
-                    borderRadius: 16,
-                    padding: 28,
-                    minHeight: 230,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-start',
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      fontFamily: monoFont,
-                      fontSize: 12,
-                      color: '#D75F32',
-                      marginBottom: 28,
-                    }}
-                  >
-                    {step.number}
-                  </span>
-
-                  <h3
-                    style={{
-                      margin: '0 0 12px',
-                      color: '#1C1E26',
-                      fontSize: 20,
-                      lineHeight: 1.25,
-                      letterSpacing: '-0.03em',
-                    }}
-                  >
-                    {step.title}
-                  </h3>
-
-                  <p
-                    style={{
-                      margin: 0,
-                      color: '#656A73',
-                      fontSize: 15,
-                      lineHeight: 1.68,
-                    }}
-                  >
-                    {step.description}
-                  </p>
-                </div>
+                <StepCard key={step.number} {...step} />
               ))}
             </div>
           </div>
@@ -1084,6 +1034,84 @@ function SectionHeader({ eyebrow, title, description }) {
       <h2>{title}</h2>
 
       <p>{description}</p>
+    </div>
+  )
+}
+
+function StepCard({ number, icon, title, description }) {
+  return (
+    <div
+      className="landing-step-card"
+      style={{
+        minHeight: 220,
+        padding: 25,
+        borderRadius: 16,
+        background: '#fff',
+        border: '1px solid #E6E3DD',
+        transition: 'transform 180ms ease, box-shadow 180ms ease',
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 22,
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: '#FFF1E9',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <FontAwesomeIcon
+            icon={icon}
+            style={{
+              color: '#D75F32',
+              fontSize: 17,
+            }}
+          />
+        </div>
+
+        <span
+          style={{
+            fontFamily: monoFont,
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#D75F32',
+            letterSpacing: '0.06em',
+          }}
+        >
+          {number}
+        </span>
+      </div>
+
+      <h3
+        style={{
+          margin: '0 0 9px',
+          color: '#20222A',
+          fontSize: 17,
+        }}
+      >
+        {title}
+      </h3>
+
+      <p
+        style={{
+          margin: 0,
+          color: '#6C6F78',
+          fontSize: 13,
+          lineHeight: 1.65,
+        }}
+      >
+        {description}
+      </p>
     </div>
   )
 }
