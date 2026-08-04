@@ -1,4 +1,5 @@
-﻿import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
@@ -126,8 +127,39 @@ const styles = {
 
 export default function Landing() {
   const navigate = useNavigate()
+  const [activeSection, setActiveSection] = useState('')
 
   const goToLogin = () => navigate('/login')
+  /* ACTIVE SECTION OBSERVER */
+  useEffect(() => {
+    const sectionIds = ['platform', 'features', 'how-it-works']
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleSection = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+
+        if (visibleSection) {
+          setActiveSection(visibleSection.target.id)
+        }
+      },
+      {
+        rootMargin: '-25% 0px -55% 0px',
+        threshold: [0.1, 0.25, 0.5],
+      }
+    )
+
+    sectionIds.forEach((id) => {
+      const section = document.getElementById(id)
+
+      if (section) {
+        observer.observe(section)
+      }
+    })
+
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <div className="premium-landing-page" style={styles.page}>
@@ -161,7 +193,8 @@ export default function Landing() {
       />
 
       {/* Navigation */}
-      <header className="landing-sticky-header"`r`n        style={{
+      <header className="landing-sticky-header"
+        style={{
           position: 'relative',
           zIndex: 10,
           borderBottom: '1px solid rgba(220,217,211,0.75)',
@@ -169,7 +202,11 @@ export default function Landing() {
           backdropFilter: 'blur(16px)',
         }}
       >
-        <div`r`n          className="landing-header-inner"`r`n          style={{`r`n            ...styles.container,`r`n            minHeight: 74,
+        <div
+          className="landing-header-inner"
+          style={{
+            ...styles.container,
+            minHeight: 74,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -185,15 +222,15 @@ export default function Landing() {
               gap: 30,
             }}
           >
-            <a href="#features" style={navLinkStyle}>
+            <a href="#features" className={`landing-nav-link ${activeSection === 'features' ? 'is-active' : ''}`} aria-current={activeSection === 'features' ? 'page' : undefined} style={navLinkStyle}>
               Features
             </a>
 
-            <a href="#how-it-works" style={navLinkStyle}>
+            <a href="#how-it-works" className={`landing-nav-link ${activeSection === 'how-it-works' ? 'is-active' : ''}`} aria-current={activeSection === 'how-it-works' ? 'page' : undefined} style={navLinkStyle}>
               How it works
             </a>
 
-            <a href="#platform" style={navLinkStyle}>
+            <a href="#platform" className={`landing-nav-link ${activeSection === 'platform' ? 'is-active' : ''}`} aria-current={activeSection === 'platform' ? 'page' : undefined} style={navLinkStyle}>
               Platform
             </a>
           </div>
@@ -313,7 +350,7 @@ export default function Landing() {
                   }}
                 >
                   Understand how visible your business is across search engines
-                  and AI platformsâ€”and get a clear plan to improve it.
+                  and AI platformsÃ¢â‚¬â€and get a clear plan to improve it.
                 </p>
 
                 <div
@@ -726,7 +763,7 @@ export default function Landing() {
               fontSize: 12,
             }}
           >
-            Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
+            Ã‚Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
           </p>
         </div>
       </footer>
@@ -917,7 +954,7 @@ function DashboardPreview() {
                     margin: '0 0 13px',
                   }}
                 >
-                  â€œBest CRM platform for shipping companies in Norwayâ€
+                  Ã¢â‚¬Å“Best CRM platform for shipping companies in NorwayÃ¢â‚¬Â
                 </p>
 
                 <span
