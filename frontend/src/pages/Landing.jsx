@@ -80,7 +80,7 @@ const styles = {
     background: '#FBFAF8',
     color: '#171923',
     fontFamily: 'inherit',
-    overflow: 'hidden',
+    overflowX: 'hidden',
     position: 'relative',
     width: '100%',
   },
@@ -259,9 +259,10 @@ export default function Landing() {
                     style={{
                       display: 'block',
                       color: '#5246D9',
+                      marginTop: 8,
                     }}
                   >
-                    Be recommended by<br />AI.
+                    Be recommended by AI.
                   </span>
                 </h1>
 
@@ -279,6 +280,7 @@ export default function Landing() {
                 </p>
 
                 <div
+                  className="landing-hero-actions"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -287,12 +289,20 @@ export default function Landing() {
                     marginBottom: 28,
                   }}
                 >
-                  <button onClick={goToLogin} style={styles.primaryButton}>
+                  <button
+                    className="landing-hero-primary-button"
+                    onClick={goToLogin}
+                    style={styles.primaryButton}
+                  >
                     Analyse your website
                     <FontAwesomeIcon icon={faArrowRight} />
                   </button>
 
-                  <button onClick={goToLogin} style={styles.secondaryButton}>
+                  <button
+                    className="landing-hero-secondary-button"
+                    onClick={goToLogin}
+                    style={styles.secondaryButton}
+                  >
                     See live demo
                   </button>
                 </div>

@@ -838,12 +838,51 @@ body {
     gap: 18px !important;
   }
 
+  .landing-hero-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 22px !important;
+    width: 100% !important;
+  }
+
+  .landing-hero-grid > div:first-child,
   .landing-hero-grid > div:last-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .landing-hero-grid > div:last-child {
+    display: none !important;
     transform: none !important;
     width: 100%;
     max-width: 760px;
     margin-left: auto;
     margin-right: auto;
+  }
+
+  .landing-hero-grid h1 {
+    font-size: clamp(38px, 7vw, 54px) !important;
+    line-height: 1.04 !important;
+  }
+
+  .landing-hero-actions {
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .landing-hero-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .landing-features-grid,
+  .landing-steps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .landing-platform-cards {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
@@ -891,6 +930,7 @@ body {
     width: 100%;
     max-width: 100%;
     grid-template-columns: minmax(0, 1fr) !important;
+    gap: 18px !important;
   }
 
   .landing-hero-grid > div:last-child {
@@ -902,6 +942,22 @@ body {
   .landing-hero-grid > div:last-child > div:last-child {
     right: 6px !important;
     width: 155px !important;
+  }
+
+  .landing-hero-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .landing-hero-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .landing-features-grid,
+  .landing-steps-grid,
+  .landing-platform-cards {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
@@ -1085,10 +1141,11 @@ html::-webkit-scrollbar-thumb:hover {
   top: 0;
   z-index: 3000;
   width: 100%;
-  background: rgba(251, 250, 248, 0.92);
+  background: rgba(251, 250, 248, 0.86);
   border-bottom: 1px solid rgba(220, 217, 211, 0.75);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px) saturate(1.15);
+  -webkit-backdrop-filter: blur(20px) saturate(1.15);
+  box-shadow: 0 1px 0 rgba(23, 25, 35, 0.03), 0 12px 30px rgba(23, 25, 35, 0.05);
 }
 
 .landing-site-header-inner {
@@ -1148,6 +1205,11 @@ html::-webkit-scrollbar-thumb:hover {
   color: #4338ca;
 }
 
+.landing-nav-item:hover::after,
+.landing-nav-item.is-active::after {
+  width: 100%;
+}
+
 .landing-nav-item.is-active::after {
   width: 100%;
 }
@@ -1174,7 +1236,7 @@ html::-webkit-scrollbar-thumb:hover {
   padding: 0 17px;
   border: 0;
   border-radius: 9px;
-  background: #171923;
+  background: linear-gradient(135deg, #171923, #252941);
   color: #fff;
   font-size: 13px;
   font-weight: 650;
@@ -1182,6 +1244,7 @@ html::-webkit-scrollbar-thumb:hover {
   display: inline-flex;
   align-items: center;
   gap: 9px;
+  box-shadow: 0 8px 22px rgba(23, 25, 35, 0.14);
 }
 
 .landing-menu-button {
@@ -1353,7 +1416,8 @@ body,
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     width: 100% !important;
-    gap: 38px !important;
+    gap: 18px !important;
+    padding-top: 4px !important;
   }
 
   .landing-hero-grid > div:first-child,
@@ -1363,11 +1427,27 @@ body,
     min-width: 0 !important;
   }
 
+  .landing-hero-grid > div:first-child {
+    text-align: left !important;
+  }
+
+  .landing-hero-grid > div:last-child {
+    display: none !important;
+  }
+
   .landing-hero-grid h1 {
     max-width: 100% !important;
-    font-size: clamp(42px, 12vw, 56px) !important;
-    line-height: 1.02 !important;
-    overflow-wrap: anywhere;
+    font-size: clamp(34px, 10.5vw, 48px) !important;
+    line-height: 1.03 !important;
+    letter-spacing: -0.04em !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+    text-wrap: balance !important;
+  }
+
+  .landing-hero-grid h1 span {
+    margin-top: 6px !important;
+    max-width: 100% !important;
   }
 
   .landing-hero-grid p {
