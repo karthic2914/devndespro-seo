@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -686,7 +686,7 @@ export default function Landing() {
               fontSize: 12,
             }}
           >
-            Ãƒâ€šÃ‚Â© {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
+            (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
           </p>
         </div>
       </footer>
@@ -877,7 +877,7 @@ function DashboardPreview() {
                     margin: '0 0 13px',
                   }}
                 >
-                  ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œBest CRM platform for shipping companies in NorwayÃƒÂ¢Ã¢â€šÂ¬Ã‚Â
+                  Best CRM platform for shipping companies in Norway
                 </p>
 
                 <span
