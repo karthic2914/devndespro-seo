@@ -538,7 +538,7 @@ export default function Landing() {
           id="how-it-works"
           style={{
             padding: '82px 0 90px',
-            background: 'linear-gradient(180deg, #F6F4EF 0%, #F1EEEA 100%)',
+            background: '#F3F1EC',
           }}
         >
           <div style={styles.container}>
@@ -561,8 +561,8 @@ export default function Landing() {
                 <div
                   key={step.number}
                   style={{
-                    background: '#F8F7F4',
-                    border: '1px solid #E6E1D7',
+                    background: '#F7F6F2',
+                    border: '1px solid #E4DFD6',
                     borderRadius: 16,
                     padding: 28,
                     minHeight: 230,
