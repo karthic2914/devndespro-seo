@@ -248,7 +248,7 @@ export default function Landing() {
                     maxWidth: 670,
                     margin: '0 0 24px',
                     color: '#171923',
-                    fontSize: 'clamp(44px, 4.7vw, 66px)',
+                    fontSize: 'clamp(34px, 9vw, 66px)',
                     fontWeight: 740,
                     lineHeight: 0.99,
                     letterSpacing: '-0.052em',
