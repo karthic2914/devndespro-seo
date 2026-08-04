@@ -191,9 +191,8 @@ export default function Dashboard() {
 
   const hasTrafficData = weeklyTraffic.length > 0
   const isClientSiteError = gscErrorCode === 'property_access' || gscErrorCode === 'site_mismatch'
-  const isSiteOwner = Number(site?.user_id) === Number(user?.id)
   const allowedAuditEmails = new Set(['hello@devndespro.com', 'karthic2914@gmail.com'])
-  const canRunFullAudit = Boolean((user?.is_paid || allowedAuditEmails.has(user?.email)) && isSiteOwner)
+  const canRunFullAudit = Boolean(user?.is_paid || allowedAuditEmails.has(user?.email))
 
   return (
     <div style={{ flex: 1 }}>
@@ -210,14 +209,15 @@ export default function Dashboard() {
           <Button variant="secondary" size="sm" onClick={loadDashboardData}>
             <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} /><span className='btn-label'>Refresh Data</span>
           </Button>
-          <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning}>
-            <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
-            <span className='btn-label'>{auditRunning ? 'Scanning�' : 'Run Full Audit'}</span>
-          </Button>
-          <div style={{ position: 'relative' }}>
-            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={auditRunning}>
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
+            <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
+              <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
+              <span className='btn-label'>{auditRunning ? 'Scanning�' : 'Run Full Audit'}</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={auditRunning} style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255,255,255,0.3)' }}>
               <FontAwesomeIcon icon={faChevronDown} />
             </Button>
+
             {showAuditMenu && (
               <>
                 <div onClick={() => setShowAuditMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
