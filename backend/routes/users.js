@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const crypto = require('crypto')
 const axios = require('axios')
 const { pool } = require('../clients')
@@ -86,13 +86,12 @@ router.post('/invite', auth, async (req, res) => {
       await pool.query(
         `INSERT INTO invited_users (email, token, status, invited_by, invited_at, accepted_at, site_id)
          VALUES ($1, NULL, 'accepted', $2, NOW(), NOW(), $3)
-         ON CONFLICT (email) DO UPDATE SET
+         ON CONFLICT (email, site_id) DO UPDATE SET
            token = EXCLUDED.token,
            status = EXCLUDED.status,
            invited_by = EXCLUDED.invited_by,
            invited_at = EXCLUDED.invited_at,
-           accepted_at = EXCLUDED.accepted_at,
-           site_id = EXCLUDED.site_id`,
+           accepted_at = EXCLUDED.accepted_at`,
         [normalizedEmail, req.user.id, siteId]
       )
 
