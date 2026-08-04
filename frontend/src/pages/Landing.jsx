@@ -81,6 +81,8 @@ const styles = {
     color: '#171923',
     fontFamily: 'inherit',
     overflow: 'hidden',
+    position: 'relative',
+    width: '100%',
   },
 
   container: {
@@ -205,7 +207,7 @@ export default function Landing() {
               className="landing-hero-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(620px, 1.05fr) minmax(560px, 0.95fr)',
+                gridTemplateColumns: 'minmax(min(620px, 100%), 1.05fr) minmax(min(560px, 100%), 0.95fr)',
                 gap: 58,
                 alignItems: 'center',
               }}
@@ -273,7 +275,7 @@ export default function Landing() {
                   }}
                 >
                   Understand how visible your business is across search engines
-                  and AI platformsÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Âand get a clear plan to improve it.
+                  and AI platforms — and get a clear plan to improve it.
                 </p>
 
                 <div
