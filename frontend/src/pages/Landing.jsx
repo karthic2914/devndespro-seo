@@ -537,8 +537,8 @@ export default function Landing() {
         <section
           id="how-it-works"
           style={{
-            padding: '72px 0',
-            background: '#F2F1ED',
+            padding: '82px 0 90px',
+            background: 'linear-gradient(180deg, #F6F4EF 0%, #F1EEEA 100%)',
           }}
         >
           <div style={styles.container}>
@@ -553,27 +553,40 @@ export default function Landing() {
               style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 20,
-                marginTop: 50,
+                gap: 22,
+                marginTop: 48,
               }}
             >
               {STEPS.map((step) => (
                 <div
                   key={step.number}
                   style={{
-                    background: '#fff',
+                    background: 'linear-gradient(180deg, #FFFFFF 0%, #FBFAF8 100%)',
                     border: '1px solid #E1DED8',
-                    borderRadius: 16,
+                    borderRadius: 18,
                     padding: 28,
+                    boxShadow: '0 18px 38px rgba(23, 25, 35, 0.05)',
+                    minHeight: 230,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
                   }}
                 >
                   <span
                     style={{
-                      display: 'block',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: 40,
+                      height: 28,
+                      borderRadius: 999,
                       fontFamily: monoFont,
-                      fontSize: 12,
+                      fontSize: 11,
+                      fontWeight: 700,
                       color: '#D75F32',
-                      marginBottom: 35,
+                      background: '#FFF3EC',
+                      border: '1px solid #F5D6C7',
+                      marginBottom: 28,
                     }}
                   >
                     {step.number}
@@ -581,9 +594,11 @@ export default function Landing() {
 
                   <h3
                     style={{
-                      margin: '0 0 10px',
+                      margin: '0 0 12px',
                       color: '#1C1E26',
-                      fontSize: 19,
+                      fontSize: 20,
+                      lineHeight: 1.25,
+                      letterSpacing: '-0.03em',
                     }}
                   >
                     {step.title}
@@ -592,9 +607,9 @@ export default function Landing() {
                   <p
                     style={{
                       margin: 0,
-                      color: '#686B74',
-                      fontSize: 14,
-                      lineHeight: 1.65,
+                      color: '#656A73',
+                      fontSize: 15,
+                      lineHeight: 1.68,
                     }}
                   >
                     {step.description}
