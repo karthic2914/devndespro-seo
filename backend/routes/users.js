@@ -82,6 +82,20 @@ router.post('/invite', auth, async (req, res) => {
         'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
         [siteId, users[0].id]
       )
+
+      await pool.query(
+        `INSERT INTO invited_users (email, token, status, invited_by, invited_at, accepted_at, site_id)
+         VALUES ($1, NULL, 'accepted', $2, NOW(), NOW(), $3)
+         ON CONFLICT (email) DO UPDATE SET
+           token = EXCLUDED.token,
+           status = EXCLUDED.status,
+           invited_by = EXCLUDED.invited_by,
+           invited_at = EXCLUDED.invited_at,
+           accepted_at = EXCLUDED.accepted_at,
+           site_id = EXCLUDED.site_id`,
+        [normalizedEmail, req.user.id, siteId]
+      )
+
       return res.json({ ok: true, message: `Access granted to ${normalizedEmail}` })
     }
 
