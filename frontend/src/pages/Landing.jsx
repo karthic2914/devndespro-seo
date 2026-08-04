@@ -7,181 +7,173 @@ import {
   faRobot,
   faListCheck,
   faChartLine,
-  faCheck,
-  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
-import { Logo, Button, T } from '../components/UI'
+import { Logo, T } from '../components/UI'
 
 const FEATURES = [
-  { icon: faComments,        label: 'AI Visibility',        desc: 'Test whether ChatGPT and Claude cite your domain', lead: true },
-  { icon: faMagnifyingGlass, label: 'Full Site Audit',      desc: 'Crawl up to 100 pages for real issues, not just the homepage', lead: true },
-  { icon: faLocationDot,     label: 'Nordic Search Signals', desc: 'Norwegian keyword classification and local search patterns' },
-  { icon: faRobot,           label: 'AI Recommendations',   desc: 'Fix suggestions written for the exact issue found' },
-  { icon: faListCheck,       label: 'Action Plans',         desc: 'Every issue turned into a ranked next step' },
-  { icon: faChartLine,       label: 'Rank & Link Tracking', desc: 'Keyword positions and backlink monitoring, included' },
+  { icon: faComments,        label: 'AI visibility',         desc: 'Test whether ChatGPT and Claude cite your domain' },
+  { icon: faMagnifyingGlass, label: 'Full site audit',       desc: 'Crawl up to 100 pages for real issues' },
+  { icon: faLocationDot,     label: 'Nordic search signals', desc: 'Norwegian keyword classification and local patterns' },
+  { icon: faRobot,           label: 'AI recommendations',    desc: 'Fix suggestions written for the exact issue' },
+  { icon: faListCheck,       label: 'Action plans',          desc: 'Every issue turned into a ranked next step' },
+  { icon: faChartLine,       label: 'Rank and link tracking', desc: 'Keyword positions and backlinks, included' },
 ]
 
 const STEPS = [
   { n: '01', title: 'Crawl the site',    desc: 'Up to 100 pages, sitemap and link discovery' },
-  { n: '02', title: 'Score every page',  desc: 'On-page, technical, content, and speed - plus AI citation testing' },
+  { n: '02', title: 'Score every page',  desc: 'On-page, technical, content, and AI citation testing' },
   { n: '03', title: 'Fix what matters',  desc: 'Ranked actions, AI written fixes' },
 ]
 
 const monoFont = "'SF Mono', 'Consolas', 'Menlo', monospace"
+const serifFont = "Georgia, 'Times New Roman', serif"
 
 export default function Landing() {
   const navigate = useNavigate()
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: `linear-gradient(135deg, #FFF4EE 0%, #F3F4F6 50%, #EFF6FF 100%)`,
-      fontFamily: 'inherit',
-    }}>
+    <div style={{ minHeight: '100vh', background: '#FAFAF9', fontFamily: 'inherit' }}>
+      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 2rem' }}>
 
-      {/* Nav */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Logo size="md" variant="transparent" />
-        <Button variant="primary" onClick={() => navigate('/login')}>Sign in</Button>
-      </div>
+        {/* Nav */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 0', marginBottom: '2.5rem' }}>
+          <Logo size="md" variant="transparent" />
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              background: 'transparent', color: T.text, border: `0.5px solid ${T.border}`,
+              padding: '0 20px', height: 36, borderRadius: 6, fontSize: 13, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Sign in
+          </button>
+        </div>
 
-      {/* Hero */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '1.5rem 2rem 2.5rem' }}>
-        <div className='login-hero-grid' style={{ display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 36, alignItems: 'center' }}>
+        {/* Hero */}
+        <div className='login-hero-grid' style={{ display: 'grid', gridTemplateColumns: '1.15fr 1fr', gap: 56, alignItems: 'center', paddingBottom: '4rem' }}>
           <div>
-            <p style={{ fontFamily: monoFont, fontSize: 11, color: T.orange, letterSpacing: '0.08em', margin: '0 0 14px' }}>
+            <p style={{ fontFamily: monoFont, fontSize: 11, color: T.muted, letterSpacing: '0.1em', margin: '0 0 20px' }}>
               AI VISIBILITY FOR NORDIC BUSINESSES
             </p>
-            <h1 style={{ fontSize: 40, fontWeight: 800, color: T.text, lineHeight: 1.1, letterSpacing: '-0.01em', margin: '0 0 18px' }}>
+            <h1 style={{ fontSize: 42, fontWeight: 500, lineHeight: 1.15, letterSpacing: '-0.02em', margin: '0 0 22px', color: T.text }}>
               Google still ranks you.<br />Does AI even know you exist?
             </h1>
-            <p style={{ fontSize: 15, color: T.text2, lineHeight: 1.7, margin: '0 0 24px', maxWidth: 440 }}>
-              ChatGPT and Claude are answering the questions your customers used to type into
-              search. This tool tests whether your site shows up in those answers, audits your
-              whole site for the issues holding you back, and reads local search signals most
-              global tools skip.
+            <p style={{ fontSize: 16, color: T.text2, lineHeight: 1.75, margin: '0 0 32px', maxWidth: 420 }}>
+              ChatGPT and Claude now answer the questions your customers used to search for.
+              This tool tests whether you show up in those answers, audits your whole site,
+              and reads local search signals most tools skip.
             </p>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <Button variant="primary" onClick={() => navigate('/login')}>Sign in</Button>
-              <span style={{ fontSize: 13, color: T.muted }}>Private access &middot; invite only</span>
-            </div>
+            <button
+              onClick={() => navigate('/login')}
+              style={{
+                background: '#14171F', color: '#fff', border: 'none',
+                padding: '0 26px', height: 44, borderRadius: 6, fontSize: 14, fontWeight: 500,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Sign in
+            </button>
           </div>
 
-          {/* Dual citation receipts */}
-          <div style={{ position: 'relative', height: 260 }}>
+          {/* Citation receipts */}
+          <div style={{ position: 'relative', height: 250 }}>
             <div style={{
-              position: 'absolute', top: 26, left: 34, width: '88%',
-              background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 10,
-              padding: '1rem 1.2rem', fontFamily: monoFont, transform: 'rotate(2deg)',
+              position: 'absolute', top: 22, left: 30, width: '86%',
+              background: T.surface2, border: `0.5px solid ${T.border}`, borderRadius: 8,
+              padding: '1.1rem 1.3rem', fontFamily: monoFont,
             }}>
-              <p style={{ fontSize: 10, color: T.muted, margin: '0 0 8px' }}>ASK CHATGPT</p>
-              <p style={{ fontSize: 12, color: T.text, margin: '0 0 10px' }}>
-                "top logistics software norway"
-              </p>
-              <div style={{ borderTop: `1px dashed ${T.border}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  background: T.amberDim, color: '#92400E', fontSize: 11, fontWeight: 600,
-                  padding: '2px 8px', borderRadius: 6,
-                }}>
-                  <FontAwesomeIcon icon={faXmark} style={{ fontSize: 10 }} />
-                  Not mentioned
-                </span>
+              <p style={{ fontSize: 10, color: T.muted, margin: '0 0 9px', letterSpacing: '0.04em' }}>ASK CHATGPT</p>
+              <p style={{ fontSize: 12, color: T.text, margin: '0 0 11px' }}>"top logistics software norway"</p>
+              <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 11 }}>
+                <span style={{ color: T.muted, fontSize: 11 }}>Not mentioned</span>
               </div>
             </div>
             <div style={{
-              position: 'absolute', top: 0, left: 0, width: '88%',
-              background: '#fff', border: `0.5px solid ${T.border}`, borderRadius: 10,
-              padding: '1.1rem 1.3rem', fontFamily: monoFont, transform: 'rotate(-2deg)',
-              boxShadow: T.shadow,
+              position: 'absolute', top: 0, left: 0, width: '86%',
+              background: '#fff', border: `0.5px solid ${T.border}`, borderRadius: 8,
+              padding: '1.2rem 1.4rem', fontFamily: monoFont, boxShadow: T.shadow,
             }}>
-              <p style={{ fontSize: 10, color: T.muted, margin: '0 0 8px' }}>ASK CLAUDE</p>
-              <p style={{ fontSize: 12, color: T.text, margin: '0 0 10px' }}>
-                "best crm for shipping companies in norway"
-              </p>
-              <div style={{ borderTop: `1px dashed ${T.border}`, paddingTop: 10, marginBottom: 10 }}>
-                <p style={{ fontSize: 11, color: T.text2, lineHeight: 1.6, margin: 0 }}>
+              <p style={{ fontSize: 10, color: T.muted, margin: '0 0 9px', letterSpacing: '0.04em' }}>ASK CLAUDE</p>
+              <p style={{ fontSize: 12, color: T.text, margin: '0 0 11px' }}>"best crm for shipping companies in norway"</p>
+              <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 11, marginBottom: 11 }}>
+                <p style={{ fontSize: 11, color: T.text2, lineHeight: 1.65, margin: 0 }}>
                   "...compfly.ai stands out for its focus on freight coordination..."
                 </p>
               </div>
-              <div style={{ borderTop: `1px dashed ${T.border}`, paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 5,
-                  background: T.greenDim, color: T.green, fontSize: 11, fontWeight: 600,
-                  padding: '2px 8px', borderRadius: 6,
-                }}>
-                  <FontAwesomeIcon icon={faCheck} style={{ fontSize: 10 }} />
-                  Cited
-                </span>
+              <div style={{ borderTop: `0.5px solid ${T.border}`, paddingTop: 11, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: T.green, fontSize: 11, fontWeight: 500 }}>Cited</span>
                 <span style={{ fontSize: 11, color: T.muted }}>compfly.ai</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Feature grid */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 2rem 2rem' }}>
-        <div className='login-features-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        {/* Editorial pull-quote */}
+        <div style={{ padding: '3rem 0', borderTop: `0.5px solid ${T.border}`, textAlign: 'center' }}>
+          <p style={{
+            fontFamily: serifFont, fontStyle: 'italic', fontSize: 22, fontWeight: 400,
+            color: T.text, lineHeight: 1.6, margin: '0 auto', maxWidth: 600,
+          }}>
+            Most SEO tools measure how Google sees you. We measure how AI does too.
+          </p>
+        </div>
+
+        {/* Feature grid - hairline divided */}
+        <div
+          className='login-features-grid'
+          style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1,
+            background: T.border, borderTop: `0.5px solid ${T.border}`, borderBottom: `0.5px solid ${T.border}`,
+            marginBottom: '4rem',
+          }}
+        >
           {FEATURES.map(f => (
-            <div key={f.label} style={{
-              background: f.lead ? '#fff' : T.surface2,
-              border: f.lead ? `1px solid ${T.orange}` : 'none',
-              borderRadius: T.radius, padding: '1.1rem',
-            }}>
-              <FontAwesomeIcon icon={f.icon} style={{ fontSize: 18, color: f.lead ? T.orange : T.text2 }} />
-              <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: '10px 0 4px' }}>{f.label}</p>
-              <p style={{ fontSize: 12, color: T.text2, margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
+            <div key={f.label} style={{ background: T.surface2, padding: '1.5rem' }}>
+              <FontAwesomeIcon icon={f.icon} style={{ fontSize: 20, color: T.text }} />
+              <p style={{ fontSize: 14, fontWeight: 500, color: T.text, margin: '14px 0 6px' }}>{f.label}</p>
+              <p style={{ fontSize: 12, color: T.text2, margin: 0, lineHeight: 1.6 }}>{f.desc}</p>
             </div>
           ))}
         </div>
-      </div>
 
-      {/* Dark band - why it matters */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 2rem 2.5rem' }}>
-        <div style={{ background: '#14171F', borderRadius: 12, padding: '2.25rem 2rem' }}>
-          <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', lineHeight: 1.5, margin: '0 0 10px', maxWidth: 580 }}>
-            Ahrefs and SEMrush treat Norway the same as everywhere else. Global backlink index,
-            global keyword data, no read on how AI engines talk about Nordic businesses.
+        {/* How it works */}
+        <div style={{ paddingBottom: '2rem' }}>
+          <p style={{ fontFamily: monoFont, fontSize: 11, color: T.muted, letterSpacing: '0.1em', margin: '0 0 24px' }}>
+            HOW IT WORKS
           </p>
-          <p style={{ fontFamily: monoFont, fontSize: 12, color: '#9CA3AF', margin: 0 }}>
-            We built this for the market they're not paying attention to.
-          </p>
+          <div className='login-steps-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32 }}>
+            {STEPS.map(s => (
+              <div key={s.n}>
+                <p style={{ fontFamily: monoFont, fontSize: 20, color: T.muted, margin: '0 0 10px' }}>{s.n}</p>
+                <p style={{ fontSize: 15, fontWeight: 500, color: T.text, margin: '0 0 5px' }}>{s.title}</p>
+                <p style={{ fontSize: 12, color: T.text2, margin: 0, lineHeight: 1.6 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {/* How it works */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 2rem 2.5rem' }}>
-        <p style={{ fontFamily: monoFont, fontSize: 11, color: T.muted, letterSpacing: '0.06em', margin: '0 0 18px' }}>
-          HOW IT WORKS
-        </p>
-        <div className='login-steps-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
-          {STEPS.map(s => (
-            <div key={s.n}>
-              <p style={{ fontFamily: monoFont, fontSize: 22, color: T.orange, margin: '0 0 8px' }}>{s.n}</p>
-              <p style={{ fontSize: 14, fontWeight: 700, color: T.text, margin: '0 0 4px' }}>{s.title}</p>
-              <p style={{ fontSize: 12, color: T.text2, margin: 0 }}>{s.desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Closing CTA */}
-      <div style={{ maxWidth: 1080, margin: '0 auto', padding: '0 2rem 3rem' }}>
-        <div style={{ background: '#FFF4EE', borderRadius: 12, padding: '2.25rem 2rem', textAlign: 'center' }}>
-          <p style={{ fontSize: 22, fontWeight: 800, color: T.text, margin: '0 0 8px' }}>
+        {/* Closing CTA */}
+        <div style={{ padding: '3.5rem 0 4rem', borderTop: `0.5px solid ${T.border}`, textAlign: 'center' }}>
+          <p style={{ fontSize: 24, fontWeight: 500, color: T.text, margin: '0 0 10px', letterSpacing: '-0.01em' }}>
             Ready to see where you stand?
           </p>
-          <p style={{ fontSize: 13, color: T.text2, margin: '0 0 20px' }}>
-            Private access &middot; invite only
+          <p style={{ fontSize: 13, color: T.muted, margin: '0 0 24px' }}>
+            Private access, invite only
           </p>
-          <Button variant="primary" onClick={() => navigate('/login')}>Sign in</Button>
-          <p style={{ fontSize: 12, color: T.muted, marginTop: '1.5rem', lineHeight: 1.6 }}>
-            devndespro.com &middot; SEO Management Platform
-          </p>
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              background: '#14171F', color: '#fff', border: 'none',
+              padding: '0 26px', height: 44, borderRadius: 6, fontSize: 14, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Sign in
+          </button>
         </div>
-      </div>
 
+      </div>
     </div>
   )
 }
