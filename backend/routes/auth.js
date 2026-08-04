@@ -164,7 +164,7 @@ router.get('/gsc/callback', async (req, res) => {
     })
     await pool.query('UPDATE users SET gsc_refresh_token=$1 WHERE id=$2', [data.refresh_token, userId])
     const frontend = process.env.FRONTEND_URL || 'http://localhost:5174'
-    res.send(`<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><div style="font-size:48px;margin-bottom:12px">✓</div><h2 style="color:#22C55E;margin:0 0 8px">GSC Connected!</h2><p style="color:#6b7280">You can close this window.</p><script>window.opener?.postMessage('gsc_connected','${frontend}');setTimeout(()=>window.close(),1800)<\/script></div></body></html>`)
+    res.send(`<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0"><div style="text-align:center"><div style="font-size:48px;margin-bottom:12px">✓</div><h2 style="color:#22C55E;margin:0 0 8px">GSC Connected!</h2><p style="color:#6b7280">You can now return to DevNdesPro SEO and close this tab.</p><script>window.opener?.postMessage('gsc_connected','${frontend}');<\/script></div></body></html>`)
   } catch (e) {
     console.error('GSC callback:', e.response?.data || e.message)
     res.status(500).send('Connection failed. Please try again.')
