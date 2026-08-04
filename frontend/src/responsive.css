@@ -119,3 +119,102 @@
   .audit-header-btns button svg { margin-right: 0 !important; font-size: 14px; }
   .audit-header-btns .btn-label { display: none !important; }
 }
+/* ============================================
+   LANDING PAGE RESPONSIVE
+   ============================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 56px !important;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .landing-steps-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 639px) {
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 44px !important;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-steps-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-preview-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .landing-preview-grid > div {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+}
+
+
+/* ============================================
+   LANDING PAGE RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 56px !important;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .landing-steps-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .landing-nav-links {
+    display: none !important;
+  }
+
+  .landing-hero-grid {
+    grid-template-columns: 1fr !important;
+    gap: 44px !important;
+  }
+
+  .landing-features-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-steps-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .landing-preview-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .landing-preview-grid > div {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+}
+
