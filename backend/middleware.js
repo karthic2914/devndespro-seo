@@ -18,7 +18,17 @@ const auth = async (req, res, next) => {
 const verifySite = async (req, res, next) => {
   const siteId = req.params.siteId
   if (!siteId) return res.status(400).json({ error: 'siteId required' })
-  const { rows } = await pool.query('SELECT id FROM sites WHERE id=$1 AND user_id=$2', [siteId, req.user.id])
+
+  const { rows } = await pool.query(
+    `SELECT s.id
+     FROM sites s
+     LEFT JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $2
+     WHERE s.id = $1
+       AND (s.user_id = $2 OR sa.user_id = $2)
+     LIMIT 1`,
+    [siteId, req.user.id]
+  )
+
   if (!rows[0]) return res.status(403).json({ error: 'Site not found or access denied' })
   req.siteId = parseInt(siteId)
   next()

@@ -12,15 +12,32 @@ function toCapitalizedName(value) {
 }
 
 async function verifySiteOwner(req, res, next) {
-  const { rows } = await pool.query('SELECT user_id FROM sites WHERE id=$1 LIMIT 1', [req.siteId])
-  if (!rows[0] || Number(rows[0].user_id) !== Number(req.user.id)) {
-    return res.status(403).json({ error: 'Only the site owner can access cold email prospects' })
+  const { rows } = await pool.query(
+    `SELECT s.id
+     FROM sites s
+     LEFT JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1
+     WHERE s.id = $2
+       AND (s.user_id = $1 OR sa.user_id = $1)
+     LIMIT 1`,
+    [req.user.id, req.siteId]
+  )
+
+  if (!rows[0]) {
+    return res.status(403).json({ error: 'Only the site owner or invited member can access cold email prospects' })
   }
   next()
 }
 
 async function siteOwnedByUser(siteId, userId) {
-  const { rows } = await pool.query('SELECT id FROM sites WHERE id=$1 AND user_id=$2 LIMIT 1', [siteId, userId])
+  const { rows } = await pool.query(
+    `SELECT s.id
+     FROM sites s
+     LEFT JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $2
+     WHERE s.id = $1
+       AND (s.user_id = $2 OR sa.user_id = $2)
+     LIMIT 1`,
+    [siteId, userId]
+  )
   return Boolean(rows[0])
 }
 
@@ -41,7 +58,8 @@ router.get('/cold-emails', auth, async (req, res) => {
     `SELECT c.*, s.name AS site_name, s.url AS site_url
      FROM cold_email_prospects c
      INNER JOIN sites s ON s.id = c.site_id
-     WHERE s.user_id=$1
+     LEFT JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1
+     WHERE s.user_id = $1 OR sa.user_id = $1
      ORDER BY c.updated_at DESC, c.created_at DESC`,
     [req.user.id]
   )
