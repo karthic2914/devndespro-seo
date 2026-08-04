@@ -680,13 +680,14 @@ export default function SiteAudit() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
             <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} /><span className='btn-label'>Fix in Actions</span>
           </Button>
-          <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting || multipageStatus === 'running'}>
-            <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
-          </Button>
-          <div style={{ position: 'relative' }}>
-            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={running || exporting || multipageStatus === 'running'}>
+          <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
+            <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
+              <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255,255,255,0.3)' }}>
               <FontAwesomeIcon icon={faChevronDown} />
             </Button>
+
             {showAuditMenu && (
               <>
                 <div onClick={() => setShowAuditMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
