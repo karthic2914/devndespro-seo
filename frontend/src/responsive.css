@@ -1,4 +1,4 @@
-/* ============================================
+﻿/* ============================================
    GLOBAL RESPONSIVE GRID OVERRIDES
    Covers all pages: mobile/tablet/desktop/large
    ============================================ */
@@ -1286,6 +1286,159 @@ html::-webkit-scrollbar-thumb:hover {
     justify-content: center;
     gap: 9px;
     cursor: pointer;
+  }
+}
+
+
+/* MOBILE LANDING OVERFLOW FIX */
+
+html,
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+.premium-landing-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden !important;
+}
+
+.premium-landing-page main,
+.premium-landing-page section,
+.premium-landing-page section > div {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.landing-hero-grid,
+.landing-hero-grid > div,
+.landing-features-grid,
+.landing-steps-grid,
+.landing-platform-cards {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+@media (max-width: 760px) {
+  .landing-site-header,
+  .landing-site-header-inner,
+  .landing-mobile-menu {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .landing-site-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    overflow: hidden;
+  }
+
+  .landing-site-logo {
+    min-width: 0;
+    max-width: calc(100vw - 76px);
+    overflow: hidden;
+  }
+
+  .landing-site-logo img,
+  .landing-site-logo svg {
+    max-width: 150px !important;
+    height: auto !important;
+  }
+
+  .landing-hero-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100% !important;
+    gap: 38px !important;
+  }
+
+  .landing-hero-grid > div:first-child,
+  .landing-hero-grid > div:last-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .landing-hero-grid h1 {
+    max-width: 100% !important;
+    font-size: clamp(42px, 12vw, 56px) !important;
+    line-height: 1.02 !important;
+    overflow-wrap: anywhere;
+  }
+
+  .landing-hero-grid p {
+    max-width: 100% !important;
+    overflow-wrap: anywhere;
+  }
+
+  .landing-hero-grid > div:last-child {
+    transform: none !important;
+    margin: 0 auto !important;
+  }
+
+  .landing-hero-grid > div:last-child > div {
+    max-width: 100% !important;
+  }
+
+  .landing-hero-grid > div:last-child > div:last-child {
+    position: relative !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100% !important;
+    max-width: 180px !important;
+    margin: 14px 0 0 auto !important;
+  }
+
+  .landing-features-grid,
+  .landing-steps-grid,
+  .landing-platform-cards {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .landing-platform-section,
+  .landing-search-shift {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    box-sizing: border-box;
+  }
+
+  .landing-signal-strip {
+    max-width: 100%;
+    overflow-x: auto !important;
+  }
+
+  .landing-section-header,
+  .landing-section-header h2,
+  .landing-section-header p {
+    max-width: 100% !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .landing-site-header-inner {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .landing-site-logo img,
+  .landing-site-logo svg {
+    max-width: 125px !important;
+  }
+
+  .landing-hero-grid h1 {
+    font-size: clamp(38px, 11.5vw, 48px) !important;
+  }
+
+  .landing-platform-section,
+  .landing-search-shift {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
 
