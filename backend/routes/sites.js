@@ -96,6 +96,48 @@ router.get('/summary', auth, async (req, res) => {
   })
 })
 
+// GSC verified properties available to import (excludes already-added projects)
+router.get('/gsc-properties', auth, async (req, res) => {
+  const axios = require('axios')
+  const { getGscAccessToken } = require('../utils/gsc')
+  try {
+    const { rows: userRows } = await pool.query('SELECT gsc_refresh_token FROM users WHERE id=$1', [req.user.id])
+    const refreshToken = userRows[0]?.gsc_refresh_token
+    if (!refreshToken) return res.json({ connected: false, properties: [] })
+
+    const accessToken = await getGscAccessToken(refreshToken)
+    const { data } = await axios.get('https://www.googleapis.com/webmasters/v3/sites', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 12000,
+    })
+    const entries = data?.siteEntry || []
+    const properties = entries
+      .filter(e => String(e?.permissionLevel || '') !== 'siteUnverifiedUser')
+      .map(e => {
+        const raw = String(e.siteUrl || '')
+        const display = raw.startsWith('sc-domain:')
+          ? raw.replace('sc-domain:', '')
+          : raw.replace(/^https?:\/\//, '').replace(/\/$/, '')
+        return { propertyUrl: raw, displayUrl: display, permissionLevel: e.permissionLevel }
+      })
+
+    const { rows: existingSites } = await pool.query(
+      `SELECT s.url FROM sites s INNER JOIN site_access sa ON sa.site_id = s.id AND sa.user_id = $1`,
+      [req.user.id]
+    )
+    const existingHosts = new Set(existingSites.map(s => {
+      try { return new URL(s.url.startsWith('http') ? s.url : `https://${s.url}`).hostname.replace(/^www\./, '') }
+      catch { return s.url }
+    }))
+    const available = properties.filter(p => !existingHosts.has(p.displayUrl.replace(/^www\./, '')))
+
+    res.json({ connected: true, properties: available })
+  } catch (e) {
+    console.error('GSC properties fetch failed:', e.response?.data || e.message)
+    res.status(500).json({ connected: true, properties: [], error: 'Failed to fetch GSC properties' })
+  }
+})
+
 // Single site by ID
 router.get('/:siteId', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query(
