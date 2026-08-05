@@ -186,7 +186,9 @@ export default function Users() {
                 <div style={{ fontSize: 13, color: T.text, fontWeight: 500 }}>{u.email}</div>
                 <div style={{ fontSize: 12, color: T.text2 }}>{u.site_name || '-'}</div>
                 <div>
-                  <Badge variant={STATUS_VARIANT[u.status] || 'default'}>{u.status}</Badge>
+                  <Badge variant={STATUS_VARIANT[u.status] || 'default'}>
+                    {u.status === 'granted' || u.status === 'accepted' ? 'Active' : u.status}
+                  </Badge>
                 </div>
                 <div style={{ fontSize: 12, color: T.muted }}>
                   {u.invited_at ? new Date(u.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
