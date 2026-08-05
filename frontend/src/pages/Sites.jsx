@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -96,6 +96,13 @@ export default function Sites() {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ name: '', url: '', contactEmail: '', notifyAdmin: true })
   const [findingEmail, setFindingEmail] = useState(false)
+  const [addMode, setAddMode] = useState('choose')
+  const [gscConnected, setGscConnected] = useState(false)
+  const [gscProperties, setGscProperties] = useState([])
+  const [gscLoadingProps, setGscLoadingProps] = useState(false)
+  const [gscConnecting, setGscConnecting] = useState(false)
+  const [selectedProps, setSelectedProps] = useState([])
+  const [importing, setImporting] = useState(false)
   const { user } = useAuth()
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState({})
@@ -177,6 +184,70 @@ export default function Sites() {
     if (!form.url.trim()) e.url = 'Website URL is required'
     setErrors(e)
     return !Object.keys(e).length
+  }
+
+  const checkGscAndLoadProperties = async () => {
+    setGscLoadingProps(true)
+    try {
+      const res = await fetch('/api/sites/gsc-properties', { headers: authHeaders })
+      const data = await res.json()
+      setGscConnected(!!data.connected)
+      setGscProperties(Array.isArray(data.properties) ? data.properties : [])
+    } catch {
+      setGscConnected(false)
+      setGscProperties([])
+    }
+    setGscLoadingProps(false)
+  }
+
+  const connectGsc = async () => {
+    setGscConnecting(true)
+    try {
+      const res = await fetch('/api/auth/gsc', { headers: authHeaders })
+      const data = await res.json()
+      const popup = window.open(data.url, 'gsc_connect', 'width=520,height=640')
+      const onMessage = (e) => {
+        if (e.data === 'gsc_connected') {
+          window.removeEventListener('message', onMessage)
+          popup?.close()
+          checkGscAndLoadProperties()
+          setGscConnecting(false)
+        }
+      }
+      window.addEventListener('message', onMessage)
+    } catch {
+      toast.error('Failed to start GSC connection')
+      setGscConnecting(false)
+    }
+  }
+
+  const toggleSelectedProp = (url) => {
+    setSelectedProps(p => p.includes(url) ? p.filter(x => x !== url) : [...p, url])
+  }
+
+  const importSelected = async () => {
+    if (selectedProps.length === 0) return
+    setImporting(true)
+    let successCount = 0
+    for (const propUrl of selectedProps) {
+      const displayUrl = propUrl.startsWith('sc-domain:')
+        ? propUrl.replace('sc-domain:', '')
+        : propUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
+      try {
+        const res = await fetch('/api/sites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders },
+          body: JSON.stringify({ name: displayUrl, url: displayUrl, notifyAdmin: true }),
+        })
+        if (res.ok) successCount++
+      } catch { /* continue with remaining */ }
+    }
+    setImporting(false)
+    setShowAdd(false)
+    setAddMode('choose')
+    setSelectedProps([])
+    toast.success(`Imported ${successCount} of ${selectedProps.length} project${selectedProps.length === 1 ? '' : 's'}`)
+    load()
   }
 
   const add = async () => {
@@ -262,47 +333,109 @@ export default function Sites() {
 
         <Modal
           open={showAdd}
-          onClose={() => { setShowAdd(false); setErrors({}) }}
-          title="Add new project"
-          subtitle="Start tracking SEO metrics for any website"
-          width={460}
+          onClose={() => { setShowAdd(false); setErrors({}); setAddMode('choose'); setSelectedProps([]) }}
+          title={addMode === 'gsc' ? 'Import from Google Search Console' : 'Add new project'}
+          subtitle={addMode === 'gsc' ? 'Select verified domains to import' : addMode === 'manual' ? 'Start tracking SEO metrics for any website' : 'Start tracking SEO metrics for any website'}
+          width={480}
           footer={
-            <>
-              <Button variant="secondary" onClick={() => setShowAdd(false)}>Cancel</Button>
-              <Button variant="primary" loading={adding} onClick={add}>
-                Add Project <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
-              </Button>
-            </>
+            addMode === 'choose' ? null : addMode === 'gsc' ? (
+              <>
+                <Button variant="secondary" onClick={() => setAddMode('choose')}>Back</Button>
+                <Button variant="primary" loading={importing} disabled={selectedProps.length === 0} onClick={importSelected}>
+                  Import{selectedProps.length > 0 ? ` (${selectedProps.length})` : ''} <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="secondary" onClick={() => setAddMode('choose')}>Back</Button>
+                <Button variant="primary" loading={adding} onClick={add}>
+                  Add Project <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                </Button>
+              </>
+            )
           }
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <Input label="Project name" placeholder="e.g. devndespro" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} icon={<FontAwesomeIcon icon={faTag} />} />
-            <Input label="Website URL" placeholder="e.g. devndespro.com" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} error={errors.url} icon={<FontAwesomeIcon icon={faGlobe} />} hint="Only domains verified in your connected GSC account are allowed." />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." style={{ flex: 1 }} />
-              {user?.id === 1 && (
-                <Button variant="secondary" size="sm" loading={findingEmail} style={{ minWidth: 120 }}
-                  onClick={async () => {
-                    if (!form.url) return toast.error('Enter a website URL first')
-                    setFindingEmail(true)
-                    try {
-                      const r = await api.post('/extract/extract-email', { url: form.url.startsWith('http') ? form.url : `https://${form.url}` })
-                      if (Array.isArray(r.data?.emails) && r.data.emails.length > 0) {
-                        setForm(p => ({ ...p, contactEmail: r.data.emails[0] }))
-                        toast.success('Email found and filled!')
-                      } else { toast.error('No email found on homepage') }
-                    } catch { toast.error('Failed to extract email') }
-                    setFindingEmail(false)
-                  }}>
-                  Find email from site
-                </Button>
+          {addMode === 'choose' && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <div
+                onClick={() => { setAddMode('gsc'); checkGscAndLoadProperties() }}
+                style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+                onMouseOver={e => { e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)' }}
+                onMouseOut={e => { e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 8 }}><FontAwesomeIcon icon={faGlobe} /></div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Import from GSC</div>
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Automatic ownership verification. Import multiple projects at once.</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#EA6A3B' }}>Choose this &rarr;</div>
+              </div>
+              <div
+                onClick={() => setAddMode('manual')}
+                style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
+                onMouseOver={e => { e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.08)' }}
+                onMouseOut={e => { e.currentTarget.style.boxShadow = 'none' }}
+              >
+                <div style={{ fontSize: 20, marginBottom: 8 }}><FontAwesomeIcon icon={faTag} /></div>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Add manually</div>
+                <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 10 }}>Add one project at a time. Fully configure during creation.</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#EA6A3B' }}>Choose this &rarr;</div>
+              </div>
+            </div>
+          )}
+
+          {addMode === 'gsc' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {gscLoadingProps ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>Loading your GSC properties...</div>
+              ) : !gscConnected ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: '#6B7280', marginBottom: 14 }}>Connect Google Search Console to import your verified domains.</div>
+                  <Button variant="primary" loading={gscConnecting} onClick={connectGsc}>Connect Google Search Console</Button>
+                </div>
+              ) : gscProperties.length === 0 ? (
+                <div style={{ padding: '1.5rem', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>No new verified domains found in your GSC account. All verified domains may already be added as projects.</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+                  {gscProperties.map(p => (
+                    <label key={p.propertyUrl} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', border: '1px solid #e5e7eb', borderRadius: 8, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={selectedProps.includes(p.propertyUrl)} onChange={() => toggleSelectedProp(p.propertyUrl)} />
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>{p.displayUrl}</span>
+                    </label>
+                  ))}
+                </div>
               )}
             </div>
-            <label style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-              <input type="checkbox" checked={form.notifyAdmin} onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))} style={{ marginRight: 6 }} />
-              Notify admin by email when this project is added
-            </label>
-          </div>
+          )}
+
+          {addMode === 'manual' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <Input label="Project name" placeholder="e.g. devndespro" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} error={errors.name} icon={<FontAwesomeIcon icon={faTag} />} />
+              <Input label="Website URL" placeholder="e.g. devndespro.com" value={form.url} onChange={e => setForm(p => ({ ...p, url: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} error={errors.url} icon={<FontAwesomeIcon icon={faGlobe} />} hint="Adding a domain not verified in GSC is fine - some features work better once it is verified." />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Input label="Client contact email" placeholder="e.g. client@example.com" value={form.contactEmail} onChange={e => setForm(p => ({ ...p, contactEmail: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} icon={<FontAwesomeIcon icon={faEnvelope} />} hint="Saved to Cold Email tracker automatically." style={{ flex: 1 }} />
+                {user?.id === 1 && (
+                  <Button variant="secondary" size="sm" loading={findingEmail} style={{ minWidth: 120 }}
+                    onClick={async () => {
+                      if (!form.url) return toast.error('Enter a website URL first')
+                      setFindingEmail(true)
+                      try {
+                        const r = await api.post('/extract/extract-email', { url: form.url.startsWith('http') ? form.url : `https://${form.url}` })
+                        if (Array.isArray(r.data?.emails) && r.data.emails.length > 0) {
+                          setForm(p => ({ ...p, contactEmail: r.data.emails[0] }))
+                          toast.success('Email found and filled!')
+                        } else { toast.error('No email found on homepage') }
+                      } catch { toast.error('Failed to extract email') }
+                      setFindingEmail(false)
+                    }}>
+                    Find email from site
+                  </Button>
+                )}
+              </div>
+              <label style={{ fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+                <input type="checkbox" checked={form.notifyAdmin} onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))} style={{ marginRight: 6 }} />
+                Notify admin by email when this project is added
+              </label>
+            </div>
+          )}
         </Modal>
 
         <Modal
