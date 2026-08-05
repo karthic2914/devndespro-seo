@@ -230,10 +230,26 @@ router.post('/resend/:id', auth, async (req, res) => {
   }
 })
 
-// Revoke invite
+// Revoke invite - actually removes site_access, keeps the row for history
 router.delete('/:id', auth, async (req, res) => {
-  await pool.query('DELETE FROM invited_users WHERE id=$1', [req.params.id])
-  res.json({ ok: true })
+  try {
+    const { rows } = await pool.query('SELECT email, site_id FROM invited_users WHERE id=$1', [req.params.id])
+    if (!rows[0]) return res.status(404).json({ error: 'Invite not found' })
+
+    const { email, site_id } = rows[0]
+
+    const { rows: userRows } = await pool.query('SELECT id FROM users WHERE email=$1', [email])
+    if (userRows.length > 0) {
+      await pool.query('DELETE FROM site_access WHERE site_id=$1 AND user_id=$2', [site_id, userRows[0].id])
+    }
+
+    await pool.query(`UPDATE invited_users SET status='revoked', token=NULL WHERE id=$1`, [req.params.id])
+
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('Revoke error:', e)
+    res.status(500).json({ error: 'Failed to revoke access' })
+  }
 })
 
 // Accept invite (public - no auth)
