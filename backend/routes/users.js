@@ -95,6 +95,28 @@ router.post('/invite', auth, async (req, res) => {
         [normalizedEmail, req.user.id, siteId]
       )
 
+
+      const { rows: siteRows2 } = await pool.query('SELECT name FROM sites WHERE id=$1', [siteId])
+      const siteName2 = siteRows2[0]?.name || 'your project'
+
+      await sendEmail({
+        to: normalizedEmail,
+        subject: `You now have access to ${siteName2} on DevNdesPro SEO`,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+            <div style="text-align:center;margin-bottom:24px">
+              <h1 style="font-size:22px;font-weight:800;color:#E66A39;margin:0">DevNdesPro SEO</h1>
+            </div>
+            <h2 style="font-size:18px;font-weight:700;color:#1a1a1a;margin:0 0 12px">You have new access!</h2>
+            <p style="color:#555;line-height:1.6;margin:0 0 24px">
+              You have been given access to the SEO dashboard for <strong>${siteName2}</strong>. Log in with your existing account to view it.
+            </p>
+            <a href="${process.env.FRONTEND_URL || 'http://localhost:5174'}/login" style="display:inline-block;background:#E66A39;color:#fff;text-decoration:none;padding:12px 28px;border-radius:8px;font-weight:700;font-size:15px">
+              Go to dashboard
+            </a>
+          </div>
+        `,
+      }).catch(e => console.error('Access-granted email failed:', e.message))
       return res.json({ ok: true, message: `Access granted to ${normalizedEmail}` })
     }
 
