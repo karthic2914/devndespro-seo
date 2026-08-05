@@ -109,7 +109,9 @@ export default function Sites() {
   const { logout } = useAuth()
   const navigate = useNavigate()
   const didLoadRef = useRef(false)
-  const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null })
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null, bulk: false })
+  const [selectMode, setSelectMode] = useState(false)
+  const [selectedIds, setSelectedIds] = useState([])
   const [showAeoBanner, setShowAeoBanner] = useState(() => localStorage.getItem('aeo_banner_dismissed') !== '1')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
   const [summary, setSummary] = useState(null)
@@ -301,6 +303,35 @@ export default function Sites() {
     load()
   }
 
+  const toggleSelectMode = () => {
+    setSelectMode(v => !v)
+    setSelectedIds([])
+  }
+
+  const toggleSelected = (id) => {
+    setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id])
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredSites.length) setSelectedIds([])
+    else setSelectedIds(filteredSites.map(s => s.id))
+  }
+
+  const bulkRemove = async () => {
+    let successCount = 0
+    for (const id of selectedIds) {
+      try {
+        const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
+        if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
+        if (res.ok) successCount++
+      } catch { /* continue with remaining */ }
+    }
+    toast.success(`Deleted ${successCount} of ${selectedIds.length} project${selectedIds.length === 1 ? '' : 's'}`)
+    setSelectedIds([])
+    setSelectMode(false)
+    load()
+  }
+
   const getDomain = (url) => {
     try { return new URL(url.startsWith('http') ? url : `https://${url}`).hostname }
     catch { return url }
@@ -440,25 +471,39 @@ export default function Sites() {
 
         <Modal
           open={confirmDelete.open}
-          onClose={() => setConfirmDelete({ open: false, site: null })}
-          title="Delete Project?"
+          onClose={() => setConfirmDelete({ open: false, site: null, bulk: false })}
+          title={confirmDelete.bulk ? `Delete ${selectedIds.length} Projects?` : 'Delete Project?'}
           width={380}
           footer={
             <>
-              <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, site: null })}>Cancel</Button>
+              <Button variant="secondary" onClick={() => setConfirmDelete({ open: false, site: null, bulk: false })}>Cancel</Button>
               <Button variant="danger" onClick={async () => {
-                if (confirmDelete.site) await remove(confirmDelete.site.id)
-                setConfirmDelete({ open: false, site: null })
+                if (confirmDelete.bulk) await bulkRemove()
+                else if (confirmDelete.site) await remove(confirmDelete.site.id)
+                setConfirmDelete({ open: false, site: null, bulk: false })
               }}>Delete</Button>
             </>
           }
         >
-          <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
-            Are you sure you want to delete <span style={{ color: '#111' }}>{confirmDelete.site?.name}</span>?
-          </div>
-          <div style={{ fontSize: 13, color: '#6B7280' }}>
-            This will permanently remove the project and all its data. This action cannot be undone.
-          </div>
+          {confirmDelete.bulk ? (
+            <>
+              <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
+                Are you sure you want to delete {selectedIds.length} project{selectedIds.length === 1 ? '' : 's'}?
+              </div>
+              <div style={{ fontSize: 13, color: '#6B7280' }}>
+                This will permanently remove all selected projects and their data. This action cannot be undone.
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 15, color: '#b91c1c', marginBottom: 8, fontWeight: 600 }}>
+                Are you sure you want to delete <span style={{ color: '#111' }}>{confirmDelete.site?.name}</span>?
+              </div>
+              <div style={{ fontSize: 13, color: '#6B7280' }}>
+                This will permanently remove the project and all its data. This action cannot be undone.
+              </div>
+            </>
+          )}
         </Modal>
 
         <div className="page-content">
@@ -604,6 +649,34 @@ export default function Sites() {
                   </div>
               </div>
             </div>
+            {user?.id === 1 && (
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+                padding: '8px 14px', borderBottom: '1px solid var(--border)', background: 'var(--surface)',
+              }}>
+                {selectMode ? (
+                  <>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={filteredSites.length > 0 && selectedIds.length === filteredSites.length}
+                        onChange={toggleSelectAll}
+                      />
+                      Select all ({selectedIds.length} selected)
+                    </label>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <Button variant="danger" size="sm" disabled={selectedIds.length === 0}
+                        onClick={() => setConfirmDelete({ open: true, site: null, bulk: true })}>
+                        <FontAwesomeIcon icon={faTrash} style={{ marginRight: 6 }} />Delete Selected ({selectedIds.length})
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={toggleSelectMode}>Cancel</Button>
+                    </div>
+                  </>
+                ) : (
+                  <Button variant="secondary" size="sm" onClick={toggleSelectMode}>Select projects</Button>
+                )}
+              </div>
+            )}
               <div style={{ padding: '4px 4px 12px', maxHeight: 640, overflowY: 'auto' }}>
                 {loading ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
@@ -623,15 +696,24 @@ export default function Sites() {
                       {filteredSites.slice(0, visibleCount).map((site, idx) => (
                         <div
                           key={site.id}
-                          onClick={() => enter(site)}
+                          onClick={() => selectMode ? toggleSelected(site.id) : enter(site)}
                         className="fade-in"
                           style={{
-                            background: '#fff', border: '1px solid var(--dark4)', borderRadius: 12, animationDelay: `ms`, animationFillMode: 'both',
-                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.25s ease, transform 0.25s ease',
+                            background: '#fff', border: selectMode && selectedIds.includes(site.id) ? '2px solid var(--accent, #EA6A3B)' : '1px solid var(--dark4)', borderRadius: 12, animationDelay: `ms`, animationFillMode: 'both',
+                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.25s ease, transform 0.25s ease', position: 'relative',
                           }}
                           onMouseOver={e => { e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
                           onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
                         >
+                          {selectMode && (
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.includes(site.id)}
+                              onChange={() => toggleSelected(site.id)}
+                              onClick={e => e.stopPropagation()}
+                              style={{ position: 'absolute', top: 10, right: 10, width: 16, height: 16, cursor: 'pointer' }}
+                            />
+                          )}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
                               <SiteAvatar name={site.name || '?'} url={site.url} />
@@ -647,9 +729,9 @@ export default function Sites() {
                                 </div>
                               </div>
                             </div>
-                            {user?.id === 1 && (
+                            {user?.id === 1 && !selectMode && (
                               <button
-                                onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site }) }}
+                                onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site, bulk: false }) }}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 14, color: '#9CA3AF', flexShrink: 0 }}
                                 title="Delete project"
                               >
