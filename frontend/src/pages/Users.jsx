@@ -192,8 +192,8 @@ export default function Users() {
                   {u.invited_at ? new Date(u.invited_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
-                  {u.status === 'pending' && (
-                    <button onClick={() => resend(u.id, u.email)} title="Resend invite"
+                  {(u.status === 'pending' || u.status === 'granted') && (
+                    <button onClick={() => resend(u.id, u.email)} title={u.status === 'granted' ? 'Resend access reminder' : 'Resend invite'}
                       style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.blue, padding: '4px 6px', borderRadius: 4 }}>
                       <FontAwesomeIcon icon={faRotateRight} />
                     </button>
