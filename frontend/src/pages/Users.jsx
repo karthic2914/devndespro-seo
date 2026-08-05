@@ -141,7 +141,7 @@ export default function Users() {
       {/* Stats row */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
         {[
-          { label: 'Total Invited', value: users.length, icon: faUserGroup, color: T.blue },
+          { label: 'Total Invited', value: users.filter(u => u.status !== 'revoked').length, icon: faUserGroup, color: T.blue },
           { label: 'Pending', value: pending.length, icon: faClock, color: T.amber },
           { label: 'Active', value: accepted.length, icon: faCircleCheck, color: T.green },
         ].map(s => (
@@ -198,10 +198,12 @@ export default function Users() {
                       <FontAwesomeIcon icon={faRotateRight} />
                     </button>
                   )}
-                  <button onClick={() => revoke(u.id, u.email)} title="Remove user"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.red, padding: '4px 6px', borderRadius: 4 }}>
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                  {u.status !== 'revoked' && (
+                    <button onClick={() => revoke(u.id, u.email)} title="Remove user"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: T.red, padding: '4px 6px', borderRadius: 4 }}>
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
