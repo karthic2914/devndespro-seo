@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faUserPlus, faEnvelope, faTrash, faRotateRight,
@@ -11,7 +11,7 @@ import AppSidebar from '../components/AppSidebar'
 import api from '../utils/api'
 import toast from 'react-hot-toast'
 
-const STATUS_VARIANT = { pending: 'warning', accepted: 'success', revoked: 'default' }
+const STATUS_VARIANT = { pending: 'warning', accepted: 'success', granted: 'success', revoked: 'default' }
 
 export default function Users() {
   const { user: authUser } = useAuth()
@@ -88,7 +88,7 @@ export default function Users() {
   }
 
   const pending = users.filter(u => u.status === 'pending')
-  const accepted = users.filter(u => u.status === 'accepted')
+  const accepted = users.filter(u => u.status === 'accepted' || u.status === 'granted')
 
   return (
     <div className="app-shell">
