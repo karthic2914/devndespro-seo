@@ -266,6 +266,21 @@ router.get('/accept', async (req, res) => {
 
     await pool.query(`UPDATE invited_users SET status='accepted', accepted_at=NOW(), token=NULL WHERE id=$1`, [rows[0].id])
 
+    const { rows: siteRows3 } = await pool.query('SELECT name FROM sites WHERE id=$1', [rows[0].site_id])
+    const siteName3 = siteRows3[0]?.name || 'a project'
+
+    sendEmail({
+      to: 'karthic2914@gmail.com',
+      subject: `${rows[0].email} accepted the invite to ${siteName3}`,
+      html: `
+        <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px 24px">
+          <h2 style="color:#E66A39;margin:0 0 16px">Invite Accepted</h2>
+          <p style="color:#555;margin:0 0 8px"><strong>${rows[0].email}</strong> just accepted the invite to <strong>${siteName3}</strong>.</p>
+          <p style="color:#999;font-size:12px;margin:0">This is an automated notification from DevNdesPro SEO.</p>
+        </div>
+      `,
+    }).catch(e => console.error('Accept notify failed:', e.message))
+
     res.json({ ok: true, email: rows[0].email })
   } catch (e) {
     console.error('Accept error:', e)
