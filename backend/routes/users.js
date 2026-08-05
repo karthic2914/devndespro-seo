@@ -85,7 +85,7 @@ router.post('/invite', auth, async (req, res) => {
 
       await pool.query(
         `INSERT INTO invited_users (email, token, status, invited_by, invited_at, accepted_at, site_id)
-         VALUES ($1, NULL, 'accepted', $2, NOW(), NOW(), $3)
+         VALUES ($1, NULL, 'granted', $2, NOW(), NOW(), $3)
          ON CONFLICT (email, site_id) DO UPDATE SET
            token = EXCLUDED.token,
            status = EXCLUDED.status,
