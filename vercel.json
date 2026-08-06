@@ -1,0 +1,38 @@
+{
+    "$schema":  "https://openapi.vercel.sh/vercel.json",
+    "headers":  [
+                    {
+                        "source":  "/(.*)",
+                        "headers":  [
+                                        {
+                                            "key":  "Content-Security-Policy",
+                                            "value":  "default-src \u0027self\u0027; script-src \u0027self\u0027 \u0027unsafe-inline\u0027 https://va.vercel-scripts.com https://sc.lfeeder.com; style-src \u0027self\u0027 \u0027unsafe-inline\u0027 https:; img-src \u0027self\u0027 data: blob: https:; font-src \u0027self\u0027 data: https:; connect-src \u0027self\u0027 https: wss:; frame-src \u0027self\u0027 https:; worker-src \u0027self\u0027 blob:; object-src \u0027none\u0027; base-uri \u0027self\u0027; form-action \u0027self\u0027; frame-ancestors \u0027self\u0027; upgrade-insecure-requests"
+                                        },
+                                        {
+                                            "key":  "X-Content-Type-Options",
+                                            "value":  "nosniff"
+                                        },
+                                        {
+                                            "key":  "Referrer-Policy",
+                                            "value":  "strict-origin-when-cross-origin"
+                                        },
+                                        {
+                                            "key":  "Permissions-Policy",
+                                            "value":  "camera=(), microphone=(), geolocation=()"
+                                        },
+                                        {
+                                            "key":  "Strict-Transport-Security",
+                                            "value":  "max-age=63072000; includeSubDomains; preload"
+                                        },
+                                        {
+                                            "key":  "Cross-Origin-Opener-Policy",
+                                            "value":  "same-origin-allow-popups"
+                                        },
+                                        {
+                                            "key":  "X-Frame-Options",
+                                            "value":  "SAMEORIGIN"
+                                        }
+                                    ]
+                    }
+                ]
+}
