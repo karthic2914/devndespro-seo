@@ -63,98 +63,203 @@ function getSummarySubject(lang, url) {
 }
 
 function getSummaryEmailText(lang, tone, auditData, allIssues) {
-  const score    = auditData?.score ?? '-'
-  const critical = (allIssues || []).filter((i) => i.status === 'error').length
-  const warnings = (allIssues || []).filter((i) => i.status === 'warning').length
-  const url      = auditData?.url || 'nettstedet'
+  const score = auditData?.score ?? '-'
+  const critical = (allIssues || []).filter(
+    (issue) => issue.status === 'error'
+  ).length
+  const warnings = (allIssues || []).filter(
+    (issue) => issue.status === 'warning'
+  ).length
+  const url = auditData?.url || 'nettstedet'
 
-  let techScore = null, contentScore = null
+  let techScore = null
+  let contentScore = null
+
   if (Array.isArray(auditData?.checks)) {
     const grouped = groupByCategory(auditData.checks)
-    for (const cat of grouped) {
-      if (cat.name.toLowerCase().includes('technical seo') || cat.name.toLowerCase().includes('sikkerhet') || cat.name.toLowerCase().includes('security')) {
-        techScore = cat.score
+
+    for (const category of grouped) {
+      const categoryName = category.name.toLowerCase()
+
+      if (
+        categoryName.includes('technical seo') ||
+        categoryName.includes('sikkerhet') ||
+        categoryName.includes('security')
+      ) {
+        techScore = category.score
       }
-      if (cat.name.toLowerCase().includes('content quality')) {
-        contentScore = cat.score
+
+      if (categoryName.includes('content quality')) {
+        contentScore = category.score
       }
     }
   }
-  techScore    = techScore ?? '-'
+
+  techScore = techScore ?? '-'
   contentScore = contentScore ?? '-'
-  const techTick    = techScore === 100 ? ' &#10003;' : ''
+
+  const techTick = techScore === 100 ? ' &#10003;' : ''
   const contentTick = contentScore === 100 ? ' &#10003;' : ''
 
-  // -- NORWEGIAN ----------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // NORWEGIAN
+  // ---------------------------------------------------------------------------
+
   if (lang === 'no') {
     if (tone === 'formal') {
       return `Kjære [Navn/Team],<br><br>
-Jeg har nylig gjennomført en teknisk SEO-analyse av <b>${url}</b> og ønsker å dele en oppsummering av funn som kan være relevante for deres digitale synlighet.<br><br>
-<b>Revisjonsoppsummering:</b><br>
+
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som hjelper bedrifter med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+
+Vi analyserer jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre digital synlighet, ytelse og brukeropplevelse.<br><br>
+
+I forbindelse med en gjennomgang av <b>${url}</b> identifiserte vi noen områder som kan være relevante å se nærmere på.<br><br>
+
+<b>Oppsummering av analysen:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
-- Kritiske problemer: <b>${critical}</b> (påvirker direkte Googles indeksering)<br>
+- Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-En fullstendig rapport med konkrete anbefalinger er tilgjengelig kostnadsfritt, dersom teamet ønsker å gjennomgå den.<br><br>
-Med vennlig hilsen,<br>
-<b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
-<a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
+
+Nettstedet har flere sterke sider, men analysen viser også noen tekniske forbedringsmuligheter. Disse kan påvirke hvordan Google crawler, indekserer og rangerer nettstedet, og kan samtidig ha betydning for ytelse og brukeropplevelse.<br><br>
+
+Analysen er utført med vårt eget analyseverktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+
+Vi har utarbeidet en detaljert rapport med konkrete anbefalinger og prioriterte tiltak. Rapporten deles gjerne kostnadsfritt og uten forpliktelser dersom dere ønsker å gjennomgå den.<br><br>
+
+Dersom dere også har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, bistår vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
+
+Gi meg gjerne beskjed dersom dere ønsker rapporten tilsendt.<br><br>
+
+Med vennlig hilsen,<br><br>
+
+<b>Mahadevan Sivasubramanian</b><br>
+Chief Technology Officer (CTO)<br>
+<b>Devndespro</b><br>
+AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
+<a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
     }
-    // casual norsk
+
+    // Casual Norwegian
     return `Hei,<br><br>
-Jeg har kjørt en teknisk SEO-analyse av <b>${url}</b> og ville dele noen av funnene med dere.<br><br>
+
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som hjelper bedrifter med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+
+Vi analyserer jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
+
+Da vi gjennomgikk <b>${url}</b>, la vi merke til noen områder som kan være verdt å se nærmere på.<br><br>
+
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
 - Kritiske problemer: <b>${critical}</b><br>
 - Advarsler: <b>${warnings}</b><br>
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
-De kritiske problemene påvirker direkte hvordan Google crawler og rangerer siden.<br><br>
-Analysen er gjort via mitt eget SEO-verktøy (<a href="https://seo.devndespro.com">seo.devndespro.com</a>), som jeg bruker til å hjelpe norske bedrifter med å forbedre synligheten sin på nett.<br><br>
-Jeg har en fullstendig rapport klar med konkrete forslag til utbedring - gjerne gratis tilgjengelig for dere hvis det er av interesse.<br><br>
-Med vennlig hilsen,<br>
-<b>Mahadevan</b><br>
-Devndespro – Webutvikling &amp; SEO<br>
+
+Nettstedet har flere sterke sider, men analysen viser også noen tekniske forbedringsmuligheter. Disse kan påvirke hvordan Google crawler, indekserer og rangerer nettstedet, og kan samtidig ha betydning for ytelse og brukeropplevelse.<br><br>
+
+Analysen er utført med vårt eget analyseverktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+
+Jeg har en detaljert rapport klar med konkrete anbefalinger og prioriterte tiltak. Jeg deler den gjerne kostnadsfritt og uten forpliktelser dersom det er av interesse.<br><br>
+
+Dersom dere også har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, hjelper vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
+
+Gi meg gjerne beskjed dersom dere ønsker rapporten tilsendt.<br><br>
+
+Med vennlig hilsen,<br><br>
+
+<b>Mahadevan Sivasubramanian</b><br>
+Chief Technology Officer (CTO)<br>
+<b>Devndespro</b><br>
+AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
-<a href="https://seo.devndespro.com">seo.devndespro.com</a>`
+<a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
+<a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
   }
 
-  // -- ENGLISH ------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
+  // ENGLISH
+  // ---------------------------------------------------------------------------
+
   if (tone === 'formal') {
     return `Dear [Name/Team],<br><br>
-I recently conducted a technical SEO audit of <b>${url}</b> and wanted to share a summary of findings that may be relevant to your digital visibility.<br><br>
-<b>Audit Summary:</b><br>
-- Overall Health Score: <b>${score}/100</b><br>
-- Critical Issues: <b>${critical}</b> (directly impacting Google crawling and indexing)<br>
+
+My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company specializing in web development, AI solutions, DevOps, technical SEO, and digital transformation.<br><br>
+
+We regularly review business websites to identify technical improvement opportunities and share practical recommendations that can support better visibility, performance, and user experience.<br><br>
+
+During our review of <b>${url}</b>, we identified several areas that may be worth examining further.<br><br>
+
+<b>Audit summary:</b><br>
+- Overall health score: <b>${score}/100</b><br>
+- Critical issues: <b>${critical}</b><br>
 - Warnings: <b>${warnings}</b><br>
-- Technical SEO &amp; Security: <b>${techScore}</b>${techTick}<br>
-- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
-A full report with actionable recommendations is available at no cost, should your team wish to review it.<br><br>
-Best regards,<br>
-<b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
-<a href="https://www.devndespro.com">www.devndespro.com</a> | hello@devndespro.com`
+- Technical SEO &amp; security: <b>${techScore}</b>${techTick}<br>
+- Content quality: <b>${contentScore}</b>${contentTick}<br><br>
+
+The website already has several strengths, but the analysis also identified technical improvement opportunities. These may affect how Google crawls, indexes, and ranks the website, while also influencing performance and user experience.<br><br>
+
+The analysis was conducted using our own platform, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+
+We have prepared a detailed report containing actionable recommendations and prioritized improvements. We would be pleased to share it at no cost and without obligation if your team would like to review it.<br><br>
+
+Should you also require assistance with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
+
+Please let me know if you would like me to send the report.<br><br>
+
+Best regards,<br><br>
+
+<b>Mahadevan Sivasubramanian</b><br>
+Chief Technology Officer (CTO)<br>
+<b>Devndespro</b><br>
+AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+
+<a href="https://www.devndespro.com">www.devndespro.com</a><br>
+<a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
+<a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
   }
 
-  // casual english
+  // Casual English
   return `Hi,<br><br>
-I've run a technical SEO audit of <b>${url}</b> and wanted to share some findings.<br><br>
+
+My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company specializing in web development, AI solutions, DevOps, technical SEO, and digital improvements.<br><br>
+
+We regularly review business websites to identify technical improvement opportunities and share practical suggestions that can support better visibility, performance, and user experience.<br><br>
+
+When we reviewed <b>${url}</b>, we noticed a few areas that may be worth looking into.<br><br>
+
 <b>Summary:</b><br>
 - Overall health score: <b>${score}/100</b><br>
 - Critical issues: <b>${critical}</b><br>
 - Warnings: <b>${warnings}</b><br>
-- Technical SEO &amp; Security: <b>${techScore}</b>${techTick}<br>
-- Content Quality: <b>${contentScore}</b>${contentTick}<br><br>
-The critical issues directly affect how Google crawls and ranks the site.<br><br>
-Analysis done using my own SEO tool (<a href="https://seo.devndespro.com">seo.devndespro.com</a>).<br><br>
-I have a full report ready with concrete suggestions, available for free if you're interested.<br><br>
-Best regards,<br>
-<b>Mahadevan</b><br>
-Devndespro – Web Development &amp; SEO<br>
+- Technical SEO &amp; security: <b>${techScore}</b>${techTick}<br>
+- Content quality: <b>${contentScore}</b>${contentTick}<br><br>
+
+The website already has several strengths, but the analysis also identified some technical improvement opportunities. These may affect how Google crawls, indexes, and ranks the website, while also influencing performance and user experience.<br><br>
+
+The analysis was completed using our own platform, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+
+I have prepared a detailed report with actionable recommendations and prioritized improvements. I would be happy to share it free of charge and without obligation if it would be useful.<br><br>
+
+Should you also need support with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
+
+Please let me know if you would like me to send the report.<br><br>
+
+Best regards,<br><br>
+
+<b>Mahadevan Sivasubramanian</b><br>
+Chief Technology Officer (CTO)<br>
+<b>Devndespro</b><br>
+AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
-<a href="https://seo.devndespro.com">seo.devndespro.com</a>`
+<a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
+<a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
 }
 
 function EmptyAudit({ onRun, running, error }) {
