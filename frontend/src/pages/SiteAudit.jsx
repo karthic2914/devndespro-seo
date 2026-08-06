@@ -528,7 +528,8 @@ export default function SiteAudit() {
   const [multipageProgress, setMultipageProgress] = useState(null)
   
   const [currentAuditRunId, setCurrentAuditRunId] = useState(null)
-  const cancelPollingRef = useRef(false)const [multipageResults, setMultipageResults] = useState(null)
+  const cancelPollingRef = useRef(false)
+  const [multipageResults, setMultipageResults] = useState(null)
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
   const [showDupTitles, setShowDupTitles] = useState(false)
@@ -736,53 +737,114 @@ export default function SiteAudit() {
       setRunning(false)
     }
   }
-  async function cancelPollingRef.current = false
-        setCurrentAuditRunId(auditRunId)
-        pollMultipageProgress(auditRunId) {
+  async function pollMultipageProgress(auditRunId) {
+    if (cancelPollingRef.current) return
+
     try {
-      const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
-      setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
-      setMultipageLatestPages(p.data.latestPages || [])
-      setMultipageBuckets(p.data.statusBuckets || null)
-      if (p.data.status === 'complete') {
+      const response = await api.get(
+        `/sites/${siteId}/audit/multipage-progress/${auditRunId}`
+      )
+
+      if (cancelPollingRef.current) return
+
+      const data = response.data
+
+      setMultipageProgress({
+        pagesCrawled: data.pagesCrawled,
+        pagesTotal: data.pagesTotal,
+      })
+
+      setMultipageLatestPages(data.latestPages || [])
+      setMultipageBuckets(data.statusBuckets || null)
+
+      if (data.status === 'complete') {
         setMultipageStatus('complete')
-        setMultipageResults(p.data.results)
+        setCurrentAuditRunId(null)
+        setMultipageResults(data.results)
+
         showSnackbar('Full site audit completed!', 'success')
-        api.get(`/sites/${siteId}/audit/multipage-history`).then(h => { if (h?.data?.history) setIssueHistory(h.data.history) }).catch(() => {})
-      } else if (p.data.status === 'failed') {
+
+        api.get(`/sites/${siteId}/audit/multipage-history`)
+          .then((historyResponse) => {
+            if (historyResponse?.data?.history) {
+              setIssueHistory(historyResponse.data.history)
+            }
+          })
+          .catch(() => {})
+      } else if (data.status === 'failed') {
         setMultipageStatus('failed')
+        setCurrentAuditRunId(null)
         showSnackbar('Full site audit failed', 'error')
-      } else {
-        setTimeout(() => cancelPollingRef.current = false
-        setCurrentAuditRunId(auditRunId)
-        pollMultipageProgress(auditRunId), 2000)
+      } else if (data.status === 'cancelled') {
+        setMultipageStatus('cancelled')
+        setCurrentAuditRunId(null)
+        showSnackbar('Full site audit cancelled', 'success')
+      } else if (!cancelPollingRef.current) {
+        setTimeout(() => {
+          pollMultipageProgress(auditRunId)
+        }, 2000)
       }
-    } catch (e) {
+    } catch (error) {
+      if (cancelPollingRef.current) return
+
       setMultipageStatus('failed')
-      showSnackbar('Lost connection while checking audit progress', 'error')
+      setCurrentAuditRunId(null)
+
+      showSnackbar(
+        'Lost connection while checking audit progress',
+        'error'
+      )
     }
   }
 
   async function runMultipageAudit() {
     if (!canRunFullAudit) {
-      showSnackbar('Full Site Audit is available only for approved admin accounts', 'error')
+      showSnackbar(
+        'Full Site Audit is available only for approved admin accounts',
+        'error'
+      )
       return
     }
 
+    cancelPollingRef.current = false
     setMultipageStatus('running')
-    setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
+    setMultipageProgress({
+      pagesCrawled: 0,
+      pagesTotal: 0,
+    })
+    setMultipageLatestPages([])
+    setMultipageBuckets(null)
     setMultipageResults(null)
+    setShowDupTitles(false)
+    setShowDupMeta(false)
+
     try {
-      cancelPollingRef.current = false
-      const start = await api.post(/sites//audit/run-multipage)
-      setCurrentAuditRunId(start.data.auditRunId)
-      pollMultipageProgress(start.data.auditRunId)
-    } catch (e) {
+      const response = await api.post(
+        `/sites/${siteId}/audit/run-multipage`
+      )
+
+      const auditRunId = response?.data?.auditRunId
+
+      if (!auditRunId) {
+        throw new Error(
+          'Full-site audit did not return an audit run ID'
+        )
+      }
+
+      setCurrentAuditRunId(auditRunId)
+      pollMultipageProgress(auditRunId)
+    } catch (error) {
       setMultipageStatus('failed')
-      showSnackbar('Failed to start full site audit', 'error')
+      setCurrentAuditRunId(null)
+
+      showSnackbar(
+        error.response?.data?.error ||
+          error.message ||
+          'Failed to start full site audit',
+        'error'
+      )
     }
   }
-
   async function cancelMultipageAudit() {
     cancelPollingRef.current = true
     const auditRunId = currentAuditRunId
