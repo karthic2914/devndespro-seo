@@ -670,6 +670,68 @@ export default function SiteAudit() {
     setRunning(false)
   }
 
+
+  async function rerunCompleteAudit() {
+    setRunning(true)
+    setRunError(null)
+
+    try {
+      // Refresh the homepage audit
+      const quickResponse = await api.post(`/sites/${siteId}/audit/run`)
+
+      setAuditData(quickResponse.data)
+      setActiveTab('all')
+      setExpandedIdx(null)
+
+      // Refresh the full-site audit
+      if (canRunFullAudit) {
+        setMultipageStatus('running')
+        setMultipageProgress({
+          pagesCrawled: 0,
+          pagesTotal: 0,
+        })
+        setMultipageLatestPages([])
+        setMultipageBuckets(null)
+        setMultipageResults(null)
+        setShowDupTitles(false)
+        setShowDupMeta(false)
+
+        const fullResponse = await api.post(
+          `/sites/${siteId}/audit/run-multipage`
+        )
+
+        const auditRunId = fullResponse?.data?.auditRunId
+
+        if (!auditRunId) {
+          throw new Error('Full-site audit did not return an audit run ID')
+        }
+
+        pollMultipageProgress(auditRunId)
+
+        showSnackbar(
+          'Homepage audit completed. Full-site audit is now running.',
+          'success'
+        )
+      } else {
+        showSnackbar('Audit completed successfully!', 'success')
+      }
+    } catch (e) {
+      const message =
+        e.response?.data?.error ||
+        e.message ||
+        'Audit failed - check the site URL is accessible'
+
+      setRunError(message)
+
+      setMultipageStatus((currentStatus) =>
+        currentStatus === 'running' ? 'failed' : currentStatus
+      )
+
+      showSnackbar(message, 'error')
+    } finally {
+      setRunning(false)
+    }
+  }
   async function pollMultipageProgress(auditRunId) {
     try {
       const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
@@ -847,7 +909,7 @@ export default function SiteAudit() {
             <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} /><span className='btn-label'>Fix in Actions</span>
           </Button>
           <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
-            <Button variant="primary" size="sm" onClick={runAudit} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
+            <Button variant="primary" size="sm" onClick={rerunCompleteAudit} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
               <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
             </Button>
             <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255,255,255,0.3)' }}>
