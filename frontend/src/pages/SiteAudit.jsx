@@ -62,13 +62,17 @@ function getSummarySubject(lang, url) {
     : `Free technical website analysis for ${domain}`
 }
 function getSummaryEmailText(lang, tone, auditData, allIssues) {
-  const score = auditData?.score ?? '-'
+  const rawScore = Number(auditData?.score)
+  const score = Number.isFinite(rawScore) ? rawScore : '-'
+
   const critical = (allIssues || []).filter(
     (issue) => issue.status === 'error'
   ).length
+
   const warnings = (allIssues || []).filter(
     (issue) => issue.status === 'warning'
   ).length
+
   const url = auditData?.url || 'nettstedet'
 
   let techScore = null
@@ -78,7 +82,7 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
     const grouped = groupByCategory(auditData.checks)
 
     for (const category of grouped) {
-      const categoryName = category.name.toLowerCase()
+      const categoryName = String(category.name || '').toLowerCase()
 
       if (
         categoryName.includes('technical seo') ||
@@ -100,6 +104,116 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   const techTick = techScore === 100 ? ' &#10003;' : ''
   const contentTick = contentScore === 100 ? ' &#10003;' : ''
 
+  const numericScore = Number.isFinite(rawScore) ? rawScore : 0
+
+  let introNo = ''
+  let observationNo = ''
+  let ctaNo = ''
+
+  let introEn = ''
+  let observationEn = ''
+  let ctaEn = ''
+
+  // ---------------------------------------------------------------------------
+  // DYNAMIC WORDING BASED ON SCORE AND CRITICAL ISSUES
+  // ---------------------------------------------------------------------------
+
+  if (numericScore >= 90) {
+    introNo = `Da vi gjennomgikk <b>${url}</b>, fikk vi et svært godt inntrykk av den tekniske kvaliteten på nettstedet.`
+
+    observationNo =
+      critical > 0
+        ? `Nettsiden har et sterkt teknisk fundament. Vi fant likevel ${critical === 1 ? 'ett viktig punkt' : `${critical} viktige punkter`} som kan være verdt å prioritere, i tillegg til noen mindre forbedringsmuligheter.`
+        : `Nettsiden har et svært godt teknisk fundament. Vi fant hovedsakelig noen mindre forbedringsmuligheter som kan styrke synlighet og ytelse ytterligere.`
+
+    ctaNo = `Jeg har samlet observasjonene i en kort og konkret rapport som jeg gjerne deler kostnadsfritt dersom det er nyttig.`
+
+    introEn = `When we reviewed <b>${url}</b>, we were genuinely impressed by the overall technical quality of the website.`
+
+    observationEn =
+      critical > 0
+        ? `The site has a strong technical foundation. We did, however, identify ${critical === 1 ? 'one important item' : `${critical} important items`} worth prioritizing, along with a few smaller opportunities.`
+        : `The site has an excellent technical foundation. We mainly identified a few smaller opportunities that could further strengthen visibility and performance.`
+
+    ctaEn = `I've summarized the observations in a concise report and would be happy to share it free of charge.`
+
+  } else if (numericScore >= 80) {
+    introNo = `Da vi gjennomgikk <b>${url}</b>, så vi at nettstedet allerede holder et godt teknisk nivå.`
+
+    observationNo =
+      critical > 0
+        ? `Det finnes likevel ${critical === 1 ? 'ett viktig teknisk punkt' : `${critical} viktige tekniske punkter`} og noen mindre forbedringer som kan bidra til bedre synlighet og brukeropplevelse.`
+        : `Det finnes likevel noen forbedringsmuligheter som kan bidra til bedre synlighet, ytelse og brukeropplevelse.`
+
+    ctaNo = `Jeg har laget en kostnadsfri rapport med de viktigste anbefalingene, dersom dere ønsker å se nærmere på dem.`
+
+    introEn = `When we reviewed <b>${url}</b>, we found that the website is already in good technical shape.`
+
+    observationEn =
+      critical > 0
+        ? `There are still ${critical === 1 ? 'one important technical item' : `${critical} important technical items`} and a few smaller improvements that could strengthen visibility and user experience.`
+        : `There are still a few improvement opportunities that could strengthen visibility, performance, and user experience.`
+
+    ctaEn = `I've prepared a complimentary report with the main recommendations if you'd like to review them.`
+
+  } else if (numericScore >= 70) {
+    introNo = `Da vi gjennomgikk <b>${url}</b>, fant vi flere tekniske forbedringsmuligheter.`
+
+    observationNo =
+      critical > 0
+        ? `Nettsiden har et godt utgangspunkt, men ${critical === 1 ? 'ett kritisk punkt bør prioriteres' : `${critical} kritiske punkter bør prioriteres`}, sammen med noen øvrige forbedringer.`
+        : `Nettsiden har et godt utgangspunkt, men noen tekniske forbedringer kan bidra til bedre synlighet og ytelse.`
+
+    ctaNo = `Jeg sender gjerne den fullstendige rapporten med prioriterte anbefalinger kostnadsfritt.`
+
+    introEn = `While reviewing <b>${url}</b>, we identified several technical improvement opportunities.`
+
+    observationEn =
+      critical > 0
+        ? `The website has a solid foundation, but ${critical === 1 ? 'one critical item should be prioritized' : `${critical} critical items should be prioritized`}, together with several other improvements.`
+        : `The website has a solid foundation, but a number of technical improvements could strengthen visibility and performance.`
+
+    ctaEn = `I'd be happy to share the full report with prioritized recommendations at no cost.`
+
+  } else if (numericScore >= 60) {
+    introNo = `Da vi gjennomgikk <b>${url}</b>, oppdaget vi flere tekniske forhold som kan begrense nettstedets synlighet i Google.`
+
+    observationNo =
+      critical > 0
+        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} og flere øvrige forbedringsområder. De fleste er håndterbare når de først er identifisert og prioritert.`
+        : `Analysen viser flere forbedringsområder, men ingen kritiske problemer. De fleste tiltakene er relativt enkle å håndtere når de først er identifisert.`
+
+    ctaNo = `Jeg har utarbeidet en rapport med tiltakene sortert etter prioritet og deler den gjerne kostnadsfritt.`
+
+    introEn = `While reviewing <b>${url}</b>, we noticed several technical issues that may be limiting its visibility in Google.`
+
+    observationEn =
+      critical > 0
+        ? `The audit identified ${critical === 1 ? 'one critical issue' : `${critical} critical issues`} and several additional improvement areas. Most are manageable once they have been clearly identified and prioritized.`
+        : `The audit identified several improvement areas but no critical issues. Most of the recommendations are relatively straightforward once identified.`
+
+    ctaEn = `I've prepared a report with the recommendations prioritized and would be happy to share it free of charge.`
+
+  } else {
+    introNo = `Da vi analyserte <b>${url}</b>, fant vi flere tekniske utfordringer som kan påvirke hvordan søkemotorer crawler, indekserer og rangerer nettstedet.`
+
+    observationNo =
+      critical > 0
+        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} som det kan være nyttig å prioritere først. En trinnvis utbedring kan gi nettstedet et betydelig sterkere teknisk fundament.`
+        : `Selv om analysen ikke viser kritiske problemer, finnes det flere tekniske forbedringer som samlet kan ha betydning for synlighet, ytelse og brukeropplevelse.`
+
+    ctaNo = `Jeg har satt sammen en detaljert rapport med de viktigste tiltakene i anbefalt rekkefølge og deler den gjerne kostnadsfritt.`
+
+    introEn = `When we analysed <b>${url}</b>, we found several technical challenges that may affect how search engines crawl, index, and rank the website.`
+
+    observationEn =
+      critical > 0
+        ? `The audit identified ${critical === 1 ? 'one critical issue' : `${critical} critical issues`} that may be useful to address first. A step-by-step improvement plan could give the website a much stronger technical foundation.`
+        : `Although the audit did not identify any critical issues, there are several technical improvements that may collectively affect visibility, performance, and user experience.`
+
+    ctaEn = `I've prepared a detailed report with the most important recommendations arranged by priority and would be happy to share it at no cost.`
+  }
+
   // ---------------------------------------------------------------------------
   // NORWEGIAN
   // ---------------------------------------------------------------------------
@@ -108,11 +222,11 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
     if (tone === 'formal') {
       return `Kjære [Navn/Team],<br><br>
 
-Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som hjelper bedrifter med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
 
-Vi analyserer jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre digital synlighet, ytelse og brukeropplevelse.<br><br>
+Vi gjennomgår jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete observasjoner som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
 
-I forbindelse med en gjennomgang av <b>${url}</b> identifiserte vi noen områder som kan være relevante å se nærmere på.<br><br>
+${introNo}<br><br>
 
 <b>Oppsummering av analysen:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
@@ -121,11 +235,11 @@ I forbindelse med en gjennomgang av <b>${url}</b> identifiserte vi noen områder
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
 
-Nettstedet har flere sterke sider, men analysen viser også noen tekniske forbedringsmuligheter. Disse kan påvirke hvordan Google crawler, indekserer og rangerer nettstedet, og kan samtidig ha betydning for ytelse og brukeropplevelse.<br><br>
+${observationNo}<br><br>
 
 Analysen er utført med vårt eget analyseverktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
-Vi har utarbeidet en detaljert rapport med konkrete anbefalinger og prioriterte tiltak. Rapporten deles gjerne kostnadsfritt og uten forpliktelser dersom dere ønsker å gjennomgå den.<br><br>
+${ctaNo}<br><br>
 
 Dersom dere også har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, bistår vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
 
@@ -146,11 +260,11 @@ AI Solutions | Web Development | DevOps | Technical SEO<br><br>
     // Casual Norwegian
     return `Hei,<br><br>
 
-Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som hjelper bedrifter med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
 
-Vi analyserer jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
+Vi ser jevnlig på bedrifters nettsider for å finne tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
 
-Da vi gjennomgikk <b>${url}</b>, la vi merke til noen områder som kan være verdt å se nærmere på.<br><br>
+${introNo}<br><br>
 
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
@@ -159,13 +273,13 @@ Da vi gjennomgikk <b>${url}</b>, la vi merke til noen områder som kan være ver
 - Teknisk SEO &amp; sikkerhet: <b>${techScore}</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}</b>${contentTick}<br><br>
 
-Nettstedet har flere sterke sider, men analysen viser også noen tekniske forbedringsmuligheter. Disse kan påvirke hvordan Google crawler, indekserer og rangerer nettstedet, og kan samtidig ha betydning for ytelse og brukeropplevelse.<br><br>
+${observationNo}<br><br>
 
-Analysen er utført med vårt eget analyseverktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+Analysen er utført med vårt eget verktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
-Jeg har en detaljert rapport klar med konkrete anbefalinger og prioriterte tiltak. Jeg deler den gjerne kostnadsfritt og uten forpliktelser dersom det er av interesse.<br><br>
+${ctaNo}<br><br>
 
-Dersom dere også har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, hjelper vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
+Dersom dere også trenger hjelp med <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, hjelper vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
 
 Gi meg gjerne beskjed dersom dere ønsker rapporten tilsendt.<br><br>
 
@@ -188,11 +302,11 @@ AI Solutions | Web Development | DevOps | Technical SEO<br><br>
   if (tone === 'formal') {
     return `Dear [Name/Team],<br><br>
 
-My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company specializing in web development, AI solutions, DevOps, technical SEO, and digital transformation.<br><br>
+My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company working across web development, AI solutions, DevOps, technical SEO, and digital improvement initiatives.<br><br>
 
-We regularly review business websites to identify technical improvement opportunities and share practical recommendations that can support better visibility, performance, and user experience.<br><br>
+We regularly review business websites to identify technical improvement opportunities and share practical observations that may support better visibility, performance, and user experience.<br><br>
 
-During our review of <b>${url}</b>, we identified several areas that may be worth examining further.<br><br>
+${introEn}<br><br>
 
 <b>Audit summary:</b><br>
 - Overall health score: <b>${score}/100</b><br>
@@ -201,13 +315,13 @@ During our review of <b>${url}</b>, we identified several areas that may be wort
 - Technical SEO &amp; security: <b>${techScore}</b>${techTick}<br>
 - Content quality: <b>${contentScore}</b>${contentTick}<br><br>
 
-The website already has several strengths, but the analysis also identified technical improvement opportunities. These may affect how Google crawls, indexes, and ranks the website, while also influencing performance and user experience.<br><br>
+${observationEn}<br><br>
 
 The analysis was conducted using our own platform, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
-We have prepared a detailed report containing actionable recommendations and prioritized improvements. We would be pleased to share it at no cost and without obligation if your team would like to review it.<br><br>
+${ctaEn}<br><br>
 
-Should you also require assistance with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
+Should you also require support with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
 
 Please let me know if you would like me to send the report.<br><br>
 
@@ -226,11 +340,11 @@ AI Solutions | Web Development | DevOps | Technical SEO<br><br>
   // Casual English
   return `Hi,<br><br>
 
-My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company specializing in web development, AI solutions, DevOps, technical SEO, and digital improvements.<br><br>
+My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company working across web development, AI solutions, DevOps, technical SEO, and digital improvements.<br><br>
 
-We regularly review business websites to identify technical improvement opportunities and share practical suggestions that can support better visibility, performance, and user experience.<br><br>
+We regularly review business websites to identify technical improvement opportunities and share practical suggestions that may support better visibility, performance, and user experience.<br><br>
 
-When we reviewed <b>${url}</b>, we noticed a few areas that may be worth looking into.<br><br>
+${introEn}<br><br>
 
 <b>Summary:</b><br>
 - Overall health score: <b>${score}/100</b><br>
@@ -239,13 +353,13 @@ When we reviewed <b>${url}</b>, we noticed a few areas that may be worth looking
 - Technical SEO &amp; security: <b>${techScore}</b>${techTick}<br>
 - Content quality: <b>${contentScore}</b>${contentTick}<br><br>
 
-The website already has several strengths, but the analysis also identified some technical improvement opportunities. These may affect how Google crawls, indexes, and ranks the website, while also influencing performance and user experience.<br><br>
+${observationEn}<br><br>
 
 The analysis was completed using our own platform, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
-I have prepared a detailed report with actionable recommendations and prioritized improvements. I would be happy to share it free of charge and without obligation if it would be useful.<br><br>
+${ctaEn}<br><br>
 
-Should you also need support with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
+Should you also need help with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
 
 Please let me know if you would like me to send the report.<br><br>
 
