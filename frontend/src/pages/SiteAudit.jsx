@@ -323,7 +323,7 @@ ${ctaEn}<br><br>
 
 Should you also require support with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
 
-Please let me know if you would like me to send the report.<br><br>
+Please let me know if you would like the report, and I will send it over with no obligation.<br><br>
 
 Best regards,<br><br>
 
@@ -342,7 +342,7 @@ AI Solutions | Web Development | DevOps | Technical SEO<br><br>
 
 My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company working across web development, AI solutions, DevOps, technical SEO, and digital improvements.<br><br>
 
-We regularly review business websites to identify technical improvement opportunities and share practical suggestions that may support better visibility, performance, and user experience.<br><br>
+As part of our work, we regularly review publicly available business websites to identify technical improvement opportunities. When we find something that may offer practical value, we are happy to share our observations at no cost.<br><br>
 
 ${introEn}<br><br>
 
@@ -361,7 +361,7 @@ ${ctaEn}<br><br>
 
 Should you also need help with <b>web development, website modernization, AI solutions, DevOps, system integrations, or technical consulting</b>, we support both standalone projects and long-term technology engagements.<br><br>
 
-Please let me know if you would like me to send the report.<br><br>
+Please let me know if you would like the report, and I will send it over with no obligation.<br><br>
 
 Best regards,<br><br>
 
@@ -1383,6 +1383,7 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
 
 
