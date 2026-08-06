@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -119,12 +119,12 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   // ---------------------------------------------------------------------------
 
   if (numericScore >= 90) {
-    introNo = `Da vi gjennomgikk <b>${url}</b>, fikk vi et svært godt inntrykk av den tekniske kvaliteten på nettstedet.`
+    introNo = `Da vi gjennomgikk <b>${url}</b>, fikk vi et svÃ¦rt godt inntrykk av den tekniske kvaliteten pÃ¥ nettstedet.`
 
     observationNo =
       critical > 0
-        ? `Nettsiden har et sterkt teknisk fundament. Vi fant likevel ${critical === 1 ? 'ett viktig punkt' : `${critical} viktige punkter`} som kan være verdt å prioritere, i tillegg til noen mindre forbedringsmuligheter.`
-        : `Nettsiden har et svært godt teknisk fundament. Vi fant hovedsakelig noen mindre forbedringsmuligheter som kan styrke synlighet og ytelse ytterligere.`
+        ? `Nettsiden har et sterkt teknisk fundament. Vi fant likevel ${critical === 1 ? 'ett viktig punkt' : `${critical} viktige punkter`} som kan vÃ¦re verdt Ã¥ prioritere, i tillegg til noen mindre forbedringsmuligheter.`
+        : `Nettsiden har et svÃ¦rt godt teknisk fundament. Vi fant hovedsakelig noen mindre forbedringsmuligheter som kan styrke synlighet og ytelse ytterligere.`
 
     ctaNo = `Jeg har samlet observasjonene i en kort og konkret rapport som jeg gjerne deler kostnadsfritt dersom det er nyttig.`
 
@@ -138,14 +138,14 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
     ctaEn = `I've summarized the observations in a concise report and would be happy to share it free of charge.`
 
   } else if (numericScore >= 80) {
-    introNo = `Da vi gjennomgikk <b>${url}</b>, så vi at nettstedet allerede holder et godt teknisk nivå.`
+    introNo = `Da vi gjennomgikk <b>${url}</b>, sÃ¥ vi at nettstedet allerede holder et godt teknisk nivÃ¥.`
 
     observationNo =
       critical > 0
         ? `Det finnes likevel ${critical === 1 ? 'ett viktig teknisk punkt' : `${critical} viktige tekniske punkter`} og noen mindre forbedringer som kan bidra til bedre synlighet og brukeropplevelse.`
         : `Det finnes likevel noen forbedringsmuligheter som kan bidra til bedre synlighet, ytelse og brukeropplevelse.`
 
-    ctaNo = `Jeg har laget en kostnadsfri rapport med de viktigste anbefalingene, dersom dere ønsker å se nærmere på dem.`
+    ctaNo = `Jeg har laget en kostnadsfri rapport med de viktigste anbefalingene, dersom dere Ã¸nsker Ã¥ se nÃ¦rmere pÃ¥ dem.`
 
     introEn = `When we reviewed <b>${url}</b>, we found that the website is already in good technical shape.`
 
@@ -161,7 +161,7 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
 
     observationNo =
       critical > 0
-        ? `Nettsiden har et godt utgangspunkt, men ${critical === 1 ? 'ett kritisk punkt bør prioriteres' : `${critical} kritiske punkter bør prioriteres`}, sammen med noen øvrige forbedringer.`
+        ? `Nettsiden har et godt utgangspunkt, men ${critical === 1 ? 'ett kritisk punkt bÃ¸r prioriteres' : `${critical} kritiske punkter bÃ¸r prioriteres`}, sammen med noen Ã¸vrige forbedringer.`
         : `Nettsiden har et godt utgangspunkt, men noen tekniske forbedringer kan bidra til bedre synlighet og ytelse.`
 
     ctaNo = `Jeg sender gjerne den fullstendige rapporten med prioriterte anbefalinger kostnadsfritt.`
@@ -180,8 +180,8 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
 
     observationNo =
       critical > 0
-        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} og flere øvrige forbedringsområder. De fleste er håndterbare når de først er identifisert og prioritert.`
-        : `Analysen viser flere forbedringsområder, men ingen kritiske problemer. De fleste tiltakene er relativt enkle å håndtere når de først er identifisert.`
+        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} og flere Ã¸vrige forbedringsomrÃ¥der. De fleste er hÃ¥ndterbare nÃ¥r de fÃ¸rst er identifisert og prioritert.`
+        : `Analysen viser flere forbedringsomrÃ¥der, men ingen kritiske problemer. De fleste tiltakene er relativt enkle Ã¥ hÃ¥ndtere nÃ¥r de fÃ¸rst er identifisert.`
 
     ctaNo = `Jeg har utarbeidet en rapport med tiltakene sortert etter prioritet og deler den gjerne kostnadsfritt.`
 
@@ -195,14 +195,14 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
     ctaEn = `I've prepared a report with the recommendations prioritized and would be happy to share it free of charge.`
 
   } else {
-    introNo = `Da vi analyserte <b>${url}</b>, fant vi flere tekniske utfordringer som kan påvirke hvordan søkemotorer crawler, indekserer og rangerer nettstedet.`
+    introNo = `Da vi analyserte <b>${url}</b>, fant vi flere tekniske utfordringer som kan pÃ¥virke hvordan sÃ¸kemotorer crawler, indekserer og rangerer nettstedet.`
 
     observationNo =
       critical > 0
-        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} som det kan være nyttig å prioritere først. En trinnvis utbedring kan gi nettstedet et betydelig sterkere teknisk fundament.`
+        ? `Analysen viser ${critical === 1 ? 'ett kritisk problem' : `${critical} kritiske problemer`} som det kan vÃ¦re nyttig Ã¥ prioritere fÃ¸rst. En trinnvis utbedring kan gi nettstedet et betydelig sterkere teknisk fundament.`
         : `Selv om analysen ikke viser kritiske problemer, finnes det flere tekniske forbedringer som samlet kan ha betydning for synlighet, ytelse og brukeropplevelse.`
 
-    ctaNo = `Jeg har satt sammen en detaljert rapport med de viktigste tiltakene i anbefalt rekkefølge og deler den gjerne kostnadsfritt.`
+    ctaNo = `Jeg har satt sammen en detaljert rapport med de viktigste tiltakene i anbefalt rekkefÃ¸lge og deler den gjerne kostnadsfritt.`
 
     introEn = `When we analysed <b>${url}</b>, we found several technical challenges that may affect how search engines crawl, index, and rank the website.`
 
@@ -220,11 +220,11 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
 
   if (lang === 'no') {
     if (tone === 'formal') {
-      return `Kjære [Navn/Team],<br><br>
+      return `KjÃ¦re [Navn/Team],<br><br>
 
-Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-lÃ¸sninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
 
-Vi gjennomgår jevnlig bedrifters nettsider for å identifisere tekniske forbedringsmuligheter og dele konkrete observasjoner som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
+Vi gjennomgÃ¥r jevnlig bedrifters nettsider for Ã¥ identifisere tekniske forbedringsmuligheter og dele konkrete observasjoner som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
 
 ${introNo}<br><br>
 
@@ -237,13 +237,13 @@ ${introNo}<br><br>
 
 ${observationNo}<br><br>
 
-Analysen er utført med vårt eget analyseverktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+Analysen er utfÃ¸rt med vÃ¥rt eget analyseverktÃ¸y, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
 ${ctaNo}<br><br>
 
-Dersom dere også har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, bistår vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
+Dersom dere ogsÃ¥ har behov for bistand innen <b>webutvikling, modernisering av nettsider, AI-lÃ¸sninger, DevOps, systemintegrasjoner eller teknisk rÃ¥dgivning</b>, bistÃ¥r vi gjerne med bÃ¥de enkeltprosjekter og langsiktige teknologilÃ¸sninger.<br><br>
 
-Gi meg gjerne beskjed dersom dere ønsker rapporten tilsendt.<br><br>
+Gi meg gjerne beskjed dersom dere Ã¸nsker rapporten tilsendt.<br><br>
 
 Med vennlig hilsen,<br><br>
 
@@ -260,9 +260,9 @@ AI Solutions | Web Development | DevOps | Technical SEO<br><br>
     // Casual Norwegian
     return `Hei,<br><br>
 
-Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-løsninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
+Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-lÃ¸sninger, DevOps, teknisk SEO og digitale forbedringer.<br><br>
 
-Vi ser jevnlig på bedrifters nettsider for å finne tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
+Vi ser jevnlig pÃ¥ bedrifters nettsider for Ã¥ finne tekniske forbedringsmuligheter og dele konkrete forslag som kan bidra til bedre synlighet, ytelse og brukeropplevelse.<br><br>
 
 ${introNo}<br><br>
 
@@ -275,13 +275,13 @@ ${introNo}<br><br>
 
 ${observationNo}<br><br>
 
-Analysen er utført med vårt eget verktøy, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
+Analysen er utfÃ¸rt med vÃ¥rt eget verktÃ¸y, <a href="https://seo.devndespro.com">seo.devndespro.com</a>.<br><br>
 
 ${ctaNo}<br><br>
 
-Dersom dere også trenger hjelp med <b>webutvikling, modernisering av nettsider, AI-løsninger, DevOps, systemintegrasjoner eller teknisk rådgivning</b>, hjelper vi gjerne med både enkeltprosjekter og langsiktige teknologiløsninger.<br><br>
+Dersom dere ogsÃ¥ trenger hjelp med <b>webutvikling, modernisering av nettsider, AI-lÃ¸sninger, DevOps, systemintegrasjoner eller teknisk rÃ¥dgivning</b>, hjelper vi gjerne med bÃ¥de enkeltprosjekter og langsiktige teknologilÃ¸sninger.<br><br>
 
-Gi meg gjerne beskjed dersom dere ønsker rapporten tilsendt.<br><br>
+Gi meg gjerne beskjed dersom dere Ã¸nsker rapporten tilsendt.<br><br>
 
 Med vennlig hilsen,<br><br>
 
@@ -1241,8 +1241,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? '?? Formal - suited for corporate and enterprise prospects'
-                  : '?? Casual - suited for SMB and local businesses'}
+                  ? 'Formal – suited for corporate and enterprise prospects'
+                  : 'Casual – suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
@@ -1383,5 +1383,6 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
 
