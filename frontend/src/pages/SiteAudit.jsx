@@ -56,12 +56,11 @@ function extractDomain(url) {
 }
 
 function getSummarySubject(lang, url) {
-  const domain = extractDomain(url) || "your website"
-  return lang === "no"
-    ? domain + " \u2013 fant noen SEO-forbedringer"
-    : domain + " \u2013 found a few SEO improvements"
+  const domain = extractDomain(url) || 'your website'
+  return lang === 'no'
+    ? `Gratis teknisk analyse av ${domain}`
+    : `Free technical website analysis for ${domain}`
 }
-
 function getSummaryEmailText(lang, tone, auditData, allIssues) {
   const score = auditData?.score ?? '-'
   const critical = (allIssues || []).filter(
