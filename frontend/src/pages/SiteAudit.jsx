@@ -5,7 +5,7 @@ import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
   faCamera, faShareNodes, faEnvelope, faChevronLeft, faChevronRight, faChevronDown,
-  faAlignLeft, faAlignCenter, faAlignRight,
+  faAlignLeft, faAlignCenter, faAlignRight, faCircleStop,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
 import { Button, Modal, Input } from '../components/UI'
@@ -526,7 +526,9 @@ export default function SiteAudit() {
   const [showAuditMenu, setShowAuditMenu] = useState(false)
   const [multipageStatus, setMultipageStatus] = useState(null)
   const [multipageProgress, setMultipageProgress] = useState(null)
-  const [multipageResults, setMultipageResults] = useState(null)
+  
+  const [currentAuditRunId, setCurrentAuditRunId] = useState(null)
+  const cancelPollingRef = useRef(false)const [multipageResults, setMultipageResults] = useState(null)
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
   const [showDupTitles, setShowDupTitles] = useState(false)
@@ -706,6 +708,8 @@ export default function SiteAudit() {
           throw new Error('Full-site audit did not return an audit run ID')
         }
 
+        cancelPollingRef.current = false
+        setCurrentAuditRunId(auditRunId)
         pollMultipageProgress(auditRunId)
 
         showSnackbar(
@@ -732,7 +736,9 @@ export default function SiteAudit() {
       setRunning(false)
     }
   }
-  async function pollMultipageProgress(auditRunId) {
+  async function cancelPollingRef.current = false
+        setCurrentAuditRunId(auditRunId)
+        pollMultipageProgress(auditRunId) {
     try {
       const p = await api.get(`/sites/${siteId}/audit/multipage-progress/${auditRunId}`)
       setMultipageProgress({ pagesCrawled: p.data.pagesCrawled, pagesTotal: p.data.pagesTotal })
@@ -747,7 +753,9 @@ export default function SiteAudit() {
         setMultipageStatus('failed')
         showSnackbar('Full site audit failed', 'error')
       } else {
-        setTimeout(() => pollMultipageProgress(auditRunId), 2000)
+        setTimeout(() => cancelPollingRef.current = false
+        setCurrentAuditRunId(auditRunId)
+        pollMultipageProgress(auditRunId), 2000)
       }
     } catch (e) {
       setMultipageStatus('failed')
@@ -765,7 +773,9 @@ export default function SiteAudit() {
     setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
     setMultipageResults(null)
     try {
-      const start = await api.post(`/sites/${siteId}/audit/run-multipage`)
+      cancelPollingRef.current = false
+      const start = await api.post(/sites//audit/run-multipage)
+      setCurrentAuditRunId(start.data.auditRunId)
       pollMultipageProgress(start.data.auditRunId)
     } catch (e) {
       setMultipageStatus('failed')
@@ -773,6 +783,31 @@ export default function SiteAudit() {
     }
   }
 
+  async function cancelMultipageAudit() {
+    cancelPollingRef.current = true
+    const auditRunId = currentAuditRunId
+
+    setCurrentAuditRunId(null)
+    setMultipageStatus('cancelled')
+    setMultipageProgress(null)
+    setMultipageLatestPages([])
+    setMultipageBuckets(null)
+
+    try {
+      if (auditRunId) {
+        await api.post(
+          `/sites/${siteId}/audit/cancel-multipage/${auditRunId}`
+        )
+      }
+
+      showSnackbar('Full site audit cancelled', 'success')
+    } catch {
+      showSnackbar(
+        'Polling stopped, but server cancellation was not confirmed.',
+        'warning'
+      )
+    }
+  }
   async function fetchIssueFix(issue) {
     const key = issue.check
     if (issueFixes[key]) {
@@ -989,9 +1024,33 @@ export default function SiteAudit() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <FontAwesomeIcon icon={faArrowsRotate} style={{ color: '#2563EB', animation: 'spin 1s linear infinite' }} />
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: '#1E3A8A' }}>
-                Running full site audit{multipageProgress?.pagesTotal ? ` (${multipageProgress.pagesCrawled}/${multipageProgress.pagesTotal} pages)` : ' (discovering pages...)'}
-              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+  <div style={{ fontSize: 13, fontWeight: 600, color: '#1E3A8A' }}>
+    Running full site audit{multipageProgress?.pagesTotal ? ` (${multipageProgress.pagesCrawled}/${multipageProgress.pagesTotal} pages)` : ' (discovering pages...)'}
+  </div>
+
+  <button
+    type="button"
+    onClick={cancelMultipageAudit}
+    title="Cancel full site audit"
+    aria-label="Cancel full site audit"
+    style={{
+      width: 26,
+      height: 26,
+      borderRadius: '50%',
+      border: '1px solid #FCA5A5',
+      background: '#FEF2F2',
+      color: '#DC2626',
+      cursor: 'pointer',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    }}
+  >
+    <FontAwesomeIcon icon={faCircleStop} style={{ fontSize: 12 }} />
+  </button>
+</div>
               {multipageProgress?.pagesTotal > 0 && (
                 <div style={{ background: '#DBEAFE', borderRadius: 4, height: 6, marginTop: 6, overflow: 'hidden' }}>
                   <div style={{
