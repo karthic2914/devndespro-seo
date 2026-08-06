@@ -74,7 +74,9 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
     (issue) => issue.status === 'warning'
   ).length
 
-  const url = auditData?.url || (lang === 'no' ? 'nettstedet' : 'the website')
+  const url =
+    auditData?.url ||
+    (lang === 'no' ? 'nettstedet' : 'the website')
 
   let techScore = null
   let contentScore = null
@@ -106,23 +108,35 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   const contentTick = contentScore === 100 ? ' &#10003;' : ''
 
   let assessmentNo = ''
-  let reportNo = ''
   let assessmentEn = ''
+  let reportNo = ''
   let reportEn = ''
+
+  // ----------------------------------------------------------
+  // Dynamic wording based on health score and critical issues
+  // ----------------------------------------------------------
 
   if (numericScore >= 90) {
     assessmentNo =
       critical > 0
-        ? `Nettstedet fremst\u00e5r som teknisk solid. Vi fant likevel ${critical === 1 ? 'ett viktig punkt' : `${critical} viktige punkter`} som kan v\u00e6re fornuftige \u00e5 prioritere, i tillegg til noen mindre forbedringsmuligheter.`
+        ? `Nettstedet fremst\u00e5r som teknisk solid. Vi fant likevel ${
+            critical === 1
+              ? 'ett viktig punkt'
+              : `${critical} viktige punkter`
+          } som kan v\u00e6re fornuftige \u00e5 prioritere, i tillegg til noen mindre forbedringsmuligheter.`
         : `Nettstedet fremst\u00e5r som teknisk solid. Analysen avdekket hovedsakelig mindre forbedringspunkter som kan bidra til \u00e5 finjustere synlighet, ytelse og teknisk kvalitet ytterligere.`
-
-    reportNo =
-      `Jeg har samlet observasjonene i en kort rapport med konkrete anbefalinger, som jeg gjerne deler kostnadsfritt.`
 
     assessmentEn =
       critical > 0
-        ? `The website appears technically strong. We did, however, identify ${critical === 1 ? 'one important item' : `${critical} important items`} worth prioritizing, along with a few smaller opportunities.`
-        : `The website appears technically strong. The audit mainly identified smaller opportunities that could further refine visibility, performance, and technical quality.`
+        ? `The website appears technically strong. We did, however, identify ${
+            critical === 1
+              ? 'one important item'
+              : `${critical} important items`
+          } worth prioritizing, along with a few smaller opportunities.`
+        : `The website appears technically strong. The review mainly identified smaller opportunities that could further refine visibility, performance, and technical quality.`
+
+    reportNo =
+      `Jeg har samlet observasjonene i en kort rapport med konkrete anbefalinger, som jeg gjerne deler kostnadsfritt.`
 
     reportEn =
       `I have summarized the observations in a concise report with practical recommendations and would be happy to share it free of charge.`
@@ -130,16 +144,24 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   } else if (numericScore >= 80) {
     assessmentNo =
       critical > 0
-        ? `Nettstedet har et godt teknisk fundament. Analysen avdekket likevel ${critical === 1 ? 'ett viktig teknisk punkt' : `${critical} viktige tekniske punkter`} og noen mindre forbedringsmuligheter.`
+        ? `Nettstedet har et godt teknisk fundament. Analysen avdekket likevel ${
+            critical === 1
+              ? 'ett viktig teknisk punkt'
+              : `${critical} viktige tekniske punkter`
+          }, i tillegg til noen mindre forbedringsmuligheter.`
         : `Nettstedet har et godt teknisk fundament. Analysen avdekket noen forbedringsomr\u00e5der som kan bidra til bedre synlighet, ytelse og brukeropplevelse.`
-
-    reportNo =
-      `Jeg har utarbeidet en kostnadsfri rapport med de viktigste anbefalingene og prioriterte tiltakene.`
 
     assessmentEn =
       critical > 0
-        ? `The website has a good technical foundation. The audit still identified ${critical === 1 ? 'one important technical item' : `${critical} important technical items`} and a few smaller opportunities.`
-        : `The website has a good technical foundation. The audit identified several opportunities that could improve visibility, performance, and user experience.`
+        ? `The website has a good technical foundation. The review still identified ${
+            critical === 1
+              ? 'one important technical item'
+              : `${critical} important technical items`
+          }, along with a few smaller opportunities.`
+        : `The website has a good technical foundation. The review identified several opportunities that could improve visibility, performance, and user experience.`
+
+    reportNo =
+      `Jeg har utarbeidet en kostnadsfri rapport med de viktigste anbefalingene og prioriterte tiltakene.`
 
     reportEn =
       `I have prepared a complimentary report with the main recommendations and prioritized actions.`
@@ -147,16 +169,24 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   } else if (numericScore >= 60) {
     assessmentNo =
       critical > 0
-        ? `Nettstedet har flere sterke sider, men analysen avdekket ogs\u00e5 ${critical === 1 ? 'ett kritisk punkt' : `${critical} kritiske punkter`} og andre forbedringsomr\u00e5der. Ved \u00e5 prioritere de viktigste funnene f\u00f8rst kan nettstedet f\u00e5 et sterkere teknisk fundament.`
+        ? `Nettstedet har flere sterke sider, men analysen avdekket ogs\u00e5 ${
+            critical === 1
+              ? 'ett kritisk punkt'
+              : `${critical} kritiske punkter`
+          } og noen andre forbedringsomr\u00e5der. Ved \u00e5 prioritere de viktigste funnene f\u00f8rst kan nettstedet f\u00e5 et sterkere teknisk fundament.`
         : `Nettstedet har flere sterke sider, men analysen viser ogs\u00e5 noen tekniske forbedringsomr\u00e5der som kan bidra til bedre synlighet og ytelse.`
-
-    reportNo =
-      `Jeg har utarbeidet en detaljert rapport med prioriterte tiltak og konkrete anbefalinger. Dersom dette er av interesse, sender jeg den gjerne kostnadsfritt.`
 
     assessmentEn =
       critical > 0
-        ? `The website has several strengths, but the audit also identified ${critical === 1 ? 'one critical item' : `${critical} critical items`} and additional improvement areas. Prioritizing the most important findings first could provide a stronger technical foundation.`
-        : `The website has several strengths, but the audit also identified technical opportunities that could improve visibility and performance.`
+        ? `The website has several strengths, but the review also identified ${
+            critical === 1
+              ? 'one critical item'
+              : `${critical} critical items`
+          } and some additional improvement areas. Prioritizing the most important findings first could provide a stronger technical foundation.`
+        : `The website has several strengths, but the review also identified technical opportunities that could improve visibility and performance.`
+
+    reportNo =
+      `Jeg har utarbeidet en detaljert rapport med prioriterte tiltak og konkrete anbefalinger. Dersom dette er av interesse, sender jeg den gjerne kostnadsfritt.`
 
     reportEn =
       `I have prepared a detailed report with prioritized actions and practical recommendations. I would be happy to share it free of charge.`
@@ -164,40 +194,55 @@ function getSummaryEmailText(lang, tone, auditData, allIssues) {
   } else {
     assessmentNo =
       critical > 0
-        ? `Blant funnene er ${critical === 1 ? 'ett kritisk punkt' : `${critical} kritiske punkter`} som det kan v\u00e6re fornuftig \u00e5 prioritere f\u00f8rst. N\u00e5r disse er h\u00e5ndtert, blir det enklere \u00e5 f\u00e5 effekt av de \u00f8vrige forbedringene.`
+        ? `Det mest presserende er ${
+            critical === 1
+              ? 'det kritiske funnet'
+              : `de ${critical} kritiske funnene`
+          }. Ved \u00e5 prioritere ${
+            critical === 1 ? 'dette' : 'disse'
+          } f\u00f8rst kan nettstedet f\u00e5 et sterkere teknisk grunnlag, samtidig som de \u00f8vrige forbedringene blir enklere \u00e5 gjennomf\u00f8re.`
         : `Selv om analysen ikke viser kritiske problemer, finnes det flere tekniske forbedringer som samlet kan ha betydning for synlighet, ytelse og brukeropplevelse.`
-
-    reportNo =
-      `Jeg har utarbeidet en detaljert rapport med de viktigste tiltakene i anbefalt rekkef\u00f8lge og konkrete forslag til utbedring. Jeg deler den gjerne kostnadsfritt.`
 
     assessmentEn =
       critical > 0
-        ? `Among the findings are ${critical === 1 ? 'one critical item' : `${critical} critical items`} that may be worth prioritizing first. Once these are addressed, it should be easier to benefit from the remaining improvements.`
-        : `Although the audit did not identify critical issues, several technical improvements could collectively affect visibility, performance, and user experience.`
+        ? `The most immediate priority is ${
+            critical === 1
+              ? 'the critical finding'
+              : `the ${critical} critical findings`
+          }. Addressing ${
+            critical === 1 ? 'this item' : 'these items'
+          } first could give the website a stronger technical foundation and make the remaining improvements easier to implement.`
+        : `Although the review did not identify critical issues, several technical improvements could collectively affect visibility, performance, and user experience.`
+
+    reportNo =
+      `Jeg har utarbeidet en detaljert rapport med skjermbilder, forklaringer og konkrete anbefalinger. Dersom dette er av interesse, sender jeg den gjerne kostnadsfritt.`
 
     reportEn =
-      `I have prepared a detailed report with the most important actions in recommended order and practical suggestions. I would be happy to share it free of charge.`
+      `I have prepared a detailed report with screenshots, explanations, and practical recommendations. I would be happy to share it free of charge.`
   }
 
-  // NORWEGIAN
-  if (lang === 'no') {
-    const greeting = tone === 'formal' ? 'Kj\u00e6re [Navn/Team],' : 'Hei,'
+  // ----------------------------------------------------------
+  // Norwegian
+  // ----------------------------------------------------------
 
-    const companyIntro =
+  if (lang === 'no') {
+    const greeting =
+      tone === 'formal'
+        ? 'Kj\u00e6re [Navn/Team],'
+        : 'Hei,'
+
+    const introduction =
       tone === 'formal'
         ? `Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Founder &amp; Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som arbeider med webutvikling, AI-l\u00f8sninger, DevOps og teknisk SEO.`
         : `Mitt navn er <b>Mahadevan Sivasubramanian</b>, og jeg er <b>Founder &amp; Chief Technology Officer (CTO)</b> i <b>Devndespro</b>, et norsk teknologiselskap som hjelper bedrifter med webutvikling, AI-l\u00f8sninger, DevOps og teknisk SEO.`
 
-    const reason =
-      `Vi utvikler et analyseverkt\u00f8y for teknisk SEO og nettstedskvalitet. Som en del av dette arbeidet gjennomg\u00e5r vi jevnlig offentlig tilgjengelige bedriftsnettsider. N\u00e5r vi oppdager forhold som kan ha praktisk verdi, deler vi gjerne observasjonene med virksomheten uten kostnad eller forpliktelser.`
-
     return `${greeting}<br><br>
 
-${companyIntro}<br><br>
+${introduction}<br><br>
 
-${reason}<br><br>
+Vi har utviklet et analyseverkt\u00f8y for teknisk SEO og nettstedskvalitet. Som en del av den videre utviklingen gjennomg\u00e5r vi jevnlig offentlig tilgjengelige bedriftsnettsider. N\u00e5r vi oppdager forhold som kan v\u00e6re nyttige for virksomheten, deler vi gjerne observasjonene kostnadsfritt og uten forpliktelser.<br><br>
 
-Jeg kom nylig over <b>${url}</b> og gjennomf\u00f8rte en teknisk analyse av nettstedet. Jeg \u00f8nsket derfor \u00e5 dele en kort oppsummering av funnene med dere.<br><br>
+Jeg kom nylig over nettsiden deres, <b>${url}</b>, og valgte \u00e5 gjennomf\u00f8re en teknisk analyse. Jeg \u00f8nsket derfor \u00e5 dele en kort oppsummering av funnene med dere.<br><br>
 
 <b>Kort oppsummert:</b><br>
 - Total helsescore: <b>${score}/100</b><br>
@@ -212,7 +257,7 @@ Analysen er utf\u00f8rt med v\u00e5rt egenutviklede analyseverkt\u00f8y, <a href
 
 ${reportNo}<br><br>
 
-Dersom dere allerede samarbeider med et digitalbyr\u00e5 eller har en intern utviklingsavdeling, kan rapporten selvf\u00f8lgelig brukes av dem. Skulle dere \u00f8nske bistand med gjennomf\u00f8ringen, hjelper vi ogs\u00e5 med <b>webutvikling, modernisering av nettsider, AI-l\u00f8sninger, DevOps, teknisk SEO og systemintegrasjoner</b>.<br><br>
+Dersom dere \u00f8nsker \u00e5 gjennomf\u00f8re forbedringene selv, kan rapporten selvf\u00f8lgelig brukes av deres interne utviklingsteam eller eksisterende leverand\u00f8r. Skulle dere \u00f8nske bistand, hjelper vi ogs\u00e5 med <b>webutvikling, modernisering av nettsider, AI-l\u00f8sninger, DevOps, teknisk SEO og systemintegrasjoner</b>.<br><br>
 
 Gi meg gjerne beskjed dersom dere \u00f8nsker rapporten, s\u00e5 sender jeg den over uten noen forpliktelser.<br><br>
 
@@ -221,31 +266,34 @@ Med vennlig hilsen,<br><br>
 <b>Mahadevan Sivasubramanian</b><br>
 Founder &amp; Chief Technology Officer (CTO)<br>
 <b>Devndespro</b><br>
-AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+Web Development | AI Solutions | DevOps | Technical SEO<br><br>
 
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
 <a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
   }
 
-  // ENGLISH
-  const greeting = tone === 'formal' ? 'Dear [Name/Team],' : 'Hi,'
+  // ----------------------------------------------------------
+  // English
+  // ----------------------------------------------------------
 
-  const companyIntro =
+  const greeting =
+    tone === 'formal'
+      ? 'Dear [Name/Team],'
+      : 'Hi,'
+
+  const introduction =
     tone === 'formal'
       ? `My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Founder &amp; Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company working across web development, AI solutions, DevOps, and technical SEO.`
       : `My name is <b>Mahadevan Sivasubramanian</b>, and I am the <b>Founder &amp; Chief Technology Officer (CTO)</b> at <b>Devndespro</b>, a Norway-based technology company helping businesses with web development, AI solutions, DevOps, and technical SEO.`
 
-  const reason =
-    `We develop a platform for technical SEO and website-quality analysis. As part of that work, we regularly review publicly available business websites. When we identify something that may offer practical value, we are happy to share our observations at no cost and without obligation.`
-
   return `${greeting}<br><br>
 
-${companyIntro}<br><br>
+${introduction}<br><br>
 
-${reason}<br><br>
+We have developed a platform for technical SEO and website-quality analysis. As part of its continued development, we regularly review publicly available business websites. When we identify something that may be useful to the business, we are happy to share our observations free of charge and without obligation.<br><br>
 
-I recently came across <b>${url}</b> and conducted a technical review of the website. I wanted to share a brief summary of the findings with you.<br><br>
+I recently came across your website, <b>${url}</b>, and chose to conduct a technical review. I wanted to share a brief summary of the findings with you.<br><br>
 
 <b>Summary:</b><br>
 - Overall health score: <b>${score}/100</b><br>
@@ -260,7 +308,7 @@ The analysis was completed using our internally developed platform, <a href="htt
 
 ${reportEn}<br><br>
 
-If you already work with a digital agency or have an internal development team, they are of course welcome to use the report. Should you need implementation support, we also assist with <b>web development, website modernization, AI solutions, DevOps, technical SEO, and system integrations</b>.<br><br>
+If you prefer to implement the improvements internally, the report can of course be used by your development team or existing provider. Should you need assistance, we also support <b>web development, website modernization, AI solutions, DevOps, technical SEO, and system integrations</b>.<br><br>
 
 Please let me know if you would like the report, and I will send it over with no obligation.<br><br>
 
@@ -269,13 +317,12 @@ Best regards,<br><br>
 <b>Mahadevan Sivasubramanian</b><br>
 Founder &amp; Chief Technology Officer (CTO)<br>
 <b>Devndespro</b><br>
-AI Solutions | Web Development | DevOps | Technical SEO<br><br>
+Web Development | AI Solutions | DevOps | Technical SEO<br><br>
 
 <a href="https://www.devndespro.com">www.devndespro.com</a><br>
 <a href="https://seo.devndespro.com">seo.devndespro.com</a><br>
 <a href="mailto:hello@devndespro.com">hello@devndespro.com</a>`
 }
-
 function EmptyAudit({ onRun, running, error }) {
   return (
     <div style={{ padding: '1.5rem 2rem' }}>
