@@ -728,10 +728,31 @@ async function discoverPageUrls(baseUrl, limit) {
           if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:') || href.startsWith('javascript:')) return
           try {
             const absolute = href.startsWith('http') ? href : new URL(href, current).toString()
-            const h = new URL(absolute).hostname.toLowerCase().replace(/^www\./, '')
+
+            const parsed = new URL(absolute)
+            const pathname = parsed.pathname.toLowerCase()
+
+            const skipPathPatterns = [
+              '/cdn-cgi/',
+              '/email-protection',
+            ]
+
+            const skipExtensions = /\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|pdf|zip|rar|7z|mp4|mp3|css|js|xml|txt|woff|woff2|ttf|eot)$/i
+
+            if (
+              skipPathPatterns.some((p) => pathname.includes(p)) ||
+              skipExtensions.test(pathname)
+            ) {
+              return
+            }
+
+            // Remove URL fragments so the same page is not crawled repeatedly.
+            parsed.hash = ''
+            const cleanAbsolute = parsed.toString()
+            const h = parsed.hostname.toLowerCase().replace(/^www\./, '')
             if (h === rootHost) {
-              urls.add(absolute)
-              if (!visited.has(absolute)) queue.push(absolute)
+              urls.add(cleanAbsolute)
+              if (!visited.has(cleanAbsolute)) queue.push(cleanAbsolute)
             }
           } catch {}
         })
