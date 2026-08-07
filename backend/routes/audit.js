@@ -808,21 +808,47 @@ async function crawlSinglePageLite(pageUrl) {
   }
 }
 
+
+async function queryWithRetry(sql, params = [], attempts = 3) {
+  let lastError
+
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      return await pool.query(sql, params)
+    } catch (error) {
+      lastError = error
+
+      console.warn(
+        `Database query failed (attempt ${attempt}/${attempts}):`,
+        error.message
+      )
+
+      if (attempt < attempts) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, attempt * 1000)
+        )
+      }
+    }
+  }
+
+  throw lastError
+}
+
 async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
   try {
     const urls = await discoverPageUrls(baseUrl, MULTIPAGE_PAGE_LIMIT)
-    await pool.query('UPDATE audit_results SET pages_total=$1 WHERE id=$2', [urls.length, auditRunId])
+    await queryWithRetry('UPDATE audit_results SET pages_total=$1 WHERE id=$2', [urls.length, auditRunId])
 
     const pages = []
     for (const pageUrl of urls) {
       const pageResult = await crawlSinglePageLite(pageUrl)
       pages.push(pageResult)
-      await pool.query(
+      await queryWithRetry(
         `INSERT INTO audit_pages (site_id, audit_run_id, url, status_code, title, meta_description, h1, canonical, word_count, error)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
         [siteId, auditRunId, pageResult.url, pageResult.statusCode, pageResult.title, pageResult.metaDescription, pageResult.h1, pageResult.canonical, pageResult.wordCount, pageResult.error]
       )
-      await pool.query('UPDATE audit_results SET pages_crawled = pages_crawled + 1 WHERE id=$1', [auditRunId])
+      await queryWithRetry('UPDATE audit_results SET pages_crawled = pages_crawled + 1 WHERE id=$1', [auditRunId])
     }
 
     const titleGroups = {}
@@ -913,13 +939,13 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       scannedAt: new Date().toISOString(),
     }
 
-    await pool.query(
+    await queryWithRetry(
       'UPDATE audit_results SET results=$1, status=$2, site_health_pct=$3 WHERE id=$4',
       [JSON.stringify(results), 'complete', siteHealthPct, auditRunId]
     )
   } catch (e) {
     console.error('Multi-page crawl error:', e.message)
-    await pool.query('UPDATE audit_results SET status=$1 WHERE id=$2', ['failed', auditRunId]).catch(() => {})
+    await queryWithRetry('UPDATE audit_results SET status=$1 WHERE id=$2', ['failed', auditRunId]).catch(() => {})
   }
 }
 
