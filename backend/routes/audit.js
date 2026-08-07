@@ -679,10 +679,64 @@ router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req,
 
 const MULTIPAGE_PAGE_LIMIT = Number(process.env.AUDIT_PAGE_LIMIT) || 100
 
+function normalizeCrawlUrl(rawUrl, baseUrl) {
+  try {
+    const base = new URL(baseUrl)
+    const url = new URL(rawUrl, baseUrl)
+
+    // Only HTTP/HTTPS pages belong in the site crawl.
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null
+    }
+
+    const baseHost = base.hostname.toLowerCase().replace(/^www\./, '')
+    const urlHost = url.hostname.toLowerCase().replace(/^www\./, '')
+
+    if (urlHost !== baseHost) {
+      return null
+    }
+
+    // Canonicalise www/non-www and protocol to the project's base URL.
+    url.protocol = base.protocol
+    url.hostname = base.hostname.toLowerCase()
+    url.hash = ''
+
+    // Remove tracking parameters without destroying meaningful query params.
+    const trackingParams = [
+      'gclid',
+      'fbclid',
+      'msclkid',
+      'mc_cid',
+      'mc_eid',
+    ]
+
+    for (const key of Array.from(url.searchParams.keys())) {
+      const lower = key.toLowerCase()
+
+      if (lower.startsWith('utm_') || trackingParams.includes(lower)) {
+        url.searchParams.delete(key)
+      }
+    }
+
+    // Make query-string order deterministic.
+    url.searchParams.sort()
+
+    // /about and /about/ should count as the same page.
+    if (url.pathname.length > 1) {
+      url.pathname = url.pathname.replace(/\/+$/, '')
+    }
+
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 async function discoverPageUrls(baseUrl, limit) {
   const origin = new URL(baseUrl).origin
   const rootHost = new URL(baseUrl).hostname.toLowerCase().replace(/^www\./, '')
-  const urls = new Set([baseUrl])
+  const normalizedBaseUrl = normalizeCrawlUrl(baseUrl, baseUrl) || baseUrl
+  const urls = new Set([normalizedBaseUrl])
 
   try {
     const sitemapRes = await axios.get(`${origin}/sitemap.xml`, {
@@ -698,7 +752,10 @@ async function discoverPageUrls(baseUrl, limit) {
         if (loc) {
           try {
             const h = new URL(loc).hostname.toLowerCase().replace(/^www\./, '')
-            if (h === rootHost) urls.add(loc)
+            if (h === rootHost) {
+              const normalized = normalizeCrawlUrl(loc, baseUrl)
+              if (normalized) urls.add(normalized)
+            }
           } catch {}
         }
       })
@@ -748,7 +805,8 @@ async function discoverPageUrls(baseUrl, limit) {
 
             // Remove URL fragments so the same page is not crawled repeatedly.
             parsed.hash = ''
-            const cleanAbsolute = parsed.toString()
+            const cleanAbsolute = normalizeCrawlUrl(parsed.toString(), baseUrl)
+            if (!cleanAbsolute) return
             const h = parsed.hostname.toLowerCase().replace(/^www\./, '')
             if (h === rootHost) {
               urls.add(cleanAbsolute)

@@ -8,6 +8,9 @@ import {
   faAlignLeft, faAlignCenter, faAlignRight, faCircleStop,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
+import * as XLSX from 'xlsx'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 import { Button, Modal, Input } from '../components/UI'
 import { useSnackbar } from '../App'
 import { useAuth } from '../hooks/useAuth'
@@ -1143,6 +1146,240 @@ export default function SiteAudit() {
     } finally {
       setLoadingFixKey(null)
     }
+  }
+  function getCrawledPageExportRows() {
+    const pages = Array.isArray(multipageResults?.pages)
+      ? multipageResults.pages
+      : []
+
+    return pages.map((page, index) => ({
+      'S.No': index + 1,
+      'Status': page.statusCode || 'ERR',
+      'Page URL': page.url || '',
+      'Title': page.title || '',
+      'Meta Description': page.metaDescription || '',
+      'H1': page.h1 || '',
+      'Canonical': page.canonical || '',
+      'Word Count': Number(page.wordCount || 0),
+      'Response Time (ms)': Number(page.responseTimeMs || 0),
+    }))
+  }
+
+  function getAuditExportName(extension) {
+    let domain = 'site'
+
+    try {
+      domain = new URL(siteUrl || auditData?.url || '')
+        .hostname
+        .replace(/^www\./, '')
+    } catch {
+      domain = siteName || 'site'
+    }
+
+    const safeDomain = String(domain)
+      .toLowerCase()
+      .replace(/[^a-z0-9.-]+/g, '-')
+
+    const date = new Date().toISOString().slice(0, 10)
+
+    return `${safeDomain}-crawled-pages-${date}.${extension}`
+  }
+
+  function exportCrawledPagesCsv() {
+    const rows = getCrawledPageExportRows()
+
+    if (!rows.length) {
+      showSnackbar('No crawled pages available to export', 'error')
+      return
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+    const csv = XLSX.utils.sheet_to_csv(worksheet)
+
+    const blob = new Blob(
+      ['\uFEFF' + csv],
+      { type: 'text/csv;charset=utf-8;' }
+    )
+
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = getAuditExportName('csv')
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    URL.revokeObjectURL(url)
+
+    showSnackbar('CSV exported successfully', 'success')
+  }
+
+  function exportCrawledPagesExcel() {
+    const rows = getCrawledPageExportRows()
+
+    if (!rows.length) {
+      showSnackbar('No crawled pages available to export', 'error')
+      return
+    }
+
+    const worksheet = XLSX.utils.json_to_sheet(rows)
+
+    worksheet['!cols'] = [
+      { wch: 7 },
+      { wch: 9 },
+      { wch: 55 },
+      { wch: 45 },
+      { wch: 65 },
+      { wch: 45 },
+      { wch: 55 },
+      { wch: 12 },
+      { wch: 18 },
+    ]
+
+    const workbook = XLSX.utils.book_new()
+
+    XLSX.utils.book_append_sheet(
+      workbook,
+      worksheet,
+      'Crawled Pages'
+    )
+
+    XLSX.writeFile(
+      workbook,
+      getAuditExportName('xlsx')
+    )
+
+    showSnackbar('Excel exported successfully', 'success')
+  }
+
+  function exportCrawledPagesPdf() {
+    const rows = getCrawledPageExportRows()
+
+    if (!rows.length) {
+      showSnackbar('No crawled pages available to export', 'error')
+      return
+    }
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4',
+    })
+
+    let domain = siteName || siteUrl || auditData?.url || 'Website'
+
+    try {
+      domain = new URL(siteUrl || auditData?.url || '')
+        .hostname
+        .replace(/^www\./, '')
+    } catch {
+      // Keep available site name
+    }
+
+    doc.setFontSize(16)
+    doc.text('Full Site Audit - Crawled Pages', 14, 14)
+
+    doc.setFontSize(9)
+
+    doc.text(
+      `Website: ${domain}`,
+      14,
+      21
+    )
+
+    doc.text(
+      `Pages audited: ${rows.length}`,
+      14,
+      26
+    )
+
+    doc.text(
+      `Exported: ${new Date().toLocaleString()}`,
+      14,
+      31
+    )
+
+    const body = rows.map((row) => [
+      row['S.No'],
+      row['Status'],
+      row['Page URL'],
+      row['Title'],
+      row['Meta Description'],
+      row['H1'],
+      row['Canonical'],
+      row['Word Count'],
+      row['Response Time (ms)'],
+    ])
+
+    autoTable(doc, {
+      startY: 36,
+
+      head: [[
+        'S.No',
+        'Status',
+        'Page URL',
+        'Title',
+        'Meta Description',
+        'H1',
+        'Canonical',
+        'Words',
+        'Time (ms)',
+      ]],
+
+      body,
+
+      theme: 'grid',
+
+      styles: {
+        fontSize: 5.5,
+        cellPadding: 1.5,
+        overflow: 'linebreak',
+        valign: 'top',
+      },
+
+      headStyles: {
+        fontStyle: 'bold',
+      },
+
+      columnStyles: {
+        0: { cellWidth: 9, halign: 'center' },
+        1: { cellWidth: 12, halign: 'center' },
+        2: { cellWidth: 45 },
+        3: { cellWidth: 37 },
+        4: { cellWidth: 48 },
+        5: { cellWidth: 35 },
+        6: { cellWidth: 42 },
+        7: { cellWidth: 13, halign: 'right' },
+        8: { cellWidth: 15, halign: 'right' },
+      },
+
+      margin: {
+        top: 36,
+        left: 8,
+        right: 8,
+        bottom: 12,
+      },
+
+      didDrawPage: (data) => {
+        const pageNumber = doc.internal.getNumberOfPages()
+
+        doc.setFontSize(7)
+
+        doc.text(
+          `Page ${pageNumber}`,
+          doc.internal.pageSize.getWidth() - 20,
+          doc.internal.pageSize.getHeight() - 5
+        )
+      },
+    })
+
+    doc.save(
+      getAuditExportName('pdf')
+    )
+
+    showSnackbar('PDF exported successfully', 'success')
   }
   async function refreshAuthorityScore() {
     setRefreshingAuthority(true)
