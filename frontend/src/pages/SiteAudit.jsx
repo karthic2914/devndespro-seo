@@ -535,6 +535,7 @@ export default function SiteAudit() {
   const [multipageBuckets, setMultipageBuckets] = useState(null)
   const [showDupTitles, setShowDupTitles] = useState(false)
   const [showDupMeta, setShowDupMeta] = useState(false)
+  const [showCrawledPages, setShowCrawledPages] = useState(false)
   const [issueHistory, setIssueHistory] = useState([])
   const [expandedIssueKey, setExpandedIssueKey] = useState(null)
   const issueFixStorageKey = `site-audit-fixes:${siteId}`
@@ -1441,6 +1442,178 @@ export default function SiteAudit() {
             Full Site Audit Results (Beta) - {multipageResults.pagesTotal} pages crawled
           </div>
           <MultipageScoreBanner results={multipageResults} history={issueHistory} onCategoryClick={scrollToCategory} />
+
+          {/* Crawled page inventory - collapsed by default */}
+          {Array.isArray(multipageResults.pages) && multipageResults.pages.length > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => setShowCrawledPages(v => !v)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: 0,
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#2563EB',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={showCrawledPages ? faChevronDown : faChevronRight}
+                  style={{ fontSize: 10 }}
+                />
+                {showCrawledPages ? 'Hide' : 'View'} crawled pages ({multipageResults.pages.length})
+              </button>
+
+              {showCrawledPages && (
+                <div style={{
+                  marginTop: 10,
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 10,
+                  overflow: 'hidden',
+                  background: '#F9FAFB',
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '9px 12px',
+                    background: '#fff',
+                    borderBottom: '1px solid #E5E7EB',
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#374151' }}>
+                      Crawled Pages
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9CA3AF' }}>
+                      {multipageResults.pages.length} URLs audited
+                    </div>
+                  </div>
+
+                  <div style={{
+                    maxHeight: 360,
+                    overflowY: 'auto',
+                    overflowX: 'auto',
+                  }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      fontSize: 11,
+                      background: '#fff',
+                    }}>
+                      <thead style={{
+                        position: 'sticky',
+                        top: 0,
+                        background: '#F9FAFB',
+                        zIndex: 1,
+                      }}>
+                        <tr>
+                          <th style={{ padding: '8px 10px', textAlign: 'left', color: '#6B7280', width: 70 }}>Status</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left', color: '#6B7280' }}>Page</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'left', color: '#6B7280' }}>Title</th>
+                          <th style={{ padding: '8px 10px', textAlign: 'right', color: '#6B7280', width: 70 }}>Words</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {multipageResults.pages.map((page, index) => {
+                          const code = Number(page.statusCode || 0)
+                          const isOk = code >= 200 && code < 300
+                          const isRedirect = code >= 300 && code < 400
+                          const statusColor = isOk
+                            ? '#16A34A'
+                            : isRedirect
+                              ? '#D97706'
+                              : '#DC2626'
+
+                          let pageLabel = page.url || '-'
+
+                          try {
+                            const parsed = new URL(page.url)
+                            pageLabel = parsed.pathname + parsed.search
+                            if (pageLabel === '/') pageLabel = 'Homepage /'
+                          } catch {
+                            // Keep original URL
+                          }
+
+                          return (
+                            <tr
+                              key={`${page.url}-${index}`}
+                              style={{ borderTop: '1px solid #F3F4F6' }}
+                            >
+                              <td style={{ padding: '8px 10px' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  minWidth: 38,
+                                  padding: '2px 6px',
+                                  borderRadius: 12,
+                                  background: `${statusColor}12`,
+                                  color: statusColor,
+                                  fontWeight: 700,
+                                }}>
+                                  {page.statusCode || 'ERR'}
+                                </span>
+                              </td>
+
+                              <td style={{
+                                padding: '8px 10px',
+                                maxWidth: 340,
+                              }}>
+                                <a
+                                  href={page.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title={page.url}
+                                  style={{
+                                    color: '#2563EB',
+                                    textDecoration: 'none',
+                                    display: 'block',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                  }}
+                                >
+                                  {pageLabel}
+                                </a>
+                              </td>
+
+                              <td
+                                title={page.title || ''}
+                                style={{
+                                  padding: '8px 10px',
+                                  color: '#4B5563',
+                                  maxWidth: 320,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                }}
+                              >
+                                {page.title || 'No title'}
+                              </td>
+
+                              <td style={{
+                                padding: '8px 10px',
+                                textAlign: 'right',
+                                color: '#6B7280',
+                              }}>
+                                {Number(page.wordCount || 0).toLocaleString()}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {multipageResults.duplicateTitles?.length > 0 && (
             <div style={{ marginTop: 16 }}>
