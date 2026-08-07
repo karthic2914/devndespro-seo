@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -529,6 +529,7 @@ export default function SiteAudit() {
   
   const [currentAuditRunId, setCurrentAuditRunId] = useState(null)
   const cancelPollingRef = useRef(false)
+  const multipagePollFailuresRef = useRef(0)
   const [multipageResults, setMultipageResults] = useState(null)
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
@@ -615,9 +616,20 @@ export default function SiteAudit() {
       }
       if (historyRes?.data?.history) setIssueHistory(historyRes.data.history)
       if (runningRes?.data?.auditRunId) {
+        const resumedAuditRunId = runningRes.data.auditRunId
+
+        cancelPollingRef.current = false
+        multipagePollFailuresRef.current = 0
+
+        setCurrentAuditRunId(resumedAuditRunId)
         setMultipageStatus('running')
-        setMultipageProgress({ pagesCrawled: 0, pagesTotal: 0 })
-        pollMultipageProgress(runningRes.data.auditRunId)
+
+        setMultipageProgress({
+          pagesCrawled: runningRes.data.pagesCrawled || 0,
+          pagesTotal: runningRes.data.pagesTotal || 0,
+        })
+
+        pollMultipageProgress(resumedAuditRunId)
       }
     }).finally(() => setLoading(false))
   }, [siteId])
@@ -760,6 +772,7 @@ export default function SiteAudit() {
         }
 
         cancelPollingRef.current = false
+        multipagePollFailuresRef.current = 0
         setCurrentAuditRunId(auditRunId)
         pollMultipageProgress(auditRunId)
 
@@ -799,6 +812,9 @@ export default function SiteAudit() {
 
       const data = response.data
 
+      // Successful progress response - clear transient polling failures
+      multipagePollFailuresRef.current = 0
+
       setMultipageProgress({
         pagesCrawled: data.pagesCrawled,
         pagesTotal: data.pagesTotal,
@@ -837,11 +853,35 @@ export default function SiteAudit() {
     } catch (error) {
       if (cancelPollingRef.current) return
 
+      multipagePollFailuresRef.current += 1
+
+      const failureCount = multipagePollFailuresRef.current
+      const maxFailures = 5
+
+      console.warn(
+        `Full-site audit polling failed (${failureCount}/${maxFailures})`,
+        error
+      )
+
+      // Temporary network/API problems must not immediately
+      // terminate an otherwise running server-side audit.
+      if (failureCount < maxFailures) {
+        setMultipageStatus('running')
+
+        setTimeout(() => {
+          if (!cancelPollingRef.current) {
+            pollMultipageProgress(auditRunId)
+          }
+        }, 3000)
+
+        return
+      }
+
       setMultipageStatus('failed')
       setCurrentAuditRunId(null)
 
       showSnackbar(
-        'Lost connection while checking audit progress',
+        'Could not reconnect to the running audit after several attempts.',
         'error'
       )
     }
@@ -857,6 +897,7 @@ export default function SiteAudit() {
     }
 
     cancelPollingRef.current = false
+    multipagePollFailuresRef.current = 0
     setMultipageStatus('running')
     setMultipageProgress({
       pagesCrawled: 0,
@@ -1774,7 +1815,3 @@ export default function SiteAudit() {
     </div>
   )
 }
-
-
-
-
