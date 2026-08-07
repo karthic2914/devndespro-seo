@@ -922,30 +922,115 @@ export default function SiteAudit() {
   }
   async function fetchIssueFix(issue) {
     const key = issue.check
-    if (issueFixes[key]) {
-      setExpandedIssueKey(expandedIssueKey === key ? null : key)
+    const existingFix = issueFixes[key]
+
+    const hasExistingFix = Boolean(
+      existingFix &&
+      (
+        existingFix.why ||
+        existingFix.fix ||
+        existingFix.before ||
+        existingFix.after ||
+        existingFix.timeToFix
+      )
+    )
+
+    if (hasExistingFix) {
+      setExpandedIssueKey(
+        expandedIssueKey === key ? null : key
+      )
       return
     }
+
     setLoadingFixKey(key)
     setExpandedIssueKey(key)
-    try {
-      const r = await api.post(`/sites/${siteId}/audit/ai-fix`, {
-        issue: { message: issue.sampleMessage, category: issue.category, impact: issue.impact, status: issue.status },
-        siteUrl: siteUrl || auditData?.url,
-      }, { timeout: 30000 })
-      setIssueFixes(prev => ({ ...prev, [key]: r.data }))
-    } catch (e) {
-      const isTimeout = e.code === 'ECONNABORTED' || /timeout/i.test(e.message || '')
-      setIssueFixes(prev => ({
-        ...prev,
-        [key]: { fix: isTimeout
-          ? 'The AI took too long to respond. Please try again.'
-          : 'Could not generate fix suggestion. Please try again.' },
-      }))
-    }
-    setLoadingFixKey(null)
-  }
 
+    try {
+      const response = await api.post(
+        `/sites/${siteId}/audit/ai-fix`,
+        {
+          issue: {
+            message: issue.sampleMessage,
+            category: issue.category,
+            impact: issue.impact,
+            status: issue.status,
+          },
+          siteUrl: siteUrl || auditData?.url,
+        },
+        {
+          timeout: 30000,
+        }
+      )
+
+      const raw = response?.data
+
+      const normalized =
+        raw?.data && typeof raw.data === 'object'
+          ? raw.data
+          : raw?.result && typeof raw.result === 'object'
+            ? raw.result
+            : raw?.recommendation &&
+                typeof raw.recommendation === 'object'
+              ? raw.recommendation
+              : raw
+
+      const validFix = Boolean(
+        normalized &&
+        (
+          normalized.why ||
+          normalized.fix ||
+          normalized.before ||
+          normalized.after ||
+          normalized.timeToFix
+        )
+      )
+
+      if (!validFix) {
+        console.warn('Unexpected ai-fix response:', raw)
+
+        setIssueFixes((previous) => {
+          const next = { ...previous }
+          delete next[key]
+          return next
+        })
+
+        setExpandedIssueKey(null)
+
+        showSnackbar(
+          'Could not load the fix recommendation. Please try again.',
+          'error'
+        )
+
+        return
+      }
+
+      setIssueFixes((previous) => ({
+        ...previous,
+        [key]: normalized,
+      }))
+    } catch (e) {
+      const isTimeout =
+        e.code === 'ECONNABORTED' ||
+        /timeout/i.test(e.message || '')
+
+      setIssueFixes((previous) => {
+        const next = { ...previous }
+        delete next[key]
+        return next
+      })
+
+      setExpandedIssueKey(null)
+
+      showSnackbar(
+        isTimeout
+          ? 'The AI took too long to respond. Please try again.'
+          : 'Could not generate fix suggestion. Please try again.',
+        'error'
+      )
+    } finally {
+      setLoadingFixKey(null)
+    }
+  }
   async function refreshAuthorityScore() {
     setRefreshingAuthority(true)
     try {
@@ -1307,6 +1392,17 @@ export default function SiteAudit() {
                   const key = issue.check
                   const isExpanded = expandedIssueKey === key
                   const fix = issueFixes[key]
+
+                  const hasFix = Boolean(
+                    fix &&
+                    (
+                      fix.why ||
+                      fix.fix ||
+                      fix.before ||
+                      fix.after ||
+                      fix.timeToFix
+                    )
+                  )
                   const isLoadingFix = loadingFixKey === key
                   return (
                     <div key={key} style={{ border: '1px solid #E5E7EB', borderRadius: 8, overflow: 'hidden' }}>
@@ -1330,10 +1426,10 @@ export default function SiteAudit() {
                             cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap',
                           }}
                         >
-                          {isLoadingFix ? 'Loading...' : fix ? 'View fix' : 'How to fix'}
+                          {isLoadingFix ? 'Loading...' : hasFix ? 'View fix' : 'How to fix'}
                         </button>
                       </div>
-                      {isExpanded && fix && (
+                      {isExpanded && hasFix && (
                         <div style={{ padding: '12px 14px', background: '#F9FAFB', borderTop: '1px solid #E5E7EB', fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
                           {fix.why && <div style={{ marginBottom: 8 }}><strong>Why it matters:</strong> {fix.why}</div>}
                           {fix.fix && <div style={{ marginBottom: 8 }}><strong>Fix:</strong> {fix.fix}</div>}
