@@ -602,8 +602,7 @@ export default function SiteAudit() {
       api.get(`/sites/${siteId}`).catch(() => null),
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
       api.get(`/sites/${siteId}/audit/multipage-history`).catch(() => null),
-      api.get(`/sites/${siteId}/audit/multipage-running`).catch(() => null),
-    ]).then(([auditRes, siteRes, multipageRes, historyRes, runningRes]) => {
+    ]).then(([auditRes, siteRes, multipageRes, historyRes]) => {
       if (auditRes?.data) setAuditData(auditRes.data)
       if (siteRes?.data?.name) setSiteName(siteRes.data.name)
       if (siteRes?.data?.url)  setSiteUrl(siteRes.data.url)
@@ -615,22 +614,6 @@ export default function SiteAudit() {
         setMultipageStatus('complete')
       }
       if (historyRes?.data?.history) setIssueHistory(historyRes.data.history)
-      if (runningRes?.data?.auditRunId) {
-        const resumedAuditRunId = runningRes.data.auditRunId
-
-        cancelPollingRef.current = false
-        multipagePollFailuresRef.current = 0
-
-        setCurrentAuditRunId(resumedAuditRunId)
-        setMultipageStatus('running')
-
-        setMultipageProgress({
-          pagesCrawled: runningRes.data.pagesCrawled || 0,
-          pagesTotal: runningRes.data.pagesTotal || 0,
-        })
-
-        pollMultipageProgress(resumedAuditRunId)
-      }
     }).finally(() => setLoading(false))
   }, [siteId])
 
