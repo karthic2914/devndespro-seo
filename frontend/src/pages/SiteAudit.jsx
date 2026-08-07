@@ -536,9 +536,59 @@ export default function SiteAudit() {
   const [showDupMeta, setShowDupMeta] = useState(false)
   const [issueHistory, setIssueHistory] = useState([])
   const [expandedIssueKey, setExpandedIssueKey] = useState(null)
-  const [issueFixes, setIssueFixes] = useState({})
+  const issueFixStorageKey = `site-audit-fixes:${siteId}`
+
+  const [issueFixes, setIssueFixes] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`site-audit-fixes:${siteId}`)
+      return saved ? JSON.parse(saved) : {}
+    } catch {
+      return {}
+    }
+  })
   const [loadingFixKey, setLoadingFixKey] = useState(null)
 
+
+  // Persist generated issue fixes so they survive refreshes and re-runs
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        issueFixStorageKey,
+        JSON.stringify(issueFixes)
+      )
+    } catch {
+      // Ignore browser storage errors
+    }
+  }, [issueFixes, issueFixStorageKey])
+
+  // Remove saved fixes automatically when the corresponding
+  // issue no longer exists in the latest full-site audit
+  useEffect(() => {
+    if (!multipageResults?.issueSummary) return
+
+    const activeIssueKeys = new Set(
+      multipageResults.issueSummary
+        .map((issue) => issue.check)
+        .filter(Boolean)
+    )
+
+    setIssueFixes((previous) => {
+      const next = Object.fromEntries(
+        Object.entries(previous).filter(([key]) =>
+          activeIssueKeys.has(key)
+        )
+      )
+
+      const previousKeys = Object.keys(previous)
+      const nextKeys = Object.keys(next)
+
+      const changed =
+        previousKeys.length !== nextKeys.length ||
+        previousKeys.some((key) => !nextKeys.includes(key))
+
+      return changed ? next : previous
+    })
+  }, [multipageResults])
   const isBotBlocked = useMemo(() => {
     if (!auditData?.crawl) return false
     const { wordCount, statusCode } = auditData.crawl
@@ -1280,7 +1330,7 @@ export default function SiteAudit() {
                             cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0, whiteSpace: 'nowrap',
                           }}
                         >
-                          {isLoadingFix ? 'Loading...' : 'How to fix'}
+                          {isLoadingFix ? 'Loading...' : fix ? 'View fix' : 'How to fix'}
                         </button>
                       </div>
                       {isExpanded && fix && (
