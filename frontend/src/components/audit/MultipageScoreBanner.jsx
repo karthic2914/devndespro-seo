@@ -1,4 +1,4 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+﻿import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons'
 
 const CAT_ICONS = {
@@ -78,7 +78,17 @@ export default function MultipageScoreBanner({ results, history = [], onCategory
   if (!results) return null
 
   const categoryScores = results.categoryScores || {}
-  const categoryEntries = Object.entries(categoryScores)
+
+  const categoryEntries = Object.entries(categoryScores).map(([cat, score]) => {
+    const safeCategory =
+      !cat ||
+      cat === 'undefined' ||
+      cat === 'null'
+        ? 'On-Page SEO'
+        : cat
+
+    return [safeCategory, score]
+  })
 
   // Assumes history[0] is the run we're currently showing and history[1] is
   // the prior run. If your history endpoint is ordered differently, or

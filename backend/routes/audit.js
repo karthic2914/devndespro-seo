@@ -843,8 +843,8 @@ async function crawlSinglePageLite(pageUrl) {
 
     const liteChecks = []
 
-    const addLiteCheck = (check, status, message) => {
-      liteChecks.push({ check, status, message })
+    const addLiteCheck = (check, status, message, category = 'On-Page SEO') => {
+      liteChecks.push({ check, status, message, category })
     }
 
     // Title
@@ -874,18 +874,18 @@ async function crawlSinglePageLite(pageUrl) {
 
     // Canonical
     if (!canonical) {
-      addLiteCheck('canonical', 'warning', 'Missing canonical URL')
+      addLiteCheck('canonical', 'warning', 'Missing canonical URL', 'Technical SEO')
     } else {
-      addLiteCheck('canonical', 'pass', 'Canonical URL found')
+      addLiteCheck('canonical', 'pass', 'Canonical URL found', 'Technical SEO')
     }
 
     // Content volume
     if (wordCount < 300) {
-      addLiteCheck('content', 'error', 'Very low word count')
+      addLiteCheck('content', 'error', 'Very low word count', 'Content Quality')
     } else if (wordCount < 700) {
-      addLiteCheck('content', 'warning', 'Low word count')
+      addLiteCheck('content', 'warning', 'Low word count', 'Content Quality')
     } else {
-      addLiteCheck('content', 'pass', 'Content volume is healthy')
+      addLiteCheck('content', 'pass', 'Content volume is healthy', 'Content Quality')
     }
 
     const errorCount = liteChecks.filter(c => c.status === 'error').length
