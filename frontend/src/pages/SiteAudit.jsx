@@ -920,9 +920,92 @@ export default function SiteAudit() {
       )
     }
   }
+  function normalizeAiFixResponse(rawResponse) {
+    let candidate =
+      rawResponse?.data && typeof rawResponse.data === 'object'
+        ? rawResponse.data
+        : rawResponse?.result && typeof rawResponse.result === 'object'
+          ? rawResponse.result
+          : rawResponse?.recommendation &&
+              typeof rawResponse.recommendation === 'object'
+            ? rawResponse.recommendation
+            : rawResponse
+
+    // Remove Markdown JSON fences and parse a JSON string.
+    const parseJsonText = (value) => {
+      if (typeof value !== 'string') return null
+
+      const text = value.trim()
+
+      const cleaned = text
+        .replace(/^```json\s*/i, '')
+        .replace(/^```\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim()
+
+      if (!cleaned.startsWith('{')) {
+        return null
+      }
+
+      try {
+        return JSON.parse(cleaned)
+      } catch (error) {
+        console.warn(
+          'Could not parse AI recommendation JSON:',
+          error
+        )
+        return null
+      }
+    }
+
+    // Case 1:
+    // Entire response is JSON returned as text.
+    if (typeof candidate === 'string') {
+      const parsedCandidate = parseJsonText(candidate)
+
+      if (parsedCandidate) {
+        candidate = parsedCandidate
+      } else {
+        return {
+          fix: candidate,
+        }
+      }
+    }
+
+    // Case 2:
+    // Backend returns:
+    //
+    // {
+    //   fix: "```json { ... } ```"
+    // }
+    //
+    // This is the response format currently causing
+    // the large JSON blob in the UI.
+    if (
+      candidate &&
+      typeof candidate === 'object' &&
+      typeof candidate.fix === 'string'
+    ) {
+      const parsedFix = parseJsonText(candidate.fix)
+
+      if (
+        parsedFix &&
+        typeof parsedFix === 'object'
+      ) {
+        candidate = {
+          ...candidate,
+          ...parsedFix,
+        }
+      }
+    }
+
+    return candidate
+  }
   async function fetchIssueFix(issue) {
     const key = issue.check
-    const existingFix = issueFixes[key]
+
+    // Normalize old recommendations already stored in localStorage.
+    const existingFix = normalizeAiFixResponse(issueFixes[key])
 
     const hasExistingFix = Boolean(
       existingFix &&
@@ -931,14 +1014,23 @@ export default function SiteAudit() {
         existingFix.fix ||
         existingFix.before ||
         existingFix.after ||
-        existingFix.timeToFix
+        existingFix.timeToFix ||
+        existingFix.priorityNote
       )
     )
 
     if (hasExistingFix) {
+      // If the old saved value contained Markdown JSON,
+      // replace it with the normalized object.
+      setIssueFixes((previous) => ({
+        ...previous,
+        [key]: existingFix,
+      }))
+
       setExpandedIssueKey(
         expandedIssueKey === key ? null : key
       )
+
       return
     }
 
@@ -962,17 +1054,7 @@ export default function SiteAudit() {
         }
       )
 
-      const raw = response?.data
-
-      const normalized =
-        raw?.data && typeof raw.data === 'object'
-          ? raw.data
-          : raw?.result && typeof raw.result === 'object'
-            ? raw.result
-            : raw?.recommendation &&
-                typeof raw.recommendation === 'object'
-              ? raw.recommendation
-              : raw
+      const normalized = normalizeAiFixResponse(response?.data)
 
       const validFix = Boolean(
         normalized &&
@@ -981,12 +1063,16 @@ export default function SiteAudit() {
           normalized.fix ||
           normalized.before ||
           normalized.after ||
-          normalized.timeToFix
+          normalized.timeToFix ||
+          normalized.priorityNote
         )
       )
 
       if (!validFix) {
-        console.warn('Unexpected ai-fix response:', raw)
+        console.warn(
+          'Unexpected ai-fix response:',
+          response?.data
+        )
 
         setIssueFixes((previous) => {
           const next = { ...previous }
@@ -997,7 +1083,7 @@ export default function SiteAudit() {
         setExpandedIssueKey(null)
 
         showSnackbar(
-          'Could not load the fix recommendation. Please try again.',
+          'Could not read the fix recommendation. Please try again.',
           'error'
         )
 
@@ -1008,6 +1094,7 @@ export default function SiteAudit() {
         ...previous,
         [key]: normalized,
       }))
+
     } catch (e) {
       const isTimeout =
         e.code === 'ECONNABORTED' ||
@@ -1027,6 +1114,7 @@ export default function SiteAudit() {
           : 'Could not generate fix suggestion. Please try again.',
         'error'
       )
+
     } finally {
       setLoadingFixKey(null)
     }
@@ -1400,7 +1488,8 @@ export default function SiteAudit() {
                       fix.fix ||
                       fix.before ||
                       fix.after ||
-                      fix.timeToFix
+                      fix.timeToFix ||
+                      fix.priorityNote
                     )
                   )
                   const isLoadingFix = loadingFixKey === key
@@ -1432,10 +1521,35 @@ export default function SiteAudit() {
                       {isExpanded && hasFix && (
                         <div style={{ padding: '12px 14px', background: '#F9FAFB', borderTop: '1px solid #E5E7EB', fontSize: 12, color: '#374151', lineHeight: 1.7 }}>
                           {fix.why && <div style={{ marginBottom: 8 }}><strong>Why it matters:</strong> {fix.why}</div>}
-                          {fix.fix && <div style={{ marginBottom: 8 }}><strong>Fix:</strong> {fix.fix}</div>}
+                          {fix.fix && (
+  <div style={{ marginBottom: 8 }}>
+    <strong>Fix:</strong>
+    <div style={{ whiteSpace: 'pre-wrap', marginTop: 4 }}>
+      {fix.fix}
+    </div>
+  </div>
+)}
                           {fix.before && <div style={{ marginBottom: 4 }}><strong>Before:</strong> <code style={{ background: '#FEF2F2', padding: '1px 5px', borderRadius: 4 }}>{fix.before}</code></div>}
                           {fix.after && <div style={{ marginBottom: 8 }}><strong>After:</strong> <code style={{ background: '#F0FDF4', padding: '1px 5px', borderRadius: 4 }}>{fix.after}</code></div>}
-                          {fix.timeToFix && <div style={{ fontSize: 11, color: '#9CA3AF' }}>Estimated time: {fix.timeToFix}</div>}
+                          {fix.timeToFix && (
+                            <div style={{ fontSize: 11, color: '#6B7280', marginTop: 8 }}>
+                              <strong>Estimated time:</strong> {fix.timeToFix}
+                            </div>
+                          )}
+
+                          {fix.priorityNote && (
+                            <div style={{
+                              marginTop: 8,
+                              padding: '8px 10px',
+                              background: '#FFF7ED',
+                              border: '1px solid #FED7AA',
+                              borderRadius: 6,
+                              color: '#9A3412',
+                              fontSize: 11,
+                            }}>
+                              <strong>Priority:</strong> {fix.priorityNote}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
