@@ -840,6 +840,56 @@ async function crawlSinglePageLite(pageUrl) {
     const h1 = $('h1').first().text().trim() || null
     const canonical = $('link[rel="canonical"]').attr('href') || null
     const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
+
+    const liteChecks = []
+
+    const addLiteCheck = (check, status, message) => {
+      liteChecks.push({ check, status, message })
+    }
+
+    // Title
+    if (!title) {
+      addLiteCheck('title', 'error', 'Missing title tag')
+    } else if (title.length < 30 || title.length > 60) {
+      addLiteCheck('title', 'warning', 'Title length should be 30-60 characters')
+    } else {
+      addLiteCheck('title', 'pass', 'Title is healthy')
+    }
+
+    // Meta description
+    if (!metaDescription) {
+      addLiteCheck('meta_description', 'error', 'Missing meta description')
+    } else if (metaDescription.length < 100 || metaDescription.length > 160) {
+      addLiteCheck('meta_description', 'warning', 'Meta description length should be 100-160 characters')
+    } else {
+      addLiteCheck('meta_description', 'pass', 'Meta description is healthy')
+    }
+
+    // H1
+    if (!h1) {
+      addLiteCheck('h1', 'error', 'Missing H1 heading')
+    } else {
+      addLiteCheck('h1', 'pass', 'H1 found')
+    }
+
+    // Canonical
+    if (!canonical) {
+      addLiteCheck('canonical', 'warning', 'Missing canonical URL')
+    } else {
+      addLiteCheck('canonical', 'pass', 'Canonical URL found')
+    }
+
+    // Content volume
+    if (wordCount < 300) {
+      addLiteCheck('content', 'error', 'Very low word count')
+    } else if (wordCount < 700) {
+      addLiteCheck('content', 'warning', 'Low word count')
+    } else {
+      addLiteCheck('content', 'pass', 'Content volume is healthy')
+    }
+
+    const errorCount = liteChecks.filter(c => c.status === 'error').length
+    const warningCount = liteChecks.filter(c => c.status === 'warning').length
     return {
       url: pageUrl,
       statusCode: res.status,
@@ -849,6 +899,9 @@ async function crawlSinglePageLite(pageUrl) {
       canonical,
       wordCount,
       responseTimeMs,
+      checks: liteChecks,
+      errorCount,
+      warningCount,
       error: null,
     }
   } catch (e) {
@@ -862,6 +915,9 @@ async function crawlSinglePageLite(pageUrl) {
       wordCount: 0,
       responseTimeMs: null,
       error: e.message,
+      errorCount: 1,
+      warningCount: 0,
+      checks: [],
     }
   }
 }
@@ -941,7 +997,11 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       if (p.error || (p.statusCode && p.statusCode >= 400)) return 15
       const hasDuplicate = duplicateTitleUrls.has(p.url) || duplicateMetaUrls.has(p.url)
       const hasErrors = (p.errorCount || 0) > 0
-      if (!hasErrors && !hasDuplicate) return 100
+      const hasWarnings = (p.warningCount || 0) > 0
+      if (!hasErrors && !hasWarnings && !hasDuplicate) return 100
+      if (!hasErrors && hasWarnings && !hasDuplicate) return 80
+      if (!hasErrors && !hasWarnings && hasDuplicate) return 70
+      if (!hasErrors && hasWarnings && hasDuplicate) return 60
       if (hasErrors) return 15
       return 55
     })

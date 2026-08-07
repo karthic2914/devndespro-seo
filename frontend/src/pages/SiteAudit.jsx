@@ -1729,6 +1729,61 @@ export default function SiteAudit() {
                     <div style={{ fontSize: 11, color: '#9CA3AF' }}>
                       {multipageResults.pages.length} URLs audited
                     </div>
+                    <div style={{ display: 'flex', gap: 6, marginLeft: 10, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={exportCrawledPagesCsv}
+                        style={{
+                          border: '1px solid #D1D5DB',
+                          background: '#fff',
+                          borderRadius: 6,
+                          padding: '4px 9px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: '#4B5563',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        CSV
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={exportCrawledPagesExcel}
+                        style={{
+                          border: '1px solid #D1D5DB',
+                          background: '#fff',
+                          borderRadius: 6,
+                          padding: '4px 9px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: '#15803D',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        Excel
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={exportCrawledPagesPdf}
+                        style={{
+                          border: '1px solid #D1D5DB',
+                          background: '#fff',
+                          borderRadius: 6,
+                          padding: '4px 9px',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: '#DC2626',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        PDF
+                      </button>
+                    </div>
                   </div>
 
                   <div style={{
