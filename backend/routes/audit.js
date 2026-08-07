@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -993,10 +993,53 @@ router.get('/:siteId/audit/multipage-history', auth, verifySite, async (req, res
 
 router.get('/:siteId/audit/multipage-running', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query(
-    "SELECT id FROM audit_results WHERE site_id=$1 AND status='running' ORDER BY created_at DESC LIMIT 1",
+    `SELECT
+       ar.id,
+       ar.pages_crawled,
+       ar.pages_total,
+       ar.created_at,
+       MAX(ap.crawled_at) AS last_progress_at
+     FROM audit_results ar
+     LEFT JOIN audit_pages ap ON ap.audit_run_id = ar.id
+     WHERE ar.site_id=
+       AND ar.status='running'
+     GROUP BY ar.id
+     ORDER BY ar.created_at DESC
+     LIMIT 1`,
     [req.siteId]
   )
-  res.json({ auditRunId: rows.length ? rows[0].id : null })
+
+  if (!rows.length) {
+    return res.json({ auditRunId: null })
+  }
+
+  const run = rows[0]
+
+  const lastActivity = run.last_progress_at || run.created_at
+  const staleMs = Date.now() - new Date(lastActivity).getTime()
+
+  // A running audit with no progress for 60 seconds is considered interrupted.
+  if (staleMs > 60000) {
+    await pool.query(
+      "UPDATE audit_results SET status='failed' WHERE id= AND status='running'",
+      [run.id]
+    )
+
+    return res.json({
+      auditRunId: null,
+      status: 'failed',
+      interrupted: true,
+      pagesCrawled: Number(run.pages_crawled || 0),
+      pagesTotal: Number(run.pages_total || 0),
+    })
+  }
+
+  res.json({
+    auditRunId: run.id,
+    status: 'running',
+    pagesCrawled: Number(run.pages_crawled || 0),
+    pagesTotal: Number(run.pages_total || 0),
+  })
 })
 
 module.exports = router
