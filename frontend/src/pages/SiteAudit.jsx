@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -19,6 +19,7 @@ import AuditScoreBanner from '../components/audit/AuditScoreBanner'
 import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 import MultipageScoreBanner from '../components/audit/MultipageScoreBanner'
+import DecisionCenter from '../components/dashboard/DecisionCenter'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
 
@@ -487,6 +488,22 @@ function IssueSparkline({ checkId, history }) {
 }
 
 export default function SiteAudit() {
+  const [collapsedSections, setCollapsedSections] = useState({
+    decisionCenter: false,
+    fullSiteAudit: false,
+    aiVisibility: false,
+    authority: false,
+    crawlSnapshot: false,
+    issues: false,
+  })
+
+  const toggleSection = (section) => {
+    setCollapsedSections((previous) => ({
+      ...previous,
+      [section]: !previous[section],
+    }))
+  }
+
   const showSnackbar = useSnackbar()
   const { siteId }   = useParams()
   const navigate     = useNavigate()
@@ -524,8 +541,117 @@ export default function SiteAudit() {
   const issuesRef = useRef(null)
   const [logoAlign, setLogoAlign] = useState('center')
   const [authorityScore, setAuthorityScore] = useState(null)
+  const [authorityDetails, setAuthorityDetails] = useState(null)
   const [authorityUpdatedAt, setAuthorityUpdatedAt] = useState(null)
   const [refreshingAuthority, setRefreshingAuthority] = useState(false)
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadAuthorityBreakdownFromBacklinks() {
+      if (!siteId) return
+
+      try {
+        const response = await api.get(`/sites/${siteId}/backlinks`)
+        const rows = Array.isArray(response?.data) ? response.data : []
+
+        const live = rows.filter(
+          (item) => String(item?.status || '').toLowerCase() === 'live'
+        )
+
+        const totalBacklinks = live.length
+
+        const referringDomains = new Set(
+          live
+            .map((item) => String(item?.name || '').trim().toLowerCase())
+            .filter(Boolean)
+        ).size
+
+        const avgDr =
+          totalBacklinks > 0
+            ? live.reduce(
+                (sum, item) => sum + Number(item?.dr || 0),
+                0
+              ) / totalBacklinks
+            : 0
+
+        const dofollowCount = live.filter(
+          (item) =>
+            String(item?.type || '').toLowerCase() === 'dofollow'
+        ).length
+
+        const dofollowRatio =
+          totalBacklinks > 0
+            ? (dofollowCount / totalBacklinks) * 100
+            : 0
+
+        const logScore = (value, target) => {
+          if (!value || value <= 0) return 0
+
+          return Math.min(
+            100,
+            Math.round(
+              (100 * Math.log10(value + 1)) /
+              Math.log10(target + 1)
+            )
+          )
+        }
+
+        const referringDomainScore =
+          logScore(referringDomains, 200)
+
+        const drScore =
+          Math.round(Math.max(0, Math.min(100, avgDr)))
+
+        const dofollowScore =
+          Math.min(
+            100,
+            Math.round((dofollowRatio / 70) * 100)
+          )
+
+        const backlinkVolumeScore =
+          logScore(totalBacklinks, 1000)
+
+        if (!cancelled) {
+          setAuthorityDetails({
+            breakdown: {
+              referringDomains: {
+                value: referringDomains,
+                score: referringDomainScore,
+                weight: 40,
+              },
+              averageDR: {
+                value: Math.round(avgDr * 10) / 10,
+                score: drScore,
+                weight: 30,
+              },
+              dofollow: {
+                count: dofollowCount,
+                ratio: Math.round(dofollowRatio * 10) / 10,
+                score: dofollowScore,
+                weight: 15,
+              },
+              backlinks: {
+                value: totalBacklinks,
+                score: backlinkVolumeScore,
+                weight: 15,
+              },
+            },
+          })
+        }
+      } catch (error) {
+        console.warn(
+          'Unable to load Authority Intelligence breakdown:',
+          error
+        )
+      }
+    }
+
+    loadAuthorityBreakdownFromBacklinks()
+
+    return () => {
+      cancelled = true
+    }
+  }, [siteId])
   const [showAuditMenu, setShowAuditMenu] = useState(false)
   const [multipageStatus, setMultipageStatus] = useState(null)
   const [multipageProgress, setMultipageProgress] = useState(null)
@@ -539,6 +665,11 @@ export default function SiteAudit() {
   const [showDupTitles, setShowDupTitles] = useState(false)
   const [showDupMeta, setShowDupMeta] = useState(false)
   const [showCrawledPages, setShowCrawledPages] = useState(false)
+
+  // Major Site Audit section visibility
+  const [showFullSiteResults, setShowFullSiteResults] = useState(true)
+  const [showAuthoritySection, setShowAuthoritySection] = useState(true)
+  const [showCrawlSnapshot, setShowCrawlSnapshot] = useState(true)
   const [issueHistory, setIssueHistory] = useState([])
   const [expandedIssueKey, setExpandedIssueKey] = useState(null)
   const issueFixStorageKey = `site-audit-fixes:${siteId}`
@@ -1386,6 +1517,7 @@ export default function SiteAudit() {
     try {
       const r = await api.post(`/sites/${siteId}/authority-score`)
       setAuthorityScore(r.data.authority_score)
+      setAuthorityDetails(r.data)
       setAuthorityUpdatedAt(r.data.authority_updated_at)
       showSnackbar('Authority score updated!', 'success')
     } catch (e) {
@@ -1449,8 +1581,19 @@ export default function SiteAudit() {
     return <EmptyAudit onRun={runAudit} running={running} error={runError} />
   }
 
-  const scannedDate = auditData.scannedAt
-    ? new Date(auditData.scannedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  const latestScannedAt =
+    multipageResults?.scannedAt ||
+    auditData?.scannedAt ||
+    null
+
+  const scannedDate = latestScannedAt
+    ? new Date(latestScannedAt).toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
     : 'Unknown'
   const crawl    = auditData.crawl || null
   const fmtMs    = (n) => (Number.isFinite(Number(n)) ? `${Math.round(Number(n))} ms` : '-')
@@ -1563,7 +1706,65 @@ export default function SiteAudit() {
         </div>
       )}
 
-      {multipageStatus === 'running' && (
+      <div style={{
+        background: '#fff',
+        border: '1px solid #E5E7EB',
+        borderRadius: 12,
+        marginBottom: '1rem',
+      }}>
+        <div style={{
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: collapsedSections.decisionCenter
+            ? 'none'
+            : '1px solid #F3F4F6',
+        }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}>
+            Decision Center
+          </div>
+
+          <button
+            type="button"
+            onClick={() => toggleSection('decisionCenter')}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              border: '1px solid #E5E7EB',
+              background: '#fff',
+              cursor: 'pointer',
+              color: '#6B7280',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FontAwesomeIcon
+              icon={collapsedSections.decisionCenter
+                ? faChevronRight
+                : faChevronDown}
+            />
+          </button>
+        </div>
+
+        {!collapsedSections.decisionCenter && (
+          <DecisionCenter
+            auditData={auditData}
+            multipageResults={multipageResults}
+            authorityScore={authorityScore}
+            authorityDetails={authorityDetails}
+          />
+        )}
+      </div>
+{multipageStatus === 'running' && (
         <div style={{
           background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10,
           padding: '12px 16px', marginBottom: '1rem',
@@ -1675,9 +1876,43 @@ export default function SiteAudit() {
           background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
           padding: '16px 18px', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 10 }}>
-            Full Site Audit Results (Beta) - {multipageResults.pagesTotal} pages crawled
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: collapsedSections.fullSiteAudit ? 0 : 10,
+          }}>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}>
+              Full Site Audit Results (Beta) - {multipageResults.pagesTotal} pages crawled
+            </div>
+
+            <button
+              type="button"
+              onClick={() => toggleSection('fullSiteAudit')}
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 8,
+                border: '1px solid #E5E7EB',
+                background: '#fff',
+                cursor: 'pointer',
+                color: '#6B7280',
+              }}
+            >
+              <FontAwesomeIcon
+                icon={collapsedSections.fullSiteAudit ? faChevronRight : faChevronDown}
+              />
+            </button>
           </div>
+
+          {!collapsedSections.fullSiteAudit && (
+            <>
           <MultipageScoreBanner results={multipageResults} history={issueHistory} onCategoryClick={scrollToCategory} />
 
           {/* Crawled page inventory - collapsed by default */}
@@ -2047,10 +2282,79 @@ export default function SiteAudit() {
               </div>
             </div>
           )}
+            </>
+          )}
         </div>
       )}
 
-      <AuditScoreBanner auditData={auditData} categories={categories} aiScores={{ chatgpt: auditData?.chatgptScore, claude: auditData?.claudeScore }} cronEnabled={cronEnabled} onCronToggle={toggleCron} authorityScore={authorityScore} onCategoryClick={scrollToCategory} compact={multipageStatus === 'running' || (multipageStatus === 'complete' && !!multipageResults)} />
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          border: '1px solid #E5E7EB',
+          marginBottom: '1rem',
+          overflow: 'hidden',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => toggleSection('aiVisibility')}
+          style={{
+            width: '100%',
+            padding: '14px 16px',
+            border: 'none',
+            background: '#fff',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontFamily: 'inherit',
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            AI Visibility
+          </span>
+
+          <FontAwesomeIcon
+            icon={
+              collapsedSections.aiVisibility
+                ? faChevronRight
+                : faChevronDown
+            }
+            style={{
+              fontSize: 12,
+              color: '#6B7280',
+            }}
+          />
+        </button>
+
+        {!collapsedSections.aiVisibility && (
+          <AuditScoreBanner
+            auditData={auditData}
+            categories={categories}
+            aiScores={{
+              chatgpt: auditData?.chatgptScore,
+              claude: auditData?.claudeScore,
+            }}
+            cronEnabled={cronEnabled}
+            onCronToggle={toggleCron}
+            authorityScore={authorityScore}
+            onCategoryClick={scrollToCategory}
+            compact={
+              multipageStatus === 'running' ||
+              (multipageStatus === 'complete' && !!multipageResults)
+            }
+          />
+        )}
+      </div>
       <AuditSpeedPanel speed={auditData.speed} />
 
       {crawl && (
@@ -2121,8 +2425,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? 'Formal – suited for corporate and enterprise prospects'
-                  : 'Casual – suited for SMB and local businesses'}
+                  ? 'Formal â€“ suited for corporate and enterprise prospects'
+                  : 'Casual â€“ suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
@@ -2263,3 +2567,4 @@ export default function SiteAudit() {
     </div>
   )
 }
+

@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { firstValueByKey, parseCsvRows, toInt } = require('../utils/helpers')
@@ -121,26 +121,150 @@ router.post('/:siteId/backlinks/crawl', auth, verifySite, async (req, res) => {
 })
 
 router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query(
-    `SELECT 
-       COUNT(DISTINCT name) AS referring_domains,
-       COALESCE(AVG(dr), 0) AS avg_dr,
-       COUNT(*) FILTER (WHERE type = 'dofollow') AS dofollow_count
-     FROM backlinks
-     WHERE site_id = $1 AND status = 'Live'`,
-    [req.siteId]
-  )
-  const row = rows[0]
-  const score = Math.min(100, Math.round(
-    (parseInt(row.referring_domains) * 2) +
-    (parseFloat(row.avg_dr) * 0.5) +
-    (parseInt(row.dofollow_count) * 0.3)
-  ))
-  const { rows: updated } = await pool.query(
-    'UPDATE sites SET authority_score=$1, authority_updated_at=NOW() WHERE id=$2 RETURNING authority_score, authority_updated_at',
-    [score, req.siteId]
-  )
-  res.json(updated[0])
-})
+  try {
+    const { rows } = await pool.query(
+      `SELECT
+         COUNT(*) AS total_backlinks,
+         COUNT(DISTINCT name) AS referring_domains,
+         COALESCE(AVG(dr), 0) AS avg_dr,
+         COUNT(*) FILTER (WHERE type = 'dofollow') AS dofollow_count
+       FROM backlinks
+       WHERE site_id = $1
+         AND status = 'Live'`,
+      [req.siteId]
+    )
 
+    const row = rows[0] || {}
+
+    const totalBacklinks = Math.max(
+      0,
+      parseInt(row.total_backlinks || 0, 10)
+    )
+
+    const referringDomains = Math.max(
+      0,
+      parseInt(row.referring_domains || 0, 10)
+    )
+
+    const avgDr = Math.max(
+      0,
+      Math.min(100, parseFloat(row.avg_dr || 0))
+    )
+
+    const dofollowCount = Math.max(
+      0,
+      parseInt(row.dofollow_count || 0, 10)
+    )
+
+    // ---------------------------------------------------------
+    // Authority Engine v2
+    // ---------------------------------------------------------
+    //
+    // Uses logarithmic scaling because authority growth
+    // should have diminishing returns.
+    //
+    // 200 referring domains ~= maximum domain-diversity score.
+    // 1000 live backlinks ~= maximum backlink-volume score.
+    // ---------------------------------------------------------
+
+    const logScore = (value, target) => {
+      if (!value || value <= 0) return 0
+
+      return Math.min(
+        100,
+        Math.round(
+          100 *
+          Math.log10(value + 1) /
+          Math.log10(target + 1)
+        )
+      )
+    }
+
+    const referringDomainScore =
+      logScore(referringDomains, 200)
+
+    const drScore =
+      Math.round(avgDr)
+
+    const dofollowRatio =
+      totalBacklinks > 0
+        ? (dofollowCount / totalBacklinks) * 100
+        : 0
+
+    // Full credit around 70%+ dofollow.
+    // This prevents raw dofollow backlink count from
+    // artificially inflating authority.
+    const dofollowScore =
+      Math.min(
+        100,
+        Math.round((dofollowRatio / 70) * 100)
+      )
+
+    const backlinkVolumeScore =
+      logScore(totalBacklinks, 1000)
+
+    const weightedScore =
+      (referringDomainScore * 0.40) +
+      (drScore * 0.30) +
+      (dofollowScore * 0.15) +
+      (backlinkVolumeScore * 0.15)
+
+    const score = Math.max(
+      0,
+      Math.min(100, Math.round(weightedScore))
+    )
+
+    const { rows: updated } = await pool.query(
+      `UPDATE sites
+       SET authority_score = $1,
+           authority_updated_at = NOW()
+       WHERE id = $2
+       RETURNING authority_score, authority_updated_at`,
+      [score, req.siteId]
+    )
+
+    res.json({
+      ...updated[0],
+
+      authority_version: '2.0',
+
+      breakdown: {
+        referringDomains: {
+          value: referringDomains,
+          score: referringDomainScore,
+          weight: 40
+        },
+
+        averageDR: {
+          value: Math.round(avgDr * 10) / 10,
+          score: drScore,
+          weight: 30
+        },
+
+        dofollow: {
+          count: dofollowCount,
+          ratio: Math.round(dofollowRatio * 10) / 10,
+          score: dofollowScore,
+          weight: 15
+        },
+
+        backlinks: {
+          value: totalBacklinks,
+          score: backlinkVolumeScore,
+          weight: 15
+        }
+      }
+    })
+
+  } catch (error) {
+    console.error(
+      'Authority score calculation failed:',
+      error
+    )
+
+    res.status(500).json({
+      error: 'Failed to calculate authority score'
+    })
+  }
+})
 module.exports = router

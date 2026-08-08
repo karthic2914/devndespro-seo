@@ -1,0 +1,788 @@
+import React, { useMemo } from 'react'
+
+function clampScore(value) {
+  const number = Number(value)
+
+  if (!Number.isFinite(number)) return null
+
+  return Math.max(0, Math.min(100, Math.round(number)))
+}
+
+function getScoreColor(score) {
+  if (score >= 85) return '#16A34A'
+  if (score >= 70) return '#2563EB'
+  if (score >= 50) return '#D97706'
+  return '#DC2626'
+}
+
+function getScoreLabel(score) {
+  if (score >= 90) return 'Excellent'
+  if (score >= 80) return 'Strong'
+  if (score >= 65) return 'Good'
+  if (score >= 50) return 'Needs attention'
+  return 'Priority'
+}
+
+function MetricCard({ label, value }) {
+  const score = clampScore(value)
+
+  return (
+    <div style={{
+      flex: '1 1 130px',
+      minWidth: 120,
+      padding: '12px 14px',
+      border: '1px solid #E5E7EB',
+      borderRadius: 10,
+      background: '#fff',
+    }}>
+      <div style={{
+        fontSize: 10,
+        fontWeight: 700,
+        color: '#9CA3AF',
+        textTransform: 'uppercase',
+        letterSpacing: '0.05em',
+        marginBottom: 5,
+      }}>
+        {label}
+      </div>
+
+      <div style={{
+        fontSize: 22,
+        fontWeight: 800,
+        color: score === null ? '#9CA3AF' : getScoreColor(score),
+      }}>
+        {score ?? '-'}
+        <span style={{
+          fontSize: 11,
+          fontWeight: 500,
+          color: '#9CA3AF',
+        }}>
+          /100
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function AuthorityBreakdownRow({ label, value }) {
+  const score =
+    value === null || value === undefined
+      ? null
+      : Math.max(0, Math.min(100, Math.round(Number(value))))
+
+  return (
+    <div style={{
+      display: 'grid',
+      gridTemplateColumns: '1fr auto',
+      gap: 10,
+      alignItems: 'center',
+      padding: '7px 0',
+      borderBottom: '1px solid #F3F4F6',
+    }}>
+      <div style={{
+        fontSize: 11,
+        color: '#4B5563',
+        fontWeight: 600,
+      }}>
+        {label}
+      </div>
+
+      <div style={{
+        fontSize: 11,
+        fontWeight: 800,
+        color: score === null ? '#9CA3AF' : getScoreColor(score),
+      }}>
+        {score === null ? '-' : `${score}/100`}
+      </div>
+    </div>
+  )
+}
+export default function DecisionCenter({
+  auditData,
+  multipageResults,
+  authorityScore,
+  authorityDetails,
+}) {
+  const data = useMemo(() => {
+    const siteHealth = clampScore(
+      multipageResults?.siteHealthPct ?? auditData?.score
+    )
+
+    const authority = clampScore(authorityScore)
+
+    const homepageAudit = clampScore(auditData?.score)
+
+    const aiScores = [
+      clampScore(auditData?.chatgptScore),
+      clampScore(auditData?.claudeScore),
+    ].filter((score) => score !== null)
+
+    const aiVisibility = aiScores.length
+      ? Math.round(
+          aiScores.reduce((sum, score) => sum + score, 0) /
+          aiScores.length
+        )
+      : null
+
+    /*
+      Digital Growth Score v1
+
+      Site Health       45%
+      Authority         25%
+      AI Visibility     20%
+      Homepage Audit    10%
+
+      Missing metrics are ignored and remaining
+      weights are automatically normalized.
+    */
+
+    const metrics = [
+      { value: siteHealth, weight: 45 },
+      { value: authority, weight: 25 },
+      { value: aiVisibility, weight: 20 },
+      { value: homepageAudit, weight: 10 },
+    ].filter((item) => item.value !== null)
+
+    const totalWeight = metrics.reduce(
+      (sum, item) => sum + item.weight,
+      0
+    )
+
+    const overallScore = totalWeight
+      ? Math.round(
+          metrics.reduce(
+            (sum, item) => sum + item.value * item.weight,
+            0
+          ) / totalWeight
+        )
+      : 0
+
+    const issues = Array.isArray(multipageResults?.issueSummary)
+      ? [...multipageResults.issueSummary]
+      : []
+
+    issues.sort((a, b) => {
+      const statusWeight = {
+        error: 3,
+        warning: 2,
+        pass: 1,
+      }
+
+      const statusDifference =
+        (statusWeight[b.status] || 0) -
+        (statusWeight[a.status] || 0)
+
+      if (statusDifference !== 0) {
+        return statusDifference
+      }
+
+      return Number(b.count || 0) - Number(a.count || 0)
+    })
+
+    const priorities = issues
+      .filter((issue) => issue.status !== 'pass')
+      .slice(0, 3)
+
+    const authorityBreakdown =
+      authorityDetails?.breakdown ||
+      multipageResults?.authorityBreakdown ||
+      auditData?.authorityBreakdown ||
+      null
+
+    const breakdown = authorityBreakdown
+      ? {
+          referringDomains:
+            authorityBreakdown.referringDomains?.score ??
+            authorityBreakdown.referringDomains ??
+            null,
+
+          averageDR:
+            authorityBreakdown.averageDR?.score ??
+            authorityBreakdown.averageDR ??
+            null,
+
+          dofollow:
+            authorityBreakdown.dofollow?.score ??
+            authorityBreakdown.dofollow ??
+            null,
+
+          backlinks:
+            authorityBreakdown.backlinks?.score ??
+            authorityBreakdown.backlinks ??
+            null,
+        }
+      : null
+
+    const opportunities = []
+
+    if (breakdown) {
+      if (
+        breakdown.referringDomains !== null &&
+        breakdown.referringDomains < 70
+      ) {
+        opportunities.push({
+          title: 'Increase referring domain diversity',
+          detail: 'Earn links from more unique, relevant websites',
+          gain: 5,
+          priority: 'High',
+        })
+      }
+
+      if (
+        breakdown.averageDR !== null &&
+        breakdown.averageDR < 60
+      ) {
+        opportunities.push({
+          title: 'Earn higher-authority backlinks',
+          detail: 'Prioritize links from stronger domains',
+          gain: 4,
+          priority: 'High',
+        })
+      }
+
+      if (
+        breakdown.dofollow !== null &&
+        breakdown.dofollow < 75
+      ) {
+        opportunities.push({
+          title: 'Improve dofollow link quality',
+          detail: 'Increase the share of valuable editorial links',
+          gain: 2,
+          priority: 'Medium',
+        })
+      }
+
+      if (
+        breakdown.backlinks !== null &&
+        breakdown.backlinks < 70
+      ) {
+        opportunities.push({
+          title: 'Grow your live backlink profile',
+          detail: 'Build more relevant, sustainable backlinks',
+          gain: 3,
+          priority: 'Medium',
+        })
+      }
+    }
+
+    const topAuthorityOpportunities =
+      opportunities.slice(0, 3)
+
+    const projectedAuthority =
+      authority === null
+        ? null
+        : Math.min(
+            100,
+            authority +
+              topAuthorityOpportunities.reduce(
+                (sum, item) => sum + item.gain,
+                0
+              )
+          )
+
+    return {
+      siteHealth,
+      authority,
+      aiVisibility,
+      overallScore,
+      priorities,
+      breakdown,
+      topAuthorityOpportunities,
+      projectedAuthority,
+    }
+  }, [auditData, multipageResults, authorityScore, authorityDetails])
+
+  const scoreColor = getScoreColor(data.overallScore)
+
+  return (
+    <div style={{
+      background: '#fff',
+      border: '1px solid #E5E7EB',
+      borderRadius: 14,
+      boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+      padding: '18px',
+      marginBottom: '1rem',
+    }}>
+
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        gap: 16,
+        flexWrap: 'wrap',
+        marginBottom: 16,
+      }}>
+        <div>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 800,
+            color: '#6B7280',
+            textTransform: 'uppercase',
+            letterSpacing: '0.07em',
+          }}>
+            Decision Center
+          </div>
+
+          <div style={{
+            fontSize: 12,
+            color: '#9CA3AF',
+            marginTop: 3,
+          }}>
+            What should you work on next?
+          </div>
+        </div>
+
+        <div style={{
+          textAlign: 'right',
+        }}>
+          <div style={{
+            fontSize: 10,
+            fontWeight: 700,
+            color: '#9CA3AF',
+            textTransform: 'uppercase',
+          }}>
+            Digital Growth Score
+          </div>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'flex-end',
+            gap: 5,
+          }}>
+            <span style={{
+              fontSize: 34,
+              lineHeight: 1,
+              fontWeight: 900,
+              color: scoreColor,
+            }}>
+              {data.overallScore}
+            </span>
+
+            <span style={{
+              fontSize: 13,
+              color: '#9CA3AF',
+            }}>
+              /100
+            </span>
+          </div>
+
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: scoreColor,
+            marginTop: 3,
+          }}>
+            {getScoreLabel(data.overallScore)}
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics */}
+      <div style={{
+        display: 'flex',
+        gap: 10,
+        flexWrap: 'wrap',
+        marginBottom: 18,
+      }}>
+        <MetricCard
+          label="Site Health"
+          value={data.siteHealth}
+        />
+
+        <MetricCard
+          label="Authority"
+          value={data.authority}
+        />
+
+        <MetricCard
+          label="AI Visibility"
+          value={data.aiVisibility}
+        />
+      </div>
+
+      {/* Authority Intelligence */}
+      <div style={{
+        borderTop: '1px solid #F3F4F6',
+        paddingTop: 16,
+        marginTop: 4,
+        marginBottom: 18,
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 12,
+          flexWrap: 'wrap',
+          marginBottom: 12,
+        }}>
+          <div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: '#374151',
+            }}>
+              Authority Intelligence
+            </div>
+
+            <div style={{
+              fontSize: 11,
+              color: '#9CA3AF',
+              marginTop: 2,
+            }}>
+              Why your authority is where it is and how to improve it
+            </div>
+          </div>
+
+          {data.authority !== null &&
+           data.projectedAuthority !== null && (
+            <div style={{
+              textAlign: 'right',
+              padding: '7px 11px',
+              borderRadius: 9,
+              background: '#F9FAFB',
+              border: '1px solid #E5E7EB',
+            }}>
+              <div style={{
+                fontSize: 9,
+                color: '#9CA3AF',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+              }}>
+                Potential
+              </div>
+
+              <div style={{
+                fontSize: 14,
+                fontWeight: 800,
+                color: '#16A34A',
+              }}>
+                {data.authority} → {data.projectedAuthority}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.25fr)',
+          gap: 12,
+        }}>
+          {/* Breakdown */}
+          <div style={{
+            border: '1px solid #E5E7EB',
+            borderRadius: 10,
+            padding: '12px 14px',
+            background: '#fff',
+          }}>
+            <div style={{
+              fontSize: 10,
+              fontWeight: 800,
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: 4,
+            }}>
+              Score Breakdown
+            </div>
+
+            {data.breakdown ? (
+              <>
+                <AuthorityBreakdownRow
+                  label="Referring Domains"
+                  value={data.breakdown.referringDomains}
+                />
+
+                <AuthorityBreakdownRow
+                  label="Average Domain Rating"
+                  value={data.breakdown.averageDR}
+                />
+
+                <AuthorityBreakdownRow
+                  label="Dofollow Quality"
+                  value={data.breakdown.dofollow}
+                />
+
+                <AuthorityBreakdownRow
+                  label="Backlink Strength"
+                  value={data.breakdown.backlinks}
+                />
+              </>
+            ) : (
+              <div style={{
+                fontSize: 11,
+                color: '#9CA3AF',
+                padding: '14px 0',
+              }}>
+                Authority breakdown will appear after the latest authority refresh.
+              </div>
+            )}
+          </div>
+
+          {/* Opportunities */}
+          <div style={{
+            border: '1px solid #E5E7EB',
+            borderRadius: 10,
+            padding: '12px 14px',
+            background: '#fff',
+          }}>
+            <div style={{
+              fontSize: 10,
+              fontWeight: 800,
+              color: '#6B7280',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: 8,
+            }}>
+              Top Opportunities
+            </div>
+
+            {data.topAuthorityOpportunities.length > 0 ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 8,
+              }}>
+                {data.topAuthorityOpportunities.map((item, index) => (
+                  <div
+                    key={`${item.title}-${index}`}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '24px 1fr auto',
+                      gap: 9,
+                      alignItems: 'center',
+                      padding: '8px 9px',
+                      borderRadius: 8,
+                      background: '#FAFAFA',
+                    }}
+                  >
+                    <div style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: item.priority === 'High'
+                        ? '#FEF2F2'
+                        : '#FFFBEB',
+                      color: item.priority === 'High'
+                        ? '#DC2626'
+                        : '#D97706',
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}>
+                      {index + 1}
+                    </div>
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#374151',
+                      }}>
+                        {item.title}
+                      </div>
+
+                      <div style={{
+                        fontSize: 10,
+                        color: '#9CA3AF',
+                        marginTop: 2,
+                      }}>
+                        {item.detail}
+                      </div>
+                    </div>
+
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 800,
+                      color: '#16A34A',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      +{item.gain} pts
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{
+                padding: '12px',
+                borderRadius: 8,
+                background: '#F0FDF4',
+                color: '#15803D',
+                fontSize: 11,
+                fontWeight: 600,
+              }}>
+                Your current authority signals are already well balanced.
+              </div>
+            )}
+
+            <div style={{
+              marginTop: 10,
+              padding: '9px 10px',
+              borderRadius: 8,
+              background: '#EFF6FF',
+              color: '#1D4ED8',
+              fontSize: 10,
+              lineHeight: 1.5,
+            }}>
+              <strong>Recommended next move:</strong>{' '}
+              {data.topAuthorityOpportunities[0]?.detail ||
+               'Keep growing relevant, high-quality referring domains.'}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Mission */}
+      <div style={{
+        borderTop: '1px solid #F3F4F6',
+        paddingTop: 15,
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 10,
+          flexWrap: 'wrap',
+          marginBottom: 10,
+        }}>
+          <div>
+            <div style={{
+              fontSize: 12,
+              fontWeight: 800,
+              color: '#374151',
+            }}>
+              Today's Mission
+            </div>
+
+            <div style={{
+              fontSize: 11,
+              color: '#9CA3AF',
+              marginTop: 2,
+            }}>
+              Focus on the highest-impact issues first
+            </div>
+          </div>
+
+          <div style={{
+            fontSize: 11,
+            fontWeight: 700,
+            color: '#2563EB',
+            background: '#EFF6FF',
+            padding: '4px 9px',
+            borderRadius: 20,
+          }}>
+            {data.priorities.length} priorities
+          </div>
+        </div>
+
+        {data.priorities.length === 0 ? (
+          <div style={{
+            padding: '14px',
+            borderRadius: 9,
+            background: '#F0FDF4',
+            color: '#15803D',
+            fontSize: 12,
+            fontWeight: 600,
+          }}>
+            No critical priorities detected in the latest full-site audit.
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 7,
+          }}>
+            {data.priorities.map((issue, index) => {
+              const isCritical = issue.status === 'error'
+
+              return (
+                <div
+                  key={`${issue.check || 'issue'}-${index}`}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '10px 12px',
+                    border: '1px solid #F3F4F6',
+                    borderRadius: 9,
+                    background: '#FAFAFA',
+                  }}
+                >
+                  <div style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: isCritical
+                      ? '#FEF2F2'
+                      : '#FFFBEB',
+                    color: isCritical
+                      ? '#DC2626'
+                      : '#D97706',
+                    fontSize: 10,
+                    fontWeight: 800,
+                    flexShrink: 0,
+                  }}>
+                    {index + 1}
+                  </div>
+
+                  <div style={{
+                    minWidth: 0,
+                    flex: 1,
+                  }}>
+                    <div style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: '#374151',
+                    }}>
+                      {issue.title ||
+                       issue.sampleMessage ||
+                       issue.check ||
+                       'SEO issue'}
+                    </div>
+
+                    <div style={{
+                      fontSize: 10,
+                      color: '#9CA3AF',
+                      marginTop: 2,
+                    }}>
+                      {issue.category || 'SEO'}
+                    </div>
+                  </div>
+
+                  <div style={{
+                    textAlign: 'right',
+                    flexShrink: 0,
+                  }}>
+                    <div style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      color: isCritical
+                        ? '#DC2626'
+                        : '#D97706',
+                    }}>
+                      {isCritical ? 'Critical' : 'Warning'}
+                    </div>
+
+                    <div style={{
+                      fontSize: 10,
+                      color: '#9CA3AF',
+                      marginTop: 2,
+                    }}>
+                      {Number(issue.count || 0)} page
+                      {Number(issue.count || 0) === 1 ? '' : 's'}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

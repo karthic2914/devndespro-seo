@@ -1,4 +1,4 @@
-﻿
+
 /* Mobile topbar + hamburger */
 .mobile-topbar {
   display: none;
@@ -65,7 +65,7 @@
 body {
   background: var(--dark);
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: var(--text-base);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
@@ -73,7 +73,9 @@ body {
   letter-spacing: -0.01em;
 }
 
-.mono { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
 
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: var(--dark3); }
@@ -86,7 +88,7 @@ input, textarea, select {
   color: var(--text);
   border-radius: var(--radius);
   padding: 9px 13px;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: var(--text-sm);
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -102,7 +104,7 @@ select option { background: #fff; color: var(--text); }
 
 button {
   cursor: pointer;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: var(--text-sm);
   border: none;
   outline: none;
@@ -262,13 +264,13 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .stat-card { background: #fff; border: 1px solid var(--dark4); border-radius: var(--radius); padding: 12px 14px; }
 .stat-card__header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
 .stat-card__label  { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
-.stat-card__value  { font-size: 26px; font-weight: 800; line-height: 1.05; font-family: 'DM Mono', monospace; }
+.stat-card__value  { font-size: 26px; font-weight: 800; line-height: 1.05; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .stat-card__footer { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
 .stat-card__sub    { font-size: 11px; color: var(--text2); }
 
 .metric-card       { background: var(--dark3); border: 1px solid var(--dark4); border-radius: var(--radius); padding: 14px 16px; }
 .metric-card__label { font-size: 11px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em; }
-.metric-card__value { font-size: 26px; font-weight: 700; font-family: 'DM Mono', monospace; }
+.metric-card__value { font-size: 26px; font-weight: 700; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .metric-card__sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
 /* -- Benchmark Card -- */
@@ -276,7 +278,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .bench-card__header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .bench-card__icon   { font-size: 16px; }
 .bench-card__title  { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.bench-card__value  { font-size: 22px; font-weight: 800; font-family: 'DM Mono', monospace; letter-spacing: -0.03em; }
+.bench-card__value  { font-size: 22px; font-weight: 800; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; letter-spacing: -0.03em; }
 .bench-card__sub    { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
 /* -- Page Header -- */
@@ -314,7 +316,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 /* -- Progress Bar -- */
 .progress__header { display: flex; justify-content: space-between; margin-bottom: 5px; }
 .progress__label  { font-size: 13px; color: var(--text2); }
-.progress__value  { font-size: 13px; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; }
+.progress__value  { font-size: 13px; font-weight: 600; color: var(--text); font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .progress__track  { background: var(--dark4); border-radius: 999px; overflow: hidden; }
 .progress__fill   { height: 100%; background: var(--orange); border-radius: 999px; transition: width 0.6s ease; }
 
@@ -378,7 +380,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .da-goal-card       { background: linear-gradient(135deg, var(--orange), #FF4500); border-radius: var(--radius-lg); padding: 1.25rem; color: #fff; box-shadow: 0 4px 20px rgba(255,107,43,0.35); }
 .da-goal-card__label { font-size: 10px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .da-goal-card__nums  { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-.da-goal-card__num   { font-size: 36px; font-weight: 800; font-family: 'DM Mono', monospace; }
+.da-goal-card__num   { font-size: 36px; font-weight: 800; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .da-goal-card__arrow { font-size: 20px; opacity: 0.6; }
 .da-goal-card__bar   { background: rgba(255,255,255,0.25); border-radius: 99px; height: 5px; margin-bottom: 10px; }
 .da-goal-card__fill  { width: 4%; background: #fff; border-radius: 99px; height: 100%; }
@@ -712,7 +714,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 
 .crawler-seeds {
   width: 100%;
-  font-family: 'Inter', monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   font-size: 12px;
   resize: vertical;
 }
@@ -1222,7 +1224,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .backlinks-dr {
   font-size: 13px;
   text-align: right;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   color: var(--text2);
 }
 
@@ -1524,3 +1526,541 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
     gap: 12px !important;
   }
 }
+
+/* DEVNDESPRO SAAS UX START */
+
+:root {
+  --saas-bg: #f7f8fb;
+  --saas-surface: #ffffff;
+  --saas-surface-soft: #fafbfc;
+  --saas-border: #e6e8ee;
+  --saas-border-strong: #d9dde6;
+  --saas-text: #171923;
+  --saas-text-secondary: #596174;
+  --saas-text-muted: #8a92a3;
+  --saas-radius-sm: 8px;
+  --saas-radius-md: 10px;
+  --saas-radius-lg: 14px;
+  --saas-shadow-sm: 0 1px 2px rgba(16,24,40,0.025), 0 1px 4px rgba(16,24,40,0.025);
+  --saas-shadow-md: 0 4px 14px rgba(16,24,40,0.055);
+}
+
+.app-main {
+  min-height: 100vh;
+  background: var(--saas-bg);
+  color: var(--saas-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-main .page-content {
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 32px 48px;
+}
+
+.app-main .card {
+  background: var(--saas-surface);
+  border: 1px solid var(--saas-border);
+  border-radius: var(--saas-radius-lg);
+  box-shadow: var(--saas-shadow-sm);
+}
+
+.app-main .stat-card {
+  background: var(--saas-surface);
+  border: 1px solid var(--saas-border);
+  border-radius: var(--saas-radius-lg);
+  padding: 16px 17px;
+  box-shadow: var(--saas-shadow-sm);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.app-main .stat-card:hover {
+  border-color: var(--saas-border-strong);
+  box-shadow: var(--saas-shadow-md);
+  transform: translateY(-1px);
+}
+
+.app-main .stat-card__label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+  color: var(--saas-text-muted);
+}
+
+.app-main .stat-card__value {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 750;
+  letter-spacing: -0.04em;
+}
+
+.app-main .btn,
+.app-main .orange-btn,
+.app-main .ghost-btn {
+  min-height: 36px;
+  border-radius: var(--saas-radius-sm);
+  font-weight: 650;
+  transition: all 150ms ease;
+}
+
+.app-main .btn--primary,
+.app-main .orange-btn {
+  box-shadow: 0 1px 2px rgba(255,107,43,0.20);
+}
+
+.app-main .btn--primary:hover:not(:disabled),
+.app-main .orange-btn:hover:not(:disabled) {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(255,107,43,0.22);
+}
+
+.app-main .btn--secondary,
+.app-main .btn--ghost,
+.app-main .ghost-btn {
+  background: #fff;
+  border-color: var(--saas-border-strong);
+}
+
+.app-main .badge {
+  min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.app-main input,
+.app-main select,
+.app-main textarea {
+  border-radius: var(--saas-radius-sm);
+  border-color: var(--saas-border-strong);
+}
+
+.app-main input:focus,
+.app-main select:focus,
+.app-main textarea:focus {
+  border-color: var(--orange);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,107,43,0.10);
+}
+
+.sidebar {
+  background: #fff;
+  border-right: 1px solid var(--saas-border);
+}
+
+.sidebar .site-card {
+  border: 1px solid var(--saas-border);
+  border-radius: 12px;
+  background: #fafbfc;
+  box-shadow: none;
+}
+
+.sidebar .nav-item {
+  position: relative;
+  margin: 2px 8px;
+  border-radius: 8px;
+  min-height: 38px;
+  color: #626a79;
+  font-weight: 550;
+}
+
+.sidebar .nav-item:hover {
+  background: #f6f7f9;
+  color: #262b35;
+}
+
+.sidebar .nav-item.active {
+  background: rgba(255,107,43,0.09);
+  color: var(--orange);
+  font-weight: 650;
+}
+
+.sidebar .nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 4px 4px 0;
+  background: var(--orange);
+}
+
+.sidebar__footer {
+  background: #fff;
+  border-top-color: var(--saas-border);
+}
+
+.app-main .empty-state {
+  padding: 36px 20px;
+}
+
+.app-main table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.app-main tbody tr:hover {
+  background: #fafbfc;
+}
+
+@media (max-width: 1024px) {
+  .app-main .page-content {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (max-width: 639px) {
+  .app-main .page-content {
+    padding: 18px 14px 32px !important;
+  }
+
+  .app-main .stat-card {
+    padding: 14px;
+  }
+
+  .app-main .card {
+    border-radius: 12px;
+  }
+}
+
+/* DEVNDESPRO SAAS UX END */
+
+/* DEVNDESPRO MANROPE TYPOGRAPHY */
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.page-header__title {
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.stat-card__value,
+.metric-card__value,
+.bench-card__value,
+.da-goal-card__num,
+.progress__value {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-card__value {
+  font-weight: 750;
+  letter-spacing: -0.035em;
+}
+
+.metric-card__value,
+.bench-card__value {
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.sidebar,
+.nav-item,
+.btn,
+.badge {
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* DEVNDESPRO OVERVIEW RESPONSIVE START */
+
+/* ============================================================
+   PHASE 1.6 - OVERVIEW RESPONSIVE UX
+   Existing application breakpoints:
+   Tablet: <= 1024px
+   Mobile: <= 639px
+   Small mobile: <= 420px
+   ============================================================ */
+
+/* Prevent grid/flex children from forcing horizontal overflow */
+.dash-main-grid,
+.dash-main-grid > *,
+.overview-work-grid,
+.overview-work-grid > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keep dashboard cards and controls inside the viewport */
+.dash-main-grid .card,
+.overview-work-grid .card {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------------
+   TABLET
+   ------------------------------------------------------------ */
+@media (max-width: 1024px) {
+
+  /* Main dashboard becomes one column.
+     Site Health / Backlink Profile move below the main workspace. */
+  .dash-main-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  /* Keep Keywords + Action Plan side-by-side on wider tablets */
+  .overview-work-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  /* Avoid buttons wrapping awkwardly */
+  .dash-main-grid button,
+  .overview-work-grid button {
+    white-space: nowrap;
+  }
+
+  /* Right-column cards should use the full width once stacked */
+  .dash-main-grid > div:last-child {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Site Health and Backlink Profile look better as a 2-card row
+     after the right rail drops below the main content. */
+  .dash-main-grid > div:last-child {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: start !important;
+    gap: 12px !important;
+  }
+}
+
+/* Mid tablet / portrait tablet */
+@media (max-width: 820px) {
+  .overview-work-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dash-main-grid > div:last-child {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   MOBILE
+   ------------------------------------------------------------ */
+@media (max-width: 639px) {
+
+  /* Your existing global mobile rule stacks inline grids.
+     These rules define the desired Overview exceptions. */
+  .dash-main-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .overview-work-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .dash-main-grid > div:last-child {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  /* KPI row:
+     the top statistics row is the auto-fit inline grid inside
+     the first dashboard column. Keep two cards per row on phones. */
+  .dash-main-grid > div:first-child > div[style*="repeat(auto-fit"],
+  .dash-main-grid > div:first-child > div[style*="minmax(150px"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  /* Compact KPI cards */
+  .dash-main-grid .stat-card {
+    min-width: 0 !important;
+    padding: 11px 12px !important;
+  }
+
+  .dash-main-grid .stat-card__value {
+    font-size: 22px !important;
+  }
+
+  .dash-main-grid .stat-card__label {
+    font-size: 9px !important;
+  }
+
+  .dash-main-grid .stat-card__sub {
+    font-size: 9px !important;
+  }
+
+  /* Search Performance:
+     stack message and visual vertically instead of squeezing them. */
+  .dash-main-grid div[style*="minmax(220px, 0.9fr)"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .dash-main-grid div[style*="borderLeft: '1px solid #E5E7EB'"],
+  .dash-main-grid div[style*='borderLeft: "1px solid #E5E7EB"'] {
+    border-left: 0 !important;
+    border-top: 1px solid #E5E7EB !important;
+    padding-left: 0 !important;
+    padding-top: 10px !important;
+  }
+
+  /* Keyword table must scroll rather than crush columns */
+  .overview-work-grid > div:first-child {
+    overflow: hidden;
+  }
+
+  .overview-work-grid > div:first-child > div {
+    min-width: 0;
+  }
+
+  /* Action Plan controls */
+  .overview-work-grid button {
+    max-width: 100%;
+  }
+
+  /* Give cards tighter mobile spacing */
+  .dash-main-grid .card,
+  .overview-work-grid .card {
+    border-radius: 12px !important;
+  }
+}
+
+/* ------------------------------------------------------------
+   SMALL MOBILE
+   ------------------------------------------------------------ */
+@media (max-width: 420px) {
+
+  /* KPI cards become single-column only on very narrow phones */
+  .dash-main-grid > div:first-child > div[style*="repeat(auto-fit"],
+  .dash-main-grid > div:first-child > div[style*="minmax(150px"] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Slightly smaller common dashboard controls */
+  .dash-main-grid button,
+  .overview-work-grid button {
+    min-height: 36px;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 11px !important;
+  }
+
+  /* Keep headings from overflowing */
+  .dash-main-grid h1,
+  .dash-main-grid h2,
+  .dash-main-grid h3,
+  .overview-work-grid h1,
+  .overview-work-grid h2,
+  .overview-work-grid h3 {
+    overflow-wrap: anywhere;
+  }
+}
+
+/* DEVNDESPRO OVERVIEW RESPONSIVE END */
+
+/* DEVNDESPRO OVERVIEW AUDIT MENU MOBILE START */
+
+.overview-audit-split {
+  position: relative;
+  isolation: isolate;
+}
+
+.overview-audit-menu {
+  z-index: 5000 !important;
+}
+
+.overview-audit-menu-backdrop {
+  z-index: 4990 !important;
+}
+
+@media (max-width: 639px) {
+  .overview-audit-menu {
+    position: fixed !important;
+    top: 112px !important;
+    left: 12px !important;
+    right: 12px !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    z-index: 5000 !important;
+    box-shadow:
+      0 20px 50px rgba(15, 23, 42, 0.22),
+      0 4px 14px rgba(15, 23, 42, 0.10) !important;
+  }
+
+  .overview-audit-menu-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 4990 !important;
+    background: rgba(15, 23, 42, 0.20) !important;
+    backdrop-filter: blur(1px);
+    -webkit-backdrop-filter: blur(1px);
+  }
+
+  .overview-audit-menu button {
+    display: block !important;
+    width: 100% !important;
+    min-height: 60px !important;
+    padding: 11px 14px !important;
+    white-space: normal !important;
+    text-align: left !important;
+  }
+
+  .overview-audit-menu button > div {
+    width: 100% !important;
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .overview-audit-menu {
+    top: 108px !important;
+    left: 10px !important;
+    right: 10px !important;
+  }
+}
+
+/* DEVNDESPRO OVERVIEW AUDIT MENU MOBILE END */
+
+/* DEVNDESPRO AUDIT SCORE LINKS START */
+
+.overview-audit-score-row {
+  margin: -4px -6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.overview-audit-score-row:hover {
+  background: #F8FAFC;
+}
+
+.overview-audit-score-row:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  background: #F8FAFC;
+}
+
+.overview-audit-score-row:active {
+  transform: translateY(1px);
+}
+
+/* DEVNDESPRO AUDIT SCORE LINKS END */
