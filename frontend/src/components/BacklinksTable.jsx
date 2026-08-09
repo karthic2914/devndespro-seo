@@ -1,11 +1,11 @@
-import { useState, useMemo } from 'react'
+﻿import { useState, useMemo } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
   faSortUp, faSortDown, faFileExport, faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const SPAM_TLDS = new Set([
   'xyz','party','icu','top','click','link','online','site','website','space',
@@ -29,6 +29,18 @@ function isSpam(b) {
   const tld = getHostname(b.url || b.name || '').split('.').pop().toLowerCase()
   const dr = Number(b.dr || 0)
   return SPAM_TLDS.has(tld) || (dr > 0 && dr < 10 && b.type === 'nofollow')
+}
+
+function getDomainRank(b) {
+  return Number(b?.provider_rank || b?.dr || 0)
+}
+
+function getPageRank(b) {
+  return Number(b?.provider_page_rank || 0)
+}
+
+function getProviderSpamScore(b) {
+  return Number(b?.provider_spam_score || b?.spam_score || 0)
 }
 
 function drColor(dr) {
@@ -82,20 +94,21 @@ function SortIcon({ field, sort }) {
 
 function sourceConfig(source) {
   const value = String(source || 'manual').toLowerCase()
+  if (value === 'dataforseo') return { cls: 'dataforseo', label: 'DataForSEO' }
   if (value === 'crawled') return { cls: 'crawled', label: 'Crawled' }
   if (value === 'csv') return { cls: 'csv', label: 'Imported' }
   if (value === 'domain') return { cls: 'domain', label: 'Domain' }
   return { cls: 'manual', label: 'Manual' }
 }
 
-// ── Main Component ─────────────────────────────────────────────────────────
+// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onRemove }) {
   const [typeFilter, setTypeFilter] = useState('All')   // All | Dofollow | Nofollow
   const [statusFilter, setStatusFilter] = useState('All')
   const [spamFilter, setSpamFilter] = useState('All')   // All | Clean | Spam
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState({ field: 'dr', dir: 'desc' })
+  const [sort, setSort] = useState({ field: 'domainRank', dir: 'desc' })
 
   const toggleSort = (field) => {
     setSort(prev => prev.field === field
@@ -131,10 +144,17 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
   }, [filtered, sort])
 
   const exportCsv = () => {
-    const headers = ['Domain', 'URL', 'Anchor', 'Type', 'DR', 'Status', 'Source', 'Spam']
+    const headers = ['Domain', 'URL', 'Anchor', 'Type', 'Domain Rank', 'Page Rank', 'Provider Spam', 'Status', 'Source']
     const rows = sorted.map(b => [
-      b.name, b.url, b.anchor, b.type, b.dr, b.status,
-      sourceConfig(b.source).label, isSpam(b) ? 'Yes' : 'No',
+      b.name,
+b.url,
+b.anchor,
+b.type,
+getDomainRank(b),
+getPageRank(b),
+getProviderSpamScore(b),
+b.status,
+sourceConfig(b.source).label,
     ])
     const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ||'').replace(/"/g, '""')}"`).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
@@ -147,12 +167,12 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
   const nofollow = backlinks.filter(b => b.type === 'nofollow').length
   const spam = backlinks.filter(b => isSpam(b)).length
 
-  if (loading) return <div className="bl-empty">Loading…</div>
+  if (loading) return <div className="bl-empty">Loadingâ€¦</div>
 
   return (
     <div className="bl-wrap">
 
-      {/* ── Tab-style type filter ── */}
+      {/* â”€â”€ Tab-style type filter â”€â”€ */}
       <div className="bl-topbar">
         <div className="bl-tabs">
           {['All', 'Dofollow', 'Nofollow'].map(t => (
@@ -171,7 +191,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
         </div>
 
         <div className="bl-toolbar">
-          <input className="bl-search" placeholder="Search domain, anchor, URL…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className="bl-search" placeholder="Search domain, anchor, URLâ€¦" value={search} onChange={e => setSearch(e.target.value)} />
           <select className="bl-status-filter" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
             <option value="All">All statuses</option>
             <option>Todo</option><option>Pending</option><option>Live</option>
@@ -183,7 +203,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
         </div>
       </div>
 
-      {/* ── Result count ── */}
+      {/* â”€â”€ Result count â”€â”€ */}
       <div className="bl-count-row">
         <span className="bl-count">{sorted.length} {sorted.length === 1 ? 'backlink' : 'backlinks'}</span>
         {(search || typeFilter !== 'All' || statusFilter !== 'All' || spamFilter !== 'All') && (
@@ -209,10 +229,12 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
                   <th className="bl-th-center" onClick={() => toggleSort('type')}>
                     Type <SortIcon field="type" sort={sort} />
                   </th>
-                  <th className="bl-th-center" onClick={() => toggleSort('dr')}>
-                    DR <SortIcon field="dr" sort={sort} />
-                  </th>
-                  <th className="bl-th-center">Status</th>
+                  <th className="bl-th-center" onClick={() => toggleSort('domainRank')}>
+  Domain Rank <SortIcon field="domainRank" sort={sort} />
+</th>
+<th className="bl-th-center">Page Rank</th>
+<th className="bl-th-center">Spam</th>
+<th className="bl-th-center">Status</th>
                   <th className="bl-th-center">Source</th>
                   <th></th>
                 </tr>
@@ -245,9 +267,12 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
                       {/* Anchor + target */}
                       <td className="bl-td-anchor">
                         <span className="bl-anchor-text">{b.anchor || <em className="bl-no-anchor">No anchor text</em>}</span>
-                        {b.url && (
-                          <span className="bl-target-url">{normalizeUrl(b.url).replace(/^https?:\/\//, '').slice(0, 55)}{normalizeUrl(b.url).length > 60 ? '…' : ''}</span>
-                        )}
+                        {b.target_url && (
+  <span className="bl-target-url">
+    {normalizeUrl(b.target_url).replace(/^https?:\/\//, '').slice(0, 55)}
+    {normalizeUrl(b.target_url).length > 60 ? '…' : ''}
+  </span>
+)}
                       </td>
 
                       {/* Type */}
@@ -255,12 +280,34 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
                         <TypeBadge type={b.type} />
                       </td>
 
-                      {/* DR */}
-                      <td className="bl-td-center">
-                        <DrBadge dr={b.dr} />
-                      </td>
+                      {/* Domain Rank */}
+<td className="bl-td-center">
+  <DrBadge dr={getDomainRank(b)} />
+</td>
 
-                      {/* Status */}
+{/* Page Rank */}
+<td className="bl-td-center">
+  {getPageRank(b)}
+</td>
+
+{/* Provider Spam */}
+<td className="bl-td-center">
+  <span
+    style={{
+      fontWeight: 800,
+      color:
+        getProviderSpamScore(b) >= 50
+          ? '#DC2626'
+          : getProviderSpamScore(b) >= 30
+          ? '#D97706'
+          : '#16A34A'
+    }}
+  >
+    {getProviderSpamScore(b)}
+  </span>
+</td>
+
+{/* Status */}
                       <td className="bl-td-center">
                         <StatusBadge status={b.status} id={b.id} onChange={onUpdateStatus} />
                       </td>
@@ -288,3 +335,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
     </div>
   )
 }
+
+
+
+

@@ -552,7 +552,7 @@ export default function Sites() {
               gap: 12, flexWrap: 'wrap', boxShadow: '0 2px 12px rgba(99,60,180,0.15)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 22 }}>??</span>
+                <span style={{ fontSize: 22 }}>&#10024;</span>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 2 }}>New: AI Snippet Audits are now live!</div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>See how AI-ready your content is for ChatGPT, Perplexity & Google AI Overviews - re-run any site audit to get your AI Snippet score.</div>
@@ -566,9 +566,51 @@ export default function Sites() {
             </div>
           )}
 
-          <div className="grid-4col mb-24">
-            {BENCHMARKS.map(b => (
-              <div key={b.label} className="bench-card" style={{ borderTop: `3px solid ${b.color}` }}>
+          <div className="grid-4col mb-24 projects-modern-kpi-grid">
+            {[
+              {
+                label: 'TOTAL PROJECTS',
+                value: sites?.length || 0,
+                sub: 'all your websites',
+                color: '#6D4AFF',
+                icon: BENCHMARKS?.[0]?.icon,
+              },
+              {
+                label: 'AVERAGE SITE HEALTH',
+                value: (() => {
+                  const values = (sites || [])
+                    .map(site => Number(site.health))
+                    .filter(Number.isFinite)
+                  return values.length
+                    ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
+                    : 0
+                })(),
+                sub: 'across scored projects',
+                color: '#16A34A',
+                icon: BENCHMARKS?.[1]?.icon,
+              },
+              {
+                label: 'NEEDING ATTENTION',
+                value: (sites || []).filter(site => {
+                  const score = Number(site.health)
+                  return Number.isFinite(score) && score < 60
+                }).length,
+                sub: 'health score below 60',
+                color: '#F97316',
+                icon: BENCHMARKS?.[2]?.icon,
+              },
+              {
+                label: 'TRACKED KEYWORDS',
+                value: (sites || []).reduce(
+                  (sum, site) => sum + (Number(site.keyword_count) || 0),
+                  0
+                ),
+                sub: 'across all projects',
+                color: '#2563EB',
+                icon: BENCHMARKS?.[3]?.icon,
+              },
+            ].map(b => (
+              <div key={b.label} className="bench-card projects-modern-kpi-card" style={{ borderTop: `3px solid ${b.color}` }}>
                 <div className="bench-card__header">
                   <span className="bench-card__icon" style={{ color: b.color }}><FontAwesomeIcon icon={b.icon} /></span>
                   <span className="bench-card__title">{b.label}</span>
@@ -579,8 +621,8 @@ export default function Sites() {
             ))}
           </div>
 
-          <div className="grid-sidebar-layout">
-            <div className="projects-table">
+          <div className="grid-sidebar-layout projects-modern-layout">
+            <div className="projects-table projects-modern-panel">
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 14px', borderBottom: '1px solid var(--border)',
@@ -757,9 +799,21 @@ export default function Sites() {
                               <div style={{ fontSize: 14, fontWeight: 700, color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : '#9CA3AF' }}>{site.aeo_score ?? '-'}</div>
                             </div>
                           </div>
-                          <div style={{ display: 'flex', gap: 8, marginTop: 8, fontSize: 10, color: '#9CA3AF' }}>
-                            <span>KW {site.keyword_count ?? 0}</span>
-                            <span>BL {site.backlink_count ?? 0}</span>
+                          <div className="projects-card-footer">
+                            <div className="projects-card-mini-meta">
+                              <span>KW {site.keyword_count ?? 0}</span>
+                              <span>BL {site.backlink_count ?? 0}</span>
+                            </div>
+                            <button
+                              type="button"
+                              className="projects-card-open"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                enter(site)
+                              }}
+                            >
+                              Open <span aria-hidden="true">&rarr;</span>
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -776,7 +830,7 @@ export default function Sites() {
               </div>
             </div>
 
-            <div className="right-rail">
+            <div className="right-rail projects-modern-rail">
               <div className="da-goal-card">
                 <div className="da-goal-card__label">
                   <FontAwesomeIcon icon={faBullseye} />AI Visibility Goal

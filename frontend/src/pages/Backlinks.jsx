@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar, faLock } from '@fortawesome/free-solid-svg-icons'
@@ -10,6 +10,7 @@ import api from '../utils/api'
 
 export default function Backlinks() {
   const { siteId } = useParams()
+  const navigate = useNavigate()
   const { user } = useAuth()
   const canDiscover = user?.is_paid || user?.id === 1
   const [backlinks, setBacklinks] = useState([])
@@ -27,6 +28,8 @@ export default function Backlinks() {
   const [integrations, setIntegrations] = useState(null)
   const [loadingOpps, setLoadingOpps] = useState(false)
   const [opportunities, setOpportunities] = useState([])
+  const [savedOpportunities, setSavedOpportunities] = useState([])
+  const [backlinkSummary, setBacklinkSummary] = useState(null)
   const [csvText, setCsvText] = useState('')
   const [importingCsv, setImportingCsv] = useState(false)
   const [importResult, setImportResult] = useState(null)
@@ -36,13 +39,18 @@ export default function Backlinks() {
     Promise.all([
       api.get(`/sites/${siteId}/backlinks`).catch(() => ({ data: [] })),
       api.get(`/sites/${siteId}/integrations`).catch(() => ({ data: null })),
+      api.get(`/sites/${siteId}/backlink-opportunities`).catch(() => ({ data: [] })),
+      api.get(`/sites/${siteId}/backlinks/summary`).catch(() => ({ data: null })),
     ])
-      .then(([backlinksRes, integrationsRes]) => {
+      .then(([backlinksRes, integrationsRes, opportunitiesRes, summaryRes]) => {
         setBacklinks(Array.isArray(backlinksRes.data) ? backlinksRes.data : [])
         setIntegrations(integrationsRes.data || null)
+        setSavedOpportunities(
+          Array.isArray(opportunitiesRes.data) ? opportunitiesRes.data : []
+        )
+        setBacklinkSummary(summaryRes.data || null)
       })
       .finally(() => setLoading(false))
-
   useEffect(() => { load() }, [siteId])
 
   const normalizeUrl = (raw) => {
@@ -73,25 +81,42 @@ export default function Backlinks() {
 
   const addDomain = async () => {
     let domain = ''
-    try { domain = normalizeDomain(quickDomain) }
-    catch { toast.error('Please enter a valid domain'); return }
 
-    if (!domain) { toast.error('Domain is required'); return }
+    try {
+      domain = normalizeDomain(quickDomain)
+    } catch {
+      toast.error('Please enter a valid domain')
+      return
+    }
 
-    const ok = await createBacklink({
-      name: domain,
-      dr: 0,
-      status: quickSettings.status,
-      url: `https://${domain}/`,
-      anchor: '',
-      type: quickSettings.type,
-      source: 'domain',
-    }, 'Domain added to backlinks')
+    if (!domain) {
+      toast.error('Domain is required')
+      return
+    }
 
-    if (ok) setQuickDomain('')
+    setAdding(true)
+
+    try {
+      await api.post(`/sites/${siteId}/backlink-opportunities`, {
+        sourceDomain: domain,
+        sourceUrl: `https://${domain}/`,
+        opportunityType: 'manual-prospect',
+        strategy: '',
+        relevance: '',
+        estimatedDR: 0,
+        status: 'Prospect',
+        source: 'manual',
+      })
+
+      toast.success('Domain added as a backlink opportunity')
+      setQuickDomain('')
+      await load()
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to add opportunity')
+    }
+
     setAdding(false)
   }
-
   const addManual = async () => {
     let normalizedUrl = ''
     if (form.url.trim()) {
@@ -134,43 +159,97 @@ export default function Backlinks() {
   }
 
   const crawl = async () => {
-    setCrawling(true); setCrawlResult(null)
+    const seedList = seeds
+      .split('\n')
+      .map(s => s.trim())
+      .filter(s => /^https?:\/\//i.test(s))
+
+    if (!seedList.length) {
+      toast.error('Add at least one external public seed URL')
+      return
+    }
+
+    setCrawling(true)
+    setCrawlResult(null)
+
     try {
-      const seedList = seeds.split('\n').map(s => s.trim()).filter(s => s.startsWith('http'))
-      const r = await api.post(`/sites/${siteId}/backlinks/crawl`, { seeds: seedList })
-      setCrawlResult(r.data)
-      setOpportunities(Array.isArray(r.data?.opportunities) ? r.data.opportunities : [])
-      if (r.data.saved > 0) { toast.success(`Discovered ${r.data.saved} new backlink${r.data.saved > 1 ? 's' : ''}!`); load() }
-      else if (Array.isArray(r.data?.opportunities) && r.data.opportunities.length > 0) toast('No new live backlinks found, but new opportunities were identified.')
-      else toast('No new backlinks found this crawl.')
-    } catch { toast.error('Crawl failed') }
+      const { data } = await api.post(
+        `/sites/${siteId}/backlinks/index-crawl`,
+        {
+          seeds: seedList,
+          maxPages: 200,
+          maxDepth: 1,
+          domainDelayMs: 1200,
+        }
+      )
+
+      setCrawlResult(data)
+
+      const found = Number(data?.stats?.backlinksDetected || 0)
+
+      if (found > 0) {
+        toast.success(
+          `Our crawler verified ${found} backlink${found > 1 ? 's' : ''}`
+        )
+      } else {
+        toast(
+          `Indexed ${data?.stats?.pagesCrawled || 0} pages and ${data?.stats?.linksExtracted || 0} links. No verified backlink to this project was found in this run.`,
+          { icon: 'i' }
+        )
+      }
+
+      await load()
+    } catch (e) {
+      toast.error(
+        e.response?.data?.detail ||
+        e.response?.data?.error ||
+        'Own crawler failed'
+      )
+    }
+
     setCrawling(false)
   }
-
   const discoverFromProject = async () => {
-    if (!canDiscover) { toast('Upgrade to unlock automatic backlink discovery', { icon: '?' }); return }
-    setQuickDiscovering(true)
-    try {
-      const stored = localStorage.getItem('activeSite')
-      const site = stored ? JSON.parse(stored) : null
-      const seed = site?.url ? [String(site.url).startsWith('http') ? site.url : `https://${site.url}`] : []
-      const r = await api.post(`/sites/${siteId}/backlinks/crawl`, { seeds: seed })
-      setCrawlResult(r.data)
-      setOpportunities(Array.isArray(r.data?.opportunities) ? r.data.opportunities : [])
-      if (r.data.saved > 0) {
-        toast.success(`Discovered ${r.data.saved} backlink${r.data.saved > 1 ? 's' : ''} from project crawl`)
-        load()
-      } else if (Array.isArray(r.data?.opportunities) && r.data.opportunities.length > 0) {
-        toast('No live backlinks found yet, but the engine found new opportunities.', { icon: 'ℹ️' })
-      } else {
-        toast('No new backlinks found for this project yet.', { icon: 'ℹ️' })
-      }
-    } catch {
-      toast.error('Project backlink discovery failed')
+    if (!canDiscover) {
+      toast('Upgrade to unlock automatic backlink discovery', { icon: '?' })
+      return
     }
+
+    setQuickDiscovering(true)
+
+    try {
+      const { data } = await api.post(
+        `/sites/${siteId}/backlinks/dataforseo-sync`,
+        {
+          limit: 500,
+          verifyLimit: 25,
+        }
+      )
+
+      setCrawlResult(data)
+
+      if (Number(data.received || 0) > 0) {
+        toast.success(
+          `Found ${data.received} real backlink records from DataForSEO`
+        )
+      } else {
+        toast(
+          'DataForSEO returned no live backlinks for this project.',
+          { icon: 'i' }
+        )
+      }
+
+      await load()
+    } catch (e) {
+      toast.error(
+        e.response?.data?.detail ||
+        e.response?.data?.error ||
+        'Real backlink discovery failed'
+      )
+    }
+
     setQuickDiscovering(false)
   }
-
   const loadAiOpportunities = async () => {
     setLoadingOpps(true)
     try {
@@ -185,23 +264,25 @@ export default function Backlinks() {
 
   const addOpportunity = async (opp) => {
     try {
-      await api.post(`/sites/${siteId}/backlinks`, {
-        name: String(opp.site || '').trim(),
-        dr: Number(opp.estimatedDR || 0),
-        status: 'Todo',
-        anchor: String(opp.strategy || '').trim(),
-        url: String(opp.siteUrl || '').trim(),
-        type: 'dofollow',
-        source: 'domain',
+      await api.post(`/sites/${siteId}/backlink-opportunities`, {
+        sourceDomain: String(opp.site || '').trim(),
+        sourceUrl: String(opp.siteUrl || '').trim(),
+        strategy: String(opp.strategy || '').trim(),
+        opportunityType: String(opp.type || 'ai-opportunity'),
+        relevance: String(opp.relevance || ''),
+        estimatedDR: Number(opp.estimatedDR || 0),
+        evidence: String(opp.evidence || ''),
+        status: 'Prospect',
+        source: 'ai',
       })
+
       setOpportunities(prev => prev.filter(x => x.site !== opp.site))
-      toast.success('Opportunity added to backlinks')
+      toast.success('Opportunity saved')
       load()
-    } catch {
-      toast.error('Failed to save opportunity')
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to save opportunity')
     }
   }
-
   const importDetailedCsv = async () => {
     if (!csvText.trim()) { toast.error('Paste CSV data first'); return }
     setImportingCsv(true)
@@ -225,15 +306,55 @@ export default function Backlinks() {
   const ahrefsBacklinks = Number(integrations?.ahrefs?.latest?.backlinks || 0)
   const ahrefsRefDomains = Number(integrations?.ahrefs?.latest?.ref_domains || 0)
   const bestPicks = [...backlinks]
-    .sort((a, b) => {
-      const sa = (Number(a.dr || 0) * 2) + ((a.type || 'dofollow') === 'dofollow' ? 20 : 0) + (a.status === 'Live' ? 10 : 0)
-      const sb = (Number(b.dr || 0) * 2) + ((b.type || 'dofollow') === 'dofollow' ? 20 : 0) + (b.status === 'Live' ? 10 : 0)
-      return sb - sa
-    })
-    .slice(0, 5)
+.filter((b) => {
+  const source = String(b.source || '').toLowerCase()
+  const verificationStatus = String(b.verification_status || '').toLowerCase()
+
+  const verifiedProvider =
+    source === 'dataforseo' ||
+    source === 'crawled' ||
+    verificationStatus === 'live' ||
+    verificationStatus === 'redirected'
+
+  return b.status === 'Live' && verifiedProvider
+})
+.sort((a, b) => {
+  const rankA = Number(a.provider_rank || a.dr || 0)
+  const rankB = Number(b.provider_rank || b.dr || 0)
+
+  const scoreA =
+    (rankA * 2) +
+    ((a.type || 'dofollow') === 'dofollow' ? 20 : 0) -
+    Number(a.provider_spam_score || a.spam_score || 0)
+
+  const scoreB =
+    (rankB * 2) +
+    ((b.type || 'dofollow') === 'dofollow' ? 20 : 0) -
+    Number(b.provider_spam_score || b.spam_score || 0)
+
+  return scoreB - scoreA
+})
+.slice(0, 5)
 
   return (
     <div className="fade-in page-content">
+      <button
+        type="button"
+        onClick={() => navigate(`/site/${siteId}`)}
+        style={{
+          border: 'none',
+          background: 'transparent',
+          padding: 0,
+          marginBottom: 8,
+          color: '#64748B',
+          fontSize: 12,
+          fontWeight: 700,
+          cursor: 'pointer'
+        }}
+      >
+        ← Back to Overview
+      </button>
+
       <PageHeader
         title="Backlinks"
         subtitle="Add backlinks by domain, log exact links manually, and keep discovery tools out of the way until you need them."
@@ -244,15 +365,15 @@ export default function Backlinks() {
           <div className="bl-intake-head">
             <div className="bl-intake-copy">
               <div className="bl-intake-kicker">Simpler workflow</div>
-              <div className="bl-intake-title">Start with a domain. Switch to manual only when you already know the exact page.</div>
+              <div className="bl-intake-title">Start with a prospect domain. Add a backlink only when the exact referring page is confirmed.</div>
               <div className="bl-intake-sub">
-                Domain mode is the fastest way to track outreach targets and prospects. Manual mode is for confirmed links with URL, anchor text, or DR.
+                Prospect mode keeps outreach targets separate from verified backlinks. Manual mode is for confirmed links with a real source URL.
               </div>
             </div>
             <div className="bl-intake-actions">
               <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering} title={!canDiscover ? 'Upgrade to unlock' : ''}>
                 {quickDiscovering
-                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering…</>
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discoveringâ€¦</>
                   : !canDiscover
                     ? <><FontAwesomeIcon icon={faLock} style={{ marginRight: 6 }} />Discover from project</>
                     : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
@@ -260,7 +381,7 @@ export default function Backlinks() {
               </OrangeBtn>
               <GhostBtn onClick={loadAiOpportunities} style={{ height: 38 }}>
                 {loadingOpps
-                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding…</>
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Findingâ€¦</>
                   : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Find opportunities</>
                 }
               </GhostBtn>
@@ -272,7 +393,7 @@ export default function Backlinks() {
 
           <div className="bl-mode-switch">
             <button className={`bl-mode-btn${addMode === 'domain' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('domain')}>
-              Add by domain
+              Add prospect
             </button>
             <button className={`bl-mode-btn${addMode === 'manual' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('manual')}>
               Add manually
@@ -308,10 +429,10 @@ export default function Backlinks() {
                     </select>
                   </div>
                   <OrangeBtn onClick={addDomain} disabled={adding} style={{ alignSelf: 'end', justifyContent: 'center' }}>
-                    {adding ? 'Adding…' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add domain</>}
+                    {adding ? 'Addingâ€¦' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add prospect</>}
                   </OrangeBtn>
                 </div>
-                <div className="bl-form-help">Use this when you only need to track the referring domain first. You can update status and details later from the table.</div>
+                <div className="bl-form-help">Use this for domains you want to earn a backlink from. It will not increase backlink totals until a real link is verified.</div>
               </>
             ) : (
               <>
@@ -368,7 +489,7 @@ export default function Backlinks() {
                   <div className="bl-field bl-field--action">
                     <label>&nbsp;</label>
                     <OrangeBtn onClick={addManual} disabled={adding} style={{ justifyContent: 'center' }}>
-                      {adding ? 'Adding…' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Save backlink</>}
+                      {adding ? 'Addingâ€¦' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Save backlink</>}
                     </OrangeBtn>
                   </div>
                 </div>
@@ -405,6 +526,21 @@ export default function Backlinks() {
         </div>
       </Card>
 
+      {backlinkSummary && (
+        <div className="bl-real-summary" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: 10,
+          marginBottom: 12,
+        }}>
+          <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} />
+          <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" />
+          <MetricCard label="Dofollow" value={`${backlinkSummary.dofollowRatio || 0}%`} accent="var(--green)" />
+          <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" />
+          <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--red)" />
+          <MetricCard label="Opportunities" value={backlinkSummary.opportunities || savedOpportunities.length} accent="var(--amber)" />
+        </div>
+      )}
       {/* Metric strip */}
       <div className="bl-metric-strip">
         <MetricCard label="Total" value={backlinks.length} />
@@ -451,7 +587,7 @@ export default function Backlinks() {
                   <div style={{ fontSize: 11, color: 'var(--muted)' }}>{b.anchor || 'No anchor text'} • {b.type || 'dofollow'}</div>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'right' }}>
-                  <div>DR <strong>{b.dr || 0}</strong></div>
+                  <div>Domain Rank <strong>{Number(b.provider_rank || b.dr || 0)}</strong></div>
                   <div>{b.status}</div>
                 </div>
               </div>
@@ -491,7 +627,7 @@ export default function Backlinks() {
               <div className="bl-inline-actions">
                 <OrangeBtn onClick={importDetailedCsv} disabled={importingCsv}>
                   {importingCsv
-                    ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importing…</>
+                    ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importingâ€¦</>
                     : <>Import rows</>
                   }
                 </OrangeBtn>
@@ -507,17 +643,17 @@ export default function Backlinks() {
               <div className="crawler-header" onClick={() => setShowCrawler(p => !p)}>
                 <div className="bl-advanced-title" style={{ marginBottom: 0 }}>
                   <FontAwesomeIcon icon={faSpider} style={{ color: 'var(--orange)' }} />
-                  Discover backlinks with crawler
+                  Build our backlink index
                 </div>
-                <span className="crawler-toggle">{showCrawler ? '▲' : '▼'}</span>
+                <span className="crawler-toggle">{showCrawler ? 'â–²' : 'â–¼'}</span>
               </div>
 
               {showCrawler && (
                 <div className="crawler-body">
                   <p className="crawler-desc">
-                    Finds verified live backlinks from public web mentions and also surfaces evidence-backed opportunities. Add optional seed URLs to check specific pages.
+                    Our crawler starts from these public pages, extracts source-to-target links, grows the DevnDespro link index, and verifies any backlink it finds to this project.
                   </p>
-                  <label className="crawler-label">Seed URLs <span>(optional, one per line)</span></label>
+                  <label className="crawler-label">Seed URLs <span>(required for crawler V1, one per line)</span></label>
                   <textarea
                     className="crawler-seeds"
                     rows={5}
@@ -528,7 +664,7 @@ export default function Backlinks() {
                   <div className="bl-inline-actions">
                     <OrangeBtn onClick={crawl} disabled={crawling}>
                       {crawling
-                        ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawling…</>
+                        ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawlingâ€¦</>
                         : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Run crawler</>}
                     </OrangeBtn>
                     {crawlResult && (
@@ -546,4 +682,9 @@ export default function Backlinks() {
     </div>
   )
 }
+
+
+
+
+
 

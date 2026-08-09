@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -21,8 +21,7 @@ import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../
 import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../components/seo/SeoComponents'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
-import api from '../utils/api'
-
+import api from '../utils/api'
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
   { label: 'Technical SEO', color: T.blue },
@@ -39,7 +38,8 @@ export default function Dashboard() {
   const [actions, setActions] = useState([])
   const [metrics, setMetrics] = useState({ dr: 0, clicks: 0, impressions: 0, health: 0 })
   const [keywords, setKeywords] = useState([])
-  const [backlinks, setBacklinks] = useState([])
+  const [backlinks, setBacklinks] = useState([])
+  const [backlinkSummary, setBacklinkSummary] = useState(null)
   const [latestAudit, setLatestAudit] = useState(null)
   const [multipageLatest, setMultipageLatest] = useState(null)
   const [gscData, setGscData] = useState(null)
@@ -371,15 +371,10 @@ export default function Dashboard() {
 
     return 'Excellent health. Focus on smaller optimization opportunities.'
   })()
-  const drValue = toNum(metrics.dr, 0)
-  const backlinkCount = Array.isArray(backlinks) ? backlinks.length : 0
-  const referringDomainCount = Array.isArray(backlinks)
-    ? new Set(backlinks.map(b => String(b.name || '').trim().toLowerCase()).filter(Boolean)).size
-    : 0
-  const dofollowCount = Array.isArray(backlinks)
-    ? backlinks.filter(b => String(b.type || '').toLowerCase() === 'dofollow').length
-    : 0
-  const dofollowPct = backlinkCount > 0 ? Math.round((dofollowCount / backlinkCount) * 100) : 0
+  const drValue = Number(backlinkSummary?.avgDr || 0)
+  const backlinkCount = Number(backlinkSummary?.totalBacklinks || 0)
+  const referringDomainCount = Number(backlinkSummary?.referringDomains || 0)
+  const dofollowPct = Number(backlinkSummary?.dofollowRatio || 0)
   const rawDaily = Array.isArray(gscData?.daily) ? gscData.daily : []
   const weeklyTraffic = rawDaily
     .slice(-7)
@@ -441,6 +436,21 @@ export default function Dashboard() {
       </div>
     </div>
   )
+  useEffect(() => {
+    let cancelled = false
+
+    api.get(`/sites/${siteId}/backlinks/summary`)
+      .then(({ data }) => {
+        if (!cancelled) setBacklinkSummary(data || null)
+      })
+      .catch(() => {
+        if (!cancelled) setBacklinkSummary(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [siteId])
   return (
     <div style={{ flex: 1 }}>
 
@@ -456,7 +466,7 @@ export default function Dashboard() {
           <Button variant="secondary" size="sm" onClick={loadDashboardData}>
             <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} /><span className='btn-label'>Refresh Data</span>
           </Button>
-          <div className="overview-audit-split" style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
+          <div className="overview-audit-split" style={{ display: 'flex', alignItems: 'start', gap: 0, position: 'relative' }}>
             <Button variant="primary" size="sm" onClick={handleRunAudit} disabled={auditRunning} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
               <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
               <span className='btn-label'>{auditRunning ? 'Scanning...' : 'Run Full Audit'}</span>
@@ -685,7 +695,7 @@ export default function Dashboard() {
                       borderRadius: 12,
                       background: '#FAFBFC',
                       padding: 14,
-                      alignItems: 'stretch',
+                      alignItems: 'start',
                     }}>
                       <div style={{
                         display: 'flex',
@@ -800,7 +810,7 @@ export default function Dashboard() {
                 display: 'grid',
                 gridTemplateColumns: 'minmax(0, 1.08fr) minmax(0, 0.92fr)',
                 gap: '0.85rem',
-                alignItems: 'stretch',
+                alignItems: 'start',
               }}
             >
 
@@ -1370,13 +1380,16 @@ export default function Dashboard() {
               <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0.55rem 0 0.7rem' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 36, fontWeight: 750, color: T.text, fontFamily: 'Manrope, sans-serif', lineHeight: 1 }}>{drValue}</div>
-                  <div style={{ fontSize: 10, color: T.muted, marginTop: 3 }}>Average Domain Rating</div>
+                  <div style={{ fontSize: 10, color: T.muted, marginTop: 3 }}>Average Domain Rank</div>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 12, color: T.text2, marginBottom: 8, lineHeight: 1.5 }}>
-                    Build toward <strong style={{ color: T.orange }}>20+</strong> authority with more relevant, high-quality referring domains.
+                    {backlinkCount > 0
+                      ? <>{backlinkCount > 0 ? <>Build toward <strong style={{ color: T.orange }}>20+</strong> authority with more relevant, high-quality referring domains.</> : <>No verified backlinks yet. Open Backlinks to discover opportunities and verify real links.</>}</>
+                      : <>No verified backlinks yet. Discover or verify real referring pages to start building authority.</>
+                    }
                   </div>
-                  <ProgressBar value={drValue} max={20} color={T.orange} height={6} showLabel />
+                  <ProgressBar value={drValue} max={100} color={T.orange} height={6} showLabel />
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
@@ -1384,7 +1397,7 @@ export default function Dashboard() {
                   { label: 'Backlinks',         value: backlinkCount,        goTo: `/site/${siteId}/backlinks` },
                   { label: 'Referring Domains',  value: referringDomainCount, goTo: `/site/${siteId}/backlinks` },
                   { label: 'Dofollow',           value: `${dofollowPct}%`,   goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Target DA',          value: '20+' },
+                  { label: 'Target Rank',        value: '20+', goTo: `/site/${siteId}/backlinks` },
                 ].map(m => (
                   <button key={m.label} type="button" onClick={() => m.goTo && navigate(m.goTo)} style={{ background: T.surface2, borderRadius: 8, padding: '9px 10px', border: `1px solid ${T.border}`, textAlign: 'left', cursor: m.goTo ? 'pointer' : 'default' }}>
                     <div style={{ fontSize: 14, fontWeight: 800, color: T.text, fontFamily: 'Manrope, sans-serif' }}>{m.value}</div>
@@ -1400,3 +1413,6 @@ export default function Dashboard() {
     </div>
   )
 }
+
+
+

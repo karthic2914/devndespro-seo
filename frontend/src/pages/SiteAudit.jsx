@@ -522,6 +522,7 @@ export default function SiteAudit() {
   const [running,           setRunning]           = useState(false)
   const [runError,          setRunError]          = useState(null)
   const [activeTab,         setActiveTab]         = useState('all')
+  const auditIssuesRef = useRef(null)
   const [expandedIdx,       setExpandedIdx]       = useState(null)
   const [siteName,          setSiteName]          = useState('')
   const [siteUrl,           setSiteUrl]           = useState('')
@@ -1560,6 +1561,37 @@ export default function SiteAudit() {
     ...categories.map((c) => ({ id: c.id, label: c.name, count: c.issues.filter((i) => i.status !== 'pass').length })),
   ], [allIssues, categories])
 
+  // OVERVIEW CATEGORY DEEP LINK
+  // Example: /site/8/audit?category=On-Page%20SEO
+  useEffect(() => {
+    if (loading) return
+
+    const categoryParam = new URLSearchParams(window.location.search).get('category')
+    if (!categoryParam) return
+
+    const requestedTab = categoryParam
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+
+    const matchingCategory = categories.find(
+      (category) => category.id === requestedTab
+    )
+
+    if (!matchingCategory) return
+
+    setActiveTab(requestedTab)
+    setExpandedIdx(null)
+
+    const timer = window.setTimeout(() => {
+      auditIssuesRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    }, 180)
+
+    return () => window.clearTimeout(timer)
+  }, [loading, categories])
   const visibleIssues = useMemo(() => {
     if (activeTab === 'all')      return allIssues
     if (activeTab === 'errors')   return allIssues.filter((i) => i.status === 'error')
@@ -2543,6 +2575,11 @@ export default function SiteAudit() {
           </div>
         </div>
       )}
+      <div
+        ref={auditIssuesRef}
+        aria-hidden="true"
+        style={{ height: 0, scrollMarginTop: 88 }}
+      />
 
       <TabBar tabs={tabOptions} active={activeTab} onChange={(id) => { setActiveTab(id); setExpandedIdx(null) }} />
 

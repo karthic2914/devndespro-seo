@@ -1,24 +1,438 @@
-const express = require('express')
+﻿const express = require('express')
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { firstValueByKey, parseCsvRows, toInt } = require('../utils/helpers')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
+const { verifyBacklink } = require('../utils/backlinkVerifier')
+const { fetchDataForSeoBacklinks } = require('../utils/dataForSeoBacklinks')
+const { calculateBacklinkQuality, calculateAuthority } = require('../utils/backlinkScoreEngine')
+const { discoverCandidates, verifyCandidateBatch } = require('../utils/backlinkDiscoveryEngine')
+const { crawlLinkGraph, normalizeHost: normalizeIndexHost } = require('../utils/webLinkCrawler')
 
 const router = express.Router()
+const normalizeBacklinkDomain = (raw) => {
+  const value = String(raw || '').trim()
+  if (!value) return ''
 
+  try {
+    const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`
+    return new URL(withProtocol).hostname.replace(/^www\./i, '').toLowerCase()
+  } catch {
+    return value
+      .replace(/^https?:\/\//i, '')
+      .replace(/^www\./i, '')
+      .split('/')[0]
+      .toLowerCase()
+  }
+}
+
+let backlinkSchemaReady = false
+
+const ensureBacklinkIntelligenceSchema = async () => {
+  if (backlinkSchemaReady) return
+
+  await pool.query(`
+    ALTER TABLE backlinks
+      ADD COLUMN IF NOT EXISTS source_domain TEXT,
+      ADD COLUMN IF NOT EXISTS target_url TEXT,
+      ADD COLUMN IF NOT EXISTS first_seen TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS last_checked TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS http_status INTEGER,
+      ADD COLUMN IF NOT EXISTS is_live BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS is_lost BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS is_broken BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS quality_score INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS spam_score INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS verified_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS verification_status TEXT DEFAULT 'Unverified',
+      ADD COLUMN IF NOT EXISTS verification_reason TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_final_url TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_page_title TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_language TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_canonical TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS source_robots_noindex BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS rel_nofollow BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS rel_sponsored BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS rel_ugc BOOLEAN DEFAULT FALSE,
+      ADD COLUMN IF NOT EXISTS link_position TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS link_context TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS verification_evidence JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS verification_source TEXT DEFAULT '',
+      ADD COLUMN IF NOT EXISTS provider_rank INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS provider_page_rank INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS provider_spam_score INTEGER DEFAULT 0,
+      ADD COLUMN IF NOT EXISTS provider_first_seen TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS provider_last_seen TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS quality_breakdown JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS quality_updated_at TIMESTAMPTZ
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS backlink_opportunities (
+      id BIGSERIAL PRIMARY KEY,
+      site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+      source_domain TEXT NOT NULL,
+      source_url TEXT DEFAULT '',
+      target_url TEXT DEFAULT '',
+      strategy TEXT DEFAULT '',
+      opportunity_type TEXT DEFAULT 'prospect',
+      relevance TEXT DEFAULT '',
+      estimated_dr INTEGER DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'Prospect',
+      evidence TEXT DEFAULT '',
+      source TEXT NOT NULL DEFAULT 'manual',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_backlink_opportunity_site_domain_url
+    ON backlink_opportunities(
+      site_id,
+      lower(source_domain),
+      lower(COALESCE(source_url, ''))
+    )
+  `)
+
+    await pool.query(`
+    ALTER TABLE sites
+      ADD COLUMN IF NOT EXISTS authority_version TEXT DEFAULT '3.0',
+      ADD COLUMN IF NOT EXISTS authority_breakdown JSONB DEFAULT '{}'::jsonb
+  `)
+backlinkSchemaReady = true
+}
+
+
+let backlinkDiscoverySchemaReady = false
+
+const ensureBacklinkDiscoverySchema = async () => {
+  if (backlinkDiscoverySchemaReady) return
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS backlink_discovery_runs (
+      id BIGSERIAL PRIMARY KEY,
+      site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+      provider TEXT NOT NULL DEFAULT 'hybrid',
+      status TEXT NOT NULL DEFAULT 'Running',
+      queries_run INTEGER NOT NULL DEFAULT 0,
+      candidates_found INTEGER NOT NULL DEFAULT 0,
+      candidates_verified INTEGER NOT NULL DEFAULT 0,
+      live_found INTEGER NOT NULL DEFAULT 0,
+      lost_found INTEGER NOT NULL DEFAULT 0,
+      broken_found INTEGER NOT NULL DEFAULT 0,
+      errors JSONB NOT NULL DEFAULT '[]'::jsonb,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS backlink_candidates (
+      id BIGSERIAL PRIMARY KEY,
+      site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+      discovery_run_id BIGINT REFERENCES backlink_discovery_runs(id) ON DELETE SET NULL,
+      source_url TEXT NOT NULL,
+      source_domain TEXT NOT NULL DEFAULT '',
+      result_title TEXT DEFAULT '',
+      result_description TEXT DEFAULT '',
+      query TEXT DEFAULT '',
+      provider TEXT NOT NULL DEFAULT 'unknown',
+      candidate_status TEXT NOT NULL DEFAULT 'Candidate',
+      verification_status TEXT DEFAULT 'Unverified',
+      verification_reason TEXT DEFAULT '',
+      discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      verified_at TIMESTAMPTZ,
+      evidence JSONB NOT NULL DEFAULT '{}'::jsonb
+    )
+  `)
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_backlink_candidate_site_url
+    ON backlink_candidates(site_id, lower(source_url))
+  `)
+
+  backlinkDiscoverySchemaReady = true
+}
+let linkIndexSchemaReady = false
+
+const ensureLinkIndexSchema = async () => {
+  if (linkIndexSchemaReady) return
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS link_index_pages (
+      id BIGSERIAL PRIMARY KEY,
+      url TEXT NOT NULL,
+      normalized_url TEXT NOT NULL,
+      domain TEXT NOT NULL,
+      http_status INTEGER,
+      content_type TEXT DEFAULT '',
+      page_title TEXT DEFAULT '',
+      canonical_url TEXT DEFAULT '',
+      robots_allowed BOOLEAN DEFAULT TRUE,
+      crawl_status TEXT NOT NULL DEFAULT 'Pending',
+      crawl_depth INTEGER NOT NULL DEFAULT 0,
+      first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_crawled TIMESTAMPTZ,
+      next_crawl TIMESTAMPTZ,
+      last_error TEXT DEFAULT '',
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_link_index_pages_normalized_url
+    ON link_index_pages(lower(normalized_url))
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS link_index_edges (
+      id BIGSERIAL PRIMARY KEY,
+      source_url TEXT NOT NULL,
+      source_domain TEXT NOT NULL,
+      target_url TEXT NOT NULL,
+      target_domain TEXT NOT NULL,
+      anchor_text TEXT DEFAULT '',
+      rel_nofollow BOOLEAN DEFAULT FALSE,
+      rel_sponsored BOOLEAN DEFAULT FALSE,
+      rel_ugc BOOLEAN DEFAULT FALSE,
+      link_position TEXT DEFAULT '',
+      first_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_seen TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      last_checked TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      is_present BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `)
+
+  await pool.query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_link_index_edge
+    ON link_index_edges(
+      lower(source_url),
+      lower(target_url),
+      lower(anchor_text)
+    )
+  `)
+
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_link_index_edges_target_domain
+    ON link_index_edges(lower(target_domain))
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS link_index_runs (
+      id BIGSERIAL PRIMARY KEY,
+      site_id BIGINT REFERENCES sites(id) ON DELETE CASCADE,
+      status TEXT NOT NULL DEFAULT 'Running',
+      seed_count INTEGER NOT NULL DEFAULT 0,
+      pages_crawled INTEGER NOT NULL DEFAULT 0,
+      pages_skipped INTEGER NOT NULL DEFAULT 0,
+      links_extracted INTEGER NOT NULL DEFAULT 0,
+      backlinks_detected INTEGER NOT NULL DEFAULT 0,
+      errors JSONB NOT NULL DEFAULT '[]'::jsonb,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      finished_at TIMESTAMPTZ
+    )
+  `)
+
+  linkIndexSchemaReady = true
+}
+const persistBacklinkVerification = async (siteId, backlinkId, result) => {
+  const status = result.isLive
+    ? 'Live'
+    : result.verificationStatus === 'Lost'
+      ? 'Lost'
+      : result.verificationStatus === 'Broken'
+        ? 'Broken'
+        : 'Todo'
+
+  const { rows } = await pool.query(
+    `UPDATE backlinks
+     SET
+       status = $1,
+       anchor = CASE
+         WHEN $2 <> '' THEN $2
+         ELSE anchor
+       END,
+       type = COALESCE(NULLIF($3, ''), type),
+       target_url = CASE
+         WHEN $4 <> '' THEN $4
+         ELSE target_url
+       END,
+       verified_at = NOW(),
+       verification_status = $5,
+       verification_reason = $6,
+       source_final_url = $7,
+       source_page_title = $8,
+       source_language = $9,
+       source_canonical = $10,
+       source_robots_noindex = $11,
+       rel_nofollow = $12,
+       rel_sponsored = $13,
+       rel_ugc = $14,
+       link_position = $15,
+       link_context = $16,
+       verification_evidence = $17::jsonb,
+       http_status = $18,
+       is_live = $19,
+       is_lost = $20,
+       is_broken = $21,
+       last_checked = NOW(),
+       last_seen = CASE
+         WHEN $19 THEN NOW()
+         ELSE last_seen
+       END,
+       first_seen = CASE
+         WHEN $19 THEN COALESCE(first_seen, NOW())
+         ELSE first_seen
+       END
+     WHERE id = $22
+       AND site_id = $23
+     RETURNING *`,
+    [
+      status,
+      result.anchorText || '',
+      result.type || '',
+      result.targetResolvedUrl || '',
+      result.verificationStatus || 'Unverified',
+      result.reason || '',
+      result.sourceFinalUrl || '',
+      result.sourcePageTitle || '',
+      result.sourceLanguage || '',
+      result.sourceCanonical || '',
+      Boolean(result.sourceRobotsNoindex),
+      Boolean(result.relNofollow),
+      Boolean(result.relSponsored),
+      Boolean(result.relUgc),
+      result.linkPosition || '',
+      result.linkContext || '',
+      JSON.stringify(result.evidence || {}),
+      result.httpStatus ?? null,
+      Boolean(result.isLive),
+      Boolean(result.isLost),
+      Boolean(result.isBroken),
+      backlinkId,
+      siteId,
+    ]
+  )
+
+  return rows[0] || null
+}
+const recalculateBacklinkQualityForSite = async (siteId) => {
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM backlinks
+     WHERE site_id=$1
+       AND COALESCE(source, '') <> 'domain'`,
+    [siteId]
+  )
+
+  const updated = []
+
+  for (const row of rows) {
+    const quality = calculateBacklinkQuality(row)
+
+    const result = await pool.query(
+      `UPDATE backlinks
+       SET
+         quality_score=$1,
+         spam_score=$2,
+         quality_breakdown=$3::jsonb,
+         quality_updated_at=NOW()
+       WHERE id=$4
+         AND site_id=$5
+       RETURNING *`,
+      [
+        quality.score,
+        quality.spamScore,
+        JSON.stringify(quality.breakdown),
+        row.id,
+        siteId,
+      ]
+    )
+
+    if (result.rows[0]) {
+      updated.push(result.rows[0])
+    }
+  }
+
+  return updated
+}
 router.get('/:siteId/backlinks', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM backlinks WHERE site_id=$1 ORDER BY dr DESC', [req.siteId])
+  await ensureBacklinkIntelligenceSchema()
+
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM backlinks
+     WHERE site_id = $1
+       AND COALESCE(source, '') <> 'domain'
+     ORDER BY dr DESC, id DESC`,
+    [req.siteId]
+  )
+
   res.json(rows)
 })
 router.post('/:siteId/backlinks', auth, verifySite, async (req, res) => {
-  const { name, dr, status, anchor, url, type, source } = req.body
-  const finalSource = ['manual', 'domain'].includes(String(source || '').toLowerCase())
+  await ensureBacklinkIntelligenceSchema()
+
+  const {
+    name,
+    dr,
+    status,
+    anchor,
+    url,
+    type,
+    source,
+    targetUrl,
+    httpStatus,
+  } = req.body
+
+  const finalSource = ['manual', 'csv', 'crawled'].includes(
+    String(source || '').toLowerCase()
+  )
     ? String(source).toLowerCase()
     : 'manual'
+
+  const sourceDomain = normalizeBacklinkDomain(url || name)
+  const finalStatus = status || 'Todo'
+  const isLive = finalStatus === 'Live'
+
   const { rows } = await pool.query(
-    'INSERT INTO backlinks (site_id, name, dr, status, anchor, url, type, source) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *',
-    [req.siteId, name, dr || 0, status || 'Todo', anchor || '', url || '', type || 'dofollow', finalSource]
+    `INSERT INTO backlinks (
+       site_id, name, dr, status, anchor, url, type, source,
+       source_domain, target_url, first_seen, last_seen,
+       last_checked, http_status, is_live, is_lost, is_broken
+     )
+     VALUES (
+       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+       NOW(),
+       CASE WHEN $11 THEN NOW() ELSE NULL END,
+       NOW(),
+       $12,
+       $11,
+       FALSE,
+       FALSE
+     )
+     RETURNING *`,
+    [
+      req.siteId,
+      name || sourceDomain,
+      dr || 0,
+      finalStatus,
+      anchor || '',
+      url || '',
+      type || 'dofollow',
+      finalSource,
+      sourceDomain,
+      targetUrl || '',
+      isLive,
+      httpStatus || null,
+    ]
   )
+
   res.json(rows[0])
 })
 router.put('/:siteId/backlinks/:id', auth, verifySite, async (req, res) => {
@@ -120,142 +534,1498 @@ router.post('/:siteId/backlinks/crawl', auth, verifySite, async (req, res) => {
   })
 })
 
-router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
+router.get('/:siteId/backlinks/discovery-health', auth, verifySite, async (req, res) => {
+  await ensureBacklinkDiscoverySchema()
+
+  const latestRun = await pool.query(
+    `SELECT *
+     FROM backlink_discovery_runs
+     WHERE site_id=$1
+     ORDER BY started_at DESC
+     LIMIT 1`,
+    [req.siteId]
+  )
+
+  const candidateCounts = await pool.query(
+    `SELECT
+       COUNT(*) AS total,
+       COUNT(*) FILTER (
+         WHERE candidate_status='VerifiedBacklink'
+       ) AS verified,
+       COUNT(*) FILTER (
+         WHERE verification_status='Lost'
+       ) AS lost,
+       COUNT(*) FILTER (
+         WHERE verification_status='Broken'
+       ) AS broken
+     FROM backlink_candidates
+     WHERE site_id=$1`,
+    [req.siteId]
+  )
+
+  res.json({
+    provider: 'brave',
+    providerConfigured:
+      Boolean(process.env.BRAVE_SEARCH_API_KEY),
+    latestRun: latestRun.rows[0] || null,
+    candidates: {
+      total: Number(candidateCounts.rows[0]?.total || 0),
+      verified: Number(candidateCounts.rows[0]?.verified || 0),
+      lost: Number(candidateCounts.rows[0]?.lost || 0),
+      broken: Number(candidateCounts.rows[0]?.broken || 0),
+    },
+  })
+})
+router.post('/:siteId/backlinks/discover', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+  await ensureBacklinkDiscoverySchema()
+
+  const siteResult = await pool.query(
+    'SELECT id, name, url FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({
+      error: 'Target site URL is missing'
+    })
+  }
+
+  const requestedMax = Number(req.body?.maxResults || 120)
+  const maxResults = Math.max(1, Math.min(200, requestedMax))
+
+  const seedUrls = Array.isArray(req.body?.seeds)
+    ? req.body.seeds.slice(0, 30)
+    : []
+
+  const opportunityResult = await pool.query(
+    `SELECT source_url
+     FROM backlink_opportunities
+     WHERE site_id=$1
+       AND COALESCE(source_url, '') <> ''
+       AND status NOT IN ('Won', 'Rejected')
+     ORDER BY estimated_dr DESC, updated_at DESC
+     LIMIT 100`,
+    [req.siteId]
+  )
+
+  const opportunityUrls = opportunityResult.rows
+    .map((row) => row.source_url)
+    .filter(Boolean)
+
+  const runResult = await pool.query(
+    `INSERT INTO backlink_discovery_runs (
+       site_id,
+       provider,
+       status
+     )
+     VALUES ($1, 'hybrid', 'Running')
+     RETURNING *`,
+    [req.siteId]
+  )
+
+  const run = runResult.rows[0]
+
   try {
-    const { rows } = await pool.query(
+    const discovery = await discoverCandidates({
+      siteName: site.name,
+      siteUrl: site.url,
+      seedUrls,
+      opportunityUrls,
+      maxResults,
+      country: String(req.body?.country || 'ALL').slice(0, 3).toUpperCase(),
+      searchLang: String(req.body?.searchLang || 'en').slice(0, 8),
+    })
+
+    const existingResult = await pool.query(
       `SELECT
-         COUNT(*) AS total_backlinks,
-         COUNT(DISTINCT name) AS referring_domains,
-         COALESCE(AVG(dr), 0) AS avg_dr,
-         COUNT(*) FILTER (WHERE type = 'dofollow') AS dofollow_count
+         lower(COALESCE(source_final_url, url, '')) AS source_url
        FROM backlinks
-       WHERE site_id = $1
-         AND status = 'Live'`,
+       WHERE site_id=$1`,
       [req.siteId]
     )
 
-    const row = rows[0] || {}
-
-    const totalBacklinks = Math.max(
-      0,
-      parseInt(row.total_backlinks || 0, 10)
+    const existingUrls = new Set(
+      existingResult.rows
+        .map((row) => String(row.source_url || '').toLowerCase())
+        .filter(Boolean)
     )
 
-    const referringDomains = Math.max(
-      0,
-      parseInt(row.referring_domains || 0, 10)
+    const candidates = discovery.candidates.filter(
+      (candidate) =>
+        !existingUrls.has(String(candidate.url || '').toLowerCase())
     )
 
-    const avgDr = Math.max(
-      0,
-      Math.min(100, parseFloat(row.avg_dr || 0))
-    )
-
-    const dofollowCount = Math.max(
-      0,
-      parseInt(row.dofollow_count || 0, 10)
-    )
-
-    // ---------------------------------------------------------
-    // Authority Engine v2
-    // ---------------------------------------------------------
-    //
-    // Uses logarithmic scaling because authority growth
-    // should have diminishing returns.
-    //
-    // 200 referring domains ~= maximum domain-diversity score.
-    // 1000 live backlinks ~= maximum backlink-volume score.
-    // ---------------------------------------------------------
-
-    const logScore = (value, target) => {
-      if (!value || value <= 0) return 0
-
-      return Math.min(
-        100,
-        Math.round(
-          100 *
-          Math.log10(value + 1) /
-          Math.log10(target + 1)
-        )
+    for (const candidate of candidates) {
+      await pool.query(
+        `INSERT INTO backlink_candidates (
+           site_id,
+           discovery_run_id,
+           source_url,
+           source_domain,
+           result_title,
+           result_description,
+           query,
+           provider,
+           candidate_status,
+           evidence
+         )
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,'Candidate',$9::jsonb)
+         ON CONFLICT (
+           site_id,
+           lower(source_url)
+         )
+         DO UPDATE SET
+           discovery_run_id = EXCLUDED.discovery_run_id,
+           result_title = EXCLUDED.result_title,
+           result_description = EXCLUDED.result_description,
+           query = EXCLUDED.query,
+           provider = EXCLUDED.provider,
+           discovered_at = NOW()`,
+        [
+          req.siteId,
+          run.id,
+          candidate.url,
+          candidate.domain || '',
+          candidate.title || '',
+          candidate.description || '',
+          candidate.query || '',
+          candidate.provider || 'unknown',
+          JSON.stringify({
+            searchTitle: candidate.title || '',
+            searchDescription: candidate.description || '',
+          }),
+        ]
       )
     }
 
-    const referringDomainScore =
-      logScore(referringDomains, 200)
+    const verified = await verifyCandidateBatch({
+      candidates,
+      targetUrl: site.url,
+      concurrency: Number(req.body?.concurrency || 4),
+    })
 
-    const drScore =
-      Math.round(avgDr)
+    const savedBacklinks = []
+    const verifiedResults = []
 
-    const dofollowRatio =
-      totalBacklinks > 0
-        ? (dofollowCount / totalBacklinks) * 100
-        : 0
+    for (const item of verified) {
+      const candidate = item.candidate
+      const verification = item.verification
+      const isVerifiedLink = Boolean(verification?.isLive)
 
-    // Full credit around 70%+ dofollow.
-    // This prevents raw dofollow backlink count from
-    // artificially inflating authority.
-    const dofollowScore =
-      Math.min(
-        100,
-        Math.round((dofollowRatio / 70) * 100)
+      await pool.query(
+        `UPDATE backlink_candidates
+         SET
+           candidate_status = $1,
+           verification_status = $2,
+           verification_reason = $3,
+           verified_at = NOW(),
+           evidence = evidence || $4::jsonb
+         WHERE site_id=$5
+           AND lower(source_url)=lower($6)`,
+        [
+          isVerifiedLink ? 'VerifiedBacklink' : 'Checked',
+          verification?.verificationStatus || 'Unverified',
+          verification?.reason || '',
+          JSON.stringify({
+            verification: verification?.evidence || {},
+            httpStatus: verification?.httpStatus ?? null,
+          }),
+          req.siteId,
+          candidate.url,
+        ]
       )
 
-    const backlinkVolumeScore =
-      logScore(totalBacklinks, 1000)
+      verifiedResults.push({
+        sourceUrl: candidate.url,
+        domain: candidate.domain,
+        provider: candidate.provider,
+        verificationStatus:
+          verification?.verificationStatus || 'Unverified',
+        reason: verification?.reason || '',
+        isLive: Boolean(verification?.isLive),
+        isLost: Boolean(verification?.isLost),
+        isBroken: Boolean(verification?.isBroken),
+        httpStatus: verification?.httpStatus ?? null,
+      })
 
-    const weightedScore =
-      (referringDomainScore * 0.40) +
-      (drScore * 0.30) +
-      (dofollowScore * 0.15) +
-      (backlinkVolumeScore * 0.15)
+      if (!isVerifiedLink) continue
 
-    const score = Math.max(
-      0,
-      Math.min(100, Math.round(weightedScore))
+      const duplicateResult = await pool.query(
+        `SELECT id
+         FROM backlinks
+         WHERE site_id=$1
+           AND (
+             lower(COALESCE(url, ''))=lower($2)
+             OR lower(COALESCE(source_final_url, ''))=lower($3)
+           )
+         LIMIT 1`,
+        [
+          req.siteId,
+          candidate.url,
+          verification.sourceFinalUrl || candidate.url,
+        ]
+      )
+
+      if (duplicateResult.rows[0]) {
+        const updated = await persistBacklinkVerification(
+          req.siteId,
+          duplicateResult.rows[0].id,
+          verification
+        )
+
+        if (updated) savedBacklinks.push(updated)
+        continue
+      }
+
+      const insertResult = await pool.query(
+        `INSERT INTO backlinks (
+           site_id,
+           name,
+           dr,
+           status,
+           anchor,
+           url,
+           type,
+           source,
+           source_domain,
+           target_url,
+           first_seen,
+           last_seen,
+           last_checked,
+           http_status,
+           is_live,
+           is_lost,
+           is_broken
+         )
+         VALUES (
+           $1,$2,0,'Todo',$3,$4,$5,'discovery',$6,$7,
+           NOW(),NULL,NOW(),$8,FALSE,FALSE,FALSE
+         )
+         RETURNING *`,
+        [
+          req.siteId,
+          candidate.domain || candidate.url,
+          verification.anchorText || '',
+          candidate.url,
+          verification.type || 'dofollow',
+          candidate.domain || '',
+          verification.targetResolvedUrl || site.url,
+          verification.httpStatus ?? null,
+        ]
+      )
+
+      const inserted = insertResult.rows[0]
+
+      const persisted = await persistBacklinkVerification(
+        req.siteId,
+        inserted.id,
+        verification
+      )
+
+      if (persisted) savedBacklinks.push(persisted)
+    }
+
+    const liveFound = verifiedResults.filter((r) => r.isLive).length
+    const lostFound = verifiedResults.filter((r) => r.isLost).length
+    const brokenFound = verifiedResults.filter((r) => r.isBroken).length
+
+    await pool.query(
+      `UPDATE backlink_discovery_runs
+       SET
+         status='Completed',
+         queries_run=$1,
+         candidates_found=$2,
+         candidates_verified=$3,
+         live_found=$4,
+         lost_found=$5,
+         broken_found=$6,
+         errors=$7::jsonb,
+         finished_at=NOW()
+       WHERE id=$8`,
+      [
+        discovery.queries.length,
+        candidates.length,
+        verifiedResults.length,
+        liveFound,
+        lostFound,
+        brokenFound,
+        JSON.stringify(discovery.errors || []),
+        run.id,
+      ]
     )
+
+    res.json({
+      runId: run.id,
+      providerConfigured: discovery.providerConfigured,
+      searchProvider: 'brave',
+      queries: discovery.queries,
+      candidatesFound: candidates.length,
+      checked: verifiedResults.length,
+      saved: savedBacklinks.length,
+      liveFound,
+      lostFound,
+      brokenFound,
+      results: verifiedResults,
+      errors: discovery.errors,
+      message: discovery.providerConfigured
+        ? 'Discovery completed'
+        : 'Search provider is not configured; seed and saved-opportunity URLs were still checked',
+    })
+  } catch (error) {
+    await pool.query(
+      `UPDATE backlink_discovery_runs
+       SET
+         status='Failed',
+         errors=$1::jsonb,
+         finished_at=NOW()
+       WHERE id=$2`,
+      [
+        JSON.stringify([
+          { error: String(error?.message || error) }
+        ]),
+        run.id,
+      ]
+    ).catch(() => {})
+
+    console.error('Backlink discovery failed:', error)
+
+    res.status(500).json({
+      error: 'Backlink discovery failed',
+      detail: String(error?.message || error),
+    })
+  }
+})
+
+router.get('/:siteId/backlinks/discovery-runs', auth, verifySite, async (req, res) => {
+  await ensureBacklinkDiscoverySchema()
+
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM backlink_discovery_runs
+     WHERE site_id=$1
+     ORDER BY started_at DESC
+     LIMIT 20`,
+    [req.siteId]
+  )
+
+  res.json(rows)
+})
+
+router.get('/:siteId/backlinks/candidates', auth, verifySite, async (req, res) => {
+  await ensureBacklinkDiscoverySchema()
+
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM backlink_candidates
+     WHERE site_id=$1
+     ORDER BY discovered_at DESC
+     LIMIT 500`,
+    [req.siteId]
+  )
+
+  res.json(rows)
+})
+router.post('/:siteId/backlinks/index-crawl', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+  await ensureLinkIndexSchema()
+
+  const siteResult = await pool.query(
+    'SELECT id, name, url FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({ error: 'Target site URL is missing' })
+  }
+
+  const seeds = Array.isArray(req.body?.seeds)
+    ? req.body.seeds
+        .map((value) => String(value || '').trim())
+        .filter(Boolean)
+        .slice(0, 25)
+    : []
+
+  if (!seeds.length) {
+    return res.status(400).json({
+      error: 'Add at least one public external seed URL.'
+    })
+  }
+
+  const maxPages = Math.max(1, Math.min(500, Number(req.body?.maxPages || 200)))
+  const maxDepth = Math.max(0, Math.min(2, Number(req.body?.maxDepth ?? 1)))
+  const domainDelayMs = Math.max(
+    500,
+    Math.min(5000, Number(req.body?.domainDelayMs || 1200))
+  )
+
+  const runResult = await pool.query(
+    `INSERT INTO link_index_runs (site_id, seed_count, status)
+     VALUES ($1,$2,'Running')
+     RETURNING *`,
+    [req.siteId, seeds.length]
+  )
+
+  const run = runResult.rows[0]
+
+  try {
+    const graph = await crawlLinkGraph({
+      seeds,
+      maxPages,
+      maxDepth,
+      domainDelayMs,
+      userAgent: 'DevnDesproBot/1.0 (+https://www.devndespro.com)',
+    })
+
+    for (const page of graph.pages) {
+      await pool.query(
+        `INSERT INTO link_index_pages (
+           url, normalized_url, domain, http_status,
+           content_type, page_title, canonical_url,
+           robots_allowed, crawl_status, crawl_depth,
+           last_crawled, next_crawl, last_error
+         )
+         VALUES (
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,
+           NOW(), NOW() + INTERVAL '7 days', $11
+         )
+         ON CONFLICT (lower(normalized_url))
+         DO UPDATE SET
+           url=EXCLUDED.url,
+           domain=EXCLUDED.domain,
+           http_status=EXCLUDED.http_status,
+           content_type=EXCLUDED.content_type,
+           page_title=EXCLUDED.page_title,
+           canonical_url=EXCLUDED.canonical_url,
+           robots_allowed=EXCLUDED.robots_allowed,
+           crawl_status=EXCLUDED.crawl_status,
+           crawl_depth=LEAST(link_index_pages.crawl_depth, EXCLUDED.crawl_depth),
+           last_crawled=NOW(),
+           next_crawl=NOW() + INTERVAL '7 days',
+           last_error=EXCLUDED.last_error,
+           updated_at=NOW()`,
+        [
+          page.url,
+          page.finalUrl || page.url,
+          page.domain || '',
+          page.httpStatus ?? null,
+          page.contentType || '',
+          page.title || '',
+          page.canonical || '',
+          Boolean(page.robotsAllowed),
+          page.error ? 'Failed' : 'Crawled',
+          Number(page.depth || 0),
+          page.error || '',
+        ]
+      )
+    }
+
+    for (const edge of graph.edges) {
+      await pool.query(
+        `INSERT INTO link_index_edges (
+           source_url, source_domain, target_url, target_domain,
+           anchor_text, rel_nofollow, rel_sponsored, rel_ugc,
+           link_position, first_seen, last_seen, last_checked, is_present
+         )
+         VALUES (
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,
+           NOW(),NOW(),NOW(),TRUE
+         )
+         ON CONFLICT (
+           lower(source_url),
+           lower(target_url),
+           lower(anchor_text)
+         )
+         DO UPDATE SET
+           source_domain=EXCLUDED.source_domain,
+           target_domain=EXCLUDED.target_domain,
+           rel_nofollow=EXCLUDED.rel_nofollow,
+           rel_sponsored=EXCLUDED.rel_sponsored,
+           rel_ugc=EXCLUDED.rel_ugc,
+           link_position=EXCLUDED.link_position,
+           last_seen=NOW(),
+           last_checked=NOW(),
+           is_present=TRUE,
+           updated_at=NOW()`,
+        [
+          edge.sourceUrl,
+          edge.sourceDomain,
+          edge.targetUrl,
+          edge.targetDomain,
+          edge.anchorText || '',
+          Boolean(edge.relNofollow),
+          Boolean(edge.relSponsored),
+          Boolean(edge.relUgc),
+          edge.linkPosition || '',
+        ]
+      )
+    }
+
+    const targetHost = normalizeIndexHost(site.url)
+    const backlinkEdges = graph.edges.filter(
+      (edge) =>
+        String(edge.targetDomain || '').toLowerCase() ===
+        String(targetHost || '').toLowerCase()
+    )
+
+    const detected = []
+    const seenSources = new Set()
+
+    for (const edge of backlinkEdges) {
+      const sourceKey = String(edge.sourceUrl || '').toLowerCase()
+      if (!sourceKey || seenSources.has(sourceKey)) continue
+      seenSources.add(sourceKey)
+
+      const verification = await verifyBacklink({
+        sourceUrl: edge.sourceUrl,
+        targetUrl: site.url,
+      })
+
+      if (!verification.isLive) continue
+
+      const existing = await pool.query(
+        `SELECT id
+         FROM backlinks
+         WHERE site_id=$1
+           AND (
+             lower(COALESCE(url,''))=lower($2)
+             OR lower(COALESCE(source_final_url,''))=lower($3)
+           )
+         LIMIT 1`,
+        [
+          req.siteId,
+          edge.sourceUrl,
+          verification.sourceFinalUrl || edge.sourceUrl,
+        ]
+      )
+
+      let backlink
+
+      if (existing.rows[0]) {
+        backlink = await persistBacklinkVerification(
+          req.siteId,
+          existing.rows[0].id,
+          verification
+        )
+      } else {
+        const inserted = await pool.query(
+          `INSERT INTO backlinks (
+             site_id, name, dr, status, anchor, url, type, source,
+             source_domain, target_url, first_seen, last_seen,
+             last_checked, http_status, is_live, is_lost, is_broken
+           )
+           VALUES (
+             $1,$2,0,'Todo',$3,$4,$5,'own-index',$6,$7,
+             NOW(),NULL,NOW(),$8,FALSE,FALSE,FALSE
+           )
+           RETURNING *`,
+          [
+            req.siteId,
+            edge.sourceDomain || edge.sourceUrl,
+            verification.anchorText || edge.anchorText || '',
+            edge.sourceUrl,
+            verification.type || 'dofollow',
+            edge.sourceDomain || '',
+            verification.targetResolvedUrl || site.url,
+            verification.httpStatus ?? null,
+          ]
+        )
+
+        backlink = await persistBacklinkVerification(
+          req.siteId,
+          inserted.rows[0].id,
+          verification
+        )
+      }
+
+      if (backlink) detected.push(backlink)
+    }
+
+    await recalculateBacklinkQualityForSite(req.siteId)
+
+    await pool.query(
+      `UPDATE link_index_runs
+       SET
+         status='Completed',
+         pages_crawled=$1,
+         pages_skipped=$2,
+         links_extracted=$3,
+         backlinks_detected=$4,
+         errors=$5::jsonb,
+         finished_at=NOW()
+       WHERE id=$6`,
+      [
+        graph.stats.pagesCrawled,
+        graph.errors.length,
+        graph.stats.linksExtracted,
+        detected.length,
+        JSON.stringify(graph.errors || []),
+        run.id,
+      ]
+    )
+
+    res.json({
+      runId: run.id,
+      status: 'Completed',
+      stats: {
+        ...graph.stats,
+        errors: graph.errors.length,
+        backlinksDetected: detected.length,
+      },
+      backlinks: detected,
+      errors: graph.errors.slice(0, 50),
+    })
+  } catch (error) {
+    await pool.query(
+      `UPDATE link_index_runs
+       SET status='Failed',
+           errors=$1::jsonb,
+           finished_at=NOW()
+       WHERE id=$2`,
+      [
+        JSON.stringify([{ error: String(error?.message || error) }]),
+        run.id,
+      ]
+    ).catch(() => {})
+
+    console.error('Own link index crawl failed:', error)
+
+    res.status(500).json({
+      error: 'Own link index crawl failed',
+      detail: String(error?.message || error),
+    })
+  }
+})
+
+router.get('/:siteId/backlinks/index-stats', auth, verifySite, async (req, res) => {
+  await ensureLinkIndexSchema()
+
+  const siteResult = await pool.query(
+    'SELECT url FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({ error: 'Target site URL is missing' })
+  }
+
+  const targetHost = normalizeIndexHost(site.url)
+
+  const [pagesResult, edgesResult, targetResult, runResult] =
+    await Promise.all([
+      pool.query(
+        `SELECT
+           COUNT(*) AS pages,
+           COUNT(DISTINCT domain) AS domains,
+           MAX(last_crawled) AS last_crawled
+         FROM link_index_pages`
+      ),
+      pool.query(
+        `SELECT
+           COUNT(*) FILTER (WHERE is_present=TRUE) AS edges,
+           COUNT(DISTINCT source_domain) FILTER (WHERE is_present=TRUE) AS source_domains,
+           COUNT(DISTINCT target_domain) FILTER (WHERE is_present=TRUE) AS target_domains
+         FROM link_index_edges`
+      ),
+      pool.query(
+        `SELECT
+           COUNT(*) FILTER (WHERE is_present=TRUE) AS backlinks,
+           COUNT(DISTINCT source_domain) FILTER (WHERE is_present=TRUE) AS referring_domains
+         FROM link_index_edges
+         WHERE lower(target_domain)=lower($1)`,
+        [targetHost]
+      ),
+      pool.query(
+        `SELECT *
+         FROM link_index_runs
+         WHERE site_id=$1
+         ORDER BY started_at DESC
+         LIMIT 1`,
+        [req.siteId]
+      ),
+    ])
+
+  res.json({
+    index: {
+      pages: Number(pagesResult.rows[0]?.pages || 0),
+      domains: Number(pagesResult.rows[0]?.domains || 0),
+      edges: Number(edgesResult.rows[0]?.edges || 0),
+      sourceDomains: Number(edgesResult.rows[0]?.source_domains || 0),
+      targetDomains: Number(edgesResult.rows[0]?.target_domains || 0),
+      lastCrawled: pagesResult.rows[0]?.last_crawled || null,
+    },
+    target: {
+      domain: targetHost,
+      backlinks: Number(targetResult.rows[0]?.backlinks || 0),
+      referringDomains: Number(targetResult.rows[0]?.referring_domains || 0),
+    },
+    latestRun: runResult.rows[0] || null,
+  })
+})
+router.post('/:siteId/backlinks/dataforseo-sync', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const siteResult = await pool.query(
+    'SELECT id, name, url FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({
+      error: 'Target site URL is missing'
+    })
+  }
+
+  const limit = Math.max(
+    1,
+    Math.min(
+      1000,
+      Number(req.body?.limit || 500)
+    )
+  )
+
+  const verifyLimit = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(req.body?.verifyLimit || 25)
+    )
+  )
+
+  try {
+    const provider = await fetchDataForSeoBacklinks({
+      target: site.url,
+      limit,
+      mode: 'as_is',
+    })
+
+    let imported = 0
+    let updated = 0
+    let skipped = 0
+
+    const candidatesForOwnVerification = []
+
+    for (const item of provider.items) {
+      if (!item.sourceUrl || !item.sourceDomain) {
+        skipped += 1
+        continue
+      }
+
+      const type = item.dofollow
+        ? 'dofollow'
+        : 'nofollow'
+
+      const providerEvidence = {
+        provider: 'dataforseo',
+        sourceTitle: item.sourceTitle,
+        sourceLanguage: item.sourceLanguage,
+        textPre: item.textPre,
+        textPost: item.textPost,
+        semanticLocation: item.semanticLocation,
+        dofollow: item.dofollow,
+        nofollow: item.nofollow,
+        sponsored: item.sponsored,
+        ugc: item.ugc,
+        domainRank: item.rank,
+        pageRank: item.pageRank,
+        backlinkRank: item.backlinkRank,
+        spamScore: item.spamScore,
+        linksCount: item.linksCount,
+        firstSeen: item.firstSeen,
+        lastSeen: item.lastSeen,
+        isNew: item.isNew,
+        isLost: item.isLost,
+        isBroken: item.isBroken,
+        attributes: item.attributes,
+      }
+
+      const existing = await pool.query(
+        `SELECT id
+         FROM backlinks
+         WHERE site_id=$1
+           AND (
+             lower(COALESCE(url,''))=lower($2)
+             OR lower(COALESCE(source_final_url,''))=lower($2)
+           )
+         LIMIT 1`,
+        [
+          req.siteId,
+          item.sourceUrl,
+        ]
+      )
+
+      let backlinkId
+
+      if (existing.rows[0]) {
+        backlinkId = existing.rows[0].id
+
+        await pool.query(
+          `UPDATE backlinks
+           SET
+             name=$1,
+             anchor=$2,
+             type=$3,
+             source='dataforseo',
+             source_domain=$4,
+             target_url=$5,
+             status='Live',
+             verification_status='Live',
+             verification_source='dataforseo',
+             http_status=$6,
+             is_live=TRUE,
+             is_lost=FALSE,
+             is_broken=$7,
+             rel_nofollow=$8,
+             rel_sponsored=$9,
+             rel_ugc=$10,
+             source_page_title=$11,
+             source_page_language=$12,
+             link_position=$13,
+             link_context=$14,
+             provider_rank=$15,
+             provider_page_rank=$16,
+             provider_spam_score=$17,
+             provider_first_seen=$18,
+             provider_last_seen=$19,
+             first_seen=COALESCE(first_seen,$18,NOW()),
+             last_seen=COALESCE($19,NOW()),
+             last_checked=NOW(),
+             verified_at=NOW(),
+             verification_reason='Live in DataForSEO backlink index',
+             verification_evidence=$20::jsonb
+           WHERE id=$21
+             AND site_id=$22`,
+          [
+            item.sourceDomain,
+            item.anchor || '',
+            type,
+            item.sourceDomain,
+            item.targetUrl || site.url,
+            item.httpStatus,
+            Boolean(item.isBroken),
+            Boolean(item.nofollow),
+            Boolean(item.sponsored),
+            Boolean(item.ugc),
+            item.sourceTitle || '',
+            item.sourceLanguage || '',
+            item.semanticLocation || '',
+            `${item.textPre || ''} ${item.anchor || ''} ${item.textPost || ''}`.trim(),
+            item.rank,
+            item.pageRank,
+            item.spamScore,
+            item.firstSeen,
+            item.lastSeen,
+            JSON.stringify(providerEvidence),
+            backlinkId,
+            req.siteId,
+          ]
+        )
+
+        updated += 1
+      } else {
+        const inserted = await pool.query(
+          `INSERT INTO backlinks (
+             site_id,
+             name,
+             dr,
+             status,
+             anchor,
+             url,
+             type,
+             source,
+             source_domain,
+             target_url,
+             first_seen,
+             last_seen,
+             last_checked,
+             verified_at,
+             verification_status,
+             verification_source,
+             verification_reason,
+             verification_evidence,
+             http_status,
+             is_live,
+             is_lost,
+             is_broken,
+             rel_nofollow,
+             rel_sponsored,
+             rel_ugc,
+             source_page_title,
+             source_page_language,
+             link_position,
+             link_context,
+             provider_rank,
+             provider_page_rank,
+             provider_spam_score,
+             provider_first_seen,
+             provider_last_seen
+           )
+           VALUES (
+             $1,$2,0,'Live',$3,$4,$5,'dataforseo',
+             $6,$7,
+             COALESCE($8,NOW()),
+             COALESCE($9,NOW()),
+             NOW(),NOW(),
+             'Live',
+             'dataforseo',
+             'Live in DataForSEO backlink index',
+             $10::jsonb,
+             $11,
+             TRUE,FALSE,$12,
+             $13,$14,$15,
+             $16,$17,$18,$19,
+             $20,$21,$22,$23,$24
+           )
+           RETURNING id`,
+          [
+            req.siteId,
+            item.sourceDomain,
+            item.anchor || '',
+            item.sourceUrl,
+            type,
+            item.sourceDomain,
+            item.targetUrl || site.url,
+            item.firstSeen,
+            item.lastSeen,
+            JSON.stringify(providerEvidence),
+            item.httpStatus,
+            Boolean(item.isBroken),
+            Boolean(item.nofollow),
+            Boolean(item.sponsored),
+            Boolean(item.ugc),
+            item.sourceTitle || '',
+            item.sourceLanguage || '',
+            item.semanticLocation || '',
+            `${item.textPre || ''} ${item.anchor || ''} ${item.textPost || ''}`.trim(),
+            item.rank,
+            item.pageRank,
+            item.spamScore,
+            item.firstSeen,
+            item.lastSeen,
+          ]
+        )
+
+        backlinkId = inserted.rows[0]?.id
+        imported += 1
+      }
+
+      if (backlinkId) {
+        candidatesForOwnVerification.push({
+          id: backlinkId,
+          sourceUrl: item.sourceUrl,
+          rank: item.rank,
+          pageRank: item.pageRank,
+        })
+      }
+    }
+
+    // Re-verify a controlled high-value sample with our own verifier.
+    const toVerify = candidatesForOwnVerification
+      .sort((a, b) =>
+        (b.rank + b.pageRank) -
+        (a.rank + a.pageRank)
+      )
+      .slice(0, verifyLimit)
+
+    let devnVerified = 0
+    let devnFailed = 0
+
+    for (const item of toVerify) {
+      const verification = await verifyBacklink({
+        sourceUrl: item.sourceUrl,
+        targetUrl: site.url,
+      })
+
+      if (verification.isLive) {
+        await persistBacklinkVerification(
+          req.siteId,
+          item.id,
+          verification
+        )
+
+        await pool.query(
+          `UPDATE backlinks
+           SET verification_source='devndespro+dataforseo'
+           WHERE id=$1 AND site_id=$2`,
+          [
+            item.id,
+            req.siteId,
+          ]
+        )
+
+        devnVerified += 1
+      } else {
+        // Keep provider evidence, but flag that our immediate fetch
+        // did not independently reconfirm the link.
+        await pool.query(
+          `UPDATE backlinks
+           SET
+             verification_reason=$1,
+             last_checked=NOW()
+           WHERE id=$2 AND site_id=$3`,
+          [
+            `DataForSEO live; DevnDespro recheck: ${
+              verification.verificationStatus ||
+              verification.reason ||
+              'not reconfirmed'
+            }`,
+            item.id,
+            req.siteId,
+          ]
+        )
+
+        devnFailed += 1
+      }
+    }
+
+    await recalculateBacklinkQualityForSite(req.siteId)
+
+    const authorityRows = await pool.query(
+      `SELECT *
+       FROM backlinks
+       WHERE site_id=$1
+         AND COALESCE(source,'') <> 'domain'`,
+      [req.siteId]
+    )
+
+    const authority = calculateAuthority({
+      rows: authorityRows.rows,
+    })
+
+    await pool.query(
+      `UPDATE sites
+       SET
+         authority_score=$1,
+         authority_updated_at=NOW(),
+         authority_version=$2,
+         authority_breakdown=$3::jsonb
+       WHERE id=$4`,
+      [
+        authority.score,
+        authority.version,
+        JSON.stringify(authority.breakdown),
+        req.siteId,
+      ]
+    )
+
+    res.json({
+      provider: 'dataforseo',
+      target: provider.target,
+      providerTotal: provider.totalCount,
+      received: provider.itemsCount,
+      imported,
+      updated,
+      skipped,
+      devnDesproVerified: devnVerified,
+      devnDesproNotReconfirmed: devnFailed,
+      verificationSampleSize: toVerify.length,
+      costUsd: provider.cost,
+      authorityScore: authority.score,
+      authorityVersion: authority.version,
+    })
+  } catch (error) {
+    console.error(
+      'DataForSEO backlink sync failed:',
+      error
+    )
+
+    res.status(500).json({
+      error: 'DataForSEO backlink sync failed',
+      detail: String(error?.message || error),
+    })
+  }
+})
+router.get('/:siteId/backlink-opportunities', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const { rows } = await pool.query(
+    `SELECT *
+     FROM backlink_opportunities
+     WHERE site_id = $1
+     ORDER BY estimated_dr DESC, created_at DESC`,
+    [req.siteId]
+  )
+
+  res.json(rows)
+})
+
+router.post('/:siteId/backlink-opportunities', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const {
+    sourceDomain,
+    sourceUrl,
+    targetUrl,
+    strategy,
+    opportunityType,
+    relevance,
+    estimatedDR,
+    status,
+    evidence,
+    source,
+  } = req.body
+
+  const domain = normalizeBacklinkDomain(sourceDomain || sourceUrl)
+
+  if (!domain) {
+    return res.status(400).json({ error: 'A referring domain is required' })
+  }
+
+  const { rows } = await pool.query(
+    `INSERT INTO backlink_opportunities (
+       site_id, source_domain, source_url, target_url,
+       strategy, opportunity_type, relevance,
+       estimated_dr, status, evidence, source
+     )
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     ON CONFLICT (
+       site_id,
+       lower(source_domain),
+       lower(COALESCE(source_url, ''))
+     )
+     DO UPDATE SET
+       strategy = EXCLUDED.strategy,
+       relevance = EXCLUDED.relevance,
+       estimated_dr = GREATEST(
+         backlink_opportunities.estimated_dr,
+         EXCLUDED.estimated_dr
+       ),
+       evidence = CASE
+         WHEN EXCLUDED.evidence <> '' THEN EXCLUDED.evidence
+         ELSE backlink_opportunities.evidence
+       END,
+       updated_at = NOW()
+     RETURNING *`,
+    [
+      req.siteId,
+      domain,
+      sourceUrl || '',
+      targetUrl || '',
+      strategy || '',
+      opportunityType || 'prospect',
+      relevance || '',
+      Math.max(0, Math.min(100, Number(estimatedDR || 0))),
+      status || 'Prospect',
+      evidence || '',
+      source || 'manual',
+    ]
+  )
+
+  res.json(rows[0])
+})
+
+router.put('/:siteId/backlink-opportunities/:id', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const allowed = ['Prospect', 'Qualified', 'Contacted', 'Replied', 'Won', 'Rejected']
+  const status = allowed.includes(req.body?.status) ? req.body.status : 'Prospect'
+
+  const { rows } = await pool.query(
+    `UPDATE backlink_opportunities
+     SET status = $1,
+         updated_at = NOW()
+     WHERE id = $2 AND site_id = $3
+     RETURNING *`,
+    [status, req.params.id, req.siteId]
+  )
+
+  res.json(rows[0] || null)
+})
+
+router.delete('/:siteId/backlink-opportunities/:id', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  await pool.query(
+    'DELETE FROM backlink_opportunities WHERE id=$1 AND site_id=$2',
+    [req.params.id, req.siteId]
+  )
+
+  res.json({ ok: true })
+})
+
+router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const { rows } = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE is_live = TRUE AND verification_status IN ('Live','Redirected')) AS total_backlinks,
+       COUNT(
+         DISTINCT COALESCE(
+           NULLIF(source_domain, ''),
+           NULLIF(name, '')
+         )
+       ) FILTER (WHERE is_live = TRUE AND verification_status IN ('Live','Redirected')) AS referring_domains,
+       COUNT(*) FILTER (
+         WHERE is_live = TRUE
+           AND verification_status IN ('Live','Redirected')
+           AND type = 'dofollow'
+       ) AS dofollow_count,
+       COUNT(*) FILTER (WHERE is_lost = TRUE) AS lost_count,
+       COUNT(*) FILTER (WHERE is_broken = TRUE) AS broken_count,
+       COUNT(*) FILTER (
+         WHERE first_seen >= NOW() - INTERVAL '30 days'
+           AND is_live = TRUE
+           AND verification_status IN ('Live','Redirected')
+       ) AS new_30d,
+       COALESCE(
+         (
+           SELECT AVG(domain_rank)
+           FROM (
+             SELECT
+               COALESCE(
+                 NULLIF(MAX(provider_rank), 0),
+                 NULLIF(MAX(dr), 0),
+                 0
+               ) AS domain_rank
+             FROM backlinks b2
+             WHERE b2.site_id = $1
+               AND COALESCE(b2.source, '') <> 'domain'
+               AND b2.is_live = TRUE
+               AND b2.verification_status IN ('Live','Redirected')
+             GROUP BY COALESCE(
+               NULLIF(b2.source_domain, ''),
+               NULLIF(b2.name, '')
+             )
+           ) domain_scores
+         ),
+         0
+       ) AS avg_dr
+     FROM backlinks
+     WHERE site_id = $1
+       AND COALESCE(source, '') <> 'domain'`,
+    [req.siteId]
+  )
+
+  const opps = await pool.query(
+    `SELECT COUNT(*) AS opportunities
+     FROM backlink_opportunities
+     WHERE site_id = $1
+       AND status NOT IN ('Won', 'Rejected')`,
+    [req.siteId]
+  )
+
+  const row = rows[0] || {}
+  const totalBacklinks = Number(row.total_backlinks || 0)
+  const dofollowCount = Number(row.dofollow_count || 0)
+
+  res.json({
+    totalBacklinks,
+    referringDomains: Number(row.referring_domains || 0),
+    dofollowCount,
+    dofollowRatio: totalBacklinks > 0
+      ? Math.round((dofollowCount / totalBacklinks) * 1000) / 10
+      : 0,
+    new30d: Number(row.new_30d || 0),
+    lost: Number(row.lost_count || 0),
+    broken: Number(row.broken_count || 0),
+    avgDr: Math.round(Number(row.avg_dr || 0) * 10) / 10,
+    opportunities: Number(opps.rows[0]?.opportunities || 0),
+  })
+})
+router.post('/:siteId/backlinks/:id/verify', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const backlinkResult = await pool.query(
+    `SELECT *
+     FROM backlinks
+     WHERE id = $1
+       AND site_id = $2`,
+    [req.params.id, req.siteId]
+  )
+
+  const backlink = backlinkResult.rows[0]
+
+  if (!backlink) {
+    return res.status(404).json({ error: 'Backlink not found' })
+  }
+
+  const siteResult = await pool.query(
+    'SELECT url FROM sites WHERE id = $1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({ error: 'Target site URL is missing' })
+  }
+
+  if (!backlink.url) {
+    return res.status(400).json({
+      error: 'Backlink source URL is missing and cannot be verified'
+    })
+  }
+
+  const verification = await verifyBacklink({
+    sourceUrl: backlink.url,
+    targetUrl: site.url,
+  })
+
+  const saved = await persistBacklinkVerification(
+    req.siteId,
+    backlink.id,
+    verification
+  )
+
+  res.json({
+    backlink: saved,
+    verification,
+  })
+})
+
+router.post('/:siteId/backlinks/verify-all', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const requestedLimit = Number(req.body?.limit || 50)
+  const limit = Math.max(1, Math.min(200, requestedLimit))
+
+  const siteResult = await pool.query(
+    'SELECT url FROM sites WHERE id = $1',
+    [req.siteId]
+  )
+
+  const site = siteResult.rows[0]
+
+  if (!site?.url) {
+    return res.status(400).json({ error: 'Target site URL is missing' })
+  }
+
+  const backlinkResult = await pool.query(
+    `SELECT *
+     FROM backlinks
+     WHERE site_id = $1
+       AND COALESCE(url, '') <> ''
+       AND COALESCE(source, '') <> 'domain'
+     ORDER BY
+       COALESCE(last_checked, TIMESTAMPTZ '1970-01-01') ASC,
+       id ASC
+     LIMIT $2`,
+    [req.siteId, limit]
+  )
+
+  const results = []
+
+  for (const backlink of backlinkResult.rows) {
+    const verification = await verifyBacklink({
+      sourceUrl: backlink.url,
+      targetUrl: site.url,
+    })
+
+    const saved = await persistBacklinkVerification(
+      req.siteId,
+      backlink.id,
+      verification
+    )
+
+    results.push({
+      id: backlink.id,
+      sourceUrl: backlink.url,
+      verificationStatus: verification.verificationStatus,
+      isLive: Boolean(verification.isLive),
+      isLost: Boolean(verification.isLost),
+      isBroken: Boolean(verification.isBroken),
+      httpStatus: verification.httpStatus ?? null,
+      reason: verification.reason || '',
+      backlink: saved,
+    })
+  }
+
+  const summary = {
+    checked: results.length,
+    live: results.filter((r) => r.isLive).length,
+    lost: results.filter((r) => r.isLost).length,
+    broken: results.filter((r) => r.isBroken).length,
+    unverified: results.filter(
+      (r) =>
+        !r.isLive &&
+        !r.isLost &&
+        !r.isBroken
+    ).length,
+  }
+
+  res.json({
+    summary,
+    results,
+  })
+})
+router.post('/:siteId/backlinks/recalculate-quality', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const updated = await recalculateBacklinkQualityForSite(req.siteId)
+
+  res.json({
+    updated: updated.length,
+    backlinks: updated,
+  })
+})
+router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
+  try {
+    await ensureBacklinkIntelligenceSchema()
+
+    // Always refresh individual link-quality scores before
+    // calculating the domain-level authority score.
+    await recalculateBacklinkQualityForSite(req.siteId)
+
+    const { rows } = await pool.query(
+      `SELECT *
+       FROM backlinks
+       WHERE site_id=$1
+         AND COALESCE(source, '') <> 'domain'`,
+      [req.siteId]
+    )
+
+    const authority = calculateAuthority({
+      rows,
+    })
 
     const { rows: updated } = await pool.query(
       `UPDATE sites
-       SET authority_score = $1,
-           authority_updated_at = NOW()
-       WHERE id = $2
-       RETURNING authority_score, authority_updated_at`,
-      [score, req.siteId]
+       SET
+         authority_score=$1,
+         authority_updated_at=NOW(),
+         authority_version=$2,
+         authority_breakdown=$3::jsonb
+       WHERE id=$4
+       RETURNING
+         authority_score,
+         authority_updated_at,
+         authority_version,
+         authority_breakdown`,
+      [
+        authority.score,
+        authority.version,
+        JSON.stringify(authority.breakdown),
+        req.siteId,
+      ]
     )
 
     res.json({
       ...updated[0],
-
-      authority_version: '2.0',
-
-      breakdown: {
-        referringDomains: {
-          value: referringDomains,
-          score: referringDomainScore,
-          weight: 40
+      authority_version: authority.version,
+      counts: authority.counts,
+      breakdown: authority.breakdown,
+      methodology: {
+        name: 'DevnDespro Authority Score',
+        scale: '0-100',
+        verifiedLinksOnly: true,
+        weights: {
+          domainDiversity: 30,
+          verifiedLinkQuality: 25,
+          followNaturality: 15,
+          linkStability: 10,
+          verificationFreshness: 10,
+          domainConcentration: 10,
         },
-
-        averageDR: {
-          value: Math.round(avgDr * 10) / 10,
-          score: drScore,
-          weight: 30
-        },
-
-        dofollow: {
-          count: dofollowCount,
-          ratio: Math.round(dofollowRatio * 10) / 10,
-          score: dofollowScore,
-          weight: 15
-        },
-
-        backlinks: {
-          value: totalBacklinks,
-          score: backlinkVolumeScore,
-          weight: 15
-        }
-      }
+      },
     })
-
   } catch (error) {
     console.error(
       'Authority score calculation failed:',
@@ -263,8 +2033,10 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
     )
 
     res.status(500).json({
-      error: 'Failed to calculate authority score'
+      error: 'Failed to calculate authority score',
+      detail: String(error?.message || error),
     })
   }
 })
 module.exports = router
+
