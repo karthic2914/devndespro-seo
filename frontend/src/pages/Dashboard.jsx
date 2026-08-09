@@ -21,7 +21,8 @@ import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../
 import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../components/seo/SeoComponents'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
-import api from '../utils/api'
+import api from '../utils/api'
+
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
   { label: 'Technical SEO', color: T.blue },
@@ -38,7 +39,8 @@ export default function Dashboard() {
   const [actions, setActions] = useState([])
   const [metrics, setMetrics] = useState({ dr: 0, clicks: 0, impressions: 0, health: 0 })
   const [keywords, setKeywords] = useState([])
-  const [backlinks, setBacklinks] = useState([])
+  const [backlinks, setBacklinks] = useState([])
+
   const [backlinkSummary, setBacklinkSummary] = useState(null)
   const [latestAudit, setLatestAudit] = useState(null)
   const [multipageLatest, setMultipageLatest] = useState(null)
@@ -666,7 +668,7 @@ export default function Dashboard() {
           <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop />
           <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
           <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
-          <StatCard label="Avg. Position"    value={gscPosition}       sub="across tracked queries" icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop />
+          <StatCard label="Avg. Position"    value={gscPosition}       sub={gscSubLabel} icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop />
           <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop />
         </div>
 
@@ -1413,6 +1415,7 @@ export default function Dashboard() {
     </div>
   )
 }
+
 
 
 
