@@ -5,7 +5,7 @@ import {
   faMagnifyingGlass, faArrowsRotate, faPlay, faClock, faExternalLink, faPenToSquare,
   faMagnifyingGlassChart, faCircleXmark, faTriangleExclamation, faCircleCheck,
   faCamera, faShareNodes, faEnvelope, faChevronLeft, faChevronRight, faChevronDown,
-  faAlignLeft, faAlignCenter, faAlignRight, faCircleStop,
+  faAlignLeft, faAlignCenter, faAlignRight, faCircleStop, faPaperclip,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
@@ -1447,6 +1447,7 @@ export default function SiteAudit() {
 
     autoTable(doc, {
       startY: 36,
+      tableWidth: 'auto',
 
       head: [[
         'S.No',
@@ -1468,37 +1469,43 @@ export default function SiteAudit() {
         fontSize: 5.5,
         cellPadding: 1.5,
         overflow: 'linebreak',
+        cellWidth: 'wrap',
         valign: 'top',
+        minCellHeight: 6,
       },
 
       headStyles: {
         fontStyle: 'bold',
+        overflow: 'linebreak',
       },
 
       columnStyles: {
         0: { cellWidth: 9, halign: 'center' },
         1: { cellWidth: 12, halign: 'center' },
-        2: { cellWidth: 45 },
-        3: { cellWidth: 37 },
-        4: { cellWidth: 48 },
-        5: { cellWidth: 35 },
-        6: { cellWidth: 42 },
+        2: { cellWidth: 45, overflow: 'linebreak' },
+        3: { cellWidth: 37, overflow: 'linebreak' },
+        4: { cellWidth: 48, overflow: 'linebreak' },
+        5: { cellWidth: 35, overflow: 'linebreak' },
+        6: { cellWidth: 42, overflow: 'linebreak' },
         7: { cellWidth: 13, halign: 'right' },
         8: { cellWidth: 15, halign: 'right' },
       },
 
+      rowPageBreak: 'auto',
+      horizontalPageBreak: true,
+      horizontalPageBreakRepeat: 0,
+
       margin: {
-        top: 36,
+        top: 14,
         left: 8,
         right: 8,
         bottom: 12,
       },
 
-      didDrawPage: (data) => {
+      didDrawPage: () => {
         const pageNumber = doc.internal.getNumberOfPages()
 
         doc.setFontSize(7)
-
         doc.text(
           `Page ${pageNumber}`,
           doc.internal.pageSize.getWidth() - 20,
@@ -2410,9 +2417,26 @@ export default function SiteAudit() {
             title="Send Audit Summary Email"
             width={480}
             footer={
-              <div style={{ display: 'flex', gap: 8 }}>
-                <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Cancel</Button>
-                <Button variant="primary" loading={sendingEmail} onClick={sendSummaryEmail}>Send Email</Button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ minHeight: 20 }}>
+                  {includeFullReport && (
+                    <span style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      fontSize: 12, color: '#9A3412', background: '#FFF7ED',
+                      border: '1px solid #FDBA74', borderRadius: 999,
+                      padding: '4px 10px', fontWeight: 600,
+                    }}>
+                      <FontAwesomeIcon icon={faPaperclip} style={{ fontSize: 11 }} />
+                      PDF attached
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button variant="secondary" onClick={() => setShowEmailModal(false)}>Cancel</Button>
+                  <Button variant="primary" loading={sendingEmail} onClick={sendSummaryEmail}>
+                    {includeFullReport ? 'Send Email with PDF' : 'Send Email'}
+                  </Button>
+                </div>
               </div>
             }
           >
@@ -2495,11 +2519,51 @@ export default function SiteAudit() {
                   onInput={(e) => { if (!isProgrammatic.current) setEmailMessage(e.currentTarget.innerHTML) }}
                 />
               </div>
-              <label style={{ fontSize: 14, fontWeight: 500, marginTop: 6 }}>
-                <input type="checkbox" checked={includeFullReport}
-                  onChange={(e) => setIncludeFullReport(e.target.checked)} style={{ marginRight: 6 }} />
+              <label style={{
+                fontSize: 14, fontWeight: 500, marginTop: 6,
+                display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={includeFullReport}
+                  onChange={(e) => setIncludeFullReport(e.target.checked)}
+                />
                 Include full audit report
+                {includeFullReport && (
+                  <FontAwesomeIcon icon={faPaperclip} style={{ color: '#EA580C', fontSize: 13 }} title="PDF will be attached" />
+                )}
               </label>
+
+              {includeFullReport && (
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 10,
+                  marginTop: -4,
+                  padding: '10px 12px',
+                  background: '#FFF7ED',
+                  border: '1px solid #FDBA74',
+                  borderRadius: 8,
+                }}>
+                  <FontAwesomeIcon icon={faPaperclip} style={{ color: '#EA580C', marginTop: 2, flexShrink: 0 }} />
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#9A3412' }}>
+                      PDF attachment will be included
+                    </div>
+                    <div style={{ fontSize: 12, color: '#C2410C', marginTop: 2, wordBreak: 'break-all' }}>
+                      {`devndespro-seo-audit-${(() => {
+                        try {
+                          return new URL(siteUrl || auditData?.url || '')
+                            .hostname
+                            .replace(/^www\./, '')
+                        } catch {
+                          return siteName || 'report'
+                        }
+                      })()}.pdf`}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </Modal>
 

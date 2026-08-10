@@ -22,6 +22,85 @@ function getDataForSEOAuth() {
   return Buffer.from(`${login}:${password}`).toString('base64')
 }
 
+const DFS_LOCATIONS = {
+  2840: { code: 2840, name: 'United States', language: 'English' },
+  2826: { code: 2826, name: 'United Kingdom', language: 'English' },
+  2578: { code: 2578, name: 'Norway', language: 'English' },
+  2036: { code: 2036, name: 'Australia', language: 'English' },
+  2124: { code: 2124, name: 'Canada', language: 'English' },
+  2276: { code: 2276, name: 'Germany', language: 'German' },
+  2356: { code: 2356, name: 'India', language: 'English' },
+}
+
+const QUESTION_RE = /^(who|what|where|when|why|how|which|is|are|can|do|does|did|will|should|vs|versus)\b|\?$/i
+
+function difficultyLabel(score) {
+  if (score == null || Number.isNaN(Number(score))) return 'Medium'
+  const n = Number(score)
+  if (n < 33) return 'Easy'
+  if (n < 66) return 'Medium'
+  return 'Hard'
+}
+
+function capitalizeIntent(intent) {
+  if (!intent || typeof intent !== 'string') return null
+  return intent.charAt(0).toUpperCase() + intent.slice(1).toLowerCase()
+}
+
+function mapDfsKeywordItem(raw) {
+  const data = raw?.keyword_data || raw || {}
+  const info = data.keyword_info || {}
+  const props = data.keyword_properties || {}
+  const intentInfo = data.search_intent_info || {}
+  const kd = props.keyword_difficulty != null ? Number(props.keyword_difficulty) : null
+  const monthly = Array.isArray(info.monthly_searches) ? info.monthly_searches : []
+  const trend = monthly
+    .slice()
+    .sort((a, b) => (a.year - b.year) || (a.month - b.month))
+    .slice(-12)
+    .map((m) => m.search_volume ?? 0)
+
+  const keyword = data.keyword || raw?.keyword || ''
+  return {
+    keyword,
+    volume: info.search_volume ?? 0,
+    difficulty: difficultyLabel(kd),
+    difficultyScore: kd ?? 0,
+    cpc: info.cpc ?? 0,
+    competition: info.competition ?? 0,
+    competitionLevel: info.competition_level || null,
+    trend,
+    intent: capitalizeIntent(intentInfo.main_intent),
+    parentTopic: props.core_keyword || null,
+    categories: Array.isArray(info.categories) ? info.categories.slice(0, 3) : [],
+    isQuestion: QUESTION_RE.test(String(keyword).trim()),
+  }
+}
+
+function dedupeSuggestions(list) {
+  const seen = new Set()
+  const out = []
+  for (const item of list) {
+    const key = String(item.keyword || '').toLowerCase().trim()
+    if (!key || seen.has(key)) continue
+    seen.add(key)
+    out.push(item)
+  }
+  return out
+}
+
+async function dfsPost(authHeader, path, payload) {
+  const { data } = await axios.post(
+    `https://api.dataforseo.com/v3/${path}`,
+    [payload],
+    {
+      headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
+      timeout: 25000,
+    }
+  )
+  return data?.tasks?.[0]?.result?.[0] || null
+}
+
 router.get('/:siteId/keywords', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM keywords WHERE site_id=$1 ORDER BY created_at ASC', [req.siteId])
   res.json(rows)
@@ -104,61 +183,134 @@ router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) =
       'SELECT query, results, searched_at FROM keyword_searches WHERE site_id=$1 ORDER BY searched_at DESC LIMIT 1',
       [req.siteId]
     )
-    if (!rows.length) return res.json({ query: '', suggestions: [] })
-    res.json({ query: rows[0].query, suggestions: rows[0].results, searchedAt: rows[0].searched_at })
+    if (!rows.length) return res.json({ query: '', suggestions: [], matching: [], related: [], questions: [] })
+
+    const results = rows[0].results
+    // New shape: { suggestions, matching, related, questions, meta }
+    if (results && typeof results === 'object' && !Array.isArray(results)) {
+      return res.json({
+        query: rows[0].query,
+        suggestions: results.suggestions || results.matching || [],
+        matching: results.matching || results.suggestions || [],
+        related: results.related || [],
+        questions: results.questions || [],
+        meta: results.meta || null,
+        searchedAt: rows[0].searched_at,
+      })
+    }
+
+    // Legacy shape: bare array
+    const list = Array.isArray(results) ? results : []
+    res.json({
+      query: rows[0].query,
+      suggestions: list,
+      matching: list,
+      related: [],
+      questions: list.filter((s) => QUESTION_RE.test(String(s.keyword || '').trim())),
+      searchedAt: rows[0].searched_at,
+    })
   } catch (e) {
-    res.json({ query: '', suggestions: [] })
+    res.json({ query: '', suggestions: [], matching: [], related: [], questions: [] })
   }
 })
 
-// DataForSEO keyword suggestions with real volume + difficulty
+// DataForSEO keyword research: matching terms + related + questions (vendor-style)
 router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req, res) => {
-  const { keyword } = req.body
+  const keyword = typeof req.body?.keyword === 'string' ? req.body.keyword.trim() : ''
   if (!keyword) return res.status(400).json({ error: 'keyword required' })
 
   const authHeader = getDataForSEOAuth()
   if (!authHeader) return res.status(500).json({ error: 'DataForSEO not configured' })
 
+  const locationCode = Number(req.body?.locationCode) || 2840
+  const location = DFS_LOCATIONS[locationCode] || DFS_LOCATIONS[2840]
+  const languageName =
+    typeof req.body?.languageName === 'string' && req.body.languageName.trim()
+      ? req.body.languageName.trim()
+      : location.language
+  const limit = Math.min(Math.max(parseInt(req.body?.limit || 50, 10) || 50, 10), 100)
+
   try {
-    const { data } = await axios.post(
-      'https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_suggestions/live',
-      [{
-        keyword,
-        language_name: 'English',
-        location_code: 2840,
-        limit: 10,
-        include_serp_info: false,
-        include_seed_keyword: true,
-      }],
-      {
-        headers: { 'Authorization': `Basic ${authHeader}`, 'Content-Type': 'application/json' },
-        timeout: 15000,
-      }
+    const basePayload = {
+      keyword,
+      language_name: languageName,
+      location_code: location.code,
+      include_serp_info: false,
+      include_seed_keyword: true,
+    }
+
+    const [matchingResult, relatedResult, questionResult] = await Promise.all([
+      dfsPost(authHeader, 'dataforseo_labs/google/keyword_suggestions/live', {
+        ...basePayload,
+        limit,
+        order_by: ['keyword_info.search_volume,desc'],
+      }),
+      dfsPost(authHeader, 'dataforseo_labs/google/related_keywords/live', {
+        ...basePayload,
+        limit: Math.min(limit, 72),
+        depth: 2,
+        order_by: ['keyword_data.keyword_info.search_volume,desc'],
+      }).catch((err) => {
+        console.warn('DataForSEO related keywords failed:', err.response?.data || err.message)
+        return null
+      }),
+      dfsPost(authHeader, 'dataforseo_labs/google/keyword_suggestions/live', {
+        ...basePayload,
+        limit: Math.min(limit, 50),
+        order_by: ['keyword_info.search_volume,desc'],
+        filters: [
+          ['keyword', 'regex', '^(who|what|where|when|why|how|which|is|are|can|do|does|did|will|should)\\b'],
+        ],
+      }).catch((err) => {
+        console.warn('DataForSEO question keywords failed:', err.response?.data || err.message)
+        return null
+      }),
+    ])
+
+    const matching = dedupeSuggestions(
+      (matchingResult?.items || []).map(mapDfsKeywordItem)
     )
+    const related = dedupeSuggestions(
+      (relatedResult?.items || []).map(mapDfsKeywordItem)
+    )
+    const fromQuestionsEndpoint = (questionResult?.items || []).map(mapDfsKeywordItem)
+    const questions = dedupeSuggestions([
+      ...fromQuestionsEndpoint,
+      ...matching.filter((s) => s.isQuestion),
+      ...related.filter((s) => s.isQuestion),
+    ]).sort((a, b) => (b.volume || 0) - (a.volume || 0))
 
-    const items = data?.tasks?.[0]?.result?.[0]?.items || []
-    const suggestions = items.map(item => ({
-      keyword: item.keyword,
-      volume: item.keyword_info?.search_volume || 0,
-      difficulty: item.keyword_properties?.keyword_difficulty
-        ? item.keyword_properties.keyword_difficulty < 33 ? 'Easy'
-          : item.keyword_properties.keyword_difficulty < 66 ? 'Medium' : 'Hard'
-        : 'Medium',
-      difficultyScore: item.keyword_properties?.keyword_difficulty || 0,
-      cpc: item.keyword_info?.cpc || 0,
-      competition: item.keyword_info?.competition || 0,
-      trend: (item.keyword_info?.monthly_searches || []).slice(-6).map(m => m.search_volume),
-    }))
+    // Backward-compatible flat list (matching first)
+    const suggestions = matching.length ? matching : related
 
-    // Save search to DB (upsert - keep only latest per site)
+    const payload = {
+      suggestions,
+      matching,
+      related,
+      questions,
+      meta: {
+        query: keyword,
+        locationCode: location.code,
+        locationName: location.name,
+        languageName,
+        limit,
+        counts: {
+          matching: matching.length,
+          related: related.length,
+          questions: questions.length,
+        },
+      },
+      source: 'dataforseo',
+    }
+
     await pool.query(
       `INSERT INTO keyword_searches (site_id, query, results)
        VALUES ($1, $2, $3)
        ON CONFLICT (site_id) DO UPDATE SET query=$2, results=$3, searched_at=NOW()`,
-      [req.siteId, keyword, JSON.stringify(suggestions)]
+      [req.siteId, keyword, JSON.stringify(payload)]
     )
 
-    res.json({ suggestions, source: 'dataforseo' })
+    res.json(payload)
   } catch (e) {
     console.error('DataForSEO suggest error:', e.response?.data || e.message)
     res.status(500).json({ error: 'DataForSEO request failed' })

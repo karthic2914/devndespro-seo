@@ -35,6 +35,7 @@ router.post('/send-summary', auth, async (req, res) => {
     await sendSummaryEmail({ to, subject, message, fullReport })
     res.json({ ok: true })
   } catch (e) {
+    console.error('SEND SUMMARY EMAIL ERROR:', e)
     res.status(500).json({ error: 'Failed to send email', details: e.message })
   }
 })

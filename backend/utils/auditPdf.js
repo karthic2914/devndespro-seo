@@ -1,6 +1,6 @@
 const PDFDocument = require('pdfkit')
 
-const AUDIT_PDF_VERSION = 'premium-v2'
+const AUDIT_PDF_VERSION = 'premium-v4'
 
 const CHECK_GUIDANCE = {
   content: {
@@ -224,6 +224,7 @@ function buildAuditPdfBuffer(report) {
       const doc = new PDFDocument({
         size: 'A4',
         margin: 42,
+        bufferPages: true,
         info: {
           Title: 'SEO Audit Report',
           Author: 'Devndespro',
@@ -280,18 +281,46 @@ function buildAuditPdfBuffer(report) {
           .replace(/^www\./, '')
       } catch {}
 
+      function pageBottom() {
+        return doc.page.height - doc.page.margins.bottom
+      }
+
+      function contentWidth() {
+        return doc.page.width - doc.page.margins.left - doc.page.margins.right
+      }
+
+      function usablePageHeight() {
+        return pageBottom() - doc.page.margins.top
+      }
+
       function ensureSpace(height = 70) {
-        if (doc.y + height > doc.page.height - 55) {
+        // Keep whole blocks on one page when they fit; avoid drawing past the bottom.
+        const needed = Math.min(height, usablePageHeight())
+        if (doc.y + needed > pageBottom()) {
           doc.addPage()
         }
+      }
+
+      function measureTextHeight(text, font = 'Helvetica', size = 9, width = contentWidth()) {
+        doc.font(font).fontSize(size)
+        return doc.heightOfString(String(text || ''), { width })
+      }
+
+      function finishBlock(startY, minHeight = 0, gap = 10) {
+        // If text flowed onto a new page, doc.y resets near the top — never jump back.
+        if (doc.y < startY) {
+          doc.y += gap
+          return
+        }
+        doc.y = Math.max(doc.y, startY + minHeight) + gap
       }
 
       function divider() {
         doc
           .strokeColor('#E5E7EB')
           .lineWidth(1)
-          .moveTo(42, doc.y)
-          .lineTo(doc.page.width - 42, doc.y)
+          .moveTo(doc.page.margins.left, doc.y)
+          .lineTo(doc.page.width - doc.page.margins.right, doc.y)
           .stroke()
       }
 
@@ -362,25 +391,27 @@ function buildAuditPdfBuffer(report) {
             width: width - 16,
             align: 'center',
           })
+
+        doc.x = doc.page.margins.left
       }
 
       function progressBar(label, value) {
         ensureSpace(32)
 
-        const x = doc.x
+        const x = doc.page.margins.left
         const y = doc.y
-        const width = 250
+        const width = Math.min(250, contentWidth() - 60)
 
         doc
           .font('Helvetica-Bold')
           .fontSize(9)
           .fillColor('#334155')
-          .text(label, x, y)
+          .text(label, x, y, { width: width - 10 })
 
         doc
           .font('Helvetica')
           .fillColor('#64748B')
-          .text(String(value) + '%', x + 260, y)
+          .text(String(value) + '%', x + width + 10, y)
 
         doc
           .roundedRect(x, y + 14, width, 7, 4)
@@ -402,153 +433,227 @@ function buildAuditPdfBuffer(report) {
                 : '#DC2626'
           )
 
+        doc.x = x
         doc.y = y + 30
       }
 
       function drawPriority(item, index) {
-        ensureSpace(92)
-
         const guidance = getGuidance(item)
+        const width = contentWidth()
+        const textWidth = width - 24
+        const title = String(index + 1) + '. ' + guidance.title
+        const metaText =
+          'Impact: ' +
+          String(item?.impact || 'Medium') +
+          '   |   Effort: ' +
+          guidance.effort +
+          '   |   ' +
+          String(item?.category || 'SEO')
 
-        const x = doc.x
+        const titleH = measureTextHeight(title, 'Helvetica-Bold', 10, textWidth)
+        const metaH = measureTextHeight(metaText, 'Helvetica', 8.5, textWidth)
+        const fixLabelH = measureTextHeight('Recommended action', 'Helvetica-Bold', 9, textWidth)
+        const fixH = measureTextHeight(guidance.fix, 'Helvetica', 9, textWidth)
+        const boxHeight = 12 + titleH + 6 + metaH + 8 + fixLabelH + 2 + fixH + 14
+
+        ensureSpace(boxHeight + 10)
+
+        const x = doc.page.margins.left
         const y = doc.y
-        const width = 505
+        const useCard = boxHeight <= usablePageHeight() - 4
 
-        doc
-          .roundedRect(x, y, width, 82, 8)
-          .fill('#F8FAFC')
+        if (useCard) {
+          doc.roundedRect(x, y, width, boxHeight, 8).fill('#F8FAFC')
+        }
 
         doc
           .font('Helvetica-Bold')
           .fontSize(10)
           .fillColor('#111827')
-          .text(
-            String(index + 1) + '. ' + guidance.title,
-            x + 12,
-            y + 10,
-            { width: width - 24 }
-          )
+          .text(title, x + 12, y + 10, { width: textWidth })
 
         doc
           .font('Helvetica')
           .fontSize(8.5)
           .fillColor('#64748B')
-          .text(
-            'Impact: ' + String(item?.impact || 'Medium') +
-            '   |   Effort: ' + guidance.effort +
-            '   |   ' + String(item?.category || 'SEO'),
-            x + 12,
-            y + 28,
-            { width: width - 24 }
-          )
+          .text(metaText, x + 12, doc.y + 4, { width: textWidth })
 
         doc
           .font('Helvetica-Bold')
+          .fontSize(9)
           .fillColor('#166534')
-          .text('Recommended action: ', x + 12, y + 46, {
-            continued: true,
-          })
+          .text('Recommended action', x + 12, doc.y + 6, { width: textWidth })
 
         doc
           .font('Helvetica')
+          .fontSize(9)
           .fillColor('#334155')
-          .text(guidance.fix, {
-            width: width - 24,
-          })
+          .text(guidance.fix, x + 12, doc.y + 2, { width: textWidth })
 
-        doc.y = y + 91
+        doc.x = x
+        finishBlock(y, useCard ? boxHeight : 0, 10)
       }
 
       function drawQuickWin(item, index) {
-        ensureSpace(52)
-
         const guidance = getGuidance(item)
+        const width = contentWidth()
+        const title = 'QUICK WIN ' + String(index + 1) + '   ' + guidance.title
+        const titleH = measureTextHeight(title, 'Helvetica-Bold', 10, width)
+        const fixH = measureTextHeight(guidance.fix, 'Helvetica', 8.8, width)
+
+        ensureSpace(titleH + fixH + 18)
 
         doc
           .font('Helvetica-Bold')
           .fontSize(10)
           .fillColor('#166534')
-          .text('QUICK WIN ' + String(index + 1), {
-            continued: true,
-          })
+          .text('QUICK WIN ' + String(index + 1), { continued: true })
 
         doc
           .fillColor('#111827')
-          .text('   ' + guidance.title)
+          .text('   ' + guidance.title, { width })
 
         doc
           .font('Helvetica')
           .fontSize(8.8)
           .fillColor('#475569')
-          .text(guidance.fix)
+          .text(guidance.fix, { width })
 
         doc.moveDown(0.5)
       }
 
-function drawIssue(item) {
-  const guidance = getGuidance(item)
-  const status = String(item?.status || 'unknown').toLowerCase()
+      function drawIssue(item) {
+        const guidance = getGuidance(item)
+        const status = String(item?.status || 'unknown').toLowerCase()
 
-  let statusLabel = 'REVIEW'
-  let statusColor = '#475569'
-  if (status === 'error') { statusLabel = 'CRITICAL'; statusColor = '#DC2626' }
-  else if (status === 'warning') { statusLabel = 'WARNING'; statusColor = '#B45309' }
-  else if (status === 'pass') { statusLabel = 'PASS'; statusColor = '#15803D' }
+        let statusLabel = 'REVIEW'
+        let statusColor = '#475569'
+        if (status === 'error') {
+          statusLabel = 'CRITICAL'
+          statusColor = '#DC2626'
+        } else if (status === 'warning') {
+          statusLabel = 'WARNING'
+          statusColor = '#B45309'
+        } else if (status === 'pass') {
+          statusLabel = 'PASS'
+          statusColor = '#15803D'
+        }
 
-  const foundText = cleanAuditMessage(item?.message)
-  const textWidth = 470
+        const foundText = cleanAuditMessage(item?.message)
+        const width = contentWidth()
+        const textWidth = width - 24
+        const metaText =
+          String(item?.category || 'SEO') +
+          ' | Impact: ' +
+          String(item?.impact || 'N/A') +
+          ' | Effort: ' +
+          guidance.effort
 
-  // Measure actual heights needed for each text block
-  doc.font('Helvetica').fontSize(8)
-  const foundH = doc.heightOfString('What we found: ' + foundText, { width: textWidth })
-  const whyH = doc.heightOfString('Why it matters: ' + guidance.why, { width: textWidth })
-  const fixH = doc.heightOfString('Recommended action: ' + guidance.fix, { width: textWidth })
+        // Measure with the fonts used when drawing (no continued:true mismatch).
+        const titleH = measureTextHeight(guidance.title, 'Helvetica-Bold', 11, textWidth)
+        const metaH = measureTextHeight(metaText, 'Helvetica', 8, textWidth)
+        const foundLabelH = measureTextHeight('What we found', 'Helvetica-Bold', 8.7, textWidth)
+        const foundH = measureTextHeight(foundText, 'Helvetica', 8.7, textWidth)
+        const whyLabelH = measureTextHeight('Why it matters', 'Helvetica-Bold', 8.7, textWidth)
+        const whyH = measureTextHeight(guidance.why, 'Helvetica', 8.7, textWidth)
+        const fixLabelH = measureTextHeight('Recommended action', 'Helvetica-Bold', 8.7, textWidth)
+        const fixH = measureTextHeight(guidance.fix, 'Helvetica', 8.7, textWidth)
 
-  const headerH = 59   // space for status label + title + meta line
-  const padding = 16
-  const boxHeight = headerH + foundH + whyH + fixH + padding
+        const boxHeight =
+          10 +
+          11 +
+          4 +
+          titleH +
+          4 +
+          metaH +
+          8 +
+          foundLabelH +
+          2 +
+          foundH +
+          6 +
+          whyLabelH +
+          2 +
+          whyH +
+          6 +
+          fixLabelH +
+          2 +
+          fixH +
+          14
 
-  ensureSpace(boxHeight + 12)
+        ensureSpace(Math.min(boxHeight + 12, usablePageHeight()))
 
-  const startY = doc.y
+        const x = doc.page.margins.left
+        const startY = doc.y
+        const useCard = boxHeight <= usablePageHeight() - 4
 
-  doc.roundedRect(doc.x, startY, 505, boxHeight, 8).fill('#FAFAFA')
+        if (useCard) {
+          doc.roundedRect(x, startY, width, boxHeight, 8).fill('#FAFAFA')
+        }
 
-  doc.fillColor(statusColor).font('Helvetica-Bold').fontSize(8)
-    .text(statusLabel, doc.x + 12, startY + 10)
+        doc
+          .fillColor(statusColor)
+          .font('Helvetica-Bold')
+          .fontSize(8)
+          .text(statusLabel, x + 12, startY + 10, { width: textWidth })
 
-  doc.font('Helvetica-Bold').fontSize(11).fillColor('#111827')
-    .text(guidance.title, doc.x + 12, startY + 26, { width: 470 })
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(11)
+          .fillColor('#111827')
+          .text(guidance.title, x + 12, doc.y + 4, { width: textWidth })
 
-  doc.font('Helvetica').fontSize(8).fillColor('#64748B')
-    .text(
-      String(item?.category || 'SEO') + ' | Impact: ' + String(item?.impact || 'N/A') + ' | Effort: ' + guidance.effort,
-      doc.x + 12, startY + 43
-    )
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#64748B')
+          .text(metaText, x + 12, doc.y + 4, { width: textWidth })
 
-  let cursorY = startY + 59
+        let cursorY = doc.y + 8
 
-  doc.font('Helvetica-Bold').fontSize(8.7).fillColor('#334155')
-    .text('What we found: ', doc.x + 12, cursorY, { continued: true })
-  doc.font('Helvetica').text(foundText, { width: textWidth })
-  cursorY = doc.y + 4
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(8.7)
+          .fillColor('#334155')
+          .text('What we found', x + 12, cursorY, { width: textWidth })
+        doc
+          .font('Helvetica')
+          .fillColor('#334155')
+          .text(foundText, x + 12, doc.y + 2, { width: textWidth })
 
-  doc.font('Helvetica-Bold').fillColor('#334155')
-    .text('Why it matters: ', doc.x + 12, cursorY, { continued: true })
-  doc.font('Helvetica').text(guidance.why, { width: textWidth })
-  cursorY = doc.y + 4
+        cursorY = doc.y + 6
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(8.7)
+          .fillColor('#334155')
+          .text('Why it matters', x + 12, cursorY, { width: textWidth })
+        doc
+          .font('Helvetica')
+          .fillColor('#334155')
+          .text(guidance.why, x + 12, doc.y + 2, { width: textWidth })
 
-  doc.font('Helvetica-Bold').fillColor('#166534')
-    .text('Recommended action: ', doc.x + 12, cursorY, { continued: true })
-  doc.font('Helvetica').fillColor('#334155').text(guidance.fix, { width: textWidth })
+        cursorY = doc.y + 6
+        doc
+          .font('Helvetica-Bold')
+          .fontSize(8.7)
+          .fillColor('#166534')
+          .text('Recommended action', x + 12, cursorY, { width: textWidth })
+        doc
+          .font('Helvetica')
+          .fillColor('#334155')
+          .text(guidance.fix, x + 12, doc.y + 2, { width: textWidth })
 
-  doc.y = startY + boxHeight + 12
-}
+        doc.x = x
+        finishBlock(startY, useCard ? boxHeight : 0, 12)
+      }
 
       function drawPassedCheck(item) {
-        ensureSpace(42)
-
         const guidance = getGuidance(item)
+        const width = contentWidth()
+        const titleH = measureTextHeight(guidance.title, 'Helvetica-Bold', 9.5, width)
+        const message = cleanAuditMessage(item?.message)
+        const messageH = measureTextHeight(message, 'Helvetica', 8.5, width)
+
+        ensureSpace(titleH + messageH + 16)
 
         doc
           .font('Helvetica-Bold')
@@ -558,13 +663,13 @@ function drawIssue(item) {
 
         doc
           .fillColor('#111827')
-          .text(guidance.title)
+          .text(guidance.title, { width })
 
         doc
           .font('Helvetica')
           .fontSize(8.5)
           .fillColor('#64748B')
-          .text(cleanAuditMessage(item?.message))
+          .text(message, { width })
 
         doc.moveDown(0.35)
       }
@@ -574,15 +679,20 @@ function drawIssue(item) {
       // PAGE 1 - EXECUTIVE DASHBOARD
       // ======================================================
 
+      const pageLeft = doc.page.margins.left
+      const pageInnerWidth = contentWidth()
+
       doc
-        .roundedRect(42, 42, 511, 92, 12)
+        .roundedRect(pageLeft, 42, pageInnerWidth, 92, 12)
         .fill('#111827')
 
       doc
         .font('Helvetica-Bold')
         .fontSize(24)
         .fillColor('#FFFFFF')
-        .text('SEO AUDIT REPORT', 62, 64)
+        .text('SEO AUDIT REPORT', pageLeft + 20, 64, {
+          width: pageInnerWidth - 40,
+        })
 
       doc
         .font('Helvetica')
@@ -590,7 +700,7 @@ function drawIssue(item) {
         .fillColor('#64748B')
         .text(
           'Report engine: ' + AUDIT_PDF_VERSION,
-          430,
+          pageLeft + pageInnerWidth - 125,
           116,
           {
             width: 105,
@@ -602,16 +712,22 @@ function drawIssue(item) {
         .font('Helvetica')
         .fontSize(11)
         .fillColor('#CBD5E1')
-        .text(hostname, 62, 96)
+        .text(hostname, pageLeft + 20, 96, {
+          width: pageInnerWidth - 40,
+        })
 
       if (reportUrl) {
         doc
           .fontSize(8)
           .fillColor('#94A3B8')
-          .text(reportUrl, 62, 114)
+          .text(reportUrl, pageLeft + 20, 114, {
+            width: pageInnerWidth - 150,
+            ellipsis: true,
+          })
       }
 
       doc.y = 154
+      doc.x = pageLeft
 
       doc
         .font('Helvetica-Bold')
@@ -623,42 +739,40 @@ function drawIssue(item) {
               ? '#F97316'
               : '#DC2626'
         )
-        .text(String(score) + '/100', {
+        .text(String(score) + '/100', pageLeft, doc.y, {
           align: 'center',
+          width: pageInnerWidth,
         })
 
       doc
         .font('Helvetica')
         .fontSize(10)
         .fillColor('#64748B')
-        .text('OVERALL SITE HEALTH', {
+        .text('OVERALL SITE HEALTH', pageLeft, doc.y, {
           align: 'center',
+          width: pageInnerWidth,
         })
 
       const cardY = doc.y + 18
-      const cardWidth = 115
+      const cardGap = 10
+      const cardWidth = (pageInnerWidth - cardGap * 3) / 4
 
-      metricCard(42, cardY, cardWidth, 'Critical Issues', critical.length, '#DC2626')
-      metricCard(172, cardY, cardWidth, 'Warnings', warnings.length, '#D97706')
-      metricCard(302, cardY, cardWidth, 'Passed Checks', passed.length, '#16A34A')
+      metricCard(pageLeft, cardY, cardWidth, 'Critical Issues', critical.length, '#DC2626')
+      metricCard(pageLeft + cardWidth + cardGap, cardY, cardWidth, 'Warnings', warnings.length, '#D97706')
+      metricCard(pageLeft + (cardWidth + cardGap) * 2, cardY, cardWidth, 'Passed Checks', passed.length, '#16A34A')
       metricCard(
-        432,
+        pageLeft + (cardWidth + cardGap) * 3,
         cardY,
-        121,
+        cardWidth,
         'Checks Performed',
         checks.length,
         '#2563EB'
       )
 
+      // Absolute-positioned metric cards leave doc.x near the right edge.
+      // Reset before flowing text so Executive Summary is not clipped.
+      doc.x = pageLeft
       doc.y = cardY + 84
-
-      doc
-        .font('Helvetica-Bold')
-        .fontSize(13)
-        .fillColor('#111827')
-        .text('Executive Summary')
-
-      doc.moveDown(0.4)
 
       let summaryText
 
@@ -673,28 +787,49 @@ function drawIssue(item) {
           'The audit identified several important areas that deserve attention. Addressing critical issues first, followed by high-impact warnings, can significantly improve the website’s technical SEO foundation and search readiness.'
       }
 
+      const auditDateText =
+        'Audit date: ' +
+        (
+          report?.scannedAt
+            ? new Date(report.scannedAt).toLocaleString('en-GB')
+            : new Date().toLocaleString('en-GB')
+        )
+
+      const summaryTitleH = measureTextHeight('Executive Summary', 'Helvetica-Bold', 13, pageInnerWidth)
+      const summaryBodyH = measureTextHeight(summaryText, 'Helvetica', 10, pageInnerWidth)
+      const summaryDateH = measureTextHeight(auditDateText, 'Helvetica', 8.5, pageInnerWidth)
+      const summaryBlockH = summaryTitleH + 8 + summaryBodyH + 14 + summaryDateH + 8
+
+      ensureSpace(summaryBlockH)
+
+      doc.x = pageLeft
+      doc
+        .font('Helvetica-Bold')
+        .fontSize(13)
+        .fillColor('#111827')
+        .text('Executive Summary', pageLeft, doc.y, {
+          width: pageInnerWidth,
+        })
+
       doc
         .font('Helvetica')
         .fontSize(10)
         .fillColor('#334155')
-        .text(summaryText, {
-          width: 505,
+        .text(summaryText, pageLeft, doc.y + 8, {
+          width: pageInnerWidth,
           lineGap: 3,
         })
 
-      doc.moveDown(1)
-
       doc
+        .font('Helvetica')
         .fontSize(8.5)
         .fillColor('#64748B')
-        .text(
-          'Audit date: ' +
-          (
-            report?.scannedAt
-              ? new Date(report.scannedAt).toLocaleString('en-GB')
-              : new Date().toLocaleString('en-GB')
-          )
-        )
+        .text(auditDateText, pageLeft, doc.y + 12, {
+          width: pageInnerWidth,
+        })
+
+      doc.x = pageLeft
+      doc.moveDown(0.4)
 
 
       // ======================================================
@@ -803,6 +938,8 @@ function drawIssue(item) {
 
         ensureSpace(22)
 
+        const snapWidth = contentWidth()
+
         doc
           .font('Helvetica-Bold')
           .fontSize(9)
@@ -814,7 +951,9 @@ function drawIssue(item) {
         doc
           .font('Helvetica')
           .fillColor('#111827')
-          .text(String(row[1]))
+          .text(String(row[1]), {
+            width: snapWidth,
+          })
       }
 
 
@@ -891,27 +1030,33 @@ function drawIssue(item) {
       for (const item of roadmap) {
         ensureSpace(70)
 
+        const x = doc.page.margins.left
+        const width = contentWidth()
         const y = doc.y
+        const textWidth = width - 24
+        const textH = measureTextHeight(item.text, 'Helvetica', 9, textWidth)
+        const boxHeight = Math.max(58, 27 + textH + 12)
 
         doc
-          .roundedRect(doc.x, y, 505, 58, 8)
+          .roundedRect(x, y, width, boxHeight, 8)
           .fill('#F8FAFC')
 
         doc
           .font('Helvetica-Bold')
           .fontSize(9)
           .fillColor('#2563EB')
-          .text(item.title, doc.x + 12, y + 10)
+          .text(item.title, x + 12, y + 10, { width: textWidth })
 
         doc
           .font('Helvetica')
           .fontSize(9)
           .fillColor('#334155')
-          .text(item.text, doc.x + 12, y + 27, {
-            width: 470,
+          .text(item.text, x + 12, y + 27, {
+            width: textWidth,
           })
 
-        doc.y = y + 68
+        doc.x = x
+        doc.y = y + boxHeight + 10
       }
 
 
@@ -923,10 +1068,12 @@ function drawIssue(item) {
 
       doc.moveDown(0.8)
 
+      const ctaX = doc.page.margins.left
+      const ctaWidth = contentWidth()
       const ctaY = doc.y
 
       doc
-        .roundedRect(doc.x, ctaY, 505, 100, 10)
+        .roundedRect(ctaX, ctaY, ctaWidth, 100, 10)
         .fill('#111827')
 
       doc
@@ -935,10 +1082,10 @@ function drawIssue(item) {
         .fillColor('#FFFFFF')
         .text(
           'Need help implementing these improvements?',
-          doc.x + 16,
+          ctaX + 16,
           ctaY + 16,
           {
-            width: 470,
+            width: ctaWidth - 32,
             align: 'center',
           }
         )
@@ -949,10 +1096,10 @@ function drawIssue(item) {
         .fillColor('#CBD5E1')
         .text(
           'Devndespro helps businesses with technical SEO, web development and AI-search optimisation.',
-          doc.x + 26,
+          ctaX + 26,
           ctaY + 42,
           {
-            width: 450,
+            width: ctaWidth - 52,
             align: 'center',
           }
         )
@@ -963,15 +1110,76 @@ function drawIssue(item) {
         .fillColor('#F97316')
         .text(
           'www.devndespro.com   |   seo.devndespro.com',
-          doc.x + 26,
+          ctaX + 26,
           ctaY + 72,
           {
-            width: 450,
+            width: ctaWidth - 52,
             align: 'center',
           }
         )
 
+      doc.x = ctaX
       doc.y = ctaY + 112
+
+      // Stamp footers onto existing pages.
+      // PDFKit auto-paginates if you write inside the bottom margin, so
+      // temporarily clear margins while drawing page numbers.
+      const pageRange = doc.bufferedPageRange()
+      const totalPages = pageRange.count
+
+      for (let i = 0; i < totalPages; i++) {
+        doc.switchToPage(pageRange.start + i)
+
+        const { width: pageWidth, height: pageHeight, margins } = doc.page
+        const left = margins.left
+        const usableWidth = pageWidth - margins.left - margins.right
+        const footerY = pageHeight - 28
+
+        const savedBottom = margins.bottom
+        const savedTop = margins.top
+        doc.page.margins.bottom = 0
+        doc.page.margins.top = 0
+
+        doc
+          .strokeColor('#E5E7EB')
+          .lineWidth(0.6)
+          .moveTo(left, footerY - 8)
+          .lineTo(left + usableWidth, footerY - 8)
+          .stroke()
+
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#94A3B8')
+          .text(
+            hostname + '  ·  SEO Audit Report',
+            left,
+            footerY,
+            {
+              width: usableWidth * 0.62,
+              align: 'left',
+              lineBreak: false,
+            }
+          )
+
+        doc
+          .font('Helvetica')
+          .fontSize(8)
+          .fillColor('#64748B')
+          .text(
+            'Page ' + (i + 1) + ' of ' + totalPages,
+            left + usableWidth * 0.62,
+            footerY,
+            {
+              width: usableWidth * 0.38,
+              align: 'right',
+              lineBreak: false,
+            }
+          )
+
+        doc.page.margins.bottom = savedBottom
+        doc.page.margins.top = savedTop
+      }
 
       doc.end()
 

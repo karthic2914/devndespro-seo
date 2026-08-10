@@ -1,4 +1,4 @@
-  import { useState, useEffect } from 'react'
+  import { useState, useEffect, useMemo } from 'react'
   import { useParams } from 'react-router-dom'
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
   import {
@@ -15,16 +15,77 @@
     { value: 'duckduckgo', label: 'DuckDuckGo' },
   ]
 
+  const RESEARCH_LOCATIONS = [
+    { code: 2578, name: 'Norway', language: 'English' },
+    { code: 2840, name: 'United States', language: 'English' },
+    { code: 2826, name: 'United Kingdom', language: 'English' },
+    { code: 2036, name: 'Australia', language: 'English' },
+    { code: 2124, name: 'Canada', language: 'English' },
+    { code: 2276, name: 'Germany', language: 'German' },
+    { code: 2356, name: 'India', language: 'English' },
+  ]
+
+  const RESEARCH_TABS = [
+    { id: 'matching', label: 'Matching terms' },
+    { id: 'related', label: 'Related' },
+    { id: 'questions', label: 'Questions' },
+  ]
+
   function DifficultyBar({ score }) {
     const color = score < 33 ? T.green : score < 66 ? T.amber : T.red
     const label = score < 33 ? 'Easy' : score < 66 ? 'Medium' : 'Hard'
     return (
       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <div style={{ flex: 1, height: 4, background: T.surface2, borderRadius: 99, overflow: 'hidden' }}>
-          <div style={{ width: `${score}%`, height: '100%', background: color, borderRadius: 99 }} />
+          <div style={{ width: `${Math.min(100, Math.max(0, score || 0))}%`, height: '100%', background: color, borderRadius: 99 }} />
         </div>
-        <span style={{ fontSize: 11, color, fontWeight: 700, minWidth: 36 }}>{label}</span>
+        <span style={{ fontSize: 11, color, fontWeight: 700, minWidth: 48 }}>{label} {score ?? 0}</span>
       </div>
+    )
+  }
+
+  function TrendSparkline({ values }) {
+    const pts = Array.isArray(values) ? values.filter((v) => Number.isFinite(Number(v))) : []
+    if (pts.length < 2) {
+      return <span style={{ fontSize: 11, color: T.muted }}>-</span>
+    }
+    const w = 56
+    const h = 18
+    const max = Math.max(...pts, 1)
+    const min = Math.min(...pts, 0)
+    const range = Math.max(max - min, 1)
+    const d = pts
+      .map((v, i) => {
+        const x = (i / (pts.length - 1)) * w
+        const y = h - ((Number(v) - min) / range) * (h - 2) - 1
+        return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`
+      })
+      .join(' ')
+    const up = pts[pts.length - 1] >= pts[0]
+    return (
+      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+        <path d={d} fill="none" stroke={up ? T.green : T.red} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  function IntentBadge({ intent }) {
+    if (!intent) return <span style={{ fontSize: 11, color: T.muted }}>-</span>
+    const key = String(intent).toLowerCase()
+    const styles = {
+      informational: { color: '#0369a1', bg: '#e0f2fe' },
+      commercial: { color: '#b45309', bg: '#fef3c7' },
+      transactional: { color: '#16a34a', bg: '#dcfce7' },
+      navigational: { color: '#7c3aed', bg: '#ede9fe' },
+    }
+    const s = styles[key] || { color: '#374151', bg: '#f3f4f6' }
+    return (
+      <span style={{
+        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+        background: s.bg, color: s.color, whiteSpace: 'nowrap', textTransform: 'capitalize',
+      }}>
+        {intent}
+      </span>
     )
   }
 
@@ -37,12 +98,12 @@
       diffScore = d === 'easy' ? 20 : d === 'medium' ? 50 : d === 'hard' ? 80 : 50
     }
     const vol = volume || 0
-    if (vol >= 500 && diffScore < 40) return { label: '\u{1F525} Quick Win', color: '#16a34a', bg: '#dcfce7' }
-    if (vol >= 1000 && diffScore < 66) return { label: '\u{1F4C8} High Value', color: '#0369a1', bg: '#e0f2fe' }
-    if (vol < 200 && diffScore < 40) return { label: '\u{1F3AF} Long Tail', color: '#7c3aed', bg: '#ede9fe' }
-    if (vol >= 500 && diffScore >= 66) return { label: '\u{1F4AA} High Competition', color: '#b45309', bg: '#fef3c7' }
-    if (vol < 100 && diffScore >= 50) return { label: '\u26A0\uFE0F Low Priority', color: '#6b7280', bg: '#f3f4f6' }
-    return { label: '\u{1F4CA} Standard', color: '#374151', bg: '#f9fafb' }
+    if (vol >= 500 && diffScore < 40) return { label: 'Quick Win', color: '#16a34a', bg: '#dcfce7', score: 90 }
+    if (vol >= 1000 && diffScore < 66) return { label: 'High Value', color: '#0369a1', bg: '#e0f2fe', score: 80 }
+    if (vol < 200 && diffScore < 40) return { label: 'Long Tail', color: '#7c3aed', bg: '#ede9fe', score: 70 }
+    if (vol >= 500 && diffScore >= 66) return { label: 'High Competition', color: '#b45309', bg: '#fef3c7', score: 40 }
+    if (vol < 100 && diffScore >= 50) return { label: 'Low Priority', color: '#6b7280', bg: '#f3f4f6', score: 20 }
+    return { label: 'Standard', color: '#374151', bg: '#f9fafb', score: 50 }
   }
 
   function OpportunityTag({ volume, difficulty }) {
@@ -55,6 +116,10 @@
         {tag.label}
       </span>
     )
+  }
+
+  function opportunityScore(s) {
+    return getOpportunityTag(s.volume, s.difficultyScore ?? s.difficulty).score
   }
 
   export default function Keywords() {
@@ -77,10 +142,36 @@
 
     const [dfsQuery, setDfsQuery] = useState('')
     const [dfsLoading, setDfsLoading] = useState(false)
-    const [dfsSuggestions, setDfsSuggestions] = useState([])
+    const [dfsMatching, setDfsMatching] = useState([])
+    const [dfsRelated, setDfsRelated] = useState([])
+    const [dfsQuestions, setDfsQuestions] = useState([])
+    const [dfsMeta, setDfsMeta] = useState(null)
+    const [researchTab, setResearchTab] = useState('matching')
+    const [researchLocation, setResearchLocation] = useState(2578)
+    const [researchLanguage, setResearchLanguage] = useState('English')
+    const [researchSort, setResearchSort] = useState('volume')
+    const [minVolume, setMinVolume] = useState(0)
+    const [researchFilter, setResearchFilter] = useState('')
     const [addedKeywords, setAddedKeywords] = useState(new Set())
     const [addingKeywords, setAddingKeywords] = useState(new Set())
+    const [bulkAdding, setBulkAdding] = useState(false)
     const [importingProjectKeywords, setImportingProjectKeywords] = useState(false)
+
+    const applyResearchPayload = (data, queryFallback = '') => {
+      const matching = data.matching || data.suggestions || []
+      const related = data.related || []
+      const questions = data.questions || []
+      setDfsMatching(matching)
+      setDfsRelated(related)
+      setDfsQuestions(questions)
+      setDfsMeta(data.meta || null)
+      if (data.meta?.locationCode) setResearchLocation(data.meta.locationCode)
+      if (data.meta?.languageName) setResearchLanguage(data.meta.languageName)
+      if (queryFallback || data.meta?.query) setDfsQuery(queryFallback || data.meta.query || '')
+      if (!matching.length && related.length) setResearchTab('related')
+      else if (!matching.length && !related.length && questions.length) setResearchTab('questions')
+      else setResearchTab('matching')
+    }
 
     const load = () =>
       api.get(`/sites/${siteId}/keywords`).then(r => {
@@ -94,33 +185,71 @@
       }).finally(() => setLoading(false))
 
     useEffect(() => {
-    load()
-    // Load last search from DB
-    api.get(`/sites/${siteId}/keywords/last-search`).then(r => {
-      if (r.data.suggestions?.length) {
-        setDfsSuggestions(r.data.suggestions)
-        setDfsQuery(r.data.query || '')
-      }
-    }).catch(() => {})
-  }, [siteId])
+      load()
+      api.get(`/sites/${siteId}/keywords/last-search`).then(r => {
+        const hasResults =
+          (r.data.matching || r.data.suggestions || []).length ||
+          (r.data.related || []).length ||
+          (r.data.questions || []).length
+        if (hasResults) applyResearchPayload(r.data, r.data.query || '')
+      }).catch(() => {})
+    }, [siteId])
 
     const searchDataForSEO = async () => {
       if (!dfsQuery.trim()) return
       setDfsLoading(true)
-      setDfsSuggestions([])
+      setDfsMatching([])
+      setDfsRelated([])
+      setDfsQuestions([])
+      setDfsMeta(null)
       try {
-        const { data } = await api.post(`/sites/${siteId}/keywords/dataforseo-suggest`, { keyword: dfsQuery.trim() })
-        setDfsSuggestions(data.suggestions || [])
-        if (!data.suggestions?.length) toast.error('No suggestions found for this keyword')
+        const loc = RESEARCH_LOCATIONS.find((l) => l.code === Number(researchLocation))
+        const { data } = await api.post(`/sites/${siteId}/keywords/dataforseo-suggest`, {
+          keyword: dfsQuery.trim(),
+          locationCode: Number(researchLocation) || 2840,
+          languageName: researchLanguage || loc?.language || 'English',
+          limit: 50,
+        })
+        applyResearchPayload(data, dfsQuery.trim())
+        const total =
+          (data.matching || data.suggestions || []).length +
+          (data.related || []).length +
+          (data.questions || []).length
+        if (!total) toast.error('No keyword ideas found for this seed')
       } catch (e) {
         toast.error(e.response?.data?.error || 'DataForSEO search failed')
       }
       setDfsLoading(false)
     }
 
-    const addDfsSuggestion = async (s) => {
+    const researchLists = { matching: dfsMatching, related: dfsRelated, questions: dfsQuestions }
+
+    const visibleResearch = useMemo(() => {
+      const list = researchLists[researchTab] || []
+      const q = researchFilter.trim().toLowerCase()
+      let rows = list.filter((s) => (s.volume || 0) >= Number(minVolume || 0))
+      if (q) rows = rows.filter((s) => String(s.keyword || '').toLowerCase().includes(q))
+      const sorted = [...rows]
+      sorted.sort((a, b) => {
+        if (researchSort === 'difficulty') return (a.difficultyScore || 0) - (b.difficultyScore || 0)
+        if (researchSort === 'cpc') return (b.cpc || 0) - (a.cpc || 0)
+        if (researchSort === 'opportunity') return opportunityScore(b) - opportunityScore(a)
+        if (researchSort === 'alpha') return String(a.keyword).localeCompare(String(b.keyword))
+        return (b.volume || 0) - (a.volume || 0)
+      })
+      return sorted
+    }, [dfsMatching, dfsRelated, dfsQuestions, researchTab, researchSort, minVolume, researchFilter])
+
+    const researchTotals = useMemo(() => {
+      const vol = visibleResearch.reduce((sum, s) => sum + (s.volume || 0), 0)
+      const kdVals = visibleResearch.map((s) => s.difficultyScore || 0)
+      const avgKd = kdVals.length ? Math.round(kdVals.reduce((a, b) => a + b, 0) / kdVals.length) : 0
+      return { count: visibleResearch.length, volume: vol, avgKd }
+    }, [visibleResearch])
+
+    const addDfsSuggestion = async (s, { silent = false } = {}) => {
       const key = s.keyword.toLowerCase().trim()
-      if (addedKeywords.has(key)) return
+      if (addedKeywords.has(key)) return false
       setAddingKeywords(prev => new Set([...prev, key]))
       try {
         await api.post(`/sites/${siteId}/keywords`, {
@@ -128,18 +257,42 @@
           difficulty: s.difficulty || 'Medium', position: null,
         })
         setAddedKeywords(prev => new Set([...prev, key]))
-        toast.success(`Added: ${s.keyword}`)
-        load()
+        if (!silent) toast.success(`Added: ${s.keyword}`)
+        if (!silent) load()
+        return true
       } catch (e) {
         const msg = e.response?.data?.error || ''
         if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
           setAddedKeywords(prev => new Set([...prev, key]))
-          toast('Already tracked', { icon: '\u2139\uFE0F' })
-        } else {
-          toast.error(msg || 'Failed to add keyword')
+          if (!silent) toast('Already tracked', { icon: '\u2139\uFE0F' })
+          return false
         }
+        if (!silent) toast.error(msg || 'Failed to add keyword')
+        return false
+      } finally {
+        setAddingKeywords(prev => { const n = new Set(prev); n.delete(key); return n })
       }
-      setAddingKeywords(prev => { const n = new Set(prev); n.delete(key); return n })
+    }
+
+    const addAllVisibleResearch = async () => {
+      const pending = visibleResearch.filter((s) => !addedKeywords.has(s.keyword.toLowerCase().trim()))
+      if (!pending.length) {
+        toast('All visible keywords are already tracked', { icon: '\u2139\uFE0F' })
+        return
+      }
+      setBulkAdding(true)
+      let added = 0
+      for (const s of pending.slice(0, 25)) {
+        const ok = await addDfsSuggestion(s, { silent: true })
+        if (ok) added += 1
+      }
+      setBulkAdding(false)
+      if (added > 0) {
+        toast.success(`Added ${added} keyword${added === 1 ? '' : 's'} to tracking`)
+        load()
+      } else {
+        toast('No new keywords were added', { icon: '\u2139\uFE0F' })
+      }
     }
 
     const enrichKeywords = async () => {
@@ -368,72 +521,207 @@
 
           {/* DataForSEO Keyword Research Panel */}
           <Card padding="1.25rem">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />
-              <strong style={{ fontSize: 14, color: T.text }}>Keyword Research</strong>
-              <span style={{ fontSize: 11, background: T.orangeDim, color: T.orange, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>DataForSEO</span>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />
+                <strong style={{ fontSize: 14, color: T.text }}>Keyword Research</strong>
+                <span style={{ fontSize: 11, background: T.orangeDim, color: T.orange, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>DataForSEO</span>
+              </div>
+              {dfsMeta?.locationName && (
+                <span style={{ fontSize: 11, color: T.muted }}>
+                  {dfsMeta.locationName} · {dfsMeta.languageName || researchLanguage}
+                </span>
+              )}
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
+
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <input
-                placeholder="Type a seed keyword (e.g. web design norway)"
+                placeholder="Seed keyword (e.g. web design norway)"
                 value={dfsQuery}
                 onChange={e => setDfsQuery(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && searchDataForSEO()}
-                style={{ flex: 1 }}
+                style={{ flex: 2, minWidth: 220 }}
               />
+              <select
+                value={researchLocation}
+                onChange={(e) => {
+                  const code = Number(e.target.value)
+                  setResearchLocation(code)
+                  const loc = RESEARCH_LOCATIONS.find((l) => l.code === code)
+                  if (loc) setResearchLanguage(loc.language)
+                }}
+                style={{ width: 160, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff', color: T.text2 }}
+              >
+                {RESEARCH_LOCATIONS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+              </select>
+              <select
+                value={researchLanguage}
+                onChange={(e) => setResearchLanguage(e.target.value)}
+                style={{ width: 130, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff', color: T.text2 }}
+              >
+                <option value="English">English</option>
+                <option value="Norwegian">Norwegian</option>
+                <option value="German">German</option>
+              </select>
               <OrangeBtn onClick={searchDataForSEO} disabled={dfsLoading || !dfsQuery.trim()}>
                 {dfsLoading
-                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />SearchingÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦</>
+                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Searching...</>
                   : <><FontAwesomeIcon icon={faMagnifyingGlass} style={{ marginRight: 6 }} />Search</>
                 }
               </OrangeBtn>
             </div>
 
-            {dfsSuggestions.length > 0 && (
-              <div style={{ marginTop: 12, border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px 80px 140px 70px 70px 90px', padding: '8px 12px', background: T.surface2, borderBottom: `1px solid ${T.border}` }}>
-                  {['Keyword', 'Opportunity', 'Volume', 'Difficulty', 'CPC', 'Comp.', ''].map(h => (
-                    <div key={h} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
-                  ))}
+            {(dfsMatching.length > 0 || dfsRelated.length > 0 || dfsQuestions.length > 0) && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', gap: 4, background: T.surface2, padding: 3, borderRadius: 10, border: `1px solid ${T.border}` }}>
+                    {RESEARCH_TABS.map((tab) => {
+                      const count = (researchLists[tab.id] || []).length
+                      const active = researchTab === tab.id
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setResearchTab(tab.id)}
+                          style={{
+                            border: 'none',
+                            background: active ? '#fff' : 'transparent',
+                            color: active ? T.text : T.muted,
+                            boxShadow: active ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                            borderRadius: 8,
+                            padding: '6px 12px',
+                            fontSize: 12,
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {tab.label}
+                          <span style={{ marginLeft: 6, color: active ? T.orange : T.muted }}>{count}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input
+                      placeholder="Filter keywords"
+                      value={researchFilter}
+                      onChange={(e) => setResearchFilter(e.target.value)}
+                      style={{ width: 150, fontSize: 12 }}
+                    />
+                    <select
+                      value={researchSort}
+                      onChange={(e) => setResearchSort(e.target.value)}
+                      style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, background: '#fff', color: T.text2 }}
+                    >
+                      <option value="volume">Sort: Volume</option>
+                      <option value="difficulty">Sort: KD (easy first)</option>
+                      <option value="opportunity">Sort: Opportunity</option>
+                      <option value="cpc">Sort: CPC</option>
+                      <option value="alpha">Sort: A-Z</option>
+                    </select>
+                    <select
+                      value={minVolume}
+                      onChange={(e) => setMinVolume(Number(e.target.value))}
+                      style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, background: '#fff', color: T.text2 }}
+                    >
+                      <option value={0}>Min vol: Any</option>
+                      <option value={10}>Min vol: 10+</option>
+                      <option value={50}>Min vol: 50+</option>
+                      <option value={100}>Min vol: 100+</option>
+                      <option value={500}>Min vol: 500+</option>
+                    </select>
+                    <OrangeBtn onClick={addAllVisibleResearch} disabled={bulkAdding || !visibleResearch.length}>
+                      {bulkAdding
+                        ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Adding...</>
+                        : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add top 25</>
+                      }
+                    </OrangeBtn>
+                  </div>
                 </div>
-                {dfsSuggestions.map((s, i) => {
-                  const key = s.keyword.toLowerCase().trim()
-                  const isAdded = addedKeywords.has(key)
-                  const isAdding = addingKeywords.has(key)
-                  return (
-                    <div key={s.keyword + i} style={{
-                      display: 'grid', gridTemplateColumns: '1fr 100px 80px 140px 70px 70px 90px',
-                      padding: '10px 12px', alignItems: 'center',
-                      borderBottom: i < dfsSuggestions.length - 1 ? `1px solid #F3F4F6` : 'none',
-                      background: isAdded ? '#F0FDF4' : '#fff',
-                    }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: T.text }}>{s.keyword}</div>
-                      <div><OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} /></div>
-                      <div style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: T.text2, fontWeight: 700 }}>
-                        {s.volume?.toLocaleString() || '-'}
-                      </div>
-                      <DifficultyBar score={s.difficultyScore || 0} />
-                      <div style={{ fontSize: 12, color: T.text2 }}>${s.cpc?.toFixed(2) || '0.00'}</div>
-                      <div style={{ fontSize: 12, color: T.text2 }}>{s.competition ? (s.competition * 100).toFixed(0) + '%' : '-'}</div>
-                      <div>
-                        {isAdded ? (
-                          <span style={{ fontSize: 11, color: T.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <FontAwesomeIcon icon={faCircleCheck} />Added
-                          </span>
-                        ) : (
-                          <button onClick={() => addDfsSuggestion(s)} disabled={isAdding} style={{
-                            background: isAdding ? T.surface2 : T.orangeDim, color: isAdding ? T.muted : T.orange,
-                            border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12,
-                            fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
-                          }}>
-                            {isAdding ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding...</> : <><FontAwesomeIcon icon={faPlus} />Add</>}
-                          </button>
-                        )}
-                      </div>
+
+                <div style={{
+                  display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 10, padding: '8px 12px',
+                  background: T.surface2, borderRadius: 8, border: `1px solid ${T.border}`, fontSize: 12, color: T.text2,
+                }}>
+                  <span>Showing <strong>{researchTotals.count}</strong></span>
+                  <span>Total volume <strong>{researchTotals.volume.toLocaleString()}</strong></span>
+                  <span>Avg KD <strong>{researchTotals.avgKd}</strong></span>
+                </div>
+
+                <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'auto' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                    gap: 8,
+                    padding: '8px 12px',
+                    background: T.surface2,
+                    borderBottom: `1px solid ${T.border}`,
+                    minWidth: 900,
+                  }}>
+                    {['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', ''].map((h) => (
+                      <div key={h || 'action'} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
+                    ))}
+                  </div>
+
+                  {visibleResearch.length === 0 ? (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', color: T.muted, fontSize: 13 }}>
+                      No keywords match this tab/filter. Try another tab or lower the min volume.
                     </div>
-                  )
-                })}
+                  ) : visibleResearch.map((s, i) => {
+                    const key = s.keyword.toLowerCase().trim()
+                    const isAdded = addedKeywords.has(key)
+                    const isAdding = addingKeywords.has(key)
+                    return (
+                      <div key={`${researchTab}-${s.keyword}-${i}`} style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                        gap: 8,
+                        padding: '10px 12px',
+                        alignItems: 'center',
+                        borderBottom: i < visibleResearch.length - 1 ? '1px solid #F3F4F6' : 'none',
+                        background: isAdded ? '#F0FDF4' : '#fff',
+                        minWidth: 900,
+                      }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.keyword}</div>
+                          {s.parentTopic && (
+                            <div style={{ fontSize: 10, color: T.muted, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              Parent: {s.parentTopic}
+                            </div>
+                          )}
+                        </div>
+                        <div><IntentBadge intent={s.intent} /></div>
+                        <div><OpportunityTag volume={s.volume} difficulty={s.difficultyScore || s.difficulty} /></div>
+                        <div style={{ fontSize: 13, fontFamily: 'DM Mono, monospace', color: T.text2, fontWeight: 700 }}>
+                          {s.volume?.toLocaleString() || '-'}
+                        </div>
+                        <TrendSparkline values={s.trend} />
+                        <DifficultyBar score={s.difficultyScore || 0} />
+                        <div style={{ fontSize: 12, color: T.text2 }}>${Number(s.cpc || 0).toFixed(2)}</div>
+                        <div style={{ fontSize: 12, color: T.text2 }}>
+                          {s.competition ? `${(s.competition * 100).toFixed(0)}%` : '-'}
+                        </div>
+                        <div>
+                          {isAdded ? (
+                            <span style={{ fontSize: 11, color: T.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <FontAwesomeIcon icon={faCircleCheck} />Added
+                            </span>
+                          ) : (
+                            <button onClick={() => addDfsSuggestion(s)} disabled={isAdding || bulkAdding} style={{
+                              background: isAdding ? T.surface2 : T.orangeDim, color: isAdding ? T.muted : T.orange,
+                              border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12,
+                              fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
+                              display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
+                            }}>
+                              {isAdding ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding...</> : <><FontAwesomeIcon icon={faPlus} />Add</>}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
           </Card>
@@ -481,8 +769,8 @@
                           <OpportunityTag volume={s.estimatedVolume} difficulty={s.difficulty} />
                         </div>
                         <div style={{ fontSize: 11, color: T.muted }}>
-                          {s.intent || 'Informational'} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ {s.difficulty || 'Medium'} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Vol ~{s.estimatedVolume || 0}
-                          {s.why ? ` ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${s.why}` : ''}
+                          {s.intent || 'Informational'} · {s.difficulty || 'Medium'} · Vol ~{s.estimatedVolume || 0}
+                          {s.why ? ` · ${s.why}` : ''}
                         </div>
                       </div>
                       {isAdded ? (
@@ -555,7 +843,7 @@
                 <div style={{ marginTop: 10 }}>
                   <OrangeBtn onClick={importFromProject} disabled={importingProjectKeywords}>
                     <FontAwesomeIcon icon={faBolt} style={{ marginRight: 6 }} />
-                    {importingProjectKeywords ? 'Importing from projectÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦' : 'Import from project data'}
+                    {importingProjectKeywords ? 'Importing from project...' : 'Import from project data'}
                   </OrangeBtn>
                 </div>
               </div>
