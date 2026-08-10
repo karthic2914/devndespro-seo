@@ -1,4 +1,6 @@
-﻿const PDFDocument = require('pdfkit')
+const PDFDocument = require('pdfkit')
+
+const AUDIT_PDF_VERSION = 'premium-v2'
 
 const CHECK_GUIDANCE = {
   content: {
@@ -211,6 +213,12 @@ function categoryScore(checks, category) {
 }
 
 function buildAuditPdfBuffer(report) {
+  console.log(
+    'AUDIT PDF GENERATOR:',
+    AUDIT_PDF_VERSION,
+    '| URL:',
+    report?.url || report?.crawl?.finalUrl || 'unknown'
+  )
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({
@@ -616,6 +624,20 @@ function buildAuditPdfBuffer(report) {
         .fontSize(24)
         .fillColor('#FFFFFF')
         .text('SEO AUDIT REPORT', 62, 64)
+
+      doc
+        .font('Helvetica')
+        .fontSize(7)
+        .fillColor('#64748B')
+        .text(
+          'Report engine: ' + AUDIT_PDF_VERSION,
+          430,
+          116,
+          {
+            width: 105,
+            align: 'right',
+          }
+        )
 
       doc
         .font('Helvetica')
