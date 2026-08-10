@@ -485,106 +485,65 @@ function buildAuditPdfBuffer(report) {
         doc.moveDown(0.5)
       }
 
-      function drawIssue(item) {
-        ensureSpace(142)
+function drawIssue(item) {
+  const guidance = getGuidance(item)
+  const status = String(item?.status || 'unknown').toLowerCase()
 
-        const status = String(item?.status || 'unknown').toLowerCase()
-        const guidance = getGuidance(item)
+  let statusLabel = 'REVIEW'
+  let statusColor = '#475569'
+  if (status === 'error') { statusLabel = 'CRITICAL'; statusColor = '#DC2626' }
+  else if (status === 'warning') { statusLabel = 'WARNING'; statusColor = '#B45309' }
+  else if (status === 'pass') { statusLabel = 'PASS'; statusColor = '#15803D' }
 
-        let statusLabel = 'REVIEW'
-        let statusColor = '#475569'
+  const foundText = cleanAuditMessage(item?.message)
+  const textWidth = 470
 
-        if (status === 'error') {
-          statusLabel = 'CRITICAL'
-          statusColor = '#DC2626'
-        } else if (status === 'warning') {
-          statusLabel = 'WARNING'
-          statusColor = '#B45309'
-        } else if (status === 'pass') {
-          statusLabel = 'PASS'
-          statusColor = '#15803D'
-        }
+  // Measure actual heights needed for each text block
+  doc.font('Helvetica').fontSize(8)
+  const foundH = doc.heightOfString('What we found: ' + foundText, { width: textWidth })
+  const whyH = doc.heightOfString('Why it matters: ' + guidance.why, { width: textWidth })
+  const fixH = doc.heightOfString('Recommended action: ' + guidance.fix, { width: textWidth })
 
-        const startY = doc.y
+  const headerH = 59   // space for status label + title + meta line
+  const padding = 16
+  const boxHeight = headerH + foundH + whyH + fixH + padding
 
-        doc
-          .roundedRect(doc.x, startY, 505, 128, 8)
-          .fill('#FAFAFA')
+  ensureSpace(boxHeight + 12)
 
-        doc
-          .fillColor(statusColor)
-          .font('Helvetica-Bold')
-          .fontSize(8)
-          .text(statusLabel, doc.x + 12, startY + 10)
+  const startY = doc.y
 
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(11)
-          .fillColor('#111827')
-          .text(
-            guidance.title,
-            doc.x + 12,
-            startY + 26,
-            { width: 470 }
-          )
+  doc.roundedRect(doc.x, startY, 505, boxHeight, 8).fill('#FAFAFA')
 
-        doc
-          .font('Helvetica')
-          .fontSize(8)
-          .fillColor('#64748B')
-          .text(
-            String(item?.category || 'SEO') +
-            ' | Impact: ' +
-            String(item?.impact || 'N/A') +
-            ' | Effort: ' +
-            guidance.effort,
-            doc.x + 12,
-            startY + 43
-          )
+  doc.fillColor(statusColor).font('Helvetica-Bold').fontSize(8)
+    .text(statusLabel, doc.x + 12, startY + 10)
 
-        doc
-          .font('Helvetica-Bold')
-          .fontSize(8.7)
-          .fillColor('#334155')
-          .text('What we found: ', doc.x + 12, startY + 59, {
-            continued: true,
-          })
+  doc.font('Helvetica-Bold').fontSize(11).fillColor('#111827')
+    .text(guidance.title, doc.x + 12, startY + 26, { width: 470 })
 
-        doc
-          .font('Helvetica')
-          .text(cleanAuditMessage(item?.message), {
-            width: 470,
-          })
+  doc.font('Helvetica').fontSize(8).fillColor('#64748B')
+    .text(
+      String(item?.category || 'SEO') + ' | Impact: ' + String(item?.impact || 'N/A') + ' | Effort: ' + guidance.effort,
+      doc.x + 12, startY + 43
+    )
 
-        doc
-          .font('Helvetica-Bold')
-          .fillColor('#334155')
-          .text('Why it matters: ', doc.x + 12, startY + 83, {
-            continued: true,
-          })
+  let cursorY = startY + 59
 
-        doc
-          .font('Helvetica')
-          .text(guidance.why, {
-            width: 470,
-          })
+  doc.font('Helvetica-Bold').fontSize(8.7).fillColor('#334155')
+    .text('What we found: ', doc.x + 12, cursorY, { continued: true })
+  doc.font('Helvetica').text(foundText, { width: textWidth })
+  cursorY = doc.y + 4
 
-        doc
-          .font('Helvetica-Bold')
-          .fillColor('#166534')
-          .text('Recommended action: ', doc.x + 12, startY + 106, {
-            continued: true,
-          })
+  doc.font('Helvetica-Bold').fillColor('#334155')
+    .text('Why it matters: ', doc.x + 12, cursorY, { continued: true })
+  doc.font('Helvetica').text(guidance.why, { width: textWidth })
+  cursorY = doc.y + 4
 
-        doc
-          .font('Helvetica')
-          .fillColor('#334155')
-          .text(guidance.fix, {
-            width: 470,
-          })
+  doc.font('Helvetica-Bold').fillColor('#166534')
+    .text('Recommended action: ', doc.x + 12, cursorY, { continued: true })
+  doc.font('Helvetica').fillColor('#334155').text(guidance.fix, { width: textWidth })
 
-        doc.y = startY + 140
-      }
+  doc.y = startY + boxHeight + 12
+}
 
       function drawPassedCheck(item) {
         ensureSpace(42)
