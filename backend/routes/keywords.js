@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
@@ -28,12 +28,60 @@ router.get('/:siteId/keywords', auth, verifySite, async (req, res) => {
 })
 
 router.post('/:siteId/keywords', auth, verifySite, async (req, res) => {
-  const { keyword, volume, difficulty, position } = req.body
-  const { rows } = await pool.query(
-    'INSERT INTO keywords (site_id, keyword, volume, difficulty, position) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-    [req.siteId, keyword, volume || 0, difficulty || 'Easy', position || null]
-  )
-  res.json(rows[0])
+  try {
+    const { keyword, volume, difficulty, position } = req.body
+
+    const normalizedKeyword =
+      typeof keyword === 'string'
+        ? keyword.trim().replace(/\s+/g, ' ')
+        : ''
+
+    if (!normalizedKeyword) {
+      return res.status(400).json({ error: 'Keyword is required' })
+    }
+
+    if (normalizedKeyword.length > 255) {
+      return res.status(400).json({ error: 'Keyword must be 255 characters or fewer' })
+    }
+
+    const volumeNumber = Number(volume)
+    const safeVolume =
+      Number.isFinite(volumeNumber) && volumeNumber >= 0
+        ? Math.round(volumeNumber)
+        : 0
+
+    const positionNumber = Number(position)
+    const safePosition =
+      position !== null &&
+      position !== undefined &&
+      position !== '' &&
+      Number.isFinite(positionNumber) &&
+      positionNumber >= 1
+        ? Math.round(positionNumber)
+        : null
+
+    const safeDifficulty =
+      typeof difficulty === 'string' && difficulty.trim()
+        ? difficulty.trim()
+        : 'Easy'
+
+    const { rows } = await pool.query(
+      `INSERT INTO keywords
+         (site_id, keyword, volume, difficulty, position)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING *`,
+      [req.siteId, normalizedKeyword, safeVolume, safeDifficulty, safePosition]
+    )
+
+    res.status(201).json(rows[0])
+  } catch (e) {
+    if (e.code === '23505') {
+      return res.status(409).json({ error: 'Keyword already tracked for this project' })
+    }
+
+    console.error('Add keyword failed:', e.message)
+    res.status(500).json({ error: 'Could not add keyword' })
+  }
 })
 
 router.put('/:siteId/keywords/:id', auth, verifySite, async (req, res) => {

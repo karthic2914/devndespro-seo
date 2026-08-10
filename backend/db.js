@@ -161,6 +161,49 @@ async function initDB() {
     ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
     ALTER TABLE keywords ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE keywords ADD COLUMN IF NOT EXISTS rank_state JSONB DEFAULT '{}'::jsonb;
+ALTER TABLE keywords ADD COLUMN IF NOT EXISTS rank_country VARCHAR(10) DEFAULT 'us';
+ALTER TABLE keywords ADD COLUMN IF NOT EXISTS rank_language VARCHAR(10) DEFAULT 'en';
+ALTER TABLE keywords ADD COLUMN IF NOT EXISTS rank_location VARCHAR(255);
+CREATE TABLE IF NOT EXISTS keyword_rankings (
+  id BIGSERIAL PRIMARY KEY,
+  keyword_id INTEGER NOT NULL REFERENCES keywords(id) ON DELETE CASCADE,
+  site_id INTEGER NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+
+  engine VARCHAR(30) NOT NULL DEFAULT 'google',
+  country VARCHAR(10) NOT NULL DEFAULT 'us',
+  language VARCHAR(10) NOT NULL DEFAULT 'en',
+  location VARCHAR(255),
+  device VARCHAR(20) NOT NULL DEFAULT 'desktop',
+
+  position INTEGER,
+  ranking_url TEXT,
+
+  previous_position INTEGER,
+  change INTEGER,
+  status VARCHAR(30) DEFAULT 'initial',
+
+  checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS keyword_rankings_keyword_id_idx
+  ON keyword_rankings(keyword_id);
+
+CREATE INDEX IF NOT EXISTS keyword_rankings_site_id_idx
+  ON keyword_rankings(site_id);
+
+CREATE INDEX IF NOT EXISTS keyword_rankings_lookup_idx
+  ON keyword_rankings(
+    keyword_id,
+    engine,
+    country,
+    language,
+    device,
+    checked_at DESC
+  );
+
+CREATE INDEX IF NOT EXISTS keyword_rankings_checked_at_idx
+  ON keyword_rankings(checked_at DESC);
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE actions ADD COLUMN IF NOT EXISTS site_id INTEGER;
@@ -181,6 +224,14 @@ async function initDB() {
     DROP INDEX IF EXISTS seo_metrics_site_id_uidx;
     CREATE UNIQUE INDEX IF NOT EXISTS seo_metrics_site_id_uidx ON seo_metrics(site_id);
     CREATE INDEX IF NOT EXISTS keywords_site_id_idx ON keywords(site_id);
+
+    UPDATE keywords
+    SET keyword = btrim(keyword)
+    WHERE keyword <> btrim(keyword);
+
+    CREATE UNIQUE INDEX IF NOT EXISTS keywords_site_keyword_uidx
+      ON keywords (site_id, lower(btrim(keyword)))
+      WHERE site_id IS NOT NULL;
     CREATE INDEX IF NOT EXISTS backlinks_site_id_idx ON backlinks(site_id);
     CREATE INDEX IF NOT EXISTS competitors_site_id_idx ON competitors(site_id);
     CREATE INDEX IF NOT EXISTS actions_site_id_idx ON actions(site_id);
@@ -309,3 +360,4 @@ CREATE INDEX IF NOT EXISTS cold_email_prospects_status_idx ON cold_email_prospec
 }
 
 module.exports = { initDB }
+

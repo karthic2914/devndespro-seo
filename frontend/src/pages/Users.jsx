@@ -9,7 +9,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, Button, PageHeader, Badge, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
 import api from '../utils/api'
-import toast from 'react-hot-toast'
+import toast from '../utils/toast'
 
 const STATUS_VARIANT = { pending: 'warning', accepted: 'success', granted: 'success', revoked: 'default' }
 

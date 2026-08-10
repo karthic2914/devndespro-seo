@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlug,
@@ -346,7 +346,7 @@ export default function Integrations() {
               {data?.ahrefs?.latest && (
                 <div style={{ marginTop: 10, fontSize: 12, color: T.text2 }}>
                   <FontAwesomeIcon icon={faCircleCheck} style={{ color: T.green, marginRight: 6 }} />
-                  Latest: DR {data.ahrefs.latest.dr} • Backlinks {data.ahrefs.latest.backlinks} • Ref Domains {data.ahrefs.latest.ref_domains}
+                  Latest: DR {data.ahrefs.latest.dr} â€¢ Backlinks {data.ahrefs.latest.backlinks} â€¢ Ref Domains {data.ahrefs.latest.ref_domains}
                 </div>
               )}
               {!data?.ahrefs?.latest && (

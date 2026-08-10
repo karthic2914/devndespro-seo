@@ -1,4 +1,4 @@
-﻿  import { useState, useEffect } from 'react'
+  import { useState, useEffect } from 'react'
   import { useParams } from 'react-router-dom'
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
   import {
@@ -7,7 +7,7 @@
   } from '@fortawesome/free-solid-svg-icons'
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
   import api from '../utils/api'
-  import toast from 'react-hot-toast'
+  import toast from '../utils/toast'
 
   const ENGINES = [
     { value: 'google', label: 'Google' },
@@ -37,12 +37,12 @@
       diffScore = d === 'easy' ? 20 : d === 'medium' ? 50 : d === 'hard' ? 80 : 50
     }
     const vol = volume || 0
-    if (vol >= 500 && diffScore < 40) return { label: '🔥 Quick Win', color: '#16a34a', bg: '#dcfce7' }
-    if (vol >= 1000 && diffScore < 66) return { label: '📈 High Value', color: '#0369a1', bg: '#e0f2fe' }
-    if (vol < 200 && diffScore < 40) return { label: '🎯 Long Tail', color: '#7c3aed', bg: '#ede9fe' }
-    if (vol >= 500 && diffScore >= 66) return { label: '💪 High Competition', color: '#b45309', bg: '#fef3c7' }
-    if (vol < 100 && diffScore >= 50) return { label: '⚠️ Low Priority', color: '#6b7280', bg: '#f3f4f6' }
-    return { label: '📊 Standard', color: '#374151', bg: '#f9fafb' }
+    if (vol >= 500 && diffScore < 40) return { label: '\u{1F525} Quick Win', color: '#16a34a', bg: '#dcfce7' }
+    if (vol >= 1000 && diffScore < 66) return { label: '\u{1F4C8} High Value', color: '#0369a1', bg: '#e0f2fe' }
+    if (vol < 200 && diffScore < 40) return { label: '\u{1F3AF} Long Tail', color: '#7c3aed', bg: '#ede9fe' }
+    if (vol >= 500 && diffScore >= 66) return { label: '\u{1F4AA} High Competition', color: '#b45309', bg: '#fef3c7' }
+    if (vol < 100 && diffScore >= 50) return { label: '\u26A0\uFE0F Low Priority', color: '#6b7280', bg: '#f3f4f6' }
+    return { label: '\u{1F4CA} Standard', color: '#374151', bg: '#f9fafb' }
   }
 
   function OpportunityTag({ volume, difficulty }) {
@@ -61,7 +61,7 @@
     const { siteId } = useParams()
     const [keywords, setKeywords] = useState([])
     const [loading, setLoading] = useState(true)
-    const [form, setForm] = useState({ keyword: '', volume: '', difficulty: 'Easy', position: '' })
+    const [form, setForm] = useState({ keyword: '', volume: '', difficulty: 'Easy' })
     const [adding, setAdding] = useState(false)
     const [engine, setEngine] = useState('google')
     const [checking, setChecking] = useState(false)
@@ -134,7 +134,7 @@
         const msg = e.response?.data?.error || ''
         if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
           setAddedKeywords(prev => new Set([...prev, key]))
-          toast('Already tracked', { icon: 'ℹ️' })
+          toast('Already tracked', { icon: '\u2139\uFE0F' })
         } else {
           toast.error(msg || 'Failed to add keyword')
         }
@@ -164,7 +164,7 @@
           toast.success(`Imported ${data.imported} keywords from project GSC data`)
           load()
         } else {
-          toast('No new keywords found in project GSC data', { icon: 'ℹ️' })
+          toast('No new keywords found in project GSC data', { icon: '\u2139\uFE0F' })
         }
       } catch (e) {
         toast.error(e.response?.data?.error || 'Project keyword import failed')
@@ -188,9 +188,11 @@
     const runWeeklyScanReport = async () => {
       if (!keywords.length) return
       setScanRunning(true)
+    toast('Ranking scan started. This may take a little time.')
       try {
         const { data } = await api.post(`/sites/${siteId}/keywords/scan-weekly-now`, { engines: [engine], limit: 50 })
         setScanReport(data)
+        await load()
       } catch { setScanReport(null) }
       setScanRunning(false)
     }
@@ -225,7 +227,7 @@
         if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
           setAddedKeywords(prev => new Set([...prev, key]))
           setAiSuggestions(prev => prev.filter(x => x.keyword !== s.keyword))
-          toast('Already tracked', { icon: 'ℹ️' })
+          toast('Already tracked', { icon: '\u2139\uFE0F' })
         } else {
           toast.error('Failed to add keyword')
         }
@@ -237,19 +239,20 @@
     const add = async () => {
       if (!form.keyword.trim()) return
       const key = form.keyword.toLowerCase().trim()
-      if (addedKeywords.has(key)) { toast('Already tracked', { icon: 'ℹ️' }); return }
+      if (addedKeywords.has(key)) { toast('Already tracked', { icon: '\u2139\uFE0F' }); return }
       setAdding(true)
       try {
         await api.post(`/sites/${siteId}/keywords`, {
           keyword: form.keyword.trim(), volume: parseInt(form.volume) || 0,
-          difficulty: form.difficulty, position: parseInt(form.position) || null,
+          difficulty: form.difficulty, position: null,
         })
-        setForm({ keyword: '', volume: '', difficulty: 'Easy', position: '' })
+        setForm({ keyword: '', volume: '', difficulty: 'Easy' })
+      toast.success('Keyword added successfully')
         load()
       } catch (e) {
         const msg = e.response?.data?.error || ''
         if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
-          toast('Already tracked', { icon: 'ℹ️' })
+          toast('Already tracked', { icon: '\u2139\uFE0F' })
         } else {
           toast.error('Failed to add keyword')
         }
@@ -285,6 +288,53 @@
     const firstPageCount = page1Data?.inFirstPageCount || 0
     const checkedCount = page1Data?.checked || 0
     const selectedEngine = ENGINES.find(e => e.value === engine)?.label || 'Google'
+
+    const getPersistedRank = (keyword) => {
+      const state = keyword?.rank_state?.[engine] || {}
+
+      const toNumber = (value) =>
+        value !== null &&
+        value !== undefined &&
+        Number.isFinite(Number(value))
+          ? Number(value)
+          : null
+
+      return {
+        position: toNumber(state.position),
+        previousPosition: toNumber(state.previous_position),
+        change: toNumber(state.change),
+        status: state.status || 'initial',
+        checkedAt: state.checked_at || null,
+      }
+    }
+
+    const getMovementDisplay = (rank) => {
+      if (!rank.checkedAt || rank.status === 'initial') {
+        return { label: '-', color: T.muted }
+      }
+
+      if (rank.status === 'new') {
+        return { label: 'NEW', color: T.green }
+      }
+
+      if (rank.status === 'lost') {
+        return { label: 'LOST', color: T.red }
+      }
+
+      if (rank.status === 'up' && rank.change !== null) {
+        return { label: `\u2191 +${rank.change}`, color: T.green }
+      }
+
+      if (rank.status === 'down' && rank.change !== null) {
+        return { label: `\u2193 ${rank.change}`, color: T.red }
+      }
+
+      if (rank.status === 'same') {
+        return { label: '0', color: T.muted }
+      }
+
+      return { label: '-', color: T.muted }
+    }
 
     return (
       <div className="fade-in">
@@ -333,7 +383,7 @@
               />
               <OrangeBtn onClick={searchDataForSEO} disabled={dfsLoading || !dfsQuery.trim()}>
                 {dfsLoading
-                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Searching…</>
+                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />SearchingÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦</>
                   : <><FontAwesomeIcon icon={faMagnifyingGlass} style={{ marginRight: 6 }} />Search</>
                 }
               </OrangeBtn>
@@ -377,7 +427,7 @@
                             fontWeight: 700, cursor: isAdding ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', gap: 4, opacity: isAdding ? 0.6 : 1,
                           }}>
-                            {isAdding ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding…</> : <><FontAwesomeIcon icon={faPlus} />Add</>}
+                            {isAdding ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Adding...</> : <><FontAwesomeIcon icon={faPlus} />Add</>}
                           </button>
                         )}
                       </div>
@@ -397,13 +447,12 @@
               <select value={form.difficulty} onChange={e => setForm(p => ({ ...p, difficulty: e.target.value }))} style={{ width: 110 }}>
                 <option>Easy</option><option>Medium</option><option>Hard</option>
               </select>
-              <input placeholder="Position" value={form.position} onChange={e => setForm(p => ({ ...p, position: e.target.value }))} style={{ width: 90 }} type="number" min="1" max="100" />
               <OrangeBtn onClick={add} disabled={adding}>
                 {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add</>}
               </OrangeBtn>
               <OrangeBtn onClick={generateAiSuggestions} disabled={aiLoading}>
                 {aiLoading
-                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Thinking…</>
+                  ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Thinking...</>
                   : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />AI suggestions</>
                 }
               </OrangeBtn>
@@ -432,8 +481,8 @@
                           <OpportunityTag volume={s.estimatedVolume} difficulty={s.difficulty} />
                         </div>
                         <div style={{ fontSize: 11, color: T.muted }}>
-                          {s.intent || 'Informational'} • {s.difficulty || 'Medium'} • Vol ~{s.estimatedVolume || 0}
-                          {s.why ? ` • ${s.why}` : ''}
+                          {s.intent || 'Informational'} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ {s.difficulty || 'Medium'} ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ Vol ~{s.estimatedVolume || 0}
+                          {s.why ? ` ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ ${s.why}` : ''}
                         </div>
                       </div>
                       {isAdded ? (
@@ -463,10 +512,10 @@
                   {ENGINES.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
                 </select>
                 <OrangeBtn onClick={refreshFirstPage} disabled={checking || !keywords.length}>
-                  {checking ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Checking…</> : <><FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Check Page 1</>}
+                  {checking ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Checking...</> : <><FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Check Page 1</>}
                 </OrangeBtn>
                 <OrangeBtn onClick={runWeeklyScanReport} disabled={scanRunning || !keywords.length}>
-                  {scanRunning ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Scanning…</> : <>Weekly scan report</>}
+                  {scanRunning ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Scanning...</> : <>Weekly scan report</>}
                 </OrangeBtn>
               </div>
             </div>
@@ -506,37 +555,77 @@
                 <div style={{ marginTop: 10 }}>
                   <OrangeBtn onClick={importFromProject} disabled={importingProjectKeywords}>
                     <FontAwesomeIcon icon={faBolt} style={{ marginRight: 6 }} />
-                    {importingProjectKeywords ? 'Importing from project…' : 'Import from project data'}
+                    {importingProjectKeywords ? 'Importing from projectÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦' : 'Import from project data'}
                   </OrangeBtn>
                 </div>
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 90px 96px 88px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 80px 90px 76px 110px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <span>Keyword</span>
                   <span>Opportunity</span>
                   <span style={{ textAlign: 'right' }}>Vol/mo</span>
                   <span style={{ textAlign: 'center' }}>Difficulty</span>
-                  <span style={{ textAlign: 'center' }}>Manual Pos</span>
+                  <span style={{ textAlign: 'center' }}>Position</span>
+                  <span style={{ textAlign: 'center' }}>Change</span>
                   <span style={{ textAlign: 'center' }}>Page 1</span>
-                  <span style={{ textAlign: 'center' }}>{selectedEngine}</span>
+                  <span style={{ textAlign: 'center' }}>Last checked</span>
                   <span></span>
                 </div>
                 {keywords.map(k => (
-                  <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 90px 96px 88px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
+                  <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 80px 90px 76px 110px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
                     <span style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{k.keyword}</span>
                     <div><OpportunityTag volume={k.volume} difficulty={k.difficulty} /></div>
                     <span style={{ fontSize: 13, textAlign: 'right', fontFamily: 'DM Mono, monospace', color: T.text2 }}>{k.volume?.toLocaleString()}</span>
                     <div style={{ textAlign: 'center' }}><Badge status={k.difficulty} /></div>
-                    <input type="number" placeholder="-" defaultValue={k.position || ''} onBlur={e => updatePos(k.id, e.target.value)} style={{ width: '100%', textAlign: 'center', padding: '5px 8px', fontSize: 13 }} min="1" max="100" />
+                    <div style={{ textAlign: 'center', fontSize: 13, color: T.text, fontWeight: 800 }}>
+                      {getPersistedRank(k).checkedAt
+                        ? (getPersistedRank(k).position
+                            ? `#${getPersistedRank(k).position}`
+                            : '-')
+                        : '-'}
+                    </div>
+                    
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: getMovementDisplay(getPersistedRank(k)).color,
+                      }}
+                      title={
+                        getPersistedRank(k).previousPosition
+                          ? `Previous position: #${getPersistedRank(k).previousPosition}`
+                          : 'No previous ranking observation'
+                      }
+                    >
+                      {getMovementDisplay(getPersistedRank(k)).label}
+                    </div>
                     <div style={{ textAlign: 'center' }}>
-                      {page1Map[k.id]
-                        ? page1Map[k.id].inFirstPage ? <Badge variant="success">Yes</Badge> : <Badge variant="danger">No</Badge>
-                        : <Badge variant="default">-</Badge>
+                      {!getPersistedRank(k).checkedAt
+                        ? <Badge variant="default">-</Badge>
+                        : getPersistedRank(k).position &&
+                          getPersistedRank(k).position <= 10
+                          ? <Badge variant="success">Yes</Badge>
+                          : <Badge variant="danger">No</Badge>
                       }
                     </div>
-                    <div style={{ textAlign: 'center', fontSize: 12, color: T.text2, fontWeight: 700 }}>
-                      {page1Map[k.id]?.position || '-'}
+                    <div
+                      style={{
+                        textAlign: 'center',
+                        fontSize: 10,
+                        color: T.muted,
+                        lineHeight: 1.25,
+                      }}
+                      title={
+                        getPersistedRank(k).checkedAt
+                          ? new Date(getPersistedRank(k).checkedAt).toLocaleString()
+                          : 'Not scanned yet'
+                      }
+                    >
+                      {getPersistedRank(k).checkedAt
+                        ? new Date(getPersistedRank(k).checkedAt).toLocaleDateString()
+                        : 'Not scanned'}
                     </div>
                     <button
                       onClick={() => confirmDelete(k)}
@@ -585,7 +674,7 @@
                   style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: deleting ? '#fca5a5' : '#ef4444', fontSize: 13, fontWeight: 700, color: '#fff', cursor: deleting ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
                 >
                   {deleting
-                    ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Removing…</>
+                    ? <><FontAwesomeIcon icon={faArrowsRotate} spin />Removing...</>
                     : <><FontAwesomeIcon icon={faTrash} />Remove</>
                   }
                 </button>

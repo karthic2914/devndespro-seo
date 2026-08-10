@@ -3,6 +3,8 @@ const cheerio = require('cheerio')
 const { pool } = require('../clients')
 const { SUPPORTED_ENGINES, normalizeEngine, extractDomain, mapOrganicResults, isDomainMatch, engineLabel } = require('./helpers')
 
+const MAX_RANK_DEPTH = 100
+
 async function scrapeEngineResults(keyword, engine) {
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
@@ -72,27 +74,131 @@ async function scrapeEngineResults(keyword, engine) {
   return results.slice(0, 10)
 }
 
-async function fetchSerpResults(keyword, engine) {
+async function fetchSerpResults(keyword, engine, context = {}) {
   const normalizedEngine = normalizeEngine(engine)
+const country = String(context.country || process.env.SERP_COUNTRY || 'us').toLowerCase()
+const language = String(context.language || process.env.SERP_LANGUAGE || 'en').toLowerCase()
+const location = context.location ? String(context.location).trim() : null
+const device = context.device === 'mobile' ? 'mobile' : 'desktop'
   if (process.env.SERPAPI_KEY) {
-    try {
-      const { data } = await axios.get('https://serpapi.com/search.json', {
-        params: { api_key: process.env.SERPAPI_KEY, q: keyword, num: 10, gl: 'us', hl: 'en', engine: normalizedEngine },
-        timeout: 15000,
-      })
-      const rows = mapOrganicResults(data.organic_results || [])
-      if (rows.length) return rows
-    } catch (e) { console.error('SerpAPI error:', e.message) }
-  }
+  try {
+    const allRows = []
+    const seenUrls = new Set()
 
-  if (normalizedEngine === 'google' && process.env.VALUESERP_KEY) {
+    let start = 0
+
+    while (start < MAX_RANK_DEPTH) {
+      let data = null
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          const response = await axios.get('https://serpapi.com/search.json', {
+            params: {
+              api_key: process.env.SERPAPI_KEY,
+              q: keyword,
+              num: 10,
+              start,
+              gl: country,
+              hl: language,
+              engine: normalizedEngine,
+              device,
+              ...(location ? { location } : {}),
+            },
+            timeout: 20000,
+          })
+
+          data = response.data
+          break
+        } catch (e) {
+          console.warn(
+            `SerpAPI page start=${start} attempt=${attempt} failed:`,
+            e.response?.data || e.message
+          )
+
+          if (attempt === 2) {
+            break
+          }
+        }
+      }
+
+      if (!data) {
+        console.warn(
+          `Stopping SERP pagination at start=${start}. Collected ${allRows.length} results.`
+        )
+        break
+      }
+
+      const pageRows = mapOrganicResults(data.organic_results || [])
+
+      if (!pageRows.length) {
+        break
+      }
+
+      for (const row of pageRows) {
+        if (!row?.url) continue
+
+        const key = row.url.toLowerCase()
+
+        if (seenUrls.has(key)) continue
+        seenUrls.add(key)
+
+        allRows.push({
+          ...row,
+          position: allRows.length + 1,
+        })
+
+        if (allRows.length >= MAX_RANK_DEPTH) {
+          break
+        }
+      }
+
+      if (allRows.length >= MAX_RANK_DEPTH) {
+        break
+      }
+
+      const nextStart =
+        Number(data?.serpapi_pagination?.next_start)
+
+      if (Number.isFinite(nextStart) && nextStart > start) {
+        start = nextStart
+        continue
+      }
+
+      if (
+        data?.serpapi_pagination?.next ||
+        data?.serpapi_pagination?.next_link
+      ) {
+        start += 10
+        continue
+      }
+
+      if (pageRows.length >= 10) {
+        start += 10
+        continue
+      }
+
+      break
+    }
+
+    if (allRows.length) {
+      return allRows.slice(0, MAX_RANK_DEPTH)
+    }
+
+  } catch (e) {
+    console.error(
+      'SerpAPI pagination error:',
+      e.response?.data || e.message
+    )
+  }
+}
+if (normalizedEngine === 'google' && process.env.VALUESERP_KEY) {
     try {
       const { data } = await axios.get('https://api.valueserp.com/search', {
-        params: { api_key: process.env.VALUESERP_KEY, q: keyword, num: 10, gl: 'us', hl: 'en', output: 'json' },
+        params: { api_key: process.env.VALUESERP_KEY, q: keyword, num: MAX_RANK_DEPTH, gl: 'us', hl: 'en', output: 'json' },
         timeout: 15000,
       })
       const rows = mapOrganicResults(data.organic_results || [])
-      if (rows.length) return rows
+      if (rows.length) return rows.slice(0, MAX_RANK_DEPTH)
     } catch (e) { console.error('ValueSERP error:', e.message) }
   }
 
@@ -110,7 +216,7 @@ async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, k
   const targetDomain = extractDomain(site.url)
 
   const { rows: keywords } = await pool.query(
-    'SELECT id, keyword, rank_state FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
+    'SELECT id, keyword, rank_state, rank_country, rank_language, rank_location FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
     [siteId, limit]
   )
 
@@ -129,12 +235,41 @@ async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, k
     const nextState = { ...state }
 
     for (const engine of normalizedEngines) {
-      const results = await fetchSerpResults(kw.keyword, engine)
+      const rankingContext = {
+        country: kw.rank_country || 'us',
+        language: kw.rank_language || 'en',
+        location: kw.rank_location || null,
+        device: 'desktop',
+      }
+
+      const results = await fetchSerpResults(
+        kw.keyword,
+        engine,
+        rankingContext
+      )
       const hit = results.find(r => isDomainMatch(r.domain, targetDomain))
       const currentPos = hit ? hit.position : null
 
-      const prevPosRaw = state?.[engine]?.position
-      const prevPos = Number.isFinite(Number(prevPosRaw)) ? Number(prevPosRaw) : null
+  const previousRankingResult = await pool.query(
+    "SELECT position FROM keyword_rankings WHERE keyword_id=$1 AND site_id=$2 AND engine=$3 AND country=$4 AND language=$5 AND COALESCE(location, '')=COALESCE($6, '') AND device=$7 ORDER BY checked_at DESC LIMIT 1",
+    [
+      kw.id,
+      siteId,
+      engine,
+      rankingContext.country,
+      rankingContext.language,
+      rankingContext.location,
+      rankingContext.device,
+    ]
+  )
+
+  const previousRankingRaw = previousRankingResult.rows[0]?.position
+  const previousRankingPosition = Number(previousRankingRaw) > 0
+    ? Number(previousRankingRaw)
+    : null
+
+      const prevPosRaw = previousRankingPosition
+      const prevPos = Number(prevPosRaw) > 0 ? Number(prevPosRaw) : null
       const wasInFirstPage = !!prevPos && prevPos <= 10
       const nowInFirstPage = !!currentPos && currentPos <= 10
 
@@ -157,7 +292,56 @@ async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, k
         else engineStats[engine].droppedCount += 1
       }
 
-      nextState[engine] = { position: currentPos, checked_at: new Date().toISOString() }
+      const hasPreviousObservation = previousRankingResult.rows.length > 0
+
+      let change = null
+      let movementStatus = 'initial'
+
+      if (hasPreviousObservation) {
+        if (prevPos === null && currentPos !== null) {
+          movementStatus = 'new'
+        } else if (prevPos !== null && currentPos === null) {
+          movementStatus = 'lost'
+        } else if (prevPos !== null && currentPos !== null) {
+          change = prevPos - currentPos
+
+          if (change > 0) {
+            movementStatus = 'up'
+          } else if (change < 0) {
+            movementStatus = 'down'
+          } else {
+            movementStatus = 'same'
+          }
+        } else {
+          movementStatus = 'not-ranked'
+        }
+      }
+
+      nextState[engine] = {
+        position: currentPos,
+        previous_position: hasPreviousObservation ? prevPos : null,
+        change,
+        status: movementStatus,
+        checked_at: new Date().toISOString(),
+      }
+
+  await pool.query(
+    "INSERT INTO keyword_rankings (keyword_id, site_id, engine, country, language, location, device, position, ranking_url, previous_position, change, status, checked_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW())",
+    [
+      kw.id,
+      siteId,
+      engine,
+      rankingContext.country,
+      rankingContext.language,
+      rankingContext.location,
+      rankingContext.device,
+      currentPos,
+      hit?.url || null,
+      hasPreviousObservation ? prevPos : null,
+      change,
+      movementStatus,
+    ]
+  )
       checked += 1
     }
 
@@ -165,11 +349,35 @@ async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, k
     normalizedEngines.forEach((engine) => {
       const pRaw = nextState?.[engine]?.position
       const pos = Number.isFinite(Number(pRaw)) ? Number(pRaw) : null
-      currentByEngine[engine] = { position: pos, inFirstPage: !!pos && pos <= 10 }
+      currentByEngine[engine] = {
+      position: pos,
+      previousPosition: nextState?.[engine]?.previous_position ?? null,
+      change: nextState?.[engine]?.change ?? null,
+      status: nextState?.[engine]?.status || 'initial',
+      checkedAt: nextState?.[engine]?.checked_at || null,
+      inFirstPage: !!pos && pos <= 10,
+    }
     })
     keywordSummaries.push({ id: kw.id, keyword: kw.keyword, current: currentByEngine })
 
-    await pool.query('UPDATE keywords SET rank_state=$1 WHERE id=$2 AND site_id=$3', [nextState, kw.id, siteId])
+    const googleWasScanned = normalizedEngines.includes('google')
+
+if (googleWasScanned) {
+  const googlePositionRaw = nextState?.google?.position
+  const googlePosition = Number.isFinite(Number(googlePositionRaw))
+    ? Number(googlePositionRaw)
+    : null
+
+  await pool.query(
+    'UPDATE keywords SET rank_state=$1, position=$2 WHERE id=$3 AND site_id=$4',
+    [nextState, googlePosition, kw.id, siteId]
+  )
+} else {
+  await pool.query(
+    'UPDATE keywords SET rank_state=$1 WHERE id=$2 AND site_id=$3',
+    [nextState, kw.id, siteId]
+  )
+}
   }
 
   const enginesSummary = normalizedEngines.map((engine) => {

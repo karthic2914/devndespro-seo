@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, MetricCard, Badge, OrangeBtn, PageHeader, EmptyState } from '../components/UI'

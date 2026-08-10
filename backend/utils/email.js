@@ -1,6 +1,7 @@
 const nodemailer = require('nodemailer')
 const { pool } = require('../clients')
 const { engineLabel } = require('./helpers')
+const { buildAuditPdfBuffer } = require('./auditPdf')
 
 function createTransporter() {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) return null
@@ -278,7 +279,7 @@ async function sendSiteReport(siteId, recipients) {
   })
 }
 
-// ─── ZeptoMail HTTP API (works on Railway - no SMTP port issues) ───────────────
+// ZeptoMail HTTP API (works on Railway - no SMTP port issues)
 async function sendSummaryEmail({ to, subject, message, fullReport }) {
   const htmlBody = `<!DOCTYPE html>
 <html>
@@ -286,7 +287,7 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
 <body style="font-family:sans-serif;max-width:600px;margin:32px auto;color:#1e293b;line-height:1.7">
   ${message}
   ${fullReport ? `<hr style="margin:24px 0;border:none;border-top:1px solid #e2e8f0">
-  <p style="font-size:12px;color:#94a3b8">Full audit report attached above.</p>` : ''}
+  <p style="font-size:12px;color:#94a3b8">A full technical audit report is attached as a PDF.</p>` : ''}
 </body>
 </html>`
 
@@ -296,6 +297,25 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
 
   if (!recipientList.length) throw new Error('No valid recipient email address provided')
 
+  const emailAttachments = []
+
+  if (fullReport) {
+    const pdfBuffer = await buildAuditPdfBuffer(fullReport)
+
+    let reportName = 'audit-report'
+
+    try {
+      reportName = new URL(
+        fullReport.url || fullReport?.crawl?.finalUrl
+      ).hostname.replace(/^www\./, '')
+    } catch {}
+
+    emailAttachments.push({
+      name: `devndespro-seo-audit-${reportName}.pdf`,
+      content: pdfBuffer.toString('base64'),
+      mime_type: 'application/pdf',
+    })
+  }
   const response = await fetch('https://api.zeptomail.com/v1.1/email', {
     method: 'POST',
     headers: {
@@ -307,6 +327,7 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
       to: recipientList.map((addr) => ({ email_address: { address: addr } })),
       subject,
       htmlbody: htmlBody,
+      attachments: emailAttachments,
     }),
   })
 

@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faWandMagicSparkles, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
 import api from '../utils/api'
-import toast from 'react-hot-toast'
+import toast from '../utils/toast'
 
 export default function Competitors() {
   const { siteId } = useParams()
