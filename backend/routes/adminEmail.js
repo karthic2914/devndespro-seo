@@ -23,7 +23,12 @@ router.post('/send-summary', auth, async (req, res) => {
   }
   let fullReport = null
   if (includeFullReport) {
-    const { rows: auditRows } = await pool.query('SELECT results FROM audit_results WHERE site_id=$1 ORDER BY created_at DESC LIMIT 1', [Number(siteId)])
+    const { rows: auditRows } = await pool.query(
+      `SELECT results FROM audit_results
+       WHERE site_id=$1 AND results->'checks' IS NOT NULL
+       ORDER BY created_at DESC LIMIT 1`,
+      [Number(siteId)]
+    )
     fullReport = auditRows[0]?.results || null
   }
   try {
