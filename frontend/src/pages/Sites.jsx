@@ -346,7 +346,7 @@ export default function Sites() {
     toast.success(`Imported ${successCount} of ${selectedProps.length} project${selectedProps.length === 1 ? '' : 's'}`)
     load()
     if (firstSite) {
-      await startKeywordDiscovery(firstSite)
+      api.post(`/sites/${firstSite.id}/keywords/auto-discover`).catch(() => {})
     } else {
       setShowAdd(false)
       setAddMode('choose')
@@ -375,7 +375,6 @@ export default function Sites() {
       load()
 
       if (newSite?.id && (user?.is_paid || user?.id === 1)) {
-        toast('Discovering backlinks in the background...')
         fetch(`/api/sites/${newSite.id}/backlinks/crawl`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders },
@@ -386,11 +385,11 @@ export default function Sites() {
             const count = data?.saved ?? 0
             toast.success(`Found ${count} backlink${count === 1 ? '' : 's'} for ${newSite.name}`)
           })
-          .catch(() => toast.error('Backlink discovery failed - you can retry from the Backlinks tab'))
+          .catch(() => {})
       }
 
       if (newSite?.id) {
-        await startKeywordDiscovery(newSite)
+        api.post(`/sites/${newSite.id}/keywords/auto-discover`).catch(() => {})
       } else {
         setShowAdd(false)
       }
@@ -634,7 +633,7 @@ export default function Sites() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>
                     Locale: {discoverData.meta?.locale?.locationName || 'United States'}
                     {discoverData.meta?.importedCount != null && (
-                      <> · Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                      <> Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
                     )}
                   </div>
 
@@ -696,10 +695,10 @@ export default function Sites() {
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
                                   <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                                     {item.position ? `#${item.position}` : 'No pos'}
-                                    {' · '}Vol {Number(item.volume || 0).toLocaleString()}
-                                    {' · '}{item.difficulty || 'Medium'}
-                                    {item.opportunity ? ` · ${item.opportunity}` : ''}
-                                    {item.source ? ` · ${item.source}` : ''}
+                                    {' Â· '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' Â· '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? ` Â· ${item.opportunity}` : ''}
+                                    {item.source ? ` Â· ${item.source}` : ''}
                                   </div>
                                   {bucket.mode === 'how' && item.how && (
                                     <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
