@@ -1547,6 +1547,7 @@ export default function SiteAudit() {
         subject: emailSubject,
         message: emailMessage,
         includeFullReport,
+        language: emailLang,
         overrideEmail: recipientEmail && recipientEmail.trim() ? recipientEmail.trim() : undefined,
       })
       setShowEmailModal(false)

@@ -280,7 +280,7 @@ async function sendSiteReport(siteId, recipients) {
 }
 
 // ZeptoMail HTTP API (works on Railway - no SMTP port issues)
-async function sendSummaryEmail({ to, subject, message, fullReport }) {
+async function sendSummaryEmail({ to, subject, message, fullReport, language = 'en' }) {
   const htmlBody = `<!DOCTYPE html>
 <html>
 <head><meta charset="UTF-8"></head>
@@ -300,7 +300,7 @@ async function sendSummaryEmail({ to, subject, message, fullReport }) {
   const emailAttachments = []
 
   if (fullReport) {
-    const pdfBuffer = await buildAuditPdfBuffer(fullReport)
+    const pdfBuffer = await buildAuditPdfBuffer(fullReport, { language })
 
     let reportName = 'audit-report'
 

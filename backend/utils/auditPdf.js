@@ -212,7 +212,10 @@ function categoryScore(checks, category) {
   return Math.round((passCount / rows.length) * 100)
 }
 
-function buildAuditPdfBuffer(report) {
+function buildAuditPdfBuffer(report, options = {}) {
+  const language = options?.language === 'no' ? 'no' : 'en'
+  const isNorwegian = language === 'no'
+  const t = (en, no) => (isNorwegian ? no : en)
   console.log(
     'AUDIT PDF GENERATOR:',
     AUDIT_PDF_VERSION,
@@ -226,9 +229,9 @@ function buildAuditPdfBuffer(report) {
         margin: 42,
         bufferPages: true,
         info: {
-          Title: 'SEO Audit Report',
+          Title: t('SEO Audit Report', 'SEO-rapport'),
           Author: 'Devndespro',
-          Subject: 'SEO, technical and AI visibility audit',
+          Subject: t('SEO, technical and AI visibility audit', 'SEO-, teknisk og AI-synlighetsanalyse'),
         },
       })
 
@@ -452,7 +455,7 @@ function buildAuditPdfBuffer(report) {
 
         const titleH = measureTextHeight(title, 'Helvetica-Bold', 10, textWidth)
         const metaH = measureTextHeight(metaText, 'Helvetica', 8.5, textWidth)
-        const fixLabelH = measureTextHeight('Recommended action', 'Helvetica-Bold', 9, textWidth)
+        const fixLabelH = measureTextHeight(t('Recommended action', 'Anbefalt tiltak'), 'Helvetica-Bold', 9, textWidth)
         const fixH = measureTextHeight(guidance.fix, 'Helvetica', 9, textWidth)
         const boxHeight = 12 + titleH + 6 + metaH + 8 + fixLabelH + 2 + fixH + 14
 
@@ -482,7 +485,7 @@ function buildAuditPdfBuffer(report) {
           .font('Helvetica-Bold')
           .fontSize(9)
           .fillColor('#166534')
-          .text('Recommended action', x + 12, doc.y + 6, { width: textWidth })
+          .text(t('Recommended action', 'Anbefalt tiltak'), x + 12, doc.y + 6, { width: textWidth })
 
         doc
           .font('Helvetica')
@@ -552,11 +555,11 @@ function buildAuditPdfBuffer(report) {
         // Measure with the fonts used when drawing (no continued:true mismatch).
         const titleH = measureTextHeight(guidance.title, 'Helvetica-Bold', 11, textWidth)
         const metaH = measureTextHeight(metaText, 'Helvetica', 8, textWidth)
-        const foundLabelH = measureTextHeight('What we found', 'Helvetica-Bold', 8.7, textWidth)
+        const foundLabelH = measureTextHeight(t('What we found', 'Hva vi fant'), 'Helvetica-Bold', 8.7, textWidth)
         const foundH = measureTextHeight(foundText, 'Helvetica', 8.7, textWidth)
-        const whyLabelH = measureTextHeight('Why it matters', 'Helvetica-Bold', 8.7, textWidth)
+        const whyLabelH = measureTextHeight(t('Why it matters', 'Hvorfor det er viktig'), 'Helvetica-Bold', 8.7, textWidth)
         const whyH = measureTextHeight(guidance.why, 'Helvetica', 8.7, textWidth)
-        const fixLabelH = measureTextHeight('Recommended action', 'Helvetica-Bold', 8.7, textWidth)
+        const fixLabelH = measureTextHeight(t('Recommended action', 'Anbefalt tiltak'), 'Helvetica-Bold', 8.7, textWidth)
         const fixH = measureTextHeight(guidance.fix, 'Helvetica', 8.7, textWidth)
 
         const boxHeight =
@@ -614,7 +617,7 @@ function buildAuditPdfBuffer(report) {
           .font('Helvetica-Bold')
           .fontSize(8.7)
           .fillColor('#334155')
-          .text('What we found', x + 12, cursorY, { width: textWidth })
+          .text(t('What we found', 'Hva vi fant'), x + 12, cursorY, { width: textWidth })
         doc
           .font('Helvetica')
           .fillColor('#334155')
@@ -625,7 +628,7 @@ function buildAuditPdfBuffer(report) {
           .font('Helvetica-Bold')
           .fontSize(8.7)
           .fillColor('#334155')
-          .text('Why it matters', x + 12, cursorY, { width: textWidth })
+          .text(t('Why it matters', 'Hvorfor det er viktig'), x + 12, cursorY, { width: textWidth })
         doc
           .font('Helvetica')
           .fillColor('#334155')
@@ -636,7 +639,7 @@ function buildAuditPdfBuffer(report) {
           .font('Helvetica-Bold')
           .fontSize(8.7)
           .fillColor('#166534')
-          .text('Recommended action', x + 12, cursorY, { width: textWidth })
+          .text(t('Recommended action', 'Anbefalt tiltak'), x + 12, cursorY, { width: textWidth })
         doc
           .font('Helvetica')
           .fillColor('#334155')
@@ -690,7 +693,7 @@ function buildAuditPdfBuffer(report) {
         .font('Helvetica-Bold')
         .fontSize(24)
         .fillColor('#FFFFFF')
-        .text('SEO AUDIT REPORT', pageLeft + 20, 64, {
+        .text(t('SEO AUDIT REPORT', 'SEO-RAPPORT'), pageLeft + 20, 64, {
           width: pageInnerWidth - 40,
         })
 
@@ -748,7 +751,7 @@ function buildAuditPdfBuffer(report) {
         .font('Helvetica')
         .fontSize(10)
         .fillColor('#64748B')
-        .text('OVERALL SITE HEALTH', pageLeft, doc.y, {
+        .text(t('OVERALL SITE HEALTH', 'SAMLET NETTSTEDHELSE'), pageLeft, doc.y, {
           align: 'center',
           width: pageInnerWidth,
         })
@@ -757,9 +760,9 @@ function buildAuditPdfBuffer(report) {
       const cardGap = 10
       const cardWidth = (pageInnerWidth - cardGap * 3) / 4
 
-      metricCard(pageLeft, cardY, cardWidth, 'Critical Issues', critical.length, '#DC2626')
-      metricCard(pageLeft + cardWidth + cardGap, cardY, cardWidth, 'Warnings', warnings.length, '#D97706')
-      metricCard(pageLeft + (cardWidth + cardGap) * 2, cardY, cardWidth, 'Passed Checks', passed.length, '#16A34A')
+      metricCard(pageLeft, cardY, cardWidth, t('Critical Issues', 'Kritiske problemer'), critical.length, '#DC2626')
+      metricCard(pageLeft + cardWidth + cardGap, cardY, cardWidth, t('Warnings', 'Advarsler'), warnings.length, '#D97706')
+      metricCard(pageLeft + (cardWidth + cardGap) * 2, cardY, cardWidth, t('Passed Checks', 'Godkjente kontroller'), passed.length, '#16A34A')
       metricCard(
         pageLeft + (cardWidth + cardGap) * 3,
         cardY,
@@ -778,13 +781,13 @@ function buildAuditPdfBuffer(report) {
 
       if (score >= 80) {
         summaryText =
-          'The website has a strong technical foundation. The remaining findings are primarily optimisation opportunities that can help strengthen organic visibility, content quality and AI-search readiness.'
+          t('The website has a strong technical foundation. The remaining findings are primarily optimisation opportunities that can help strengthen organic visibility, content quality and AI-search readiness.', 'Nettstedet har et solid teknisk fundament. De gjenværende funnene er hovedsakelig forbedringsmuligheter som kan styrke organisk synlighet, innholdskvalitet og synlighet i AI-søk.')
       } else if (score >= 60) {
         summaryText =
           'The website has a reasonable foundation, but several important improvements should be prioritised. Addressing the highest-impact findings can strengthen technical quality and organic search performance.'
       } else {
         summaryText =
-          'The audit identified several important areas that deserve attention. Addressing critical issues first, followed by high-impact warnings, can significantly improve the website’s technical SEO foundation and search readiness.'
+          t('The audit identified several important areas that deserve attention. Addressing critical issues first, followed by high-impact warnings, can significantly improve the website’s technical SEO foundation and search readiness.', 'Analysen identifiserte flere viktige områder som bør følges opp. Ved å løse kritiske problemer først og deretter prioritere viktige advarsler, kan nettstedets tekniske SEO-grunnlag og synlighet i søk forbedres betydelig.')
       }
 
       const auditDateText =
@@ -795,7 +798,7 @@ function buildAuditPdfBuffer(report) {
             : new Date().toLocaleString('en-GB')
         )
 
-      const summaryTitleH = measureTextHeight('Executive Summary', 'Helvetica-Bold', 13, pageInnerWidth)
+      const summaryTitleH = measureTextHeight(t('Executive Summary', 'Sammendrag'), 'Helvetica-Bold', 13, pageInnerWidth)
       const summaryBodyH = measureTextHeight(summaryText, 'Helvetica', 10, pageInnerWidth)
       const summaryDateH = measureTextHeight(auditDateText, 'Helvetica', 8.5, pageInnerWidth)
       const summaryBlockH = summaryTitleH + 8 + summaryBodyH + 14 + summaryDateH + 8
@@ -807,7 +810,7 @@ function buildAuditPdfBuffer(report) {
         .font('Helvetica-Bold')
         .fontSize(13)
         .fillColor('#111827')
-        .text('Executive Summary', pageLeft, doc.y, {
+        .text(t('Executive Summary', 'Sammendrag'), pageLeft, doc.y, {
           width: pageInnerWidth,
         })
 
@@ -838,7 +841,7 @@ function buildAuditPdfBuffer(report) {
 
       if (topPriorities.length) {
         section(
-          'Top 5 Priorities',
+          t('Top 5 Priorities', '5 viktigste prioriteringer'),
           'The highest-impact findings to address first.'
         )
 
@@ -852,7 +855,7 @@ function buildAuditPdfBuffer(report) {
 
       if (quickWins.length) {
         section(
-          'Quick Wins',
+          t('Quick Wins', 'Raske forbedringer'),
           'High-value improvements that are relatively straightforward to implement.'
         )
 
@@ -865,15 +868,15 @@ function buildAuditPdfBuffer(report) {
       // ======================================================
 
       section(
-        'SEO Health by Category',
-        'Percentage of checks currently passing in each audited area.'
+        t('SEO Health by Category', 'SEO-status etter kategori'),
+        t('Percentage of checks currently passing in each audited area.', 'Andel kontroller som er godkjent innen hvert analysert område.')
       )
 
       const categories = [
-        'Technical SEO',
-        'On-Page SEO',
-        'Content Quality',
-        'Page Speed',
+        t('Technical SEO', 'Teknisk SEO'),
+        t('On-Page SEO', 'On-page SEO'),
+        t('Content Quality', 'Innholdskvalitet'),
+        t('Page Speed', 'Sidehastighet'),
         'Advanced SEO',
         'AEO',
         'AI Snippet',
@@ -963,7 +966,7 @@ function buildAuditPdfBuffer(report) {
 
       if (critical.length) {
         section(
-          'Critical Issues (' + critical.length + ')',
+          t('Critical Issues', 'Kritiske problemer') + ' (' + critical.length + ')',
           'These findings should receive the highest attention.'
         )
 
@@ -979,8 +982,8 @@ function buildAuditPdfBuffer(report) {
 
       if (warnings.length) {
         section(
-          'Important Warnings (' + warnings.length + ')',
-          'Optimisation opportunities to review after critical issues.'
+          t('Important Warnings', 'Viktige advarsler') + ' (' + warnings.length + ')',
+          t('Optimisation opportunities to review after critical issues.', 'Forbedringsmuligheter som bør gjennomgås etter de kritiske problemene.')
         )
 
         warnings
@@ -1008,18 +1011,18 @@ function buildAuditPdfBuffer(report) {
       // ======================================================
 
       section(
-        '90-Day SEO Improvement Roadmap',
+        t('90-Day SEO Improvement Roadmap', '90-dagers SEO-forbedringsplan'),
         'A practical sequence for implementing the recommendations.'
       )
 
       const roadmap = [
         {
-          title: 'FIRST 7 DAYS',
+          title: t('FIRST 7 DAYS', 'FØRSTE 7 DAGER'),
           text: 'Resolve critical crawl, indexing, canonical, status-code and high-impact technical issues.',
         },
         {
           title: 'NEXT 30 DAYS',
-          text: 'Improve on-page content, structured data, accessibility, internal optimisation and quick-win opportunities.',
+          text: t('Improve on-page content, structured data, accessibility, internal optimisation and quick-win opportunities.', 'Forbedre innhold på siden, strukturerte data, tilgjengelighet, intern optimalisering og raske forbedringsmuligheter.'),
         },
         {
           title: '30-90 DAYS',
@@ -1081,7 +1084,7 @@ function buildAuditPdfBuffer(report) {
         .fontSize(14)
         .fillColor('#FFFFFF')
         .text(
-          'Need help implementing these improvements?',
+          t('Need help implementing these improvements?', 'Trenger du hjelp med å gjennomføre disse forbedringene?'),
           ctaX + 16,
           ctaY + 16,
           {
@@ -1095,7 +1098,7 @@ function buildAuditPdfBuffer(report) {
         .fontSize(9.5)
         .fillColor('#CBD5E1')
         .text(
-          'Devndespro helps businesses with technical SEO, web development and AI-search optimisation.',
+          t('Devndespro helps businesses with technical SEO, web development and AI-search optimisation.', 'Devndespro hjelper bedrifter med teknisk SEO, webutvikling og optimalisering for AI-søk.'),
           ctaX + 26,
           ctaY + 42,
           {
@@ -1152,7 +1155,7 @@ function buildAuditPdfBuffer(report) {
           .fontSize(8)
           .fillColor('#94A3B8')
           .text(
-            hostname + '  ·  SEO Audit Report',
+            hostname + '  ·  ' + t('SEO Audit Report', 'SEO-rapport'),
             left,
             footerY,
             {
@@ -1167,7 +1170,7 @@ function buildAuditPdfBuffer(report) {
           .fontSize(8)
           .fillColor('#64748B')
           .text(
-            'Page ' + (i + 1) + ' of ' + totalPages,
+            (isNorwegian ? 'Side ' + (i + 1) + ' av ' + totalPages : 'Page ' + (i + 1) + ' of ' + totalPages),
             left + usableWidth * 0.62,
             footerY,
             {

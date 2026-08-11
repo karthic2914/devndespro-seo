@@ -9,7 +9,7 @@ const router = express.Router()
 // Send summary email to project contact (admin only)
 router.post('/send-summary', auth, async (req, res) => {
   if (req.user.id !== 1) return res.status(403).json({ error: 'Admin only' })
-  const { siteId, subject, message, includeFullReport, overrideEmail } = req.body
+  const { siteId, subject, message, includeFullReport, overrideEmail, language = 'en' } = req.body
   if (!siteId || !subject || !message) return res.status(400).json({ error: 'Missing required fields' })
   const { rows: siteRows } = await pool.query('SELECT * FROM sites WHERE id=$1', [Number(siteId)])
   if (!siteRows[0]) return res.status(404).json({ error: 'Site not found' })
@@ -32,7 +32,7 @@ router.post('/send-summary', auth, async (req, res) => {
     fullReport = auditRows[0]?.results || null
   }
   try {
-    await sendSummaryEmail({ to, subject, message, fullReport })
+    await sendSummaryEmail({ to, subject, message, fullReport, language })
     res.json({ ok: true })
   } catch (e) {
     console.error('SEND SUMMARY EMAIL ERROR:', e)
