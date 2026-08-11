@@ -241,7 +241,7 @@
         const imported = data?.meta?.importedCount || 0
         toast.success(
           imported > 0
-            ? `Discovery complete — tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
+            ? `Discovery complete â€” tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
             : 'Discovery complete'
         )
         load()
@@ -632,7 +632,7 @@
                     <strong style={{ fontSize: 14, color: T.text }}>Project keyword discovery</strong>
                   </div>
                   <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
-                    Already ranking {(discovery.alreadyRanking || []).length}
+                    Google visibility {(discovery.alreadyRanking || []).length}
                     {' · '}Good to have {(discovery.goodToHave || []).length}
                     {' · '}How to get them {(discovery.howToGetThem || []).length}
                     {discovery.meta?.locale?.locationName ? ` · ${discovery.meta.locale.locationName}` : ''}
@@ -652,7 +652,7 @@
               {discoveryOpen && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
                   {[
-                    { title: 'Already ranking', items: discovery.alreadyRanking || [], mode: 'tracked' },
+                    { title: 'Google visibility', items: discovery.alreadyRanking || [], mode: 'tracked' },
                     { title: 'Good to have', items: discovery.goodToHave || [], mode: 'add' },
                     { title: 'How to get them', items: discovery.howToGetThem || [], mode: 'how' },
                   ].map((bucket) => (
@@ -678,7 +678,15 @@
                                 <div style={{ minWidth: 0, flex: 1 }}>
                                   <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{item.keyword}</div>
                                   <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>
-                                    {item.position ? `#${item.position}` : '-'}
+                                    {item.position
+  ? item.source === 'dfs_ranked'
+    ? `Live #${item.position}`
+    : item.source === 'gsc+dfs'
+      ? `GSC avg #${item.position} · Live verified`
+      : item.source === 'gsc'
+        ? `GSC avg #${item.position}`
+        : `#${item.position}`
+  : '-'}
                                     {' · '}Vol {Number(item.volume || 0).toLocaleString()}
                                     {' · '}{item.difficulty || 'Medium'}
                                   </div>
@@ -942,7 +950,7 @@
               </OrangeBtn>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
-              AI Suggestions are creative ideas from Claude (estimated volume) — not live ranking data.
+              AI Suggestions are creative ideas from Claude (estimated volume) â€” not live ranking data.
               Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real GSC / DataForSEO inventory.
             </div>
 
