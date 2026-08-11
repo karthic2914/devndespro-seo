@@ -241,7 +241,7 @@
         const imported = data?.meta?.importedCount || 0
         toast.success(
           imported > 0
-            ? `Discovery complete â€” tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
+            ? `Discovery complete Ã¢â‚¬â€ tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
             : 'Discovery complete'
         )
         load()
@@ -582,7 +582,8 @@
     )
 
     const firstPageCount = page1Data?.inFirstPageCount ?? trackedCoverage.page1
-    const checkedCount = page1Data?.checked || trackedCoverage.checked || keywords.length
+    const checkedCount = page1Data?.checked ?? trackedCoverage.checked
+    const notCheckedCount = Math.max(keywords.length - checkedCount, 0)
 
     return (
       <div className="fade-in">
@@ -950,7 +951,7 @@
               </OrangeBtn>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
-              AI Suggestions are creative ideas from Claude (estimated volume) â€” not live ranking data.
+              AI Suggestions are creative ideas from Claude (estimated volume) Ã¢â‚¬â€ not live ranking data.
               Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real GSC / DataForSEO inventory.
             </div>
 
@@ -1019,17 +1020,17 @@
             {keywords.length > 0 && (
               <div style={{ padding: '10px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: T.text2 }}>
-                  {selectedEngine} page-1 visibility:
-                  <strong style={{ marginLeft: 6, color: firstPageCount > 0 ? T.green : T.muted }}>
-                    {firstPageCount}/{checkedCount || keywords.length}
-                  </strong>
+                  Tracked: <strong style={{ color: T.text }}>{keywords.length}</strong>
+                  {' · '}Rank checked: <strong style={{ color: T.text }}>{checkedCount}/{keywords.length}</strong>
+                  {' · '}Page-1: <strong style={{ color: firstPageCount > 0 ? T.green : T.muted }}>{firstPageCount}/{checkedCount}</strong>
+                  {' · '}Not checked: <strong style={{ color: T.text }}>{notCheckedCount}</strong>
                   {trackedCoverage.local > 0 && (
                     <span style={{ marginLeft: 8, color: T.orange, fontWeight: 700 }}>
                       ({trackedCoverage.local} Local Pack)
                     </span>
                   )}
                 </span>
-                <span style={{ fontSize: 11, color: T.muted }}>Counts Local Pack + organic top 10 (Norway-aware).</span>
+                <span style={{ fontSize: 11, color: T.muted }}>Page-1 counts Local Pack + organic top 10 (Norway-aware).</span>
               </div>
             )}
 
