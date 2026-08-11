@@ -67,7 +67,8 @@ function mapDfsKeywordItem(raw) {
 function mapRankedKeywordItem(item) {
   const mapped = mapDfsKeywordItem(item)
   const serp = item?.ranked_serp_element?.serp_item || {}
-  const positionRaw = Number(serp.rank_absolute ?? serp.rank_group)
+  const isOrganic = serp.type === 'organic'
+  const positionRaw = isOrganic ? Number(serp.rank_group) : NaN
   const position = Number.isFinite(positionRaw) && positionRaw >= 1 ? Math.round(positionRaw) : null
   return {
     ...mapped,
@@ -151,7 +152,7 @@ function buildWhy(item, seed) {
   if (item.difficultyScore != null) parts.push(`KD ${item.difficultyScore}`)
   if (item.intent) parts.push(`${item.intent} intent`)
   if (item.volume) parts.push(`${Number(item.volume).toLocaleString()} searches/mo`)
-  // Use ASCII separator only — Unicode middot gets mojibake'd in some DB/client paths
+  // Use ASCII separator only â€” Unicode middot gets mojibake'd in some DB/client paths
   return parts.join(' | ') || 'Adjacent opportunity for your niche'
 }
 
@@ -239,13 +240,13 @@ async function fetchDfsRankedKeywords({ authHeader, domain, location, limit = 50
       target: domain,
       location_code: location.code,
       limit,
-      item_types: ['organic', 'local_pack', 'featured_snippet'],
+      item_types: ['organic'],
       order_by: ['keyword_data.keyword_info.search_volume,desc'],
       filters: [
         ['keyword_data.keyword_info.search_volume', '>', 0],
       ],
     })
-    return (result?.items || []).map(mapRankedKeywordItem).filter((i) => i.keyword)
+    return (result?.items || [])       .map(mapRankedKeywordItem)       .filter((i) => i.keyword && i.position != null)
   } catch (e) {
     console.warn('DataForSEO ranked_keywords failed:', e.response?.data || e.message)
     return []

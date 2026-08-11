@@ -680,7 +680,7 @@
                                   <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>
                                     {item.position
   ? item.source === 'dfs_ranked'
-    ? `Live #${item.position}`
+    ? `Organic #${item.position}`
     : item.source === 'gsc+dfs'
       ? `GSC avg #${item.position} · Live verified`
       : item.source === 'gsc'
