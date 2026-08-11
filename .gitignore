@@ -40,3 +40,4 @@ frontend/src/index.backup-*.css
 
 # Backup files from patch scripts
 *.bak
+serpapi_test.json

@@ -173,6 +173,9 @@
     const [discovery, setDiscovery] = useState(null)
     const [discoveryOpen, setDiscoveryOpen] = useState(false)
     const [discoverRunning, setDiscoverRunning] = useState(false)
+    const [trackedSearch, setTrackedSearch] = useState('')
+    const [trackedTier, setTrackedTier] = useState('all')
+    const [trackedShowAll, setTrackedShowAll] = useState(false)
 
     const applyResearchPayload = (data, queryFallback = '') => {
       const matching = data.matching || data.suggestions || []
@@ -584,6 +587,19 @@
     const firstPageCount = page1Data?.inFirstPageCount ?? trackedCoverage.page1
     const checkedCount = page1Data?.checked ?? trackedCoverage.checked
     const notCheckedCount = Math.max(keywords.length - checkedCount, 0)
+
+    const TRACKED_PAGE_SIZE = 15
+    const trackedTierCounts = keywords.reduce((acc, k) => {
+      const tier = getOpportunityTag(k.volume, k.difficulty).label
+      acc[tier] = (acc[tier] || 0) + 1
+      return acc
+    }, {})
+    const visibleTrackedAll = keywords.filter((k) => {
+      if (trackedTier !== 'all' && getOpportunityTag(k.volume, k.difficulty).label !== trackedTier) return false
+      if (trackedSearch.trim() && !k.keyword.toLowerCase().includes(trackedSearch.trim().toLowerCase())) return false
+      return true
+    })
+    const visibleTrackedKeywords = trackedShowAll ? visibleTrackedAll : visibleTrackedAll.slice(0, TRACKED_PAGE_SIZE)
 
     return (
       <div className="fade-in">
@@ -1017,6 +1033,33 @@
               </div>
             </div>
 
+            <div style={{ padding: '10px 20px', borderBottom: `1px solid ${T.border}`, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <input
+                placeholder="Filter tracked keywords"
+                value={trackedSearch}
+                onChange={(e) => setTrackedSearch(e.target.value)}
+                style={{ width: 200, fontSize: 12 }}
+              />
+              {['all', 'High Value', 'Quick Win', 'Long Tail', 'Standard', 'High Competition', 'Low Priority'].map((tier) => (
+                <button
+                  key={tier}
+                  onClick={() => setTrackedTier(tier)}
+                  style={{
+                    border: `1px solid ${T.border}`,
+                    borderRadius: 99,
+                    padding: '4px 10px',
+                    fontSize: 11,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    background: trackedTier === tier ? T.orangeDim : '#fff',
+                    color: trackedTier === tier ? T.orange : T.text2,
+                  }}
+                >
+                  {tier === 'all' ? `All (${keywords.length})` : `${tier} (${trackedTierCounts[tier] || 0})`}
+                </button>
+              ))}
+            </div>
+
             {keywords.length > 0 && (
               <div style={{ padding: '10px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: T.text2 }}>
@@ -1074,7 +1117,7 @@
                   <span style={{ textAlign: 'center' }}>Last checked</span>
                   <span></span>
                 </div>
-                {keywords.map(k => {
+                {visibleTrackedKeywords.map(k => {
                   const rank = getPersistedRank(k)
                   const movement = getMovementDisplay(rank)
                   const posLabel = formatRankPositionLabel(rank)
@@ -1151,6 +1194,19 @@
                   </div>
                   )
                 })}
+                {visibleTrackedAll.length > TRACKED_PAGE_SIZE && (
+                  <div style={{ padding: '12px 20px', textAlign: 'center', borderTop: `1px solid ${T.border}` }}>
+                    <button
+                      onClick={() => setTrackedShowAll((v) => !v)}
+                      style={{
+                        border: `1px solid ${T.border}`, borderRadius: 8, padding: '7px 14px',
+                        fontSize: 12, fontWeight: 700, color: T.text2, background: T.surface2, cursor: 'pointer',
+                      }}
+                    >
+                      {trackedShowAll ? 'Show less' : `Show all (${visibleTrackedAll.length})`}
+                    </button>
+                  </div>
+                )}
               </>
             )}
           </Card>

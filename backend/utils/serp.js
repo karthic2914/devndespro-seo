@@ -16,7 +16,11 @@ const {
   computeRankMovement,
 } = require('./helpers')
 
-const MAX_RANK_DEPTH = 100
+// Capped to 10 (page 1 only). Deep positions (beyond page 1) are sourced
+// from DataForSEO's ranked_keywords cache instead of paginated SerpAPI
+// calls, since DataForSEO returns full-domain rankings in a single request
+// while SerpAPI charges per page (10 results) fetched.
+const MAX_RANK_DEPTH = 10
 
 async function scrapeEngineResults(keyword, engine) {
   const headers = {
@@ -85,6 +89,31 @@ async function scrapeEngineResults(keyword, engine) {
   }
 
   return results.slice(0, 10)
+}
+
+/**
+ * Fallback position lookup: reads the cached DataForSEO ranked_keywords
+ * data (from keyword_discoveries.results.alreadyRanking) for a given
+ * keyword when the live shallow (page-1) SERP scan doesn't find it.
+ * This avoids paying for deep SerpAPI pagination.
+ */
+async function getDfsRankedPosition(siteId, keyword) {
+  try {
+    const { rows } = await pool.query(
+      'SELECT results FROM keyword_discoveries WHERE site_id=$1 LIMIT 1',
+      [siteId]
+    )
+    const results = rows[0]?.results
+    const alreadyRanking = results?.alreadyRanking || []
+    const key = String(keyword || '').toLowerCase().trim()
+    const match = alreadyRanking.find(
+      (item) => String(item.keyword || '').toLowerCase().trim() === key
+    )
+    return match?.position ?? null
+  } catch (e) {
+    console.warn('getDfsRankedPosition lookup failed:', e.message)
+    return null
+  }
 }
 
 async function fetchSerpVisibility(keyword, engine, context = {}) {
@@ -294,8 +323,16 @@ async function scanSiteKeywordTransitions(siteId, engines = SUPPORTED_ENGINES, k
 
       const organicHit = organic.find((r) => isDomainMatch(r.domain, targetDomain))
       const localHit = findLocalMatch(local, { domain: targetDomain, brandName: site.name })
-      const currentOrganicPos = toRankPosition(organicHit?.position)
+      let currentOrganicPos = toRankPosition(organicHit?.position)
       const currentLocalPos = toRankPosition(localHit?.position)
+
+      // Not found in the shallow (page-1) live scan — fall back to the
+      // cached DataForSEO ranked_keywords position instead of marking
+      // the keyword as "not ranked" outright.
+      if (currentOrganicPos == null) {
+        const dfsPosition = await getDfsRankedPosition(siteId, kw.keyword)
+        if (dfsPosition != null) currentOrganicPos = dfsPosition
+      }
 
       const previousRankingResult = await pool.query(
         `SELECT position, local_position
@@ -497,4 +534,5 @@ module.exports = {
   fetchSerpResults,
   fetchSerpVisibility,
   scanSiteKeywordTransitions,
+  getDfsRankedPosition,
 }
