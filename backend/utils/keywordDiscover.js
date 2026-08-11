@@ -6,6 +6,23 @@ const { getGscAccessToken, resolveGscPropertyUrl } = require('./gsc')
 const AUTO_DISCOVER_QUERY = '__auto_discover__'
 const QUESTION_RE = /^(who|what|where|when|why|how|which|is|are|can|do|does|did|will|should|vs|versus)\b|\?$/i
 
+// Relevance filter for auto-discovered keyword suggestions.
+// A keyword only qualifies for goodToHave/howToGetThem if it either
+// contains a business-relevant term, or has clear commercial intent.
+const BUSINESS_TERMS = [
+  'web', 'seo', 'design', 'nettside', 'website', 'app', 'development',
+  'utvikling', 'marketing', 'markedsforing', 'markedsf\u00f8ring', 'digital',
+  'responsive', 'responsiv', 'landing', 'page', 'hosting', 'webdesign',
+  'webutvikling', 'webshop', 'e-commerce', 'ecommerce',
+]
+
+function isRelevantKeyword(keyword, intent) {
+  const k = String(keyword || '').toLowerCase()
+  const hasBusinessTerm = BUSINESS_TERMS.some((term) => k.includes(term))
+  const isCommercial = intent === 'Commercial' || intent === 'Transactional'
+  return hasBusinessTerm || isCommercial
+}
+
 const DFS_LOCATIONS = {
   2840: { code: 2840, name: 'United States', language: 'English', languageCode: 'en' },
   2826: { code: 2826, name: 'United Kingdom', language: 'English', languageCode: 'en' },
@@ -559,6 +576,7 @@ async function runKeywordAutoDiscover({ siteId, userId }) {
       const key = keywordKey(i.keyword)
       if (!key || blocked.has(key)) return false
       if ((i.difficultyScore || 50) >= 70 && (i.volume || 0) < 100) return false
+      if (!isRelevantKeyword(i.keyword, i.intent)) return false
       return true
     })
     .sort((a, b) => {
@@ -575,7 +593,7 @@ async function runKeywordAutoDiscover({ siteId, userId }) {
   ])
     .filter((i) => {
       const key = keywordKey(i.keyword)
-      return key && !blocked.has(key)
+      return key && !blocked.has(key) && isRelevantKeyword(i.keyword, i.intent)
     })
     .sort((a, b) => (b.volume || 0) - (a.volume || 0))
 

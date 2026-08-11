@@ -37,3 +37,6 @@ Thumbs.db
 # Local script-generated source backups
 frontend/src/pages/*.backup-*.jsx
 frontend/src/index.backup-*.css
+
+# Backup files from patch scripts
+*.bak
