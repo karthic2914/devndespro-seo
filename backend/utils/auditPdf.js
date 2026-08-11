@@ -6,7 +6,7 @@ const CHECK_GUIDANCE = {
   content: {
     title: 'Content depth could be improved',
     why: 'Thin pages may struggle to demonstrate relevance, expertise and enough value for visitors.',
-    fix: 'Expand the page with original, useful content that directly answers the visitor’s main questions.',
+    fix: 'Expand the page with original, useful content that directly answers the visitorâ€™s main questions.',
     effort: 'Medium',
   },
 
@@ -137,6 +137,123 @@ const CHECK_GUIDANCE = {
   },
 }
 
+const CHECK_GUIDANCE_NO = {
+  content: {
+    title: 'Innholdsdybden kan forbedres',
+    why: 'Sider med lite innhold kan ha problemer med å vise relevans, ekspertise og tilstrekkelig verdi for besøkende.',
+    fix: 'Utvid siden med originalt og nyttig innhold som svarer direkte på de viktigste spørsmålene til besøkende.',
+    effort: 'Middels',
+  },
+  canonical: {
+    title: 'Kanonisk URL mangler',
+    why: 'Kanoniske tagger hjelper søkemotorer med å identifisere den foretrukne versjonen av en side.',
+    fix: 'Legg til en selvrefererende canonical-tag som peker til den foretrukne URL-en.',
+    effort: 'Lav',
+  },
+  img_alt: {
+    title: 'Alternativ tekst for bilder mangler',
+    why: 'Alt-tekst forbedrer tilgjengeligheten og hjelper søkemotorer med å forstå relevante bilder.',
+    fix: 'Legg til korte og beskrivende alt-tekster på relevante bilder.',
+    effort: 'Lav',
+  },
+  schema: {
+    title: 'Strukturerte data mangler',
+    why: 'Strukturerte data hjelper søkesystemer med å forstå sideinnhold, enheter og innholdstype.',
+    fix: 'Legg til relevante JSON-LD-strukturerte data som beskriver siden korrekt.',
+    effort: 'Middels',
+  },
+  render_blocking: {
+    title: 'Render-blokkerende ressurser oppdaget',
+    why: 'Blokkerende CSS eller JavaScript kan forsinke den første visningen av siden.',
+    fix: 'Utsett ikke-kritisk JavaScript, gjennomgå kritisk CSS og optimaliser innlasting av ressurser.',
+    effort: 'Middels',
+  },
+  modern_images: {
+    title: 'Mulighet for moderne bildeformater',
+    why: 'Eldre bildeformater kan øke sidestørrelsen og gjøre innlastingen tregere.',
+    fix: 'Bruk egnede WebP- eller AVIF-versjoner og komprimer bildene på en passende måte.',
+    effort: 'Lav',
+  },
+  robots_txt: {
+    title: 'Problem med robots.txt-konfigurasjon',
+    why: 'Ugyldige crawler-instruksjoner kan gjøre gjennomsøking og indeksering mindre pålitelig.',
+    fix: 'Sørg for at /robots.txt returnerer gyldig ren tekst med riktige crawler-direktiver.',
+    effort: 'Lav',
+  },
+  custom_404: {
+    title: 'Feil håndtering av 404-sider',
+    why: 'HTTP 200 for manglende URL-er kan forvirre søkemotorer og sløse med crawl-ressurser.',
+    fix: 'Returner HTTP 404 eller 410 for URL-er som ikke finnes.',
+    effort: 'Lav',
+  },
+  aeo_author_entity: {
+    title: 'Forfatter- og enhetssignaler kan være tydeligere',
+    why: 'Tydelig informasjon om forfatter og organisasjon kan styrke attribusjon og tillit.',
+    fix: 'Legg til synlige opplysninger om forfatter eller organisasjon og relevante strukturerte data.',
+    effort: 'Middels',
+  },
+  aeo_eeat: {
+    title: 'Tillit og ekspertisesignaler kan styrkes',
+    why: 'Tydelige signaler om erfaring, ekspertise og troverdighet hjelper brukere og søkesystemer med å vurdere innholdskvaliteten.',
+    fix: 'Styrk forfatterprofiler, selskapsinformasjon, kvalifikasjoner, referanser og tillitssignaler.',
+    effort: 'Middels',
+  },
+  aeo_bing_index: {
+    title: 'Bing-synlighet bør gjennomgås',
+    why: 'Synlighet i flere store søkemotorer øker muligheten for at nettstedet blir oppdaget.',
+    fix: 'Kontroller indeksering i Bing Webmaster Tools og undersøk viktige sider som eventuelt mangler.',
+    effort: 'Lav',
+  },
+  aeo_citations: {
+    title: 'Autoritative referanser kan forbedres',
+    why: 'Relevante referanser kan styrke faktabasert troverdighet.',
+    fix: 'Referer til troverdige og direkte relevante eksterne kilder der det er passende.',
+    effort: 'Lav',
+  },
+  aeo_reviews: {
+    title: 'Eksterne omdømmesignaler kan styrkes',
+    why: 'Uavhengige anmeldelser og omtale fra tredjeparter kan styrke merkevarens troverdighet.',
+    fix: 'Bygg en legitim strategi for anmeldelser på plattformer som er relevante for virksomheten.',
+    effort: 'Middels',
+  },
+  snippet_faq_schema: {
+    title: 'Mulighet for FAQ-innhold',
+    why: 'Tydelig spørsmål-og-svar-innhold kan gjøre viktig informasjon enklere å forstå.',
+    fix: 'Legg til nyttig FAQ-innhold og gyldige FAQ-strukturerte data der det er relevant.',
+    effort: 'Middels',
+  },
+  snippet_howto_schema: {
+    title: 'Mulighet for fremgangsmåte-innhold',
+    why: 'Trinnvis innhold kan gjøre instruksjoner tydeligere for relevante søk.',
+    fix: 'Strukturer relevant instruksjonsinnhold i tydelige sekvensielle steg.',
+    effort: 'Middels',
+  },
+  snippet_article_schema: {
+    title: 'Mulighet for strukturerte artikkeldata',
+    why: 'Artikkelmetadata kan tydeliggjøre forfatterskap, publiseringsinformasjon og innholdstype.',
+    fix: 'Legg til gyldige Article- eller BlogPosting-strukturerte data for redaksjonelt innhold.',
+    effort: 'Lav',
+  },
+  snippet_question_headings: {
+    title: 'Mulighet for spørsmålsbaserte overskrifter',
+    why: 'Spørsmålsbaserte seksjoner gjør svar enklere å skanne og tolke.',
+    fix: 'Bruk naturlige H2/H3-overskrifter formulert som spørsmål, etterfulgt av direkte svar.',
+    effort: 'Lav',
+  },
+  snippet_ready: {
+    title: 'Direkte svarinnhold kan forbedres',
+    why: 'Korte svar nær overskrifter gjør viktig informasjon enklere å forstå.',
+    fix: 'Legg til korte og presise svaravsnitt under viktige informative overskrifter.',
+    effort: 'Lav',
+  },
+  snippet_answer_density: {
+    title: 'Flere korte svarblokker kan hjelpe',
+    why: 'Direkte forklarende avsnitt kan forbedre tydelighet og dekning av spørsmål.',
+    fix: 'Legg til korte svarblokker der de forbedrer leseopplevelsen.',
+    effort: 'Lav',
+  },
+}
+
 function cleanAuditMessage(message = '') {
   let text = String(message || '')
 
@@ -166,18 +283,28 @@ function humanizeCheckName(check = '') {
     .replace(/\b\w/g, char => char.toUpperCase())
 }
 
-function getGuidance(item = {}) {
-  const guidance = CHECK_GUIDANCE[item.check] || {}
+function getGuidance(item = {}, language = 'en') {
+  const isNorwegian = language === 'no'
+  const guidance =
+    (isNorwegian ? CHECK_GUIDANCE_NO[item.check] : null) ||
+    CHECK_GUIDANCE[item.check] ||
+    {}
 
   return {
-    title: guidance.title || humanizeCheckName(item.check),
+    title:
+      guidance.title ||
+      (isNorwegian ? 'Funn fra SEO-analysen' : humanizeCheckName(item.check)),
     why:
       guidance.why ||
-      'This finding may affect search visibility, usability or how search systems interpret the page.',
+      (isNorwegian
+        ? 'Dette funnet kan påvirke synlighet i søk, brukervennlighet eller hvordan søkesystemer tolker siden.'
+        : 'This finding may affect search visibility, usability or how search systems interpret the page.'),
     fix:
       guidance.fix ||
-      'Review the finding and apply the appropriate technical or content improvement.',
-    effort: guidance.effort || 'Medium',
+      (isNorwegian
+        ? 'Gjennomgå funnet og gjennomfør passende tekniske eller innholdsmessige forbedringer.'
+        : 'Review the finding and apply the appropriate technical or content improvement.'),
+    effort: guidance.effort || (isNorwegian ? 'Middels' : 'Medium'),
   }
 }
 
@@ -267,7 +394,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       const topPriorities = actionable.slice(0, 5)
 
       const quickWins = actionable
-        .filter(item => getGuidance(item).effort === 'Low')
+        .filter(item => ['Low', 'Lav'].includes(getGuidance(item, language).effort))
         .slice(0, 4)
 
       const reportUrl = String(
@@ -310,7 +437,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       }
 
       function finishBlock(startY, minHeight = 0, gap = 10) {
-        // If text flowed onto a new page, doc.y resets near the top — never jump back.
+        // If text flowed onto a new page, doc.y resets near the top â€” never jump back.
         if (doc.y < startY) {
           doc.y += gap
           return
@@ -441,7 +568,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       }
 
       function drawPriority(item, index) {
-        const guidance = getGuidance(item)
+        const guidance = getGuidance(item, language)
         const width = contentWidth()
         const textWidth = width - 24
         const title = String(index + 1) + '. ' + guidance.title
@@ -498,7 +625,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       }
 
       function drawQuickWin(item, index) {
-        const guidance = getGuidance(item)
+        const guidance = getGuidance(item, language)
         const width = contentWidth()
         const title = 'QUICK WIN ' + String(index + 1) + '   ' + guidance.title
         const titleH = measureTextHeight(title, 'Helvetica-Bold', 10, width)
@@ -526,7 +653,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       }
 
       function drawIssue(item) {
-        const guidance = getGuidance(item)
+        const guidance = getGuidance(item, language)
         const status = String(item?.status || 'unknown').toLowerCase()
 
         let statusLabel = 'REVIEW'
@@ -650,7 +777,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       }
 
       function drawPassedCheck(item) {
-        const guidance = getGuidance(item)
+        const guidance = getGuidance(item, language)
         const width = contentWidth()
         const titleH = measureTextHeight(guidance.title, 'Helvetica-Bold', 9.5, width)
         const message = cleanAuditMessage(item?.message)
@@ -781,13 +908,13 @@ function buildAuditPdfBuffer(report, options = {}) {
 
       if (score >= 80) {
         summaryText =
-          t('The website has a strong technical foundation. The remaining findings are primarily optimisation opportunities that can help strengthen organic visibility, content quality and AI-search readiness.', 'Nettstedet har et solid teknisk fundament. De gjenværende funnene er hovedsakelig forbedringsmuligheter som kan styrke organisk synlighet, innholdskvalitet og synlighet i AI-søk.')
+          t('The website has a strong technical foundation. The remaining findings are primarily optimisation opportunities that can help strengthen organic visibility, content quality and AI-search readiness.', 'Nettstedet har et solid teknisk fundament. De gjenvÃ¦rende funnene er hovedsakelig forbedringsmuligheter som kan styrke organisk synlighet, innholdskvalitet og synlighet i AI-sÃ¸k.')
       } else if (score >= 60) {
         summaryText =
           'The website has a reasonable foundation, but several important improvements should be prioritised. Addressing the highest-impact findings can strengthen technical quality and organic search performance.'
       } else {
         summaryText =
-          t('The audit identified several important areas that deserve attention. Addressing critical issues first, followed by high-impact warnings, can significantly improve the website’s technical SEO foundation and search readiness.', 'Analysen identifiserte flere viktige områder som bør følges opp. Ved å løse kritiske problemer først og deretter prioritere viktige advarsler, kan nettstedets tekniske SEO-grunnlag og synlighet i søk forbedres betydelig.')
+          t('The audit identified several important areas that deserve attention. Addressing critical issues first, followed by high-impact warnings, can significantly improve the websiteâ€™s technical SEO foundation and search readiness.', 'Analysen identifiserte flere viktige omrÃ¥der som bÃ¸r fÃ¸lges opp. Ved Ã¥ lÃ¸se kritiske problemer fÃ¸rst og deretter prioritere viktige advarsler, kan nettstedets tekniske SEO-grunnlag og synlighet i sÃ¸k forbedres betydelig.')
       }
 
       const auditDateText =
@@ -869,7 +996,7 @@ function buildAuditPdfBuffer(report, options = {}) {
 
       section(
         t('SEO Health by Category', 'SEO-status etter kategori'),
-        t('Percentage of checks currently passing in each audited area.', 'Andel kontroller som er godkjent innen hvert analysert område.')
+        t('Percentage of checks currently passing in each audited area.', 'Andel kontroller som er godkjent innen hvert analysert omrÃ¥de.')
       )
 
       const categories = [
@@ -983,7 +1110,7 @@ function buildAuditPdfBuffer(report, options = {}) {
       if (warnings.length) {
         section(
           t('Important Warnings', 'Viktige advarsler') + ' (' + warnings.length + ')',
-          t('Optimisation opportunities to review after critical issues.', 'Forbedringsmuligheter som bør gjennomgås etter de kritiske problemene.')
+          t('Optimisation opportunities to review after critical issues.', 'Forbedringsmuligheter som bÃ¸r gjennomgÃ¥s etter de kritiske problemene.')
         )
 
         warnings
@@ -1017,12 +1144,12 @@ function buildAuditPdfBuffer(report, options = {}) {
 
       const roadmap = [
         {
-          title: t('FIRST 7 DAYS', 'FØRSTE 7 DAGER'),
+          title: t('FIRST 7 DAYS', 'FÃ˜RSTE 7 DAGER'),
           text: 'Resolve critical crawl, indexing, canonical, status-code and high-impact technical issues.',
         },
         {
           title: 'NEXT 30 DAYS',
-          text: t('Improve on-page content, structured data, accessibility, internal optimisation and quick-win opportunities.', 'Forbedre innhold på siden, strukturerte data, tilgjengelighet, intern optimalisering og raske forbedringsmuligheter.'),
+          text: t('Improve on-page content, structured data, accessibility, internal optimisation and quick-win opportunities.', 'Forbedre innhold pÃ¥ siden, strukturerte data, tilgjengelighet, intern optimalisering og raske forbedringsmuligheter.'),
         },
         {
           title: '30-90 DAYS',
@@ -1084,7 +1211,7 @@ function buildAuditPdfBuffer(report, options = {}) {
         .fontSize(14)
         .fillColor('#FFFFFF')
         .text(
-          t('Need help implementing these improvements?', 'Trenger du hjelp med å gjennomføre disse forbedringene?'),
+          t('Need help implementing these improvements?', 'Trenger du hjelp med Ã¥ gjennomfÃ¸re disse forbedringene?'),
           ctaX + 16,
           ctaY + 16,
           {
@@ -1098,7 +1225,7 @@ function buildAuditPdfBuffer(report, options = {}) {
         .fontSize(9.5)
         .fillColor('#CBD5E1')
         .text(
-          t('Devndespro helps businesses with technical SEO, web development and AI-search optimisation.', 'Devndespro hjelper bedrifter med teknisk SEO, webutvikling og optimalisering for AI-søk.'),
+          t('Devndespro helps businesses with technical SEO, web development and AI-search optimisation.', 'Devndespro hjelper bedrifter med teknisk SEO, webutvikling og optimalisering for AI-sÃ¸k.'),
           ctaX + 26,
           ctaY + 42,
           {
@@ -1155,7 +1282,7 @@ function buildAuditPdfBuffer(report, options = {}) {
           .fontSize(8)
           .fillColor('#94A3B8')
           .text(
-            hostname + '  ·  ' + t('SEO Audit Report', 'SEO-rapport'),
+            hostname + '  Â·  ' + t('SEO Audit Report', 'SEO-rapport'),
             left,
             footerY,
             {
