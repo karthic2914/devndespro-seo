@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
@@ -130,6 +130,11 @@ router.post('/:siteId/keywords', auth, verifySite, async (req, res) => {
 
     if (normalizedKeyword.length > 255) {
       return res.status(400).json({ error: 'Keyword must be 255 characters or fewer' })
+    }
+
+    // Reject domain-like strings (not real search keywords)
+    if (/\.(com|no|net|org|io|co)$/i.test(normalizedKeyword)) {
+      return res.status(400).json({ error: 'This looks like a domain, not a search keyword' })
     }
 
     const volumeNumber = Number(volume)
