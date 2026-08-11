@@ -16,8 +16,20 @@ const BUSINESS_TERMS = [
   'webutvikling', 'webshop', 'e-commerce', 'ecommerce',
 ]
 
+// Known false positives — platform/tool names that pass the business-term
+// or commercial-intent check but aren't real content opportunities.
+const EXCLUDED_TERMS = [
+  'uniweb', 'rcube', 'kontrollpanel', 'websupporten',
+]
+
+function isExcludedKeyword(keyword) {
+  const k = String(keyword || '').toLowerCase()
+  return EXCLUDED_TERMS.some((term) => k.includes(term))
+}
+
 function isRelevantKeyword(keyword, intent) {
   const k = String(keyword || '').toLowerCase()
+  if (isExcludedKeyword(k)) return false
   const hasBusinessTerm = BUSINESS_TERMS.some((term) => k.includes(term))
   const isCommercial = intent === 'Commercial' || intent === 'Transactional'
   return hasBusinessTerm || isCommercial
