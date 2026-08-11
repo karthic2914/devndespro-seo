@@ -1678,6 +1678,15 @@ export default function SiteAudit() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/site/${siteId}/actions`)}>
             <FontAwesomeIcon icon={faPenToSquare} style={{ marginRight: 6 }} /><span className='btn-label'>Fix in Actions</span>
           </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowEmailModal(true)}
+            style={{ background: '#F97316', borderColor: '#F97316' }}
+          >
+            <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: 6 }} />
+            <span className='btn-label'>Send summary email</span>
+          </Button>
           <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
             <Button variant="primary" size="sm" onClick={rerunCompleteAudit} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
               <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
@@ -2404,19 +2413,6 @@ export default function SiteAudit() {
 
       {crawl && (
         <div>
-          <button
-            onClick={() => setShowEmailModal(true)}
-            style={{
-              marginBottom: 12, marginTop: 12, display: 'inline-flex', alignItems: 'center',
-              gap: 8, padding: '8px 18px', borderRadius: 8, border: 'none',
-              background: '#F97316', color: '#fff', fontWeight: 600, fontSize: 13,
-              cursor: 'pointer', fontFamily: 'inherit',
-            }}
-          >
-            <FontAwesomeIcon icon={faEnvelope} />
-            Send summary email
-          </button>
-
           <Modal
             open={showEmailModal}
             onClose={() => setShowEmailModal(false)}
@@ -2487,8 +2483,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? 'Formal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ suited for corporate and enterprise prospects'
-                  : 'Casual ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ suited for SMB and local businesses'}
+                  ? 'Formal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ suited for corporate and enterprise prospects'
+                  : 'Casual ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
