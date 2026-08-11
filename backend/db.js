@@ -204,6 +204,10 @@ CREATE INDEX IF NOT EXISTS keyword_rankings_lookup_idx
 
 CREATE INDEX IF NOT EXISTS keyword_rankings_checked_at_idx
   ON keyword_rankings(checked_at DESC);
+
+ALTER TABLE keyword_rankings ADD COLUMN IF NOT EXISTS local_position INTEGER;
+ALTER TABLE keyword_rankings ADD COLUMN IF NOT EXISTS previous_local_position INTEGER;
+ALTER TABLE keyword_rankings ADD COLUMN IF NOT EXISTS local_status VARCHAR(30);
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE actions ADD COLUMN IF NOT EXISTS site_id INTEGER;
@@ -285,6 +289,12 @@ CREATE TABLE IF NOT EXISTS keyword_searches (
   searched_at TIMESTAMPTZ DEFAULT NOW()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS keyword_searches_site_id_uidx ON keyword_searches(site_id);
+
+CREATE TABLE IF NOT EXISTS keyword_discoveries (
+  site_id INTEGER PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE,
+  results JSONB NOT NULL DEFAULT '{}'::jsonb,
+  discovered_at TIMESTAMPTZ DEFAULT NOW()
+);
 
 CREATE TABLE IF NOT EXISTS ai_keyword_suggestions (
   site_id INTEGER PRIMARY KEY REFERENCES sites(id) ON DELETE CASCADE,

@@ -8,6 +8,11 @@
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
   import api from '../utils/api'
   import toast from '../utils/toast'
+  import {
+    resolveRankMovement,
+    formatRankMovementDisplay,
+    formatRankPositionLabel,
+  } from '../utils/rankMovement'
 
   const ENGINES = [
     { value: 'google', label: 'Google' },
@@ -122,6 +127,15 @@
     return getOpportunityTag(s.volume, s.difficultyScore ?? s.difficulty).score
   }
 
+  function cleanDiscoveryText(value) {
+    if (typeof value !== 'string') return value
+    return value
+      .replace(/[^\w\s"'.,:;#/+%-]+/g, ' | ')
+      .replace(/(?:\s*\|\s*)+/g, ' | ')
+      .replace(/\s{2,}/g, ' ')
+      .trim()
+  }
+
   export default function Keywords() {
     const { siteId } = useParams()
     const [keywords, setKeywords] = useState([])
@@ -156,6 +170,9 @@
     const [addingKeywords, setAddingKeywords] = useState(new Set())
     const [bulkAdding, setBulkAdding] = useState(false)
     const [importingProjectKeywords, setImportingProjectKeywords] = useState(false)
+    const [discovery, setDiscovery] = useState(null)
+    const [discoveryOpen, setDiscoveryOpen] = useState(false)
+    const [discoverRunning, setDiscoverRunning] = useState(false)
 
     const applyResearchPayload = (data, queryFallback = '') => {
       const matching = data.matching || data.suggestions || []
@@ -193,7 +210,73 @@
           (r.data.questions || []).length
         if (hasResults) applyResearchPayload(r.data, r.data.query || '')
       }).catch(() => {})
+      api.get(`/sites/${siteId}/keywords/auto-discover`).then(r => {
+        const data = r.data
+        const hasDiscovery =
+          (data?.alreadyRanking || []).length ||
+          (data?.goodToHave || []).length ||
+          (data?.howToGetThem || []).length
+        if (hasDiscovery) {
+          setDiscovery(data)
+          setDiscoveryOpen(true)
+        }
+      }).catch(() => {})
     }, [siteId])
+
+    const runAutoDiscover = async () => {
+      console.log('[Keywords] Rediscover starting', { siteId })
+      setDiscoverRunning(true)
+      try {
+        const { data } = await api.post(`/sites/${siteId}/keywords/auto-discover`)
+        console.log('[Keywords] Rediscover finished', {
+          siteId,
+          importedCount: data?.meta?.importedCount || 0,
+          alreadyRanking: (data?.alreadyRanking || []).length,
+          goodToHave: (data?.goodToHave || []).length,
+          howToGetThem: (data?.howToGetThem || []).length,
+          sourcesUsed: data?.meta?.sourcesUsed || [],
+        })
+        setDiscovery(data)
+        setDiscoveryOpen(true)
+        const imported = data?.meta?.importedCount || 0
+        toast.success(
+          imported > 0
+            ? `Discovery complete — tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
+            : 'Discovery complete'
+        )
+        load()
+      } catch (e) {
+        console.error('[Keywords] Rediscover failed', e.response?.data || e.message)
+        toast.error(e.response?.data?.error || 'Keyword discovery failed')
+      }
+      setDiscoverRunning(false)
+    }
+
+    const addDiscoveryKeyword = async (item) => {
+      const key = String(item.keyword || '').toLowerCase().trim()
+      if (!key || addedKeywords.has(key)) return
+      setAddingKeywords(prev => new Set([...prev, key]))
+      try {
+        await api.post(`/sites/${siteId}/keywords`, {
+          keyword: item.keyword,
+          volume: item.volume || 0,
+          difficulty: item.difficulty || 'Medium',
+          position: null,
+        })
+        setAddedKeywords(prev => new Set([...prev, key]))
+        toast.success(`Added: ${item.keyword}`)
+        load()
+      } catch (e) {
+        const msg = e.response?.data?.error || ''
+        if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('duplicate')) {
+          setAddedKeywords(prev => new Set([...prev, key]))
+          toast('Already tracked')
+        } else {
+          toast.error(msg || 'Failed to add keyword')
+        }
+      }
+      setAddingKeywords(prev => { const n = new Set(prev); n.delete(key); return n })
+    }
 
     const searchDataForSEO = async () => {
       if (!dfsQuery.trim()) return
@@ -340,13 +423,30 @@
 
     const runWeeklyScanReport = async () => {
       if (!keywords.length) return
+      console.log('[Keywords] Weekly scan starting', {
+        siteId,
+        engine,
+        keywordCount: keywords.length,
+        limit: 50,
+      })
       setScanRunning(true)
-    toast('Ranking scan started. This may take a little time.')
+      toast('Ranking scan started. This may take a little time.')
       try {
         const { data } = await api.post(`/sites/${siteId}/keywords/scan-weekly-now`, { engines: [engine], limit: 50 })
+        console.log('[Keywords] Weekly scan finished', {
+          siteId,
+          engine,
+          checked: data?.checked ?? data?.report?.checked,
+          alertsCreated: data?.alertsCreated ?? data?.report?.alertsCreated,
+          transitions: (data?.report?.transitions || []).length,
+          inFirstPage: data?.report?.engines || data?.engines,
+        })
         setScanReport(data)
         await load()
-      } catch { setScanReport(null) }
+      } catch (e) {
+        console.error('[Keywords] Weekly scan failed', e.response?.data || e.message)
+        setScanReport(null)
+      }
       setScanRunning(false)
     }
 
@@ -438,56 +538,51 @@
       setDeleteConfirm(null)
     }
 
-    const firstPageCount = page1Data?.inFirstPageCount || 0
-    const checkedCount = page1Data?.checked || 0
     const selectedEngine = ENGINES.find(e => e.value === engine)?.label || 'Google'
 
     const getPersistedRank = (keyword) => {
       const state = keyword?.rank_state?.[engine] || {}
-
-      const toNumber = (value) =>
-        value !== null &&
-        value !== undefined &&
-        Number.isFinite(Number(value))
-          ? Number(value)
-          : null
-
+      const live = page1Map[keyword.id]
+      const merged = {
+        ...state,
+        ...(live?.position != null ? { position: live.position } : {}),
+        ...(live?.localPosition != null ? { local_position: live.localPosition } : {}),
+        ...(live?.visibility ? { visibility: live.visibility } : {}),
+        ...(live?.inFirstPage != null ? { in_first_page: live.inFirstPage } : {}),
+        ...(live ? { checked_at: state.checked_at || new Date().toISOString() } : {}),
+      }
+      const movement = resolveRankMovement(merged)
       return {
-        position: toNumber(state.position),
-        previousPosition: toNumber(state.previous_position),
-        change: toNumber(state.change),
-        status: state.status || 'initial',
-        checkedAt: state.checked_at || null,
+        position: movement.position,
+        organicPosition: movement.organicPosition,
+        localPosition: movement.localPosition,
+        previousPosition: movement.previousPosition,
+        change: movement.change,
+        status: movement.status,
+        visibility: movement.visibility,
+        inFirstPage: movement.inFirstPage,
+        source: movement.source,
+        checkedAt: movement.checkedAt,
+        checked: movement.checked,
       }
     }
 
-    const getMovementDisplay = (rank) => {
-      if (!rank.checkedAt || rank.status === 'initial') {
-        return { label: '-', color: T.muted }
-      }
+    const getMovementDisplay = (rank) =>
+      formatRankMovementDisplay(rank, { muted: T.muted, green: T.green, red: T.red, orange: T.orange })
 
-      if (rank.status === 'new') {
-        return { label: 'NEW', color: T.green }
-      }
+    const trackedCoverage = keywords.reduce(
+      (acc, k) => {
+        const rank = getPersistedRank(k)
+        if (rank.checked) acc.checked += 1
+        if (rank.inFirstPage) acc.page1 += 1
+        if (rank.localPosition) acc.local += 1
+        return acc
+      },
+      { checked: 0, page1: 0, local: 0 }
+    )
 
-      if (rank.status === 'lost') {
-        return { label: 'LOST', color: T.red }
-      }
-
-      if (rank.status === 'up' && rank.change !== null) {
-        return { label: `\u2191 +${rank.change}`, color: T.green }
-      }
-
-      if (rank.status === 'down' && rank.change !== null) {
-        return { label: `\u2193 ${rank.change}`, color: T.red }
-      }
-
-      if (rank.status === 'same') {
-        return { label: '0', color: T.muted }
-      }
-
-      return { label: '-', color: T.muted }
-    }
+    const firstPageCount = page1Data?.inFirstPageCount ?? trackedCoverage.page1
+    const checkedCount = page1Data?.checked || trackedCoverage.checked || keywords.length
 
     return (
       <div className="fade-in">
@@ -497,7 +592,16 @@
             <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', margin: 0 }}>Keywords</h1>
             <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Track your target keyword positions</p>
           </div>
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button onClick={runAutoDiscover} disabled={discoverRunning} style={{
+              background: T.orangeDim, border: `1px solid ${T.orange}33`, borderRadius: 8,
+              padding: '7px 14px', fontSize: 12, fontWeight: 700, color: T.orange,
+              cursor: discoverRunning ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+              opacity: discoverRunning ? 0.75 : 1,
+            }}>
+              <FontAwesomeIcon icon={discoverRunning ? faArrowsRotate : faMagnifyingGlass} spin={discoverRunning} />
+              {discoverRunning ? 'Discovering...' : 'Rediscover keywords'}
+            </button>
             <button onClick={importFromProject} disabled={importingProjectKeywords} style={{
               background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
               padding: '7px 14px', fontSize: 12, fontWeight: 600, color: T.text2,
@@ -518,6 +622,98 @@
         </div>
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          {discovery && (
+            <Card padding="1.25rem">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: discoveryOpen ? 12 : 0 }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FontAwesomeIcon icon={faBolt} style={{ color: T.orange }} />
+                    <strong style={{ fontSize: 14, color: T.text }}>Project keyword discovery</strong>
+                  </div>
+                  <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                    Already ranking {(discovery.alreadyRanking || []).length}
+                    {' · '}Good to have {(discovery.goodToHave || []).length}
+                    {' · '}How to get them {(discovery.howToGetThem || []).length}
+                    {discovery.meta?.locale?.locationName ? ` · ${discovery.meta.locale.locationName}` : ''}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setDiscoveryOpen((v) => !v)}
+                  style={{
+                    background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
+                    padding: '7px 12px', fontSize: 12, fontWeight: 600, color: T.text2, cursor: 'pointer',
+                  }}
+                >
+                  {discoveryOpen ? 'Collapse' : 'Expand'}
+                </button>
+              </div>
+
+              {discoveryOpen && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
+                  {[
+                    { title: 'Already ranking', items: discovery.alreadyRanking || [], mode: 'tracked' },
+                    { title: 'Good to have', items: discovery.goodToHave || [], mode: 'add' },
+                    { title: 'How to get them', items: discovery.howToGetThem || [], mode: 'how' },
+                  ].map((bucket) => (
+                    <div key={bucket.title} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
+                      <div style={{ padding: '8px 10px', background: T.surface2, borderBottom: `1px solid ${T.border}`, fontSize: 12, fontWeight: 800, color: T.text }}>
+                        {bucket.title}
+                        <span style={{ marginLeft: 6, color: T.orange }}>{bucket.items.length}</span>
+                      </div>
+                      <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+                        {bucket.items.length === 0 ? (
+                          <div style={{ padding: 12, fontSize: 12, color: T.muted }}>No items</div>
+                        ) : bucket.items.slice(0, 12).map((item, idx) => {
+                          const key = String(item.keyword || '').toLowerCase().trim()
+                          const isAdded = addedKeywords.has(key) || item.tracked
+                          const isAdding = addingKeywords.has(key)
+                          return (
+                            <div key={`${bucket.title}-${key}-${idx}`} style={{
+                              padding: '9px 10px',
+                              borderBottom: idx < Math.min(bucket.items.length, 12) - 1 ? `1px solid ${T.border}` : 'none',
+                              background: isAdded ? '#F0FDF4' : '#fff',
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{item.keyword}</div>
+                                  <div style={{ fontSize: 10, color: T.muted, marginTop: 2 }}>
+                                    {item.position ? `#${item.position}` : '-'}
+                                    {' · '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' · '}{item.difficulty || 'Medium'}
+                                  </div>
+                                  {bucket.mode === 'how' && item.how && (
+                                    <div style={{ fontSize: 10, color: T.text2, marginTop: 3 }}>{cleanDiscoveryText(item.how)}</div>
+                                  )}
+                                  {bucket.mode === 'add' && item.why && (
+                                    <div style={{ fontSize: 10, color: T.text2, marginTop: 3 }}>{cleanDiscoveryText(item.why)}</div>
+                                  )}
+                                </div>
+                                {bucket.mode === 'tracked' || isAdded ? (
+                                  <span style={{ fontSize: 10, fontWeight: 700, color: T.green }}>Tracked</span>
+                                ) : (
+                                  <button
+                                    onClick={() => addDiscoveryKeyword(item)}
+                                    disabled={isAdding}
+                                    style={{
+                                      background: T.orangeDim, color: T.orange, border: 'none', borderRadius: 6,
+                                      padding: '4px 8px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                                    }}
+                                  >
+                                    {isAdding ? '...' : '+ Add'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* DataForSEO Keyword Research Panel */}
           <Card padding="1.25rem">
@@ -745,13 +941,17 @@
                 }
               </OrangeBtn>
             </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
+              AI Suggestions are creative ideas from Claude (estimated volume) — not live ranking data.
+              Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real GSC / DataForSEO inventory.
+            </div>
 
             {aiSuggestions.length > 0 && (
               <div style={{ marginTop: 12, border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
                 <div style={{ padding: '8px 10px', background: T.surface2, fontSize: 11, color: T.muted, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: `1px solid ${T.border}` }}>
                   AI Keyword Ideas
                   <span style={{ marginLeft: 8, fontWeight: 500, textTransform: 'none', color: T.muted }}>
-                    ({aiSource === 'fallback' ? 'smart fallback' : aiSource === 'cache' ? 'saved AI cache' : 'Claude AI'})
+                    ({aiSource === 'fallback' ? 'smart fallback' : aiSource === 'cache' ? 'saved AI cache' : 'Claude AI · estimated volume'})
                   </span>
                 </div>
                 {aiSuggestions.slice(0, 8).map((s, idx) => {
@@ -811,12 +1011,17 @@
             {keywords.length > 0 && (
               <div style={{ padding: '10px 20px', background: T.surface2, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: 12, color: T.text2 }}>
-                  {selectedEngine} first-page coverage:
+                  {selectedEngine} page-1 visibility:
                   <strong style={{ marginLeft: 6, color: firstPageCount > 0 ? T.green : T.muted }}>
                     {firstPageCount}/{checkedCount || keywords.length}
                   </strong>
+                  {trackedCoverage.local > 0 && (
+                    <span style={{ marginLeft: 8, color: T.orange, fontWeight: 700 }}>
+                      ({trackedCoverage.local} Local Pack)
+                    </span>
+                  )}
                 </span>
-                <span style={{ fontSize: 11, color: T.muted }}>Each check uses SERP API requests.</span>
+                <span style={{ fontSize: 11, color: T.muted }}>Counts Local Pack + organic top 10 (Norway-aware).</span>
               </div>
             )}
 
@@ -849,52 +1054,62 @@
               </div>
             ) : (
               <>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 80px 90px 76px 110px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 100px 120px 76px 110px 40px', gap: 8, fontSize: 11, color: T.muted, padding: '8px 20px', borderBottom: `1px solid ${T.border}`, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   <span>Keyword</span>
                   <span>Opportunity</span>
                   <span style={{ textAlign: 'right' }}>Vol/mo</span>
                   <span style={{ textAlign: 'center' }}>Difficulty</span>
-                  <span style={{ textAlign: 'center' }}>Position</span>
+                  <span style={{ textAlign: 'center' }}>Visibility</span>
                   <span style={{ textAlign: 'center' }}>Change</span>
                   <span style={{ textAlign: 'center' }}>Page 1</span>
                   <span style={{ textAlign: 'center' }}>Last checked</span>
                   <span></span>
                 </div>
-                {keywords.map(k => (
-                  <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 80px 90px 76px 110px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
+                {keywords.map(k => {
+                  const rank = getPersistedRank(k)
+                  const movement = getMovementDisplay(rank)
+                  const posLabel = formatRankPositionLabel(rank)
+                  return (
+                  <div key={k.id} style={{ display: 'grid', gridTemplateColumns: '1fr 110px 80px 90px 100px 120px 76px 110px 40px', gap: 8, alignItems: 'center', padding: '10px 20px', borderBottom: `1px solid #F3F4F6` }}>
                     <span style={{ fontSize: 14, fontWeight: 500, color: T.text }}>{k.keyword}</span>
                     <div><OpportunityTag volume={k.volume} difficulty={k.difficulty} /></div>
                     <span style={{ fontSize: 13, textAlign: 'right', fontFamily: 'DM Mono, monospace', color: T.text2 }}>{k.volume?.toLocaleString()}</span>
                     <div style={{ textAlign: 'center' }}><Badge status={k.difficulty} /></div>
-                    <div style={{ textAlign: 'center', fontSize: 13, color: T.text, fontWeight: 800 }}>
-                      {getPersistedRank(k).checkedAt
-                        ? (getPersistedRank(k).position
-                            ? `#${getPersistedRank(k).position}`
-                            : '-')
-                        : '-'}
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{
+                        fontSize: 12,
+                        fontWeight: 800,
+                        color: posLabel.colorKey === 'local' ? T.orange : posLabel.colorKey === 'organic' ? T.text : T.muted,
+                      }}>
+                        {posLabel.label}
+                      </div>
+                      <div style={{ fontSize: 9, color: T.muted, marginTop: 1 }}>{posLabel.sub}</div>
                     </div>
-                    
                     <div
                       style={{
                         textAlign: 'center',
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: 800,
-                        color: getMovementDisplay(getPersistedRank(k)).color,
+                        color: movement.color,
+                        whiteSpace: 'nowrap',
                       }}
                       title={
-                        getPersistedRank(k).previousPosition
-                          ? `Previous position: #${getPersistedRank(k).previousPosition}`
-                          : 'No previous ranking observation'
+                        rank.localPosition
+                          ? `Local Pack #${rank.localPosition}${rank.organicPosition ? ` · Organic #${rank.organicPosition}` : ''}`
+                          : rank.previousPosition
+                            ? `Previous position: #${rank.previousPosition}`
+                            : rank.status === 'lost'
+                              ? 'Was ranked before, now missing from SERP'
+                              : 'No valid previous ranking'
                       }
                     >
-                      {getMovementDisplay(getPersistedRank(k)).label}
+                      {movement.label}
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      {!getPersistedRank(k).checkedAt
+                      {!rank.checked
                         ? <Badge variant="default">-</Badge>
-                        : getPersistedRank(k).position &&
-                          getPersistedRank(k).position <= 10
-                          ? <Badge variant="success">Yes</Badge>
+                        : rank.inFirstPage
+                          ? <Badge variant="success">{rank.localPosition ? 'Local' : 'Yes'}</Badge>
                           : <Badge variant="danger">No</Badge>
                       }
                     </div>
@@ -906,13 +1121,13 @@
                         lineHeight: 1.25,
                       }}
                       title={
-                        getPersistedRank(k).checkedAt
-                          ? new Date(getPersistedRank(k).checkedAt).toLocaleString()
+                        rank.checkedAt
+                          ? new Date(rank.checkedAt).toLocaleString()
                           : 'Not scanned yet'
                       }
                     >
-                      {getPersistedRank(k).checkedAt
-                        ? new Date(getPersistedRank(k).checkedAt).toLocaleDateString()
+                      {rank.checkedAt
+                        ? new Date(rank.checkedAt).toLocaleDateString()
                         : 'Not scanned'}
                     </div>
                     <button
@@ -925,7 +1140,8 @@
                       <FontAwesomeIcon icon={faTrash} />
                     </button>
                   </div>
-                ))}
+                  )
+                })}
               </>
             )}
           </Card>

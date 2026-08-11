@@ -2,10 +2,19 @@
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
-const { normalizeEngine, extractDomain, isDomainMatch, SUPPORTED_ENGINES, buildHeuristicKeywordSuggestions } = require('../utils/helpers')
-const { fetchSerpResults, scanSiteKeywordTransitions } = require('../utils/serp')
+const {
+  normalizeEngine,
+  extractDomain,
+  isDomainMatch,
+  findLocalMatch,
+  inferRankingLocale,
+  SUPPORTED_ENGINES,
+  buildHeuristicKeywordSuggestions,
+} = require('../utils/helpers')
+const { fetchSerpVisibility, scanSiteKeywordTransitions } = require('../utils/serp')
 const { sendRankScanReportEmail } = require('../utils/email')
 const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
+const { runKeywordAutoDiscover, getCachedDiscovery } = require('../utils/keywordDiscover')
 
 const router = express.Router()
 
@@ -360,6 +369,41 @@ router.post('/:siteId/keywords/enrich', auth, verifySite, async (req, res) => {
   }
 })
 
+// Cached keyword discovery (Already ranking / Good to have / How to get them)
+router.get('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res) => {
+  try {
+    const cached = await getCachedDiscovery(req.siteId)
+    if (!cached) {
+      return res.json({
+        alreadyRanking: [],
+        goodToHave: [],
+        howToGetThem: [],
+        meta: null,
+        cached: false,
+      })
+    }
+    res.json({ ...cached, cached: true })
+  } catch (e) {
+    console.error('Get keyword discovery cache failed:', e.message)
+    res.status(500).json({ error: 'Could not load keyword discovery' })
+  }
+})
+
+// Run automatic ranking-keyword discovery (auto-tracks Already ranking)
+router.post('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res) => {
+  try {
+    const payload = await runKeywordAutoDiscover({
+      siteId: req.siteId,
+      userId: req.user.id,
+    })
+    res.json({ ...payload, cached: false })
+  } catch (e) {
+    console.error('Keyword auto-discover failed:', e.response?.data || e.message)
+    if (e.status === 404) return res.status(404).json({ error: 'Site not found' })
+    res.status(500).json({ error: 'Keyword auto-discovery failed' })
+  }
+})
+
 // Import keyword ideas from this project's GSC query data
 router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, res) => {
   try {
@@ -543,25 +587,69 @@ router.post('/:siteId/keywords/first-page-status', auth, verifySite, async (req,
   const engine = normalizeEngine(req.body?.engine)
   const limit = Math.min(Math.max(parseInt(req.body?.limit || 20), 1), 50)
 
-  const { rows: siteRows } = await pool.query('SELECT url FROM sites WHERE id=$1 LIMIT 1', [req.siteId])
+  const { rows: siteRows } = await pool.query('SELECT name, url FROM sites WHERE id=$1 LIMIT 1', [req.siteId])
   if (!siteRows[0]) return res.status(404).json({ error: 'Site not found' })
-  const targetDomain = extractDomain(siteRows[0].url)
+  const site = siteRows[0]
+  const targetDomain = extractDomain(site.url)
+  const locale = inferRankingLocale(site)
 
   const { rows: keywords } = await pool.query(
-    'SELECT id, keyword FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
+    'SELECT id, keyword, rank_country, rank_language, rank_location FROM keywords WHERE site_id=$1 ORDER BY created_at ASC LIMIT $2',
     [req.siteId, limit]
   )
 
   const details = []
   for (const k of keywords) {
-    const results = await fetchSerpResults(k.keyword, engine)
-    const hit = results.find(r => isDomainMatch(r.domain, targetDomain))
-    const position = hit ? hit.position : null
-    details.push({ id: k.id, keyword: k.keyword, position, inFirstPage: !!position && position <= 10, top10: results })
+    const country =
+      k.rank_location
+        ? (k.rank_country || locale.country)
+        : (!k.rank_country || k.rank_country === 'us')
+          ? locale.country
+          : k.rank_country
+    const rankingContext = {
+      country,
+      language: k.rank_language || locale.language,
+      location: k.rank_location || locale.location,
+      google_domain: locale.google_domain || (country === 'no' ? 'google.no' : null),
+      device: 'desktop',
+    }
+    const snapshot = await fetchSerpVisibility(k.keyword, engine, rankingContext)
+    const organic = snapshot.organic || []
+    const local = snapshot.local || []
+    const organicHit = organic.find((r) => isDomainMatch(r.domain, targetDomain))
+    const localHit = findLocalMatch(local, { domain: targetDomain, brandName: site.name })
+    const position = organicHit ? organicHit.position : null
+    const localPosition = localHit ? localHit.position : null
+    const inFirstPage = localPosition != null || (!!position && position <= 10)
+    details.push({
+      id: k.id,
+      keyword: k.keyword,
+      position,
+      localPosition,
+      visibility: localPosition != null && position != null
+        ? 'both'
+        : localPosition != null
+          ? 'local'
+          : position != null
+            ? 'organic'
+            : 'none',
+      inFirstPage,
+      top10: organic.slice(0, 10),
+      localPack: local.slice(0, 3),
+    })
   }
 
-  const inFirstPageCount = details.filter(d => d.inFirstPage).length
-  res.json({ engine, siteDomain: targetDomain, checked: details.length, inFirstPageCount, details })
+  const inFirstPageCount = details.filter((d) => d.inFirstPage).length
+  const localPackCount = details.filter((d) => d.localPosition != null).length
+  res.json({
+    engine,
+    siteDomain: targetDomain,
+    locale,
+    checked: details.length,
+    inFirstPageCount,
+    localPackCount,
+    details,
+  })
 })
 
 router.post('/:siteId/keywords/scan-weekly-now', auth, verifySite, async (req, res) => {
@@ -570,7 +658,18 @@ router.post('/:siteId/keywords/scan-weekly-now', auth, verifySite, async (req, r
       ? req.body.engines.map(normalizeEngine)
       : SUPPORTED_ENGINES
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 30), 1), 80)
+    console.log('[Keywords] Weekly scan starting', {
+      siteId: req.siteId,
+      engines,
+      limit,
+    })
     const scan = await scanSiteKeywordTransitions(req.siteId, engines, limit)
+    console.log('[Keywords] Weekly scan finished', {
+      siteId: req.siteId,
+      checked: scan?.checked,
+      alertsCreated: scan?.alertsCreated,
+      transitions: (scan?.report?.transitions || []).length,
+    })
 
     if (scan.report) {
       await pool.query(

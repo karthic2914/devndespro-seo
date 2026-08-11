@@ -37,9 +37,132 @@ function isDomainMatch(resultDomain, targetDomain) {
   return rd === td || rd.endsWith(`.${td}`) || td.endsWith(`.${rd}`)
 }
 
+function normalizeBrandName(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '')
+}
+
+function extractLocalPlaces(serpData) {
+  const lr = serpData?.local_results
+  if (!lr) return []
+  if (Array.isArray(lr)) return lr
+  if (Array.isArray(lr.places)) return lr.places
+  return []
+}
+
+function mapLocalResults(places = []) {
+  return places.map((place, index) => {
+    const website = place.website || place.links?.website || place.link || ''
+    return {
+      position: Number(place.position) > 0 ? Number(place.position) : index + 1,
+      title: place.title || '',
+      url: website || null,
+      domain: website ? extractDomain(website) : '',
+      address: place.address || '',
+      type: 'local',
+      rating: place.rating ?? null,
+    }
+  })
+}
+
+/** Match Local Pack / Maps listing by website domain or business name. */
+function findLocalMatch(localResults = [], { domain, brandName } = {}) {
+  const targetDomain = String(domain || '').toLowerCase().replace(/^www\./, '')
+  const brand = normalizeBrandName(brandName)
+  if (!Array.isArray(localResults) || !localResults.length) return null
+
+  return (
+    localResults.find((row) => {
+      if (row.domain && targetDomain && isDomainMatch(row.domain, targetDomain)) return true
+      const title = normalizeBrandName(row.title)
+      if (!brand || !title) return false
+      return title === brand || title.includes(brand) || brand.includes(title)
+    }) || null
+  )
+}
+
+function inferRankingLocale(site = {}) {
+  const haystack = `${site.name || ''} ${site.url || ''}`.toLowerCase()
+  const domain = extractDomain(site.url)
+  const looksNorway =
+    domain.endsWith('.no') ||
+    /\b(norway|norge|stavanger|oslo|bergen|trondheim)\b/.test(haystack) ||
+    /devndespro/.test(haystack)
+
+  if (looksNorway) {
+    return {
+      country: 'no',
+      language: 'en',
+      location: 'Norway',
+      google_domain: 'google.no',
+    }
+  }
+
+  return {
+    country: String(process.env.SERP_COUNTRY || 'us').toLowerCase(),
+    language: String(process.env.SERP_LANGUAGE || 'en').toLowerCase(),
+    location: null,
+    google_domain: null,
+  }
+}
+
 function engineLabel(engine) {
   if (engine === 'duckduckgo') return 'DuckDuckGo'
   return String(engine || 'google').charAt(0).toUpperCase() + String(engine || 'google').slice(1)
+}
+
+/** Valid SERP rank only: integer >= 1. Everything else is "not ranked". */
+function toRankPosition(value) {
+  if (value === null || value === undefined || value === '') return null
+  const n = Number(value)
+  if (!Number.isFinite(n)) return null
+  const rounded = Math.round(n)
+  return rounded >= 1 ? rounded : null
+}
+
+/**
+ * Canonical ranking-change status (Phase 3.3).
+ * LOST requires a valid previous rank (>= 1). A prior "not ranked" check never becomes LOST.
+ *
+ * Statuses: new | up | down | same | lost | not-ranked
+ */
+function computeRankMovement(previousPosition, currentPosition, options = {}) {
+  const prev = toRankPosition(previousPosition)
+  const curr = toRankPosition(currentPosition)
+  const hasPreviousObservation = options.hasPreviousObservation === true
+
+  if (!hasPreviousObservation) {
+    if (curr != null) {
+      return { status: 'new', change: null, previousPosition: null, position: curr }
+    }
+    return { status: 'not-ranked', change: null, previousPosition: null, position: null }
+  }
+
+  // Previously ranked, now missing from SERP
+  if (prev != null && curr == null) {
+    return { status: 'lost', change: null, previousPosition: prev, position: null }
+  }
+
+  // Newly appeared (was not ranked before, or first valid rank after null checks)
+  if (prev == null && curr != null) {
+    return { status: 'new', change: null, previousPosition: null, position: curr }
+  }
+
+  // Still not ranked
+  if (prev == null && curr == null) {
+    return { status: 'not-ranked', change: null, previousPosition: null, position: null }
+  }
+
+  const change = prev - curr
+  if (change > 0) {
+    return { status: 'up', change, previousPosition: prev, position: curr }
+  }
+  if (change < 0) {
+    return { status: 'down', change, previousPosition: prev, position: curr }
+  }
+  return { status: 'same', change: 0, previousPosition: prev, position: curr }
 }
 
 function isPrivateIp(ip) {
@@ -240,8 +363,15 @@ module.exports = {
   normalizeEngine,
   extractDomain,
   mapOrganicResults,
+  extractLocalPlaces,
+  mapLocalResults,
+  findLocalMatch,
+  normalizeBrandName,
+  inferRankingLocale,
   isDomainMatch,
   engineLabel,
+  toRankPosition,
+  computeRankMovement,
   isPrivateIp,
   normalizeAndVerifyWebsite,
   firstValueByKey,

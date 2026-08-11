@@ -20,6 +20,15 @@ const BENCHMARKS = [
   { label: 'Dofollow Backlinks',   value: '10-30',  sub: 'to start ranking', color: T.purple, icon: faLink },
 ]
 
+function cleanDiscoveryText(value) {
+  if (typeof value !== 'string') return value
+  return value
+    .replace(/[^\w\s"'.,:;#/+%-]+/g, ' | ')
+    .replace(/(?:\s*\|\s*)+/g, ' | ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 function SiteAvatar({ name, url }) {
   const [faviconError, setFaviconError] = useState(false)
 
@@ -103,6 +112,12 @@ export default function Sites() {
   const [gscConnecting, setGscConnecting] = useState(false)
   const [selectedProps, setSelectedProps] = useState([])
   const [importing, setImporting] = useState(false)
+  const [discoverSite, setDiscoverSite] = useState(null)
+  const [discoverLoading, setDiscoverLoading] = useState(false)
+  const [discoverError, setDiscoverError] = useState('')
+  const [discoverData, setDiscoverData] = useState(null)
+  const [discoverAdding, setDiscoverAdding] = useState(new Set())
+  const [discoverAdded, setDiscoverAdded] = useState(new Set())
   const { user } = useAuth()
   const [adding, setAdding] = useState(false)
   const [errors, setErrors] = useState({})
@@ -227,10 +242,84 @@ export default function Sites() {
     setSelectedProps(p => p.includes(url) ? p.filter(x => x !== url) : [...p, url])
   }
 
+  const resetDiscoverState = () => {
+    setDiscoverSite(null)
+    setDiscoverLoading(false)
+    setDiscoverError('')
+    setDiscoverData(null)
+    setDiscoverAdding(new Set())
+    setDiscoverAdded(new Set())
+  }
+
+  const startKeywordDiscovery = async (site) => {
+    if (!site?.id) return
+    setDiscoverSite(site)
+    setAddMode('discover')
+    setShowAdd(true)
+    setDiscoverLoading(true)
+    setDiscoverError('')
+    setDiscoverData(null)
+    setDiscoverAdded(new Set())
+    try {
+      const { data } = await api.post(`/sites/${site.id}/keywords/auto-discover`)
+      setDiscoverData(data)
+      const imported = data?.meta?.importedCount || 0
+      if (imported > 0) {
+        toast.success(`Tracked ${imported} already-ranking keyword${imported === 1 ? '' : 's'}`)
+      }
+    } catch (e) {
+      setDiscoverError(e.response?.data?.error || 'Keyword discovery failed')
+      toast.error(e.response?.data?.error || 'Keyword discovery failed')
+    }
+    setDiscoverLoading(false)
+  }
+
+  const addDiscoverKeyword = async (item) => {
+    if (!discoverSite?.id || !item?.keyword) return
+    const key = item.keyword.toLowerCase().trim()
+    if (discoverAdded.has(key)) return
+    setDiscoverAdding((prev) => new Set([...prev, key]))
+    try {
+      await api.post(`/sites/${discoverSite.id}/keywords`, {
+        keyword: item.keyword,
+        volume: item.volume || 0,
+        difficulty: item.difficulty || 'Medium',
+        position: null,
+      })
+      setDiscoverAdded((prev) => new Set([...prev, key]))
+      toast.success(`Added: ${item.keyword}`)
+    } catch (e) {
+      const msg = e.response?.data?.error || ''
+      if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('duplicate')) {
+        setDiscoverAdded((prev) => new Set([...prev, key]))
+        toast('Already tracked')
+      } else {
+        toast.error(msg || 'Failed to add keyword')
+      }
+    }
+    setDiscoverAdding((prev) => {
+      const next = new Set(prev)
+      next.delete(key)
+      return next
+    })
+  }
+
+  const finishDiscovery = (goToKeywords = false) => {
+    const siteId = discoverSite?.id
+    resetDiscoverState()
+    setShowAdd(false)
+    setAddMode('choose')
+    setSelectedProps([])
+    setForm({ name: '', url: '', contactEmail: '', notifyAdmin: true })
+    load()
+    if (goToKeywords && siteId) navigate(`/site/${siteId}/keywords`)
+  }
+
   const importSelected = async () => {
     if (selectedProps.length === 0) return
     setImporting(true)
     let successCount = 0
+    let firstSite = null
     for (const propUrl of selectedProps) {
       const displayUrl = propUrl.startsWith('sc-domain:')
         ? propUrl.replace('sc-domain:', '')
@@ -241,15 +330,27 @@ export default function Sites() {
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({ name: displayUrl, url: displayUrl, notifyAdmin: true }),
         })
-        if (res.ok) successCount++
+        if (res.ok) {
+          successCount++
+          const created = await res.json().catch(() => null)
+          if (created?.id && !firstSite) firstSite = created
+          else if (created?.id) {
+            // Background discover for additional imports
+            api.post(`/sites/${created.id}/keywords/auto-discover`).catch(() => {})
+          }
+        }
       } catch { /* continue with remaining */ }
     }
     setImporting(false)
-    setShowAdd(false)
-    setAddMode('choose')
     setSelectedProps([])
     toast.success(`Imported ${successCount} of ${selectedProps.length} project${selectedProps.length === 1 ? '' : 's'}`)
     load()
+    if (firstSite) {
+      await startKeywordDiscovery(firstSite)
+    } else {
+      setShowAdd(false)
+      setAddMode('choose')
+    }
   }
 
   const add = async () => {
@@ -270,12 +371,11 @@ export default function Sites() {
       }
       const newSite = await res.json().catch(() => null)
       setForm({ name: '', url: '', contactEmail: '', notifyAdmin: true })
-      setShowAdd(false)
       toast.success('Project added successfully')
       load()
 
       if (newSite?.id && (user?.is_paid || user?.id === 1)) {
-        toast('Discovering backlinks in the background...', { icon: '' })
+        toast('Discovering backlinks in the background...')
         fetch(`/api/sites/${newSite.id}/backlinks/crawl`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders },
@@ -287,6 +387,12 @@ export default function Sites() {
             toast.success(`Found ${count} backlink${count === 1 ? '' : 's'} for ${newSite.name}`)
           })
           .catch(() => toast.error('Backlink discovery failed - you can retry from the Backlinks tab'))
+      }
+
+      if (newSite?.id) {
+        await startKeywordDiscovery(newSite)
+      } else {
+        setShowAdd(false)
       }
     } catch (e) {
       const msg = e?.message || 'Failed to add site. Try again.'
@@ -364,16 +470,49 @@ export default function Sites() {
 
         <Modal
           open={showAdd}
-          onClose={() => { setShowAdd(false); setErrors({}); setAddMode('choose'); setSelectedProps([]) }}
-          title={addMode === 'gsc' ? 'Import from Google Search Console' : 'Add new project'}
-          subtitle={addMode === 'gsc' ? 'Select verified domains to import' : addMode === 'manual' ? 'Start tracking SEO metrics for any website' : 'Start tracking SEO metrics for any website'}
-          width={480}
+          onClose={() => {
+            if (addMode === 'discover') {
+              finishDiscovery(false)
+              return
+            }
+            setShowAdd(false)
+            setErrors({})
+            setAddMode('choose')
+            setSelectedProps([])
+            resetDiscoverState()
+          }}
+          title={
+            addMode === 'gsc'
+              ? 'Import from Google Search Console'
+              : addMode === 'discover'
+                ? 'Keyword discovery'
+                : 'Add new project'
+          }
+          subtitle={
+            addMode === 'gsc'
+              ? 'Select verified domains to import'
+              : addMode === 'discover'
+                ? `Finding ranking keywords for ${discoverSite?.name || 'your project'}`
+                : addMode === 'manual'
+                  ? 'Start tracking SEO metrics for any website'
+                  : 'Start tracking SEO metrics for any website'
+          }
+          width={addMode === 'discover' ? 720 : 480}
           footer={
             addMode === 'choose' ? null : addMode === 'gsc' ? (
               <>
                 <Button variant="secondary" onClick={() => setAddMode('choose')}>Back</Button>
                 <Button variant="primary" loading={importing} disabled={selectedProps.length === 0} onClick={importSelected}>
                   Import{selectedProps.length > 0 ? ` (${selectedProps.length})` : ''} <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                </Button>
+              </>
+            ) : addMode === 'discover' ? (
+              <>
+                <Button variant="secondary" onClick={() => finishDiscovery(false)} disabled={discoverLoading}>
+                  Done
+                </Button>
+                <Button variant="primary" onClick={() => finishDiscovery(true)} disabled={discoverLoading || !discoverSite?.id}>
+                  Go to Keywords <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
                 </Button>
               </>
             ) : (
@@ -465,6 +604,139 @@ export default function Sites() {
                 <input type="checkbox" checked={form.notifyAdmin} onChange={e => setForm(p => ({ ...p, notifyAdmin: e.target.checked }))} style={{ marginRight: 6 }} />
                 Notify admin by email when this project is added
               </label>
+            </div>
+          )}
+
+          {addMode === 'discover' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {discoverLoading && (
+                <div style={{ padding: '2rem 1rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 6 }}>
+                    Finding keywords you already rank for...
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6B7280' }}>
+                    Checking GSC + DataForSEO ranked keywords, then suggesting opportunities.
+                  </div>
+                </div>
+              )}
+
+              {!discoverLoading && discoverError && (
+                <div style={{ padding: '12px 14px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FECACA', color: '#B91C1C', fontSize: 13 }}>
+                  {discoverError}
+                  <div style={{ marginTop: 10 }}>
+                    <Button variant="secondary" size="sm" onClick={() => startKeywordDiscovery(discoverSite)}>Retry discovery</Button>
+                  </div>
+                </div>
+              )}
+
+              {!discoverLoading && discoverData && (
+                <>
+                  <div style={{ fontSize: 12, color: '#6B7280' }}>
+                    Locale: {discoverData.meta?.locale?.locationName || 'United States'}
+                    {discoverData.meta?.importedCount != null && (
+                      <> · Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                    )}
+                  </div>
+
+                  {[
+                    {
+                      key: 'already',
+                      title: 'Already ranking',
+                      hint: 'Auto-tracked from GSC / DataForSEO ranked keywords',
+                      items: discoverData.alreadyRanking || [],
+                      mode: 'tracked',
+                    },
+                    {
+                      key: 'good',
+                      title: 'Good to have',
+                      hint: 'Related opportunities worth targeting next',
+                      items: discoverData.goodToHave || [],
+                      mode: 'add',
+                    },
+                    {
+                      key: 'how',
+                      title: 'How to get them',
+                      hint: 'Questions and long-tails with a clear content action',
+                      items: discoverData.howToGetThem || [],
+                      mode: 'how',
+                    },
+                  ].map((bucket) => (
+                    <div key={bucket.key} style={{ border: '1px solid #e5e7eb', borderRadius: 12, overflow: 'hidden' }}>
+                      <div style={{ padding: '10px 12px', background: '#F9FAFB', borderBottom: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#111827' }}>
+                            {bucket.title}
+                            <span style={{ marginLeft: 8, color: '#EA6A3B' }}>{bucket.items.length}</span>
+                          </div>
+                          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{bucket.hint}</div>
+                        </div>
+                      </div>
+                      {bucket.items.length === 0 ? (
+                        <div style={{ padding: '14px 12px', fontSize: 12, color: '#9CA3AF' }}>No keywords in this bucket yet.</div>
+                      ) : (
+                        <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                          {bucket.items.slice(0, 20).map((item, idx) => {
+                            const key = String(item.keyword || '').toLowerCase().trim()
+                            const isAdded = discoverAdded.has(key) || item.tracked
+                            const isAdding = discoverAdding.has(key)
+                            return (
+                              <div
+                                key={`${bucket.key}-${key}-${idx}`}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'flex-start',
+                                  justifyContent: 'space-between',
+                                  gap: 10,
+                                  padding: '10px 12px',
+                                  borderBottom: idx < Math.min(bucket.items.length, 20) - 1 ? '1px solid #F3F4F6' : 'none',
+                                  background: isAdded ? '#F0FDF4' : '#fff',
+                                }}
+                              >
+                                <div style={{ minWidth: 0, flex: 1 }}>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
+                                  <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
+                                    {item.position ? `#${item.position}` : 'No pos'}
+                                    {' · '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' · '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? ` · ${item.opportunity}` : ''}
+                                    {item.source ? ` · ${item.source}` : ''}
+                                  </div>
+                                  {bucket.mode === 'how' && item.how && (
+                                    <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
+                                  )}
+                                  {bucket.mode === 'add' && item.why && (
+                                    <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.why)}</div>
+                                  )}
+                                </div>
+                                {bucket.mode === 'tracked' ? (
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: '#16A34A', whiteSpace: 'nowrap' }}>
+                                    <FontAwesomeIcon icon={faCheck} style={{ marginRight: 4 }} />
+                                    Tracked
+                                  </span>
+                                ) : isAdded ? (
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: '#16A34A', whiteSpace: 'nowrap' }}>
+                                    <FontAwesomeIcon icon={faCheck} style={{ marginRight: 4 }} />
+                                    Added
+                                  </span>
+                                ) : (
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={isAdding}
+                                    onClick={() => addDiscoverKeyword(item)}
+                                  >
+                                    {isAdding ? 'Adding...' : '+ Add'}
+                                  </Button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
           )}
         </Modal>
