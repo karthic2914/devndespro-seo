@@ -1007,6 +1007,11 @@ export default function SiteAudit() {
   }
 
   async function runMultipageAudit() {
+    if (multipageStatus === 'running' || currentAuditRunId) {
+      showSnackbar('A full site audit is already in progress.', 'warning')
+      return
+    }
+
     if (!canRunFullAudit) {
       showSnackbar(
         'Full Site Audit is available only for approved admin accounts',
@@ -1719,90 +1724,6 @@ export default function SiteAudit() {
         </div>
       </div>
 
-      {runError && (
-        <div style={{
-          background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA',
-          borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: '1rem',
-        }}>{runError}</div>
-      )}
-
-      {isBotBlocked && (
-        <div style={{
-          background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10,
-          padding: '12px 16px', marginBottom: '1rem',
-          display: 'flex', alignItems: 'flex-start', gap: 10,
-        }}>
-          <FontAwesomeIcon icon={faTriangleExclamation} style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>
-              Site appears to be behind bot protection or a CAPTCHA wall
-            </div>
-            <div style={{ fontSize: 12, color: '#92400E', marginTop: 3, lineHeight: 1.6 }}>
-              The crawler received no content (0 words, status {auditData.crawl?.statusCode}).
-              Audit scores may be inaccurate. The site owner should check if their host is blocking automated crawlers.
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div style={{
-        background: '#fff',
-        border: '1px solid #E5E7EB',
-        borderRadius: 12,
-        marginBottom: '1rem',
-      }}>
-        <div style={{
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: collapsedSections.decisionCenter
-            ? 'none'
-            : '1px solid #F3F4F6',
-        }}>
-          <div style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: '#374151',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}>
-            Decision Center
-          </div>
-
-          <button
-            type="button"
-            onClick={() => toggleSection('decisionCenter')}
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              border: '1px solid #E5E7EB',
-              background: '#fff',
-              cursor: 'pointer',
-              color: '#6B7280',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FontAwesomeIcon
-              icon={collapsedSections.decisionCenter
-                ? faChevronRight
-                : faChevronDown}
-            />
-          </button>
-        </div>
-
-        {!collapsedSections.decisionCenter && (
-          <DecisionCenter
-            auditData={auditData}
-            multipageResults={multipageResults}
-            authorityScore={authorityScore}
-            authorityDetails={authorityDetails}
-          />
-        )}
-      </div>
 {multipageStatus === 'running' && (
         <div style={{
           background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10,
@@ -1909,6 +1830,90 @@ export default function SiteAudit() {
           )}
         </div>
       )}
+      {runError && (
+        <div style={{
+          background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA',
+          borderRadius: 8, padding: '10px 14px', fontSize: 13, marginBottom: '1rem',
+        }}>{runError}</div>
+      )}
+
+      {isBotBlocked && (
+        <div style={{
+          background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 10,
+          padding: '12px 16px', marginBottom: '1rem',
+          display: 'flex', alignItems: 'flex-start', gap: 10,
+        }}>
+          <FontAwesomeIcon icon={faTriangleExclamation} style={{ color: '#D97706', marginTop: 2, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: '#92400E' }}>
+              Site appears to be behind bot protection or a CAPTCHA wall
+            </div>
+            <div style={{ fontSize: 12, color: '#92400E', marginTop: 3, lineHeight: 1.6 }}>
+              The crawler received no content (0 words, status {auditData.crawl?.statusCode}).
+              Audit scores may be inaccurate. The site owner should check if their host is blocking automated crawlers.
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        background: '#fff',
+        border: '1px solid #E5E7EB',
+        borderRadius: 12,
+        marginBottom: '1rem',
+      }}>
+        <div style={{
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: collapsedSections.decisionCenter
+            ? 'none'
+            : '1px solid #F3F4F6',
+        }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}>
+            Decision Center
+          </div>
+
+          <button
+            type="button"
+            onClick={() => toggleSection('decisionCenter')}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              border: '1px solid #E5E7EB',
+              background: '#fff',
+              cursor: 'pointer',
+              color: '#6B7280',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FontAwesomeIcon
+              icon={collapsedSections.decisionCenter
+                ? faChevronRight
+                : faChevronDown}
+            />
+          </button>
+        </div>
+
+        {!collapsedSections.decisionCenter && (
+          <DecisionCenter
+            auditData={auditData}
+            multipageResults={multipageResults}
+            authorityScore={authorityScore}
+            authorityDetails={authorityDetails}
+          />
+        )}
+      </div>
 
       {multipageStatus === 'complete' && multipageResults && (
         <div style={{
@@ -2481,8 +2486,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? 'Formal â€“ suited for corporate and enterprise prospects'
-                  : 'Casual â€“ suited for SMB and local businesses'}
+                  ? 'Formal ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ suited for corporate and enterprise prospects'
+                  : 'Casual ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
