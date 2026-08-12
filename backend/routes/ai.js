@@ -8,10 +8,15 @@ const { detectSiteProducts, getCachedProducts, saveProducts, generateAllProductQ
 const {
   runFullVisibilityScan,
   getSummary,
+  getEngineBreakdown,
+  getQuestionStatus,
   generateReasoning,
   generateRecommendations,
+  saveRecommendations,
   snapshotHistory,
   getHistory,
+  createSession,
+  listSessions,
 } = require('../utils/aiVisibilityEngine')
 
 const router = express.Router()
@@ -512,13 +517,38 @@ router.delete('/:siteId/custom-questions/:questionId', auth, verifySite, async (
 // Section 3 - run the multi-engine scan. Expensive: call from an explicit
 // "Run Visibility Scan" button, not on page load. `questions` = flat array
 // pulled from your existing generateAllProductQuestions() output.
+// Sessions - each "+ New Session" creates a named, saved scan run that
+// future scans can be tagged to (via sessionId in the /scan body), so
+// results can be grouped and compared over time.
+router.post('/:siteId/ai-visibility/sessions', auth, verifySite, async (req, res) => {
+  try {
+    const name = String(req.body?.name || '').trim()
+    if (!name) return res.status(400).json({ error: 'name is required' })
+    const session = await createSession(req.siteId, name)
+    res.json(session)
+  } catch (e) {
+    console.error('Create session failed:', e.message)
+    res.status(500).json({ error: 'Failed to create session' })
+  }
+})
+
+router.get('/:siteId/ai-visibility/sessions', auth, verifySite, async (req, res) => {
+  try {
+    const sessions = await listSessions(req.siteId)
+    res.json({ sessions })
+  } catch (e) {
+    console.error('List sessions failed:', e.message)
+    res.status(500).json({ error: 'Failed to load sessions' })
+  }
+})
+
 router.post('/:siteId/ai-visibility/scan', auth, verifySite, async (req, res) => {
   try {
-    const { siteName, questions } = req.body
+    const { siteName, questions, sessionId } = req.body
     if (!siteName || !Array.isArray(questions) || !questions.length) {
       return res.status(400).json({ error: 'siteName and questions[] are required' })
     }
-    const results = await runFullVisibilityScan(req.siteId, siteName, questions)
+    const results = await runFullVisibilityScan(req.siteId, siteName, questions, sessionId || null)
     await snapshotHistory(req.siteId) // also updates section 7 trend
     res.json({ results })
   } catch (err) {
@@ -535,6 +565,28 @@ router.get('/:siteId/ai-visibility/summary', auth, verifySite, async (req, res) 
   } catch (err) {
     console.error('ai-visibility/summary error:', err)
     res.status(500).json({ error: 'Failed to load summary' })
+  }
+})
+
+// Overview: per-engine breakdown table (mention rate, top10, avg position, trend)
+router.get('/:siteId/ai-visibility/engine-breakdown', auth, verifySite, async (req, res) => {
+  try {
+    const breakdown = await getEngineBreakdown(req.siteId)
+    res.json({ breakdown })
+  } catch (err) {
+    console.error('ai-visibility/engine-breakdown error:', err)
+    res.status(500).json({ error: 'Failed to load engine breakdown' })
+  }
+})
+
+// Questions table: tested/ready status, per-engine rank, last tested
+router.get('/:siteId/ai-visibility/question-status', auth, verifySite, async (req, res) => {
+  try {
+    const statuses = await getQuestionStatus(req.siteId)
+    res.json({ statuses })
+  } catch (err) {
+    console.error('ai-visibility/question-status error:', err)
+    res.status(500).json({ error: 'Failed to load question status' })
   }
 })
 
@@ -559,6 +611,22 @@ router.post('/:siteId/ai-visibility/recommendations', auth, verifySite, async (r
   } catch (err) {
     console.error('ai-visibility/recommendations error:', err)
     res.status(500).json({ error: 'Failed to generate recommendations' })
+  }
+})
+
+// Marks a recommendation done/not-done. Saves the whole array back as-is -
+// no new AI call, just persists the completed flags so they survive refresh.
+router.patch('/:siteId/ai-visibility/recommendations', auth, verifySite, async (req, res) => {
+  try {
+    const { recommendations } = req.body
+    if (!Array.isArray(recommendations)) {
+      return res.status(400).json({ error: 'recommendations array is required' })
+    }
+    await saveRecommendations(req.siteId, recommendations)
+    res.json({ saved: true })
+  } catch (err) {
+    console.error('ai-visibility/recommendations PATCH error:', err)
+    res.status(500).json({ error: 'Failed to save recommendations' })
   }
 })
 

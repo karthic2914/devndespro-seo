@@ -1,9 +1,9 @@
 ﻿// backend/utils/aiVisibilityEngine.js
 // Powers sections 3-7 of AI Visibility: comparison table, summary, reasoning, recommendations, history.
-// Reuses callAIEngine() pattern from productDetect.js  -  same engine-agnostic wrapper.
+// Reuses callAIEngine() pattern from productDetect.js - same engine-agnostic wrapper.
 
 const { callAIEngine } = require('./productDetect');
-const { pool } = require('../clients'); // adjust to your actual pg pool import
+const { pool } = require('../clients');
 
 const ENGINES = ['chatgpt', 'claude']; // gemini, perplexity stay "coming soon" until integrated
 
@@ -12,72 +12,19 @@ const ENGINES = ['chatgpt', 'claude']; // gemini, perplexity stay "coming soon" 
 // Prompts each engine with the question and asks for a ranked top-10 list.
 // We ask for strict JSON to avoid fragile regex parsing of prose answers.
 function buildRankingPrompt(question) {
-  return `You are evaluating AI visibility for a business/product search query.
+  return `Answer this question as you normally would, then extract your answer into a ranked list.
+Question: "${question}"
 
-Question:
-"${question}"
+Respond with ONLY valid JSON, no markdown fences, no preamble:
+{"top10": [{"rank": 1, "name": "Brand Name"}, ...up to 10 entries]}
 
-Return ONLY a ranked list of actual:
-- companies
-- brands
-- SaaS products
-- software tools
-- agencies
-- platforms
-- named services/providers
-
-Do NOT return:
-- advice
-- skills
-- evaluation criteria
-- features
-- concepts
-- job titles
-- generic phrases such as "portfolio quality", "experience", "communication skills", "user research", etc.
-
-The "name" field MUST contain a real identifiable brand, company, product, platform, agency, or tool.
-
-Respond ONLY with valid JSON, no markdown, no explanation:
-
-{
-  "top10": [
-    { "rank": 1, "name": "Brand or Product Name" },
-    { "rank": 2, "name": "Brand or Product Name" }
-  ]
-}
-
-Rules:
-- Maximum 10 entries.
-- Do not invent companies.
-- Do not pad the list.
-- Keep only genuinely relevant named entities.
-- If no appropriate named brands/products can be identified, return:
-  {"top10":[]}`;
+If fewer than 10 distinct brands/tools are genuinely relevant, return fewer entries. Do not pad with irrelevant names.`;
 }
 
 function findBrandRank(top10, siteName) {
-  if (!siteName) return null;
-
-  const normalize = value =>
-    String(value || '')
-      .toLowerCase()
-      .replace(/^www\./, '')
-      .replace(/\.(com|no|net|org|io|co)$/g, '')
-      .replace(/[^a-z0-9]/g, '');
-
-  const needle = normalize(siteName);
-
-  const hit = top10.find(item => {
-    const candidate = normalize(item?.name);
-
-    return (
-      candidate === needle ||
-      candidate.includes(needle) ||
-      needle.includes(candidate)
-    );
-  });
-
-  return hit ? Number(hit.rank) : null;
+  const needle = siteName.toLowerCase();
+  const hit = top10.find(r => r.name && r.name.toLowerCase().includes(needle));
+  return hit ? hit.rank : null; // null = not mentioned at all
 }
 
 async function testQuestionOnEngine(question, engine, siteName) {
@@ -87,7 +34,6 @@ async function testQuestionOnEngine(question, engine, siteName) {
     const cleaned = raw.replace(/```json|```/g, '').trim();
     top10 = JSON.parse(cleaned).top10 || [];
   } catch (e) {
-    // Engine didn't return clean JSON  -  treat as "not mentioned" rather than crashing the scan
     top10 = [];
   }
   return {
@@ -98,31 +44,95 @@ async function testQuestionOnEngine(question, engine, siteName) {
   };
 }
 
-// Runs one question across all live engines, saves each result row.
-async function testQuestionAcrossEngines(siteId, question, siteName) {
+async function testQuestionAcrossEngines(siteId, question, siteName, sessionId = null) {
   const results = await Promise.all(
     ENGINES.map(engine => testQuestionOnEngine(question, engine, siteName))
   );
 
   for (const r of results) {
     await pool.query(
-      `INSERT INTO ai_visibility_results (site_id, question, engine, rankings, brand_rank, raw_response)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [siteId, question, r.engine, JSON.stringify(r.top10), r.brand_rank, r.raw_response]
+      `INSERT INTO ai_visibility_results (site_id, question, engine, rankings, brand_rank, raw_response, session_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [siteId, question, r.engine, JSON.stringify(r.top10), r.brand_rank, r.raw_response, sessionId]
     );
   }
   return results;
 }
 
-// Runs every cached auto-generated question (from site_products flow) across all engines.
-// Call this from a "Run AI Visibility Scan" button  -  it's the expensive multi-call operation.
-async function runFullVisibilityScan(siteId, siteName, questions) {
+async function runFullVisibilityScan(siteId, siteName, questions, sessionId = null) {
   const allResults = [];
   for (const q of questions) {
-    const r = await testQuestionAcrossEngines(siteId, q, siteName);
+    const r = await testQuestionAcrossEngines(siteId, q, siteName, sessionId);
     allResults.push({ question: q, results: r });
   }
   return allResults;
+}
+
+// ---------- Sessions: named, saved scan runs ----------
+
+async function createSession(siteId, name) {
+  const { rows } = await pool.query(
+    `INSERT INTO ai_visibility_sessions (site_id, name) VALUES ($1, $2) RETURNING id, name, created_at`,
+    [siteId, name]
+  );
+  return rows[0];
+}
+
+// Lists sessions newest-first, each with its stats computed live from
+// ai_visibility_results (questions tested, score, average rank) rather
+// than stored redundantly - so the numbers are always accurate even if
+// results get added to a session after it was created.
+async function listSessions(siteId) {
+  const { rows: sessions } = await pool.query(
+    `SELECT id, name, created_at FROM ai_visibility_sessions
+     WHERE site_id = $1 ORDER BY created_at DESC`,
+    [siteId]
+  );
+
+  const withStats = [];
+  for (const session of sessions) {
+    const { rows } = await pool.query(
+      `SELECT engine, brand_rank FROM ai_visibility_results WHERE session_id = $1`,
+      [session.id]
+    );
+    const questionsTested = new Set();
+    const { rows: qRows } = await pool.query(
+      `SELECT DISTINCT question FROM ai_visibility_results WHERE session_id = $1`,
+      [session.id]
+    );
+    qRows.forEach(r => questionsTested.add(r.question));
+
+    const mentioned = rows.filter(r => r.brand_rank !== null);
+    const inTop10 = mentioned.filter(r => r.brand_rank <= 10);
+    const avgRank = mentioned.length
+      ? mentioned.reduce((sum, r) => sum + r.brand_rank, 0) / mentioned.length
+      : null;
+    const score = rows.length ? Math.round((inTop10.length / rows.length) * 100) : 0;
+
+    // Per-engine: was this engine tested in this session, and did the
+    // brand land in its Top 10? Drives the check/cross icon columns.
+    const engineStatus = {};
+    ENGINES.forEach(engine => {
+      const engineRows = rows.filter(r => r.engine === engine);
+      engineStatus[engine] = engineRows.length
+        ? { tested: true, inTop10: engineRows.some(r => r.brand_rank !== null && r.brand_rank <= 10) }
+        : { tested: false, inTop10: false };
+    });
+    const engineList = Object.keys(engineStatus);
+    const topEnginesCount = engineList.filter(e => engineStatus[e].inTop10).length;
+
+    withStats.push({
+      ...session,
+      questionsTested: questionsTested.size,
+      score,
+      averageRank: avgRank ? Number(avgRank.toFixed(1)) : null,
+      engineStatus,
+      topEnginesCount,
+      totalEngines: engineList.length,
+    });
+  }
+
+  return withStats;
 }
 
 // ---------- Section 4: summary score card ----------
@@ -150,6 +160,10 @@ async function getSummary(siteId) {
     : null;
 
   const overallScore = rows.length ? Math.round((inTop10.length / rows.length) * 100) : 0;
+  const mentionRate = rows.length ? Math.round((mentioned.length / rows.length) * 100) : 0;
+
+  const enginesTracked = new Set(rows.map(r => r.engine));
+  const enginesWithTop10 = new Set(inTop10.map(r => r.engine));
 
   return {
     top10Presence: `${inTop10.length} / ${rows.length}`,
@@ -157,8 +171,97 @@ async function getSummary(siteId) {
     questionsTested: questionsTested.size,
     totalMentions: mentioned.length,
     overallScore,
+    mentionRate,
+    enginesInTop10: `${enginesWithTop10.size} / ${enginesTracked.size || ENGINES.length}`,
     label: overallScore >= 70 ? 'Strong' : overallScore >= 40 ? 'Moderate' : 'Low',
   };
+}
+
+// ---------- Overview: per-engine breakdown table ----------
+
+// One row per engine: mention rate, best current Top 10 rank (or null),
+// average position, and a short trend array (most recent history buckets)
+// for a sparkline. Real data only - no engine appears here until it has
+// at least one scanned result.
+async function getEngineBreakdown(siteId) {
+  const { rows } = await pool.query(
+    `SELECT engine, brand_rank FROM ai_visibility_results
+     WHERE site_id = $1 AND tested_at > NOW() - INTERVAL '30 days'`,
+    [siteId]
+  );
+
+  const byEngine = {};
+  rows.forEach(r => {
+    byEngine[r.engine] = byEngine[r.engine] || [];
+    byEngine[r.engine].push(r.brand_rank);
+  });
+
+  const { rows: historyRows } = await pool.query(
+    `SELECT engine, snapshot_date, avg_rank, bucket FROM ai_visibility_history
+     WHERE site_id = $1 ORDER BY snapshot_date ASC`,
+    [siteId]
+  );
+  const historyByEngine = {};
+  historyRows.forEach(r => {
+    historyByEngine[r.engine] = historyByEngine[r.engine] || [];
+    historyByEngine[r.engine].push(r);
+  });
+
+  const bucketScore = { top3: 90, top10: 60, top20: 25, not_in_top20: 5 };
+
+  return ENGINES.map(engine => {
+    const ranks = byEngine[engine] || [];
+    const mentioned = ranks.filter(r => r !== null);
+    const inTop10 = mentioned.filter(r => r <= 10);
+    const mentionRate = ranks.length ? Math.round((mentioned.length / ranks.length) * 100) : 0;
+    const bestRank = inTop10.length ? Math.min(...inTop10) : null;
+    const avgRank = mentioned.length
+      ? Number((mentioned.reduce((s, r) => s + r, 0) / mentioned.length).toFixed(1))
+      : null;
+
+    const trend = (historyByEngine[engine] || [])
+      .slice(-8)
+      .map(h => bucketScore[h.bucket] ?? 5);
+
+    return {
+      engine,
+      mentionRate,
+      inTop10: bestRank !== null,
+      bestRank,
+      averagePosition: avgRank,
+      trend,
+      hasData: ranks.length > 0,
+    };
+  });
+}
+
+// ---------- Questions: tested/ready status per question ----------
+
+// For each question that has ever been scanned, the latest result per
+// engine (rank + when it was tested). Questions with no scan history yet
+// aren't included here - the frontend already knows the full question
+// list and treats anything missing from this map as "Ready" (not tested).
+async function getQuestionStatus(siteId) {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (question, engine) question, engine, brand_rank, tested_at
+     FROM ai_visibility_results
+     WHERE site_id = $1
+     ORDER BY question, engine, tested_at DESC`,
+    [siteId]
+  );
+
+  const byQuestion = {};
+  rows.forEach(r => {
+    if (!byQuestion[r.question]) {
+      byQuestion[r.question] = { question: r.question, lastTested: r.tested_at, engines: {} };
+    }
+    byQuestion[r.question].engines[r.engine] = r.brand_rank;
+    if (new Date(r.tested_at) > new Date(byQuestion[r.question].lastTested)) {
+      byQuestion[r.question].lastTested = r.tested_at;
+    }
+  });
+
+  return Object.values(byQuestion);
 }
 
 // ---------- Section 5: reasoning ("why not in Top 10") ----------
@@ -227,9 +330,18 @@ Give 5-8 prioritized, actionable recommendations to improve AI engine visibility
   return recommendations;
 }
 
+// Saves the recommendations array as-is (e.g. after the user marks one as
+// "done") without re-calling Claude. Used by the PATCH route so toggling
+// "done" is instant and free, not a new AI generation.
+async function saveRecommendations(siteId, recommendations) {
+  await pool.query(
+    `UPDATE ai_visibility_insights SET recommendations = $2, generated_at = NOW() WHERE site_id = $1`,
+    [siteId, JSON.stringify(recommendations)]
+  );
+}
+
 // ---------- Section 7: history / trend ----------
 
-// Call this once per week (cron or scan-completion hook) to snapshot current state per engine.
 async function snapshotHistory(siteId) {
   const { rows } = await pool.query(
     `SELECT engine, brand_rank FROM ai_visibility_results
@@ -270,9 +382,14 @@ module.exports = {
   testQuestionAcrossEngines,
   runFullVisibilityScan,
   getSummary,
+  getEngineBreakdown,
+  getQuestionStatus,
   generateReasoning,
   generateRecommendations,
+  saveRecommendations,
   snapshotHistory,
   getHistory,
+  createSession,
+  listSessions,
 };
 
