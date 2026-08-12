@@ -92,6 +92,7 @@ export default function AIVisibility() {
   const [questionSets, setQuestionSets] = useState([])
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [scoreHistory, setScoreHistory] = useState([])
+  const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const toggleCron = async (val) => {
     setAiCronEnabled(val)
     await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
@@ -299,292 +300,286 @@ export default function AIVisibility() {
   const flatQuestions = (questionSets || []).flatMap(qs => qs.questions || [])
   const visibilitySiteName = site?.name || domain
 
+  const visibleQuestionSets = selectedProduct === 'All Questions'
+    ? questionSets
+    : questionSets.filter(set => set.product === selectedProduct)
+
+  const visibleQuestions = visibleQuestionSets.flatMap(set => set.questions || []).slice(0, 5)
+
+  const sectionCard = {
+    background: '#fff',
+    border: '1px solid #E5E7EB',
+    borderRadius: 12,
+    padding: 16,
+    boxSizing: 'border-box',
+  }
+
+  const sectionTitle = {
+    fontSize: 14,
+    fontWeight: 700,
+    color: '#111827',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
+  }
+
+  const numberBadge = {
+    width: 22,
+    height: 22,
+    borderRadius: '50%',
+    background: '#F97316',
+    color: '#fff',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 11,
+    fontWeight: 800,
+    flexShrink: 0,
+  }
+
   return (
-    <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
-      <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
-      <div style={{ marginBottom: 20, display: 'flex', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 180 }}>
-          <h1 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+    <div ref={reportRef} className="ai-vis-page">
+      <style>{`
+        .ai-vis-page {
+          width: 100%;
+          max-width: 1440px;
+          margin: 0 auto;
+          padding: 18px 22px 28px;
+          box-sizing: border-box;
+        }
+        .ai-vis-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
+          margin-bottom: 16px;
+        }
+        .ai-vis-layout {
+          display: grid;
+          grid-template-columns: minmax(0, 1.75fr) minmax(330px, 1fr);
+          gap: 14px;
+          align-items: start;
+        }
+        .ai-vis-left, .ai-vis-right {
+          display: flex;
+          flex-direction: column;
+          gap: 14px;
+          min-width: 0;
+        }
+        .ai-product-grid {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 10px;
+          margin-top: 14px;
+        }
+        .ai-product-card {
+          border: 1px solid #E5E7EB;
+          border-radius: 9px;
+          padding: 12px;
+          min-height: 82px;
+          background: #fff;
+          cursor: pointer;
+          transition: border-color .15s, box-shadow .15s, transform .15s;
+        }
+        .ai-product-card:hover {
+          border-color: #FDBA74;
+          box-shadow: 0 3px 10px rgba(249,115,22,.08);
+          transform: translateY(-1px);
+        }
+        .ai-question-tabs {
+          display: flex;
+          gap: 18px;
+          overflow-x: auto;
+          border-bottom: 1px solid #E5E7EB;
+          margin-top: 12px;
+        }
+        .ai-question-tab {
+          border: 0;
+          background: transparent;
+          padding: 8px 2px;
+          white-space: nowrap;
+          font: inherit;
+          font-size: 11px;
+          cursor: pointer;
+          color: #6B7280;
+          border-bottom: 2px solid transparent;
+        }
+        .ai-question-tab.active {
+          color: #F97316;
+          border-bottom-color: #F97316;
+          font-weight: 700;
+        }
+        .ai-question-row {
+          display: grid;
+          grid-template-columns: 28px minmax(0,1fr) 140px;
+          gap: 8px;
+          align-items: center;
+          padding: 8px 4px;
+          border-bottom: 1px solid #F3F4F6;
+          font-size: 12px;
+        }
+        .ai-vis-left > div, .ai-vis-right > div {
+          margin-bottom: 0 !important;
+        }
+        @media (max-width: 1180px) {
+          .ai-vis-layout { grid-template-columns: 1fr; }
+          .ai-product-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+        }
+        @media (max-width: 700px) {
+          .ai-vis-page { padding: 14px 10px 24px; }
+          .ai-vis-header { flex-direction: column; }
+          .ai-product-grid { grid-template-columns: 1fr; }
+          .ai-question-row { grid-template-columns: 24px minmax(0,1fr); }
+          .ai-question-row .intent { display: none; }
+        }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div className="ai-vis-header">
+        <div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 9 }}>
             <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#F97316' }} />
             AI Visibility
             {site && <span style={{ fontSize: 12, fontWeight: 400, color: '#6B7280' }}>- {domain}</span>}
           </h1>
-          <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>Find out if AI engines cite <strong>{domain || 'this site'}</strong> when people ask relevant questions.</p>
+          <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
+            See how AI engines perceive and recommend your products & services.
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-          <button onClick={downloadImage} style={{ padding: '7px 12px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#374151', fontFamily: 'inherit' }}>
-            <FontAwesomeIcon icon={faDownload} style={{ fontSize: 11 }} /> Download
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => window.location.reload()}
+            style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #FED7AA', background: '#FFF7ED', color: '#EA580C', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+          >
+            + New Session
           </button>
-          <button onClick={shareReport} disabled={sharing} style={{ padding: '7px 12px', borderRadius: 7, border: 'none', background: '#F97316', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#fff', fontFamily: 'inherit' }}>
-            <FontAwesomeIcon icon={faShareNodes} style={{ fontSize: 11 }} /> {sharing ? 'Generating...' : 'Share'}
+          <button onClick={downloadImage} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
+            <FontAwesomeIcon icon={faDownload} style={{ marginRight: 6 }} /> Export Report
+          </button>
+          <button onClick={shareReport} disabled={sharing} style={{ padding: '8px 13px', borderRadius: 7, border: 'none', background: '#F97316', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+            <FontAwesomeIcon icon={faShareNodes} style={{ marginRight: 6 }} /> {sharing ? 'Generating...' : 'Share'}
           </button>
         </div>
       </div>
 
-      <div className='ai-vis-engines-grid' style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0,1fr))', gap: 12, marginBottom: 24 }}>
-        {engines.map(e => (
-          <div key={e.key} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 16, opacity: e.soon ? 0.45 : 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={{ width: 28, height: 28, borderRadius: 6, background: e.bg, color: e.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>{e.initial}</div>
-              <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{e.label}</span>
-            </div>
-            {e.soon ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Coming soon</div>
-            : e.pending ? <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>
-            : e.score != null ? (
-              <>
-                <div style={{ fontSize: 28, fontWeight: 800, color: SCORE_COLOR(e.score) }}>{e.score}<span style={{ fontSize: 14, fontWeight: 400 }}>/100</span></div>
-                <div style={{ background: '#F3F4F6', borderRadius: 3, height: 4, overflow: 'hidden', margin: '8px 0 6px' }}>
-                  <div style={{ width: e.score + '%', height: '100%', background: SCORE_COLOR(e.score), borderRadius: 3 }} />
+      <div className="ai-vis-layout">
+        <div className="ai-vis-left">
+
+          {/* 1. Detected products & services */}
+          <div style={sectionCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div>
+                <div style={sectionTitle}>
+                  <span style={numberBadge}>1</span>
+                  Detected products & services
+                  <span style={{ fontSize: 10, fontWeight: 500, color: '#F97316' }}>How it works?</span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5, background: SCORE_BG(e.score), color: SCORE_COLOR(e.score) }}>{SCORE_LABEL(e.score)}</span>
-              </>
-            ) : <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>}
-          </div>
-        ))}
-      </div>
-
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Detected products & services</div>
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
-              {productsDetectedAt
-                ? 'Last detected ' + new Date(productsDetectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + (productsStale ? ' (may be outdated)' : '')
-                : 'Not detected yet'}
-            </div>
-          </div>
-          <button onClick={detectProducts} disabled={detectingProducts} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: detectingProducts ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: detectingProducts ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-            <FontAwesomeIcon icon={detectingProducts ? faRotateRight : faWandMagicSparkles} style={{ animation: detectingProducts ? 'spin 1s linear infinite' : 'none' }} />
-            {detectingProducts ? 'Detecting...' : products.length > 0 ? 'Re-detect Products' : 'Detect Products'}
-          </button>
-        </div>
-        {products.length > 0 && (
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {products.map((p, i) => (
-              <div key={i} style={{ border: '1px solid #F3F4F6', borderRadius: 8, padding: 12, background: '#F9FAFB' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{p.name}</div>
-                <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5, marginBottom: 3 }}>{p.description}</div>
-                {p.targetCustomer && (
-                  <div style={{ fontSize: 11, color: '#9CA3AF' }}>Target: {p.targetCustomer}</div>
-                )}
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, marginLeft: 30 }}>
+                  {productsDetectedAt
+                    ? 'Last detected ' + new Date(productsDetectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                    : 'Detect your website products and services to begin.'}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
 
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Questions AI users ask</div>
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
-              Auto-generated per product -- count varies based on what {domain} actually offers.
+              <button onClick={detectProducts} disabled={detectingProducts} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #F97316', background: '#fff', color: '#F97316', fontWeight: 700, fontSize: 11, cursor: detectingProducts ? 'not-allowed' : 'pointer' }}>
+                <FontAwesomeIcon icon={faRotateRight} style={{ marginRight: 6, animation: detectingProducts ? 'spin 1s linear infinite' : 'none' }} />
+                {detectingProducts ? 'Detecting...' : products.length ? 'Re-detect Products' : 'Detect Products'}
+              </button>
             </div>
-          </div>
-          <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: (generatingQuestions || products.length === 0) ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: (generatingQuestions || products.length === 0) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-            <FontAwesomeIcon icon={generatingQuestions ? faRotateRight : faWandMagicSparkles} style={{ animation: generatingQuestions ? 'spin 1s linear infinite' : 'none' }} />
-            {generatingQuestions ? 'Generating...' : questionSets.length > 0 ? 'Regenerate Questions' : 'Generate Questions'}
-          </button>
-        </div>
-        {products.length === 0 && (
-          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>Detect products first to generate relevant questions.</div>
-        )}
-        {questionSets.length > 0 && (
-          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {questionSets.map((set, i) => (
-              <div key={i}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#F97316', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{set.product}</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {set.questions.map((q, qi) => (
-                    <div key={qi} style={{ fontSize: 13, color: '#111827', background: '#F9FAFB', border: '1px solid #F3F4F6', borderRadius: 8, padding: '9px 12px' }}>
-                      {q}
+
+            {products.length > 0 ? (
+              <>
+                <div className="ai-product-grid">
+                  {products.slice(0, 4).map((p, i) => (
+                    <div className="ai-product-card" key={i} onClick={() => setSelectedProduct(p.name)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 7 }}>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{p.name}</div>
+                        {i === 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803D', background: '#DCFCE7', borderRadius: 4, padding: '2px 5px' }}>Primary</span>}
+                      </div>
+                      <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.45 }}>
+                        {p.description || p.targetCustomer || 'Detected from website content'}
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Sections 3-7: AI Visibility Results, Summary, Reasoning, Recommendations, History */}
-      {flatQuestions.length > 0 && (
-        <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} />
-      )}
-      <VisibilitySummaryCard siteId={siteId} />
-      <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
-      <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
-      <VisibilityHistoryCard siteId={siteId} />
-
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Test queries for {domain}</div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>Auto-generated based on <strong>{domain}</strong> keywords. Edit if needed.</div>
-        <div style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: 8, padding: '9px 12px', marginBottom: 14, display: 'flex', gap: 8 }}>
-          <FontAwesomeIcon icon={faLightbulb} style={{ color: '#D97706', marginTop: 1, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, color: '#92400E', lineHeight: 1.5 }}>Include your brand name or city. Generic queries like "web design" will never return your specific site.</span>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
-          {queries.map((q, i) => (
-            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: '#9CA3AF', width: 22, flexShrink: 0, fontWeight: 600 }}>#{i+1}</span>
-              <input value={q} onChange={e => setQueries(prev => prev.map((v, idx) => idx === i ? e.target.value : v))}
-                style={{ flex: 1, padding: '9px 12px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111827' }}
-                onFocus={e => e.target.style.borderColor = '#F97316'}
-                onBlur={e => e.target.style.borderColor = '#E5E7EB'} />
-            </div>
-          ))}
-        </div>
-        {!sharing && <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <button onClick={runTest} disabled={isTesting} style={{ padding: '10px 24px', borderRadius: 8, border: 'none', background: isTesting ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={loading ? faRotateRight : faWandMagicSparkles} style={{ animation: loading ? 'spin 1s linear infinite' : 'none' }} />
-            {loading ? 'Asking ChatGPT...' : 'Test with ChatGPT'}
-          </button>
-          <span style={{ fontSize: 12, color: '#9CA3AF' }}>~$0.01 per run</span>
-          <button onClick={runClaudeTest} disabled={isTesting} style={{ padding: '10px 20px', borderRadius: 8, border: '1px solid #D85A30', background: isTesting ? '#F3F4F6' : '#fff', color: isTesting ? '#9CA3AF' : '#D85A30', fontWeight: 700, fontSize: 14, cursor: isTesting ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={claudeLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: claudeLoading ? 'spin 1s linear infinite' : 'none', fontSize: 13 }} />
-            {claudeLoading ? 'Asking Claude...' : 'Test with Claude'}
-          </button>
-        </div>}
-      </div>
-
-      {results && results.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 14 }}>Results - {cited}/{total} queries cited ({domain})</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {results.map((r, i) => (
-              <div key={i} style={{ border: '1px solid ' + (r.cited ? '#BBF7D0' : '#FECACA'), borderRadius: 10, padding: 14, borderLeft: '4px solid ' + (r.cited ? '#16A34A' : '#DC2626') }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: r.excerpt ? 10 : 0 }}>
-                  <FontAwesomeIcon icon={r.cited ? faCircleCheck : faCircleXmark} style={{ color: r.cited ? '#16A34A' : '#DC2626', fontSize: 16 }} />
-                  <span style={{ fontWeight: 600, fontSize: 13, color: '#111827', flex: 1 }}>{r.query}</span>
-                  <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: r.cited ? '#DCFCE7' : '#FEE2E2', color: r.cited ? '#16A34A' : '#DC2626' }}>{r.cited ? 'CITED' : 'NOT CITED'}</span>
+                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+                  <button style={{ border: '1px solid #E5E7EB', background: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 10.5, cursor: 'pointer' }}>Edit Products</button>
+                  {products.length > 4 && <span style={{ fontSize: 10.5, color: '#6B7280', alignSelf: 'center' }}>+{products.length - 4} more detected</span>}
                 </div>
-                {r.excerpt && (
-                  <div style={{ fontSize: 12, color: '#6B7280', background: '#F9FAFB', borderRadius: 6, padding: '8px 12px', lineHeight: 1.7 }}>
-                    <span style={{ fontWeight: 600, color: '#9CA3AF', fontSize: 11, display: 'block', marginBottom: 3 }}>{r.engine || 'AI'} said:</span>
-                    {r.excerpt}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* AI Site Analysis with VS Code-style engine picker */}
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#D85A30' }} />
-          AI-powered site analysis
-        </div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 16 }}>Choose an AI engine to analyse your site content and get specific recommendations.</div>
-
-        {!aiRecommendations ? (
-          <div ref={menuRef} style={{ position: 'relative', display: 'inline-block' }}>
-            <div style={{ display: 'flex', borderRadius: 8, overflow: 'visible', boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
-              <button
-                onClick={() => analyseWithEngine(selectedEngine)}
-                disabled={analyseLoading}
-                style={{ padding: '10px 18px', border: 'none', background: analyseLoading ? '#D1D5DB' : selectedEngineObj.color, color: '#fff', fontWeight: 700, fontSize: 13, cursor: analyseLoading ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '8px 0 0 8px', whiteSpace: 'nowrap' }}>
-                <FontAwesomeIcon icon={analyseLoading ? faRotateRight : faWandMagicSparkles} style={{ animation: analyseLoading ? 'spin 1s linear infinite' : 'none' }} />
-                {analyseLoading ? 'Analysing with ' + selectedEngine + '...' : 'Analyse with ' + selectedEngine}
-              </button>
-              <button
-                onClick={() => setShowEngineMenu(m => !m)}
-                disabled={analyseLoading}
-                style={{ padding: '10px 12px', border: 'none', borderLeft: '1px solid rgba(255,255,255,0.25)', background: analyseLoading ? '#D1D5DB' : selectedEngineObj.color, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', borderRadius: '0 8px 8px 0', display: 'flex', alignItems: 'center' }}>
-                <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 11, transition: 'transform 0.15s', transform: showEngineMenu ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-              </button>
-            </div>
-
-            {showEngineMenu && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 200, minWidth: 260, overflow: 'hidden' }}>
-                <div style={{ padding: '8px 12px 6px', fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em', borderBottom: '1px solid #F3F4F6' }}>Select AI engine</div>
-                {ENGINES.map((eng, i) => (
-                  <div
-                    key={eng.key}
-                    onClick={() => { setSelectedEngine(eng.key); setShowEngineMenu(false) }}
-                    style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: i < ENGINES.length - 1 ? '1px solid #F9FAFB' : 'none', background: selectedEngine === eng.key ? '#F9FAFB' : '#fff', display: 'flex', alignItems: 'center', gap: 12 }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#F3F4F6'}
-                    onMouseLeave={e => e.currentTarget.style.background = selectedEngine === eng.key ? '#F9FAFB' : '#fff'}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: eng.color, flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: selectedEngine === eng.key ? 700 : 500, color: '#111827' }}>{eng.label}</div>
-                      <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 1 }}>{eng.desc}</div>
-                    </div>
-                    {selectedEngine === eng.key && <span style={{ fontSize: 11, color: eng.color, fontWeight: 700 }}>selected</span>}
-                  </div>
-                ))}
+              </>
+            ) : (
+              <div style={{ marginTop: 14, padding: 16, border: '1px dashed #FDBA74', background: '#FFF7ED', borderRadius: 8, color: '#9A3412', fontSize: 12 }}>
+                No products detected yet. Click <strong>Detect Products</strong>.
               </div>
             )}
           </div>
-        ) : (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-              <div style={{ width: 8, height: 8, borderRadius: '50%', background: ENGINES.find(e => e.key === aiRecommendations.engine)?.color || '#D85A30' }} />
-              <span style={{ fontSize: 12, color: '#6B7280' }}>Analysis by <strong>{aiRecommendations.engine}</strong> for <strong>{aiRecommendations.url}</strong></span>
+
+          {/* 2. Questions AI users ask */}
+          <div style={sectionCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+              <div style={sectionTitle}>
+                <span style={numberBadge}>2</span>
+                Questions AI users ask
+                <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Auto-generated)</span>
+              </div>
+              <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ border: 0, background: 'transparent', color: '#F97316', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                {generatingQuestions ? 'Generating...' : '+ Generate Questions'}
+              </button>
             </div>
-            {(aiRecommendations.recommendations || []).map((r, i) => (
-              <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < 4 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
-                <div style={{ width: 24, height: 42, borderRadius: 5, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280' }}>{i+1}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.title}</span>
-                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: r.priority === 'High' ? '#FEE2E2' : r.priority === 'Medium' ? '#FEF3C7' : '#F3F4F6', color: r.priority === 'High' ? '#DC2626' : r.priority === 'Medium' ? '#D97706' : '#6B7280', fontWeight: 600 }}>{r.priority}</span>
-                  </div>
-                  <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.action}</div>
+
+            <div className="ai-question-tabs">
+              {['All Questions', ...questionSets.map(s => s.product)].slice(0, 5).map(tab => (
+                <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 5 }}>
+              {visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => (
+                <div className="ai-question-row" key={i}>
+                  <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
+                  <span style={{ color: '#111827', fontWeight: 500 }}>{q}</span>
+                  <span className="intent" style={{ justifySelf: 'end', fontSize: 9.5, color: '#C2410C', background: '#FFEDD5', borderRadius: 4, padding: '2px 6px' }}>
+                    Commercial
+                  </span>
                 </div>
-              </div>
-            ))}
-            <button onClick={() => setAiRecommendations(null)} style={{ marginTop: 12, fontSize: 12, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Re-analyse with different engine</button>
-          </div>
-        )}
-      </div>
-
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>How to improve {domain} AI visibility</div>
-        <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>{improvements.length > 0 ? 'Based on your actual audit results:' : 'Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.'}</div>
-        {tipsToShow.map((tip, i) => {
-          const isFixed = tip.status === 'pass'
-          return (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start', opacity: isFixed ? 0.7 : 1 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: isFixed ? '#DCFCE7' : '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-              <FontAwesomeIcon icon={isFixed ? faCircleCheck : faArrowRight} style={{ color: isFixed ? '#16A34A' : '#F97316', fontSize: 12 }} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: isFixed ? '#16A34A' : '#111827', textDecoration: isFixed ? 'line-through' : 'none' }}>{tip.title}</span>
-                {isFixed
-                  ? <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: '#DCFCE7', color: '#16A34A', fontWeight: 600 }}>Fixed</span>
-                  : <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: tip.priority === 'High' ? '#FEE2E2' : '#FEF3C7', color: tip.priority === 'High' ? '#DC2626' : '#D97706', fontWeight: 600 }}>{tip.priority}</span>
-                }
-              </div>
-              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{isFixed ? 'Great work! This issue is now resolved.' : tip.message}</div>
+              )) : (
+                <div style={{ padding: '18px 4px 8px', fontSize: 12, color: '#9CA3AF' }}>
+                  {products.length ? 'Generate questions to see real customer-intent prompts.' : 'Detect products first.'}
+                </div>
+              )}
             </div>
           </div>
-          )
-        })}
-      </div>
 
-      {history.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <FontAwesomeIcon icon={faHistory} style={{ color: '#6B7280' }} /> Previous tests
-          </div>
-          {history.slice(0, 5).map((h, i) => {
-            const r = h.results || []
-            const c = r.filter(x => x.cited).length
-            return (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < Math.min(history.length,5)-1 ? '1px solid #F3F4F6' : 'none' }}>
-                <span style={{ fontSize: 11, color: '#9CA3AF', minWidth: 110 }}>{new Date(h.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: c > 0 ? '#16A34A' : '#DC2626', minwidth: 110 }}>{c}/{r.length} cited</span>
-                <span style={{ fontSize: 11, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.map(x => x.query).join(', ')}</span>
+          {/* 3. AI Visibility Results */}
+          {flatQuestions.length > 0 ? (
+            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} />
+          ) : (
+            <div style={sectionCard}>
+              <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>
+              <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
+                Generate AI questions first to run Top 10 visibility analysis.
               </div>
-            )
-          })}
+            </div>
+          )}
         </div>
-      )}
-      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+
+        <div className="ai-vis-right">
+          {/* 4. AI Visibility Summary */}
+          <VisibilitySummaryCard siteId={siteId} />
+
+          {/* 5. Why not Top 10 */}
+          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
+
+          {/* 6. Actionable Recommendations */}
+          <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
+
+          {/* 7. AI Visibility History */}
+          <VisibilityHistoryCard siteId={siteId} />
+        </div>
+      </div>
     </div>
   )
 }
-
