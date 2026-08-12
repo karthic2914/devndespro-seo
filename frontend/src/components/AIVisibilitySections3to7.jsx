@@ -6,6 +6,9 @@ import {
   faArrowRight,
   faHistory,
   faTriangleExclamation,
+  faSquareCheck,
+  faSquare,
+  faLink,
 } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 
@@ -102,7 +105,8 @@ export function VisibilityResultsCard({
   siteId,
   siteName,
   questions,
-  productName = ''
+  productName = '',
+  sessionId = null,
 }) {
   const [scanning, setScanning] = useState(false)
   const [scanResults, setScanResults] = useState({})
@@ -155,6 +159,7 @@ export function VisibilityResultsCard({
         {
           siteName,
           questions: [question],
+          sessionId,
         }
       )
 
@@ -702,6 +707,153 @@ export function VisibilityResultsCard({
   )
 }
 
+// ---------- Overview: KPI cards row ----------
+const KPI_META = {
+  overallScore: { label: 'Visibility Score', icon: faWandMagicSparkles, color: '#7C3AED', bg: '#F5F3FF' },
+  mentionRate: { label: 'Mention Rate', icon: faArrowRight, color: '#16A34A', bg: '#F0FDF4' },
+  averageRank: { label: 'Average Position (Top 10)', icon: faHistory, color: '#2563EB', bg: '#EFF6FF' },
+  enginesInTop10: { label: 'Engines in Top 10', icon: faSquareCheck, color: '#D97706', bg: '#FFFBEB' },
+}
+
+export function VisibilityKPICards({ siteId }) {
+  const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/sites/' + siteId + '/ai-visibility/summary')
+      .then(res => setSummary(res.data || null))
+      .catch(() => setSummary(null))
+      .finally(() => setLoading(false))
+  }, [siteId])
+
+  useEffect(() => load(), [load])
+  useScanRefresh(load)
+
+  const cards = summary ? [
+    { key: 'overallScore', value: summary.overallScore + '%' },
+    { key: 'mentionRate', value: summary.mentionRate + '%' },
+    { key: 'averageRank', value: summary.averageRank },
+    { key: 'enginesInTop10', value: summary.enginesInTop10 },
+  ] : []
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 12, marginBottom: 14 }}>
+      {(loading || !summary) ? (
+        <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
+          <div style={emptyStyle}>{loading ? 'Loading overview...' : 'No visibility scan yet. Run a scan below to populate this.'}</div>
+        </div>
+      ) : cards.map(c => {
+        const meta = KPI_META[c.key]
+        return (
+          <div key={c.key} style={cardStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+              <div style={{ width: 26, height: 26, borderRadius: 6, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FontAwesomeIcon icon={meta.icon} style={{ color: meta.color, fontSize: 11 }} />
+              </div>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{meta.label}</span>
+            </div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{c.value}</div>
+          </div>
+        )
+      })}
+      {/* Citation Rate isn't built yet - honest placeholder, not a fake number */}
+      <div style={cardStyle}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FontAwesomeIcon icon={faLink} style={{ color: '#9CA3AF', fontSize: 11 }} />
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>Citation Rate</span>
+        </div>
+        <div style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 600 }}>Coming soon</div>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Overview: per-engine breakdown table ----------
+export function VisibilityEngineTable({ siteId }) {
+  const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    setLoading(true)
+    api.get('/sites/' + siteId + '/ai-visibility/engine-breakdown')
+      .then(res => setRows(res.data.breakdown || []))
+      .catch(() => setRows([]))
+      .finally(() => setLoading(false))
+  }, [siteId])
+
+  useEffect(() => load(), [load])
+  useScanRefresh(load)
+
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>AI Visibility by Engine</div>
+      <div style={subStyle}>{loading ? 'Loading...' : 'Per-engine mention rate and position from your last 30 days of scans.'}</div>
+
+      {!loading && rows.every(r => !r.hasData) && (
+        <div style={emptyStyle}>No scans yet for any engine. Run a visibility scan to populate this table.</div>
+      )}
+
+      {rows.some(r => r.hasData) && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(90px,1.2fr) minmax(70px,1fr) minmax(80px,1fr) minmax(70px,1fr) minmax(60px,1fr)', gap: 8, fontSize: 10, fontWeight: 700, color: '#374151', paddingBottom: 8, borderBottom: '1px solid #E5E7EB' }}>
+          <span>AI Engine</span>
+          <span>Mention Rate</span>
+          <span>Top 10 Presence</span>
+          <span>Avg Position</span>
+          <span>Trend</span>
+        </div>
+      )}
+
+      {rows.filter(r => r.hasData).map(r => {
+        const meta = ENGINE_STYLE[r.engine] || { label: r.engine, color: '#9CA3AF' }
+        const max = Math.max(1, ...r.trend)
+        const points = r.trend.map((v, i) => `${(i / Math.max(1, r.trend.length - 1)) * 60},${18 - (v / max) * 16}`).join(' ')
+        return (
+          <div key={r.engine} style={{ display: 'grid', gridTemplateColumns: 'minmax(90px,1.2fr) minmax(70px,1fr) minmax(80px,1fr) minmax(70px,1fr) minmax(60px,1fr)', gap: 8, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #F3F4F6', fontSize: 11 }}>
+            <span style={{ fontWeight: 700, color: meta.color }}>{meta.label}</span>
+            <span style={{ color: '#111827' }}>{r.mentionRate}%</span>
+            <span style={{ color: r.inTop10 ? '#16A34A' : '#DC2626', fontWeight: 700 }}>{r.inTop10 ? 'Top 10 #' + r.bestRank : 'Not in Top 10'}</span>
+            <span style={{ color: '#111827' }}>{r.averagePosition ?? '-'}</span>
+            <svg viewBox="0 0 60 20" style={{ width: 60, height: 20 }}>
+              {r.trend.length > 1 && <polyline points={points} fill="none" stroke={meta.color} strokeWidth="1.8" />}
+            </svg>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------- Overview: honest placeholder panels for not-yet-built features ----------
+export function VisibilityCompetitorsPanel() {
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Top Competitors</div>
+      <div style={emptyStyle}>Competitor tracking isn't built yet. This will let you track named competitors and compare visibility share directly against them.</div>
+    </div>
+  )
+}
+
+export function VisibilityAlertsPanel() {
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Alerts</div>
+      <div style={emptyStyle}>Alerts aren't built yet. This will notify you when your visibility score changes significantly between scans.</div>
+    </div>
+  )
+}
+
+export function VisibilitySentimentPanel() {
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Sentiment</div>
+      <div style={emptyStyle}>Sentiment analysis isn't built yet. This will show whether AI engines describe your brand positively, neutrally, or negatively.</div>
+    </div>
+  )
+}
+
 // ---------- Section 4: summary ----------
 export function VisibilitySummaryCard({ siteId, siteName, productName }) {
   const [summary, setSummary] = useState(null)
@@ -857,6 +1009,19 @@ export function VisibilityRecommendationsCard({ siteId, siteName, productName })
   useEffect(() => loadRecommendations(), [loadRecommendations])
   useScanRefresh(loadRecommendations)
 
+  // Marks a recommendation done/not-done. Updates the UI immediately, saves
+  // to the database in the background, and rolls back if the save fails so
+  // the checkbox never lies about what's actually persisted.
+  async function toggleDone(index) {
+    const updated = recs.map((r, i) => i === index ? { ...r, completed: !r.completed } : r)
+    setRecs(updated)
+    try {
+      await api.patch('/sites/' + siteId + '/ai-visibility/recommendations', { recommendations: updated })
+    } catch (e) {
+      setRecs(recs)
+    }
+  }
+
   const visibleRecs = showAll ? recs : recs.slice(0, 3)
 
   return (
@@ -874,13 +1039,23 @@ export function VisibilityRecommendationsCard({ siteId, siteName, productName })
 
       {visibleRecs.map((r, i) => {
         const p = priorityColors(r.priority)
+        const isDone = !!r.completed
         return (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px minmax(0,1fr) auto', gap: 9, padding: '9px 0', borderBottom: i < visibleRecs.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'start' }}>
-            <div style={{ width: 22, height: 34, borderRadius: 5, background: p.bg, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: p.color }}>{i + 1}</div>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px minmax(0,1fr) auto', gap: 9, padding: '9px 0', borderBottom: i < visibleRecs.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'start', opacity: isDone ? 0.6 : 1 }}>
+            <button
+              onClick={() => toggleDone(i)}
+              title={isDone ? 'Mark as not done' : 'Mark as done'}
+              style={{ border: 0, background: 'transparent', cursor: 'pointer', padding: 0, marginTop: 2, color: isDone ? '#16A34A' : '#D1D5DB' }}
+            >
+              <FontAwesomeIcon icon={isDone ? faSquareCheck : faSquare} style={{ fontSize: 16 }} />
+            </button>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 11, fontWeight: 700, color: '#111827' }}>{r.title}</span>
-                <span style={{ fontSize: 9, padding: '2px 5px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 700 }}>{r.priority || 'Low'}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: isDone ? '#16A34A' : '#111827', textDecoration: isDone ? 'line-through' : 'none' }}>{r.title}</span>
+                {isDone
+                  ? <span style={{ fontSize: 9, padding: '2px 5px', borderRadius: 4, background: '#DCFCE7', color: '#16A34A', fontWeight: 700 }}>Done</span>
+                  : <span style={{ fontSize: 9, padding: '2px 5px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 700 }}>{r.priority || 'Low'}</span>
+                }
               </div>
               <div style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.45, marginTop: 2 }}>{r.detail}</div>
 

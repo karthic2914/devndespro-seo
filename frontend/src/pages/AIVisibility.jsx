@@ -10,6 +10,11 @@ import {
   VisibilityReasoningCard,
   VisibilityRecommendationsCard,
   VisibilityHistoryCard,
+  VisibilityKPICards,
+  VisibilityEngineTable,
+  VisibilityCompetitorsPanel,
+  VisibilityAlertsPanel,
+  VisibilitySentimentPanel,
 } from '../components/AIVisibilitySections3to7'
 
 function genQueries(domain, brand, keywords) {
@@ -130,6 +135,17 @@ export default function AIVisibility() {
   const [customQuestionText, setCustomQuestionText] = useState('')
   const [showMoreTabs, setShowMoreTabs] = useState(false)
   const moreTabsRef = useRef(null)
+  // Sessions: each scan run can be tagged to a named session so it can be
+  // compared over time later. currentSession is null until the user creates
+  // one via "+ New Session"; scans work fine without a session too.
+  const [sessions, setSessions] = useState([])
+  const [currentSession, setCurrentSession] = useState(null)
+  const [creatingSession, setCreatingSession] = useState(false)
+  const [newSessionName, setNewSessionName] = useState('')
+  // Real tested/ready status per question, loaded from the database - not
+  // the AI's own guess, so the Status column in the Questions table below
+  // reflects what has actually been scanned.
+  const [questionStatuses, setQuestionStatuses] = useState([])
   // Custom questions persisted to the database - [{id, question, created_at}]
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
@@ -160,6 +176,21 @@ export default function AIVisibility() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // Re-fetch question status (and sessions, so scores stay current) right
+  // after any scan finishes, so the tables reflect the new data immediately.
+  useEffect(() => {
+    const handler = () => {
+      api.get('/sites/' + siteId + '/ai-visibility/question-status').then(res => {
+        setQuestionStatuses(res.data.statuses || [])
+      }).catch(() => {})
+      api.get('/sites/' + siteId + '/ai-visibility/sessions').then(res => {
+        setSessions(res.data.sessions || [])
+      }).catch(() => {})
+    }
+    window.addEventListener('ai-visibility-scan-complete', handler)
+    return () => window.removeEventListener('ai-visibility-scan-complete', handler)
+  }, [siteId])
 
   useEffect(() => {
     api.get('/sites').then(res => {
@@ -217,6 +248,14 @@ export default function AIVisibility() {
     // Load previously saved custom questions from the database
     api.get('/sites/' + siteId + '/custom-questions').then(res => {
       setCustomQuestions(res.data.questions || [])
+    }).catch(() => {})
+    // Load previously created sessions from the database
+    api.get('/sites/' + siteId + '/ai-visibility/sessions').then(res => {
+      setSessions(res.data.sessions || [])
+    }).catch(() => {})
+    // Load real tested/ready status per question (for the Status column)
+    api.get('/sites/' + siteId + '/ai-visibility/question-status').then(res => {
+      setQuestionStatuses(res.data.statuses || [])
     }).catch(() => {})
   }, [siteId])
 
@@ -331,6 +370,24 @@ export default function AIVisibility() {
     } catch (e) {
       showSnackbar('Failed to delete question', 'error')
     }
+  }
+
+  // Creates a named session and makes it the active one - future scans
+  // (run from AI Visibility Results) get tagged to it via sessionId, so
+  // this scan run can be found again later in Recent Sessions.
+  async function createNewSession() {
+    const name = (newSessionName.trim() || (visibleQuestions[0] || 'New session')).slice(0, 200)
+    setCreatingSession(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/sessions', { name })
+      setSessions(prev => [{ ...res.data, questionsTested: 0, score: 0, averageRank: null }, ...prev])
+      setCurrentSession(res.data)
+      setNewSessionName('')
+      showSnackbar('New session started: "' + name + '"', 'success')
+    } catch (e) {
+      showSnackbar('Failed to create session: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setCreatingSession(false)
   }
 
   async function shareReport() {
@@ -517,7 +574,7 @@ export default function AIVisibility() {
         }
         .ai-question-row {
           display: grid;
-          grid-template-columns: 28px minmax(0,1fr) 140px;
+          grid-template-columns: 28px minmax(0,1fr) 90px 90px 100px;
           gap: 8px;
           align-items: center;
           padding: 8px 4px;
@@ -553,19 +610,61 @@ export default function AIVisibility() {
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', position: 'relative' }}>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => setCreatingSession(v => !v)}
             style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #FED7AA', background: '#FFF7ED', color: '#EA580C', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
           >
-            + New Session
+            {creatingSession ? 'Cancel' : '+ New Session'}
           </button>
+          {creatingSession && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 12, zIndex: 100, width: 280 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Name this session</div>
+              <input
+                autoFocus
+                value={newSessionName}
+                onChange={e => setNewSessionName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') createNewSession() }}
+                placeholder="e.g. SEO tools for small businesses"
+                style={{ width: '100%', padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 12, color: '#111827', boxSizing: 'border-box', marginBottom: 8 }}
+              />
+              <button onClick={createNewSession} style={{ width: '100%', padding: '8px 0', borderRadius: 6, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
+                Start Session
+              </button>
+            </div>
+          )}
           <button onClick={downloadImage} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
             <FontAwesomeIcon icon={faDownload} style={{ marginRight: 6 }} /> Export Report
           </button>
           <button onClick={shareReport} disabled={sharing} style={{ padding: '8px 13px', borderRadius: 7, border: 'none', background: '#F97316', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
             <FontAwesomeIcon icon={faShareNodes} style={{ marginRight: 6 }} /> {sharing ? 'Generating...' : 'Share'}
           </button>
+        </div>
+      </div>
+
+      {currentSession && (
+        <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontWeight: 700 }}>Active session:</span> {currentSession.name}
+          <button onClick={() => setCurrentSession(null)} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#9A3412', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+            Clear
+          </button>
+        </div>
+      )}
+
+      {/* Overview dashboard: KPI cards, per-engine table + trend, and the
+          Competitors/Alerts/Sentiment panels (last 3 are honest "coming
+          soon" states - no fake data). */}
+      <VisibilityKPICards siteId={siteId} />
+
+      <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
+        <div className="ai-vis-left">
+          <VisibilityEngineTable siteId={siteId} />
+          <VisibilityHistoryCard siteId={siteId} />
+        </div>
+        <div className="ai-vis-right">
+          <VisibilityCompetitorsPanel />
+          <VisibilityAlertsPanel />
+          <VisibilitySentimentPanel />
         </div>
       </div>
 
@@ -727,15 +826,26 @@ export default function AIVisibility() {
                     </button>
                   </div>
                 ))
-              ) : visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => (
-                <div className="ai-question-row" key={i}>
-                  <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
-                  <span style={{ color: '#111827', fontWeight: 500 }}>{q}</span>
-                  <span className="intent" style={{ justifySelf: 'end', fontSize: 9.5, color: '#C2410C', background: '#FFEDD5', borderRadius: 4, padding: '2px 6px' }}>
-                    Commercial
-                  </span>
-                </div>
-              )) : (
+              ) : visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => {
+                const status = questionStatuses.find(s => s.question === q)
+                const isTested = !!status
+                return (
+                  <div className="ai-question-row" key={i}>
+                    <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
+                    <span style={{ color: '#111827', fontWeight: 500 }}>{q}</span>
+                    <span className="intent" style={{ fontSize: 9.5, color: '#C2410C', background: '#FFEDD5', borderRadius: 4, padding: '2px 6px', justifySelf: 'start' }}>
+                      Commercial
+                    </span>
+                    <span style={{ fontSize: 10.5, color: isTested ? '#16A34A' : '#2563EB', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
+                      <FontAwesomeIcon icon={isTested ? faCircleCheck : faRotateRight} style={{ fontSize: 10 }} />
+                      {isTested ? 'Tested' : 'Ready'}
+                    </span>
+                    <span style={{ fontSize: 10, color: '#9CA3AF' }}>
+                      {isTested ? new Date(status.lastTested).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                    </span>
+                  </div>
+                )
+              }) : (
                 <div style={{ padding: '18px 4px 8px', fontSize: 12, color: '#9CA3AF' }}>
                   {products.length ? 'Generate questions to see real customer-intent prompts, or add your own above.' : 'Detect products first, or add your own question above.'}
                 </div>
@@ -745,7 +855,7 @@ export default function AIVisibility() {
 
           {/* 3. AI Visibility Results */}
           {flatQuestions.length > 0 ? (
-            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} />
+            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
           ) : (
             <div style={sectionCard}>
               <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>
@@ -767,8 +877,44 @@ export default function AIVisibility() {
           {/* 6. Actionable Recommendations */}
           <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
 
-          {/* 7. AI Visibility History */}
-          <VisibilityHistoryCard siteId={siteId} />
+          {/* Recent Sessions */}
+          <div style={sectionCard}>
+            <div style={sectionTitle}>Recent Sessions</div>
+            {!sessions.length ? (
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
+                No sessions yet. Click + New Session above to start tracking scans over time.
+              </div>
+            ) : (
+              <div style={{ marginTop: 8 }}>
+                {sessions.slice(0, 5).map(s => (
+                  <div key={s.id} style={{ padding: '9px 0', borderBottom: '1px solid #F3F4F6' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 600, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
+                        <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>
+                          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} - {s.questionsTested} question{s.questionsTested === 1 ? '' : 's'}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: s.score >= 60 ? '#16A34A' : s.score >= 30 ? '#D97706' : '#DC2626', flexShrink: 0 }}>
+                        {s.score}%
+                      </div>
+                    </div>
+                    {s.engineStatus && (
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        {Object.entries(s.engineStatus).map(([engine, status]) => (
+                          <span key={engine} title={engine} style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 9.5, color: status.tested ? (status.inTop10 ? '#16A34A' : '#DC2626') : '#D1D5DB' }}>
+                            <FontAwesomeIcon icon={status.tested ? faCircleCheck : faCircleXmark} style={{ fontSize: 10 }} />
+                            {engine}
+                          </span>
+                        ))}
+                        <span style={{ fontSize: 9.5, color: '#9CA3AF', marginLeft: 'auto' }}>{s.topEnginesCount}/{s.totalEngines} in Top 10</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
