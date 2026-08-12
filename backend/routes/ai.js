@@ -4,6 +4,7 @@ const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
+const { detectSiteProducts, getCachedProducts, saveProducts } = require('../utils/productDetect')
 
 const router = express.Router()
 
@@ -398,6 +399,35 @@ router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (r
   } catch (e) {
     console.error('suggest-queries error:', e)
     res.status(500).json({ error: 'Failed to suggest queries' })
+  }
+})
+
+// Products - cached detection (GET returns cache, POST forces refresh)
+router.get('/:siteId/products', auth, verifySite, async (req, res) => {
+  try {
+    const cached = await getCachedProducts(req.siteId)
+    if (!cached) return res.json({ products: [], detectedAt: null, isStale: true })
+    res.json(cached)
+  } catch (e) {
+    console.error('Get products failed:', e.message)
+    res.status(500).json({ error: 'Could not load products' })
+  }
+})
+
+router.post('/:siteId/products/detect', auth, verifySite, async (req, res) => {
+  try {
+    const engine = String(req.body?.engine || 'claude')
+    const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
+    const site = s[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const products = await detectSiteProducts(site.url, site.name, engine)
+    await saveProducts(req.siteId, products, engine)
+
+    res.json({ products, engine, detectedAt: new Date().toISOString(), isStale: false })
+  } catch (e) {
+    console.error('Product detection failed:', e.message)
+    res.status(500).json({ error: 'Product detection failed' })
   }
 })
 
