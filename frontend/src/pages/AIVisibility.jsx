@@ -1,9 +1,16 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
+import {
+  VisibilityResultsCard,
+  VisibilitySummaryCard,
+  VisibilityReasoningCard,
+  VisibilityRecommendationsCard,
+  VisibilityHistoryCard,
+} from '../components/AIVisibilitySections3to7'
 
 function genQueries(domain, brand, keywords) {
   const kw1 = keywords[0] || (brand + ' services')
@@ -93,13 +100,7 @@ export default function AIVisibility() {
   useEffect(() => {
     const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
     document.addEventListener('mousedown', handleClick)
-    const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
-    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
-    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
-  ]
-  return () => document.removeEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
   useEffect(() => {
@@ -269,45 +270,6 @@ export default function AIVisibility() {
   const total = (results || []).length
   const score = total > 0 ? Math.round((cited / total) * 100) : null
 
-  const ENGINES = [
-  { key: 'Claude', label: 'Claude (Anthropic)', desc: 'Fast, accurate, reads your site content', color: '#D85A30' },
-  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~.02 per analysis', color: '#10A37F' },
-  { key: 'Both', label: 'Both engines', desc: 'Compare recommendations side by side', color: '#6366F1' },
-]
-
-function calculateScoreFromResults(results) {
-  const arr = Array.isArray(results) ? results : []
-  if (arr.length === 0) return null
-  const cited = arr.filter(r => r.cited).length
-  return Math.round((cited / arr.length) * 100)
-}
-
-function getLatestEngineScore(history, engineName) {
-  const engine = engineName.toLowerCase()
-  const rows = Array.isArray(history) ? history : []
-
-  for (const row of rows) {
-    const rowEngine = String(row.engine || row.provider || row.ai_engine || '').toLowerCase()
-
-    if (rowEngine === engine && row.score != null) return Number(row.score)
-
-    if (rowEngine === engine && Array.isArray(row.results)) {
-      const score = calculateScoreFromResults(row.results)
-      if (score != null) return score
-    }
-
-    if (!rowEngine && Array.isArray(row.results)) {
-      const hasEngine = row.results.some(r => String(r.engine || '').toLowerCase() === engine)
-      if (hasEngine) {
-        const score = calculateScoreFromResults(row.results)
-        if (score != null) return score
-      }
-    }
-  }
-
-  return null
-}
-
   const tipsToShow = improvements.length > 0 ? improvements : [
     { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High' },
     { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High' },
@@ -331,6 +293,12 @@ function getLatestEngineScore(history, engineName) {
     { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
+
+  // Flat list of all auto-generated questions across products, used by the
+  // AI Visibility Results scan (section 3). Built from questionSets (section 2).
+  const flatQuestions = (questionSets || []).flatMap(qs => qs.questions || [])
+  const visibilitySiteName = site?.name || domain
+
   return (
     <div ref={reportRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)', maxWidth: 860, width: '100%', boxSizing: 'border-box' }}>
       <style>{'.ai-vis-engines-grid { } @media (max-width: 640px) { .ai-vis-engines-grid { grid-template-columns: repeat(2, 1fr) !important; } } @media (max-width: 400px) { .ai-vis-engines-grid { grid-template-columns: repeat(1, 1fr) !important; } }'}</style>
@@ -438,6 +406,15 @@ function getLatestEngineScore(history, engineName) {
           </div>
         )}
       </div>
+
+      {/* Sections 3-7: AI Visibility Results, Summary, Reasoning, Recommendations, History */}
+      {flatQuestions.length > 0 && (
+        <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} />
+      )}
+      <VisibilitySummaryCard siteId={siteId} />
+      <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
+      <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
+      <VisibilityHistoryCard siteId={siteId} />
 
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
         <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }}>Test queries for {domain}</div>
@@ -568,13 +545,7 @@ function getLatestEngineScore(history, engineName) {
         <div style={{ fontSize: 12, color: '#6B7280', marginBottom: 14 }}>{improvements.length > 0 ? 'Based on your actual audit results:' : 'Fix these to increase chances of being cited by ChatGPT, Claude and Perplexity.'}</div>
         {tipsToShow.map((tip, i) => {
           const isFixed = tip.status === 'pass'
-          const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
-    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
-    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
-  ]
-  return (
+          return (
           <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < tipsToShow.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start', opacity: isFixed ? 0.7 : 1 }}>
             <div style={{ width: 28, height: 28, borderRadius: 6, background: isFixed ? '#DCFCE7' : '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
               <FontAwesomeIcon icon={isFixed ? faCircleCheck : faArrowRight} style={{ color: isFixed ? '#16A34A' : '#F97316', fontSize: 12 }} />
@@ -602,13 +573,7 @@ function getLatestEngineScore(history, engineName) {
           {history.slice(0, 5).map((h, i) => {
             const r = h.results || []
             const c = r.filter(x => x.cited).length
-            const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
-    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
-    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
-  ]
-  return (
+            return (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < Math.min(history.length,5)-1 ? '1px solid #F3F4F6' : 'none' }}>
                 <span style={{ fontSize: 11, color: '#9CA3AF', minWidth: 110 }}>{new Date(h.created_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' })}</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: c > 0 ? '#16A34A' : '#DC2626', minwidth: 110 }}>{c}/{r.length} cited</span>
@@ -622,18 +587,4 @@ function getLatestEngineScore(history, engineName) {
     </div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

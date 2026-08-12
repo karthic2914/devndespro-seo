@@ -1,316 +1,284 @@
-﻿// frontend/src/components/AIVisibilitySections3to7.jsx
-// Matches your actual dashboard palette (Overview page):
-// orange primary #F97316, purple accent #7C3AED, teal #14B8A6,
-// dark navy banner #0F172A, green success #16A34A, uppercase gray labels.
+﻿import { useState, useEffect } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faWandMagicSparkles, faRotateRight, faArrowRight, faHistory, faCircleCheck } from '@fortawesome/free-solid-svg-icons'
+import api from '../utils/api'
 
-import { useState, useEffect } from 'react';
+// Matches the exact engine colors already used in AIVisibility.jsx's top score grid
+const ENGINE_STYLE = {
+  chatgpt: { label: 'ChatGPT', bg: '#000', color: '#fff' },
+  claude: { label: 'Claude', bg: '#D85A30', color: '#fff' },
+  gemini: { label: 'Gemini', bg: '#4285F4', color: '#fff' },
+  perplexity: { label: 'Perplexity', bg: '#20808D', color: '#fff' },
+}
 
-const COLORS = {
-  orange: '#F97316',
-  orangeLight: '#FFF1E6',
-  orangeBorder: '#FED7AA',
-  purple: '#7C3AED',
-  teal: '#14B8A6',
-  navy: '#0F172A',
-  green: '#16A34A',
-  greenLight: '#F0FDF4',
-  red: '#DC2626',
-  redLight: '#FEF2F2',
-  amber: '#D97706',
-  amberLight: '#FFFBEB',
-  gray: '#6B7280',
-  border: '#E5E7EB',
-};
+// Matches the exact priority badge colors already used for recommendations/tips
+function priorityColors(priority) {
+  if (priority === 'High') return { bg: '#FEE2E2', color: '#DC2626' }
+  if (priority === 'Medium') return { bg: '#FEF3C7', color: '#D97706' }
+  return { bg: '#F3F4F6', color: '#6B7280' }
+}
 
-const ENGINE_META = {
-  chatgpt: { label: 'ChatGPT', color: COLORS.green },
-  claude: { label: 'Claude', color: COLORS.orange },
-  gemini: { label: 'Gemini', color: COLORS.purple },
-  perplexity: { label: 'Perplexity', color: COLORS.teal },
-};
+const cardStyle = { background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }
+const titleStyle = { fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }
+const subStyle = { fontSize: 12, color: '#6B7280', marginBottom: 14 }
+const primaryBtn = (disabled) => ({
+  padding: '10px 24px', borderRadius: 8, border: 'none',
+  background: disabled ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14,
+  cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+  display: 'flex', alignItems: 'center', gap: 8,
+})
 
-const SEVERITY_STYLE = {
-  High: { bg: COLORS.redLight, text: COLORS.red },
-  Medium: { bg: COLORS.amberLight, text: COLORS.amber },
-  Low: { bg: COLORS.greenLight, text: COLORS.green },
-};
+// ---------- Section 3: multi-engine comparison ----------
+export function VisibilityResultsCard({ siteId, siteName, questions }) {
+  const [scanning, setScanning] = useState(false)
+  const [scanResults, setScanResults] = useState(null) // { question: { engine: { top10 } } }
+  const [selectedQuestion, setSelectedQuestion] = useState(questions?.[0] || '')
 
-const Label = ({ children }) => (
-  <div className="text-xs font-semibold tracking-wide uppercase" style={{ color: COLORS.gray }}>{children}</div>
-);
+  useEffect(() => {
+    if (!selectedQuestion && questions?.length) setSelectedQuestion(questions[0])
+  }, [questions]) // eslint-disable-line
 
-const Card = ({ children, className = '' }) => (
-  <div className={`bg-white rounded-2xl border p-5 ${className}`} style={{ borderColor: COLORS.border }}>
-    {children}
-  </div>
-);
+  async function runScan() {
+    if (!questions || !questions.length) return
+    setScanning(true)
+    try {
+      const grouped = {}
+      for (const q of questions) {
+        const res = await api.post('/sites/' + siteId + '/ai-visibility/scan', {
+          siteName, questions: [q],
+        })
+        const byEngine = {}
+        for (const r of res.data.results || []) byEngine[r.engine] = r
+        grouped[q] = byEngine
+      }
+      setScanResults(grouped)
+    } catch (e) {
+      console.error('Visibility scan failed', e)
+    }
+    setScanning(false)
+  }
 
-// ---------- Section 3: Multi-engine comparison table ----------
-export function VisibilityResultsCard({ questions, scanResults }) {
-  const [selectedQuestion, setSelectedQuestion] = useState(questions?.[0] || '');
-  const rowsForQuestion = scanResults?.[selectedQuestion] || {};
-  const engines = Object.keys(rowsForQuestion).length ? Object.keys(rowsForQuestion) : ['chatgpt', 'claude'];
+  const rowsForQuestion = (scanResults && scanResults[selectedQuestion]) || {}
+  const engines = Object.keys(rowsForQuestion).length ? Object.keys(rowsForQuestion) : ['chatgpt', 'claude']
 
   const rowsByRank = Array.from({ length: 10 }, (_, i) => {
-    const rank = i + 1;
-    const row = { rank };
+    const rank = i + 1
+    const row = { rank }
     engines.forEach(engine => {
-      const top10 = rowsForQuestion[engine]?.top10 || [];
-      const hit = top10.find(r => r.rank === rank);
-      row[engine] = hit?.name || null;
-    });
-    return row;
-  });
+      const top10 = rowsForQuestion[engine]?.top10 || []
+      const hit = top10.find(r => r.rank === rank)
+      row[engine] = hit?.name || null
+    })
+    return row
+  })
 
   return (
-    <Card>
-      <Label>AI Visibility Results (SEO Platform)</Label>
-      <select
-        className="border rounded-lg px-3 py-2 text-sm w-full mt-3 mb-4"
-        style={{ borderColor: COLORS.border }}
-        value={selectedQuestion}
-        onChange={e => setSelectedQuestion(e.target.value)}
-      >
-        {(questions || []).map(q => <option key={q} value={q}>{q}</option>)}
-      </select>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left border-b" style={{ borderColor: COLORS.border }}>
-              <th className="py-2 pr-4" style={{ color: COLORS.gray }}>RANK</th>
-              {engines.map(e => (
-                <th key={e} className="py-2 pr-4 font-semibold" style={{ color: ENGINE_META[e]?.color }}>
-                  {ENGINE_META[e]?.label || e}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rowsByRank.map(row => (
-              <tr key={row.rank} className="border-b last:border-0" style={{ borderColor: COLORS.border }}>
-                <td className="py-2 pr-4" style={{ color: COLORS.gray }}>{row.rank}</td>
-                {engines.map(e => (
-                  <td key={e} className="py-2 pr-4 font-medium">{row[e] || <span style={{ color: '#D1D5DB' }}> - </span>}</td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </Card>
-  );
-}
-
-// ---------- Section 4: Summary score card (styled like your SITE HEALTH gauge card) ----------
-export function VisibilitySummaryCard({ siteId }) {
-  const [summary, setSummary] = useState(null);
-
-  useEffect(() => {
-    fetch(`/api/${siteId}/ai-visibility/summary`).then(r => r.json()).then(setSummary).catch(() => {});
-  }, [siteId]);
-
-  if (!summary) return null;
-
-  const status = summary.label === 'Strong'
-    ? { color: COLORS.green, bg: COLORS.greenLight, tag: 'Strong' }
-    : summary.label === 'Moderate'
-      ? { color: COLORS.amber, bg: COLORS.amberLight, tag: 'Needs Work' }
-      : { color: COLORS.orange, bg: COLORS.orangeLight, tag: 'Needs Work' };
-
-  return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
-        <Label>AI Visibility Summary (SEO Platform)</Label>
-      </div>
-
-      <div className="flex items-center gap-5 mb-4">
-        <div className="relative w-24 h-24 flex items-center justify-center">
-          <svg viewBox="0 0 100 100" className="w-24 h-24 -rotate-90">
-            <circle cx="50" cy="50" r="42" fill="none" stroke={COLORS.border} strokeWidth="10" />
-            <circle
-              cx="50" cy="50" r="42" fill="none" stroke={status.color} strokeWidth="10"
-              strokeDasharray={`${(summary.overallScore / 100) * 264} 264`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="absolute text-2xl font-bold" style={{ color: COLORS.navy }}>{summary.overallScore}%</div>
-        </div>
+    <div style={cardStyle}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
         <div>
-          <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: status.bg, color: status.color }}>
-            {status.tag}
-          </span>
-          <div className="text-sm mt-1" style={{ color: COLORS.gray }}>Overall Visibility Score</div>
+          <div style={titleStyle}>AI Visibility Results</div>
+          <div style={subStyle}>Ranked top-10 answers across engines, per question.</div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div><Label>Top 10 Presence</Label><div className="font-semibold text-lg">{summary.top10Presence}</div></div>
-        <div><Label>Average Rank</Label><div className="font-semibold text-lg">{summary.averageRank}</div></div>
-        <div><Label>Questions Tested</Label><div className="font-semibold text-lg">{summary.questionsTested}</div></div>
-        <div><Label>Total Mentions</Label><div className="font-semibold text-lg">{summary.totalMentions}</div></div>
-      </div>
-
-      {summary.label === 'Low' && (
-        <div className="mt-4 text-sm rounded-lg p-3" style={{ background: COLORS.orangeLight, color: '#9A3412' }}>
-          Not consistently recommended by AI engines.
-        </div>
-      )}
-    </Card>
-  );
-}
-
-// ---------- Section 5: Reasoning panel ----------
-export function VisibilityReasoningCard({ siteId, siteName }) {
-  const [reasons, setReasons] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const generate = () => {
-    setLoading(true);
-    fetch(`/api/${siteId}/ai-visibility/reasoning`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ siteName }),
-    })
-      .then(r => r.json())
-      .then(d => setReasons(d.reasoning || []))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { generate(); }, [siteId]); // eslint-disable-line
-
-  return (
-    <Card>
-      <Label>Why is {siteName} not in the Top 10?</Label>
-      {loading && <div className="text-sm mt-3" style={{ color: '#9CA3AF' }}>Analyzing...</div>}
-      <ul className="space-y-2 mt-3">
-        {reasons.map((r, i) => {
-          const s = SEVERITY_STYLE[r.severity] || SEVERITY_STYLE.Low;
-          return (
-            <li key={i} className="flex items-center justify-between text-sm py-1">
-              <span style={{ color: COLORS.navy }}>{r.issue}</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: s.bg, color: s.text }}>
-                {r.severity}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </Card>
-  );
-}
-
-// ---------- Section 6: Recommendations (styled like your Action Plan card) ----------
-export function VisibilityRecommendationsCard({ siteId, siteName, reasoning }) {
-  const [recs, setRecs] = useState([]);
-  const [expanded, setExpanded] = useState(null);
-
-  useEffect(() => {
-    if (!reasoning?.length) return;
-    fetch(`/api/${siteId}/ai-visibility/recommendations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ siteName, reasoning }),
-    })
-      .then(r => r.json())
-      .then(d => setRecs(d.recommendations || []));
-  }, [siteId, siteName, reasoning]);
-
-  return (
-    <Card>
-      <div className="flex items-center justify-between mb-3">
-        <Label>Actionable Recommendations</Label>
-        <span className="text-xs font-semibold px-2 py-1 rounded-full" style={{ background: COLORS.orangeLight, color: COLORS.orange }}>
-          Top {Math.min(3, recs.length)}
-        </span>
-      </div>
-      <div className="space-y-3">
-        {recs.slice(0, 3).map((r, i) => {
-          const s = SEVERITY_STYLE[r.priority] || SEVERITY_STYLE.Low;
-          return (
-            <div key={i} className="flex items-start justify-between border rounded-xl p-3" style={{ borderColor: COLORS.border }}>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm" style={{ color: COLORS.navy }}>{i + 1}. {r.title}</span>
-                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold" style={{ background: s.bg, color: s.text }}>
-                    {r.priority}
-                  </span>
-                </div>
-                <div className="text-sm mt-1" style={{ color: COLORS.gray }}>{r.detail}</div>
-                {expanded === i && (
-                  <ol className="list-decimal list-inside text-sm mt-2 space-y-1" style={{ color: COLORS.gray }}>
-                    {(r.plan || []).map((step, si) => <li key={si}>{step}</li>)}
-                  </ol>
-                )}
-              </div>
-              <button
-                className="text-sm border rounded-lg px-3 py-1 whitespace-nowrap font-medium"
-                style={{ color: COLORS.orange, borderColor: COLORS.orangeBorder }}
-                onClick={() => setExpanded(expanded === i ? null : i)}
-              >
-                {expanded === i ? 'Hide' : 'View Plan'}
-              </button>
-            </div>
-          );
-        })}
-      </div>
-      {recs.length > 3 && (
-        <button className="text-sm font-medium mt-3" style={{ color: COLORS.purple }}>
-          View all {recs.length} recommendations ->
+        <button onClick={runScan} disabled={scanning || !questions?.length} style={primaryBtn(scanning || !questions?.length)}>
+          <FontAwesomeIcon icon={scanning ? faRotateRight : faWandMagicSparkles} style={{ animation: scanning ? 'spin 1s linear infinite' : 'none' }} />
+          {scanning ? 'Scanning...' : 'Run Visibility Scan'}
         </button>
+      </div>
+
+      {!questions?.length && (
+        <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>Generate questions above first.</div>
       )}
-    </Card>
-  );
+
+      {!!questions?.length && (
+        <select
+          value={selectedQuestion}
+          onChange={e => setSelectedQuestion(e.target.value)}
+          style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', width: '100%', marginTop: 12, marginBottom: 14, color: '#111827' }}
+        >
+          {questions.map(q => <option key={q} value={q}>{q}</option>)}
+        </select>
+      )}
+
+      {scanResults && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {rowsByRank.map(row => (
+            <div key={row.rank} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
+              <span style={{ fontSize: 11, color: '#9CA3AF', width: 18, flexShrink: 0, fontWeight: 600 }}>{row.rank}</span>
+              {engines.map(e => (
+                <span key={e} style={{ fontSize: 12, flex: 1, color: '#111827' }}>
+                  {row[e]
+                    ? <span><span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: ENGINE_STYLE[e]?.bg, color: ENGINE_STYLE[e]?.color, marginRight: 6 }}>{ENGINE_STYLE[e]?.label || e}</span>{row[e]}</span>
+                    : <span style={{ color: '#D1D5DB' }}>-</span>}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
-// ---------- Section 7: History trend ----------
-export function VisibilityHistoryCard({ siteId }) {
-  const [history, setHistory] = useState([]);
+// ---------- Section 4: summary score card ----------
+export function VisibilitySummaryCard({ siteId }) {
+  const [summary, setSummary] = useState(null)
 
   useEffect(() => {
-    fetch(`/api/${siteId}/ai-visibility/history`).then(r => r.json()).then(d => setHistory(d.history || []));
-  }, [siteId]);
+    api.get('/sites/' + siteId + '/ai-visibility/summary').then(res => setSummary(res.data)).catch(() => {})
+  }, [siteId])
 
-  const bucketOrder = { top3: 0, top10: 1, top20: 2, not_in_top20: 3 };
-  const dates = [...new Set(history.map(h => h.snapshot_date))].sort();
-  const engines = [...new Set(history.map(h => h.engine))];
+  if (!summary) return null
+
+  const color = summary.label === 'Strong' ? '#16A34A' : summary.label === 'Moderate' ? '#D97706' : '#DC2626'
+  const bg = summary.label === 'Strong' ? '#DCFCE7' : summary.label === 'Moderate' ? '#FEF3C7' : '#FEE2E2'
 
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-3">
-        <Label>AI Visibility History (SEO Platform)</Label>
-        <button className="text-sm font-medium" style={{ color: COLORS.purple }}>View History</button>
+    <div style={cardStyle}>
+      <div style={titleStyle}>AI Visibility Summary</div>
+      <div style={subStyle}>Overall score across all tested questions and engines.</div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
+        <div style={{ fontSize: 32, fontWeight: 800, color }}>{summary.overallScore}<span style={{ fontSize: 16, fontWeight: 400 }}>%</span></div>
+        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: bg, color }}>{summary.label}</span>
       </div>
-      {!history.length && <div className="text-sm" style={{ color: '#9CA3AF' }}>No history yet  -  run a scan weekly to build the trend.</div>}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Top 10 Presence</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.top10Presence}</div></div>
+        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Average Rank</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.averageRank}</div></div>
+        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Questions Tested</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.questionsTested}</div></div>
+        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Total Mentions</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.totalMentions}</div></div>
+      </div>
+    </div>
+  )
+}
+
+// ---------- Section 5: reasoning ("why not in Top 10") ----------
+export function VisibilityReasoningCard({ siteId, siteName }) {
+  const [reasons, setReasons] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    setLoading(true)
+    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName })
+      .then(res => setReasons(res.data.reasoning || []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [siteId, siteName])
+
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Why is {siteName} not in the Top 10?</div>
+      <div style={subStyle}>{loading ? 'Analysing...' : 'Based on your latest visibility scan.'}</div>
+      {reasons.map((r, i) => {
+        const p = priorityColors(r.severity)
+        return (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < reasons.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
+            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+              <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 12 }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.issue}</span>
+                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 600 }}>{r.severity}</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.detail}</div>
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------- Section 6: recommendations ----------
+export function VisibilityRecommendationsCard({ siteId, siteName }) {
+  const [recs, setRecs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [expanded, setExpanded] = useState(null)
+
+  useEffect(() => {
+    setLoading(true)
+    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName })
+      .then(res => api.post('/sites/' + siteId + '/ai-visibility/recommendations', { siteName, reasoning: res.data.reasoning || [] }))
+      .then(res => setRecs(res.data.recommendations || []))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [siteId, siteName])
+
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Actionable Recommendations</div>
+      <div style={subStyle}>{loading ? 'Generating...' : 'Prioritised fixes to improve AI visibility.'}</div>
+      {recs.map((r, i) => {
+        const p = priorityColors(r.priority)
+        return (
+          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < recs.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
+            <div style={{ width: 24, height: 42, borderRadius: 5, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: p.color }}>{i + 1}</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.title}</span>
+                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 600 }}>{r.priority}</span>
+              </div>
+              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.detail}</div>
+              {expanded === i && Array.isArray(r.plan) && (
+                <ol style={{ fontSize: 12, color: '#6B7280', marginTop: 6, paddingLeft: 18 }}>
+                  {r.plan.map((step, si) => <li key={si} style={{ marginBottom: 3 }}>{step}</li>)}
+                </ol>
+              )}
+              {Array.isArray(r.plan) && r.plan.length > 0 && (
+                <button onClick={() => setExpanded(expanded === i ? null : i)} style={{ marginTop: 4, fontSize: 11, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
+                  {expanded === i ? 'Hide plan' : 'View plan'}
+                </button>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ---------- Section 7: history trend ----------
+export function VisibilityHistoryCard({ siteId }) {
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    api.get('/sites/' + siteId + '/ai-visibility/history').then(res => setHistory(res.data.history || [])).catch(() => {})
+  }, [siteId])
+
+  const bucketOrder = { top3: 0, top10: 1, top20: 2, not_in_top20: 3 }
+  const dates = [...new Set(history.map(h => h.snapshot_date))].sort()
+  const engines = [...new Set(history.map(h => h.engine))]
+
+  return (
+    <div style={cardStyle}>
+      <div style={{ ...titleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <FontAwesomeIcon icon={faHistory} style={{ color: '#6B7280' }} /> AI Visibility History
+      </div>
+      {!history.length && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>No history yet - run a scan weekly to build the trend.</div>}
       {!!history.length && (
-        <svg viewBox={`0 0 ${dates.length * 80 + 40} 160`} className="w-full h-40">
-          {engines.map((engine) => {
+        <svg viewBox={`0 0 ${dates.length * 80 + 40} 140`} style={{ width: '100%', height: 120, marginTop: 12 }}>
+          {engines.map(engine => {
             const points = dates.map((d, i) => {
-              const point = history.find(h => h.snapshot_date === d && h.engine === engine);
-              const y = point ? bucketOrder[point.bucket] * 40 + 10 : 130;
-              return `${i * 80 + 20},${y}`;
-            }).join(' ');
-            return (
-              <polyline
-                key={engine}
-                points={points}
-                fill="none"
-                stroke={ENGINE_META[engine]?.color || COLORS.gray}
-                strokeWidth="2.5"
-              />
-            );
+              const point = history.find(h => h.snapshot_date === d && h.engine === engine)
+              const y = point ? bucketOrder[point.bucket] * 35 + 10 : 115
+              return `${i * 80 + 20},${y}`
+            }).join(' ')
+            return <polyline key={engine} points={points} fill="none" stroke={ENGINE_STYLE[engine]?.bg || '#9CA3AF'} strokeWidth="2.5" />
           })}
         </svg>
       )}
-      <div className="flex gap-4 mt-2 text-xs">
-        {engines.map(e => (
-          <span key={e} className="flex items-center gap-1" style={{ color: COLORS.gray }}>
-            <span className="w-2 h-2 rounded-full inline-block" style={{ background: ENGINE_META[e]?.color }} />
-            {ENGINE_META[e]?.label || e}
-          </span>
-        ))}
-      </div>
-    </Card>
-  );
+      {!!engines.length && (
+        <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
+          {engines.map(e => (
+            <span key={e} style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ width: 8, height: 8, borderRadius: 4, background: ENGINE_STYLE[e]?.bg || '#9CA3AF', display: 'inline-block' }} />
+              {ENGINE_STYLE[e]?.label || e}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
