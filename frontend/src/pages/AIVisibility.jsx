@@ -128,6 +128,8 @@ export default function AIVisibility() {
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
   const [customQuestionText, setCustomQuestionText] = useState('')
+  const [showMoreTabs, setShowMoreTabs] = useState(false)
+  const moreTabsRef = useRef(null)
   // Custom questions persisted to the database - [{id, question, created_at}]
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
@@ -149,6 +151,12 @@ export default function AIVisibility() {
 
   useEffect(() => {
     const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  useEffect(() => {
+    const handleClick = e => { if (moreTabsRef.current && !moreTabsRef.current.contains(e.target)) setShowMoreTabs(false) }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
@@ -395,6 +403,8 @@ export default function AIVisibility() {
   const isCustomTab = selectedProduct === 'Custom Questions'
 
   const allTabs = ['All Questions', ...combinedQuestionSets.map(s => s.product)]
+  const visibleTabs = allTabs.slice(0, 5)
+  const overflowTabs = allTabs.slice(5)
 
   const visibleQuestionSets = selectedProduct === 'All Questions'
     ? combinedQuestionSets
@@ -481,6 +491,29 @@ export default function AIVisibility() {
           border-color: #FDBA74;
           box-shadow: 0 3px 10px rgba(249,115,22,.08);
           transform: translateY(-1px);
+        }
+        .ai-question-tabs {
+          display: flex;
+          align-items: center;
+          gap: 18px;
+          border-bottom: 1px solid #E5E7EB;
+          margin-top: 12px;
+        }
+        .ai-question-tab {
+          border: 0;
+          background: transparent;
+          padding: 8px 2px;
+          white-space: nowrap;
+          font: inherit;
+          font-size: 11px;
+          cursor: pointer;
+          color: #6B7280;
+          border-bottom: 2px solid transparent;
+        }
+        .ai-question-tab.active {
+          color: #F97316;
+          border-bottom-color: #F97316;
+          font-weight: 700;
         }
         .ai-question-row {
           display: grid;
@@ -631,27 +664,49 @@ export default function AIVisibility() {
               </div>
             )}
 
-            <select
-              value={selectedProduct}
-              onChange={e => setSelectedProduct(e.target.value)}
-              style={{
-                marginTop: 12,
-                marginBottom: 4,
-                padding: '9px 12px',
-                border: '1px solid #D1D5DB',
-                borderRadius: 7,
-                fontSize: 12,
-                fontWeight: 600,
-                color: '#111827',
-                background: '#fff',
-                width: '100%',
-                maxWidth: 340,
-              }}
-            >
-              {allTabs.map(tab => (
-                <option key={tab} value={tab}>{tab}</option>
+            <div className="ai-question-tabs">
+              {visibleTabs.map(tab => (
+                <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
+                  {tab}
+                </button>
               ))}
-            </select>
+
+              {overflowTabs.length > 0 && (
+                <div ref={moreTabsRef} style={{ position: 'relative', marginLeft: 'auto' }}>
+                  <button
+                    className={'ai-question-tab ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
+                    onClick={() => setShowMoreTabs(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                  >
+                    More ({overflowTabs.length})
+                    <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9, transition: 'transform 0.15s', transform: showMoreTabs ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                  </button>
+
+                  {showMoreTabs && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 190, overflow: 'hidden' }}>
+                      {overflowTabs.map(tab => (
+                        <div
+                          key={tab}
+                          onClick={() => { setSelectedProduct(tab); setShowMoreTabs(false) }}
+                          style={{
+                            padding: '9px 14px',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            color: selectedProduct === tab ? '#F97316' : '#374151',
+                            fontWeight: selectedProduct === tab ? 700 : 500,
+                            background: selectedProduct === tab ? '#FFF7ED' : '#fff',
+                          }}
+                          onMouseEnter={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#F9FAFB' }}
+                          onMouseLeave={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#fff' }}
+                        >
+                          {tab}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div style={{ marginTop: 5 }}>
               {isCustomTab && customQuestions.length > 0 ? (
