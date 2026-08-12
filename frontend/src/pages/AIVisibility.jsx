@@ -635,7 +635,47 @@ export default function AIVisibility() {
                 Questions AI users ask
                 <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Auto-generated)</span>
               </div>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+                {overflowTabs.length > 0 && (
+                  <div ref={moreTabsRef} style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setShowMoreTabs(v => !v)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        border: '1px solid ' + (overflowTabs.includes(selectedProduct) ? '#FDBA74' : '#E5E7EB'),
+                        background: overflowTabs.includes(selectedProduct) ? '#FFF7ED' : '#fff',
+                        color: overflowTabs.includes(selectedProduct) ? '#F97316' : '#374151',
+                        borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                      }}
+                    >
+                      More ({overflowTabs.length})
+                      <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9, transition: 'transform 0.15s', transform: showMoreTabs ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                    </button>
+
+                    {showMoreTabs && (
+                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 190, overflow: 'hidden' }}>
+                        {overflowTabs.map(tab => (
+                          <div
+                            key={tab}
+                            onClick={() => { setSelectedProduct(tab); setShowMoreTabs(false) }}
+                            style={{
+                              padding: '9px 14px',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              color: selectedProduct === tab ? '#F97316' : '#374151',
+                              fontWeight: selectedProduct === tab ? 700 : 500,
+                              background: selectedProduct === tab ? '#FFF7ED' : '#fff',
+                            }}
+                            onMouseEnter={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#F9FAFB' }}
+                            onMouseLeave={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#fff' }}
+                          >
+                            {tab}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
                 <button onClick={() => setAddingQuestion(v => !v)} style={{ border: 0, background: 'transparent', color: '#6366F1', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
                   {addingQuestion ? 'Cancel' : '+ Add Custom Question'}
                 </button>
@@ -670,42 +710,6 @@ export default function AIVisibility() {
                   {tab}
                 </button>
               ))}
-
-              {overflowTabs.length > 0 && (
-                <div ref={moreTabsRef} style={{ position: 'relative', marginLeft: 'auto' }}>
-                  <button
-                    className={'ai-question-tab ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
-                    onClick={() => setShowMoreTabs(v => !v)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5 }}
-                  >
-                    More ({overflowTabs.length})
-                    <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9, transition: 'transform 0.15s', transform: showMoreTabs ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                  </button>
-
-                  {showMoreTabs && (
-                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 190, overflow: 'hidden' }}>
-                      {overflowTabs.map(tab => (
-                        <div
-                          key={tab}
-                          onClick={() => { setSelectedProduct(tab); setShowMoreTabs(false) }}
-                          style={{
-                            padding: '9px 14px',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                            color: selectedProduct === tab ? '#F97316' : '#374151',
-                            fontWeight: selectedProduct === tab ? 700 : 500,
-                            background: selectedProduct === tab ? '#FFF7ED' : '#fff',
-                          }}
-                          onMouseEnter={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#F9FAFB' }}
-                          onMouseLeave={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#fff' }}
-                        >
-                          {tab}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
 
             <div style={{ marginTop: 5 }}>
