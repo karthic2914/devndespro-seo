@@ -93,6 +93,17 @@ export default function AIVisibility() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [scoreHistory, setScoreHistory] = useState([])
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
+
+  // AUTO-GENERATE PRODUCT QUESTIONS
+  useEffect(() => {
+    if (
+      products.length > 0 &&
+      questionSets.length === 0 &&
+      !generatingQuestions
+    ) {
+      generateProductQuestions()
+    }
+  }, [products.length])
   const toggleCron = async (val) => {
     setAiCronEnabled(val)
     await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
@@ -584,3 +595,4 @@ export default function AIVisibility() {
     </div>
   )
 }
+
