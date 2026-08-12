@@ -634,8 +634,12 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
     [req.siteId]
   )
   if (!rows.length) return res.json({ tips: [] })
-  const rawChecks = rows[0].results || []
-  const checks = Array.isArray(rawChecks) ? rawChecks : (typeof rawChecks === 'string' ? JSON.parse(rawChecks) : [])
+  // results is the full audit object ({ checks, score, speed, crawl, ... }),
+  // not the checks array itself -- this previously always fell through to []
+  // because it never drilled into .checks.
+  const resultsObj = typeof rows[0].results === 'string' ? JSON.parse(rows[0].results) : (rows[0].results || {})
+  const rawChecks = resultsObj.checks || []
+  const checks = Array.isArray(rawChecks) ? rawChecks : []
   const failing = checks.filter(c =>
     (c.category === 'AEO' || c.category === 'AI Snippet') &&
     (c.status === 'error' || c.status === 'warning')
