@@ -522,8 +522,13 @@ export default function AIVisibility() {
       {/* Overview dashboard: KPI cards, per-engine table + trend, and the
           Competitors/Alerts/Sentiment panels (last 3 are honest "coming
           soon" states - no fake data). */}
-      <div id="step-analyze">
-        <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} />
+      <div className="ai-vis-layout" style={{ marginBottom: 14 }} id="step-analyze">
+        <div className="ai-vis-left">
+          <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} />
+        </div>
+        <div className="ai-vis-right">
+          <VisibilityCompetitorsPanel />
+        </div>
       </div>
 
       <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
@@ -534,7 +539,6 @@ export default function AIVisibility() {
           </div>
         </div>
         <div className="ai-vis-right">
-          <VisibilityCompetitorsPanel />
           <VisibilityAlertsPanel />
           <VisibilitySentimentPanel />
           <VisibilityQuickActions
