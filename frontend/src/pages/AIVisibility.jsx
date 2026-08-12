@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -78,6 +78,10 @@ export default function AIVisibility() {
   const [showEngineMenu, setShowEngineMenu] = useState(false)
   const [selectedEngine, setSelectedEngine] = useState('Claude')
   const [aiCronEnabled, setAiCronEnabled] = useState(false)
+  const [products, setProducts] = useState([])
+  const [productsDetectedAt, setProductsDetectedAt] = useState(null)
+  const [productsStale, setProductsStale] = useState(true)
+  const [detectingProducts, setDetectingProducts] = useState(false)
   const [scoreHistory, setScoreHistory] = useState([])
   const toggleCron = async (val) => {
     setAiCronEnabled(val)
@@ -126,6 +130,11 @@ export default function AIVisibility() {
       }
     }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
+    api.get('/sites/' + siteId + '/products').then(res => {
+      setProducts(res.data.products || [])
+      setProductsDetectedAt(res.data.detectedAt || null)
+      setProductsStale(res.data.isStale !== false)
+    }).catch(() => {})
     api.get('/sites/' + siteId + '/ai-visibility/score-history').then(res => {
       const h = res.data.history || []
       setScoreHistory(h)
@@ -200,6 +209,20 @@ export default function AIVisibility() {
       showSnackbar(engine + ' analysis complete!', 'success')
     } catch (e) { showSnackbar('Analysis failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
     setAnalyseLoading(false)
+  }
+
+  async function detectProducts() {
+    setDetectingProducts(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/products/detect', { engine: selectedEngine.toLowerCase() })
+      setProducts(res.data.products || [])
+      setProductsDetectedAt(res.data.detectedAt || null)
+      setProductsStale(false)
+      showSnackbar('Products detected!', 'success')
+    } catch (e) {
+      showSnackbar('Product detection failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setDetectingProducts(false)
   }
 
   async function shareReport() {
@@ -336,6 +359,36 @@ function getLatestEngineScore(history, engineName) {
             ) : <div style={{ fontSize: 12, color: '#9CA3AF' }}>Not tested yet</div>}
           </div>
         ))}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Detected products & services</div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+              {productsDetectedAt
+                ? 'Last detected ' + new Date(productsDetectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) + (productsStale ? ' (may be outdated)' : '')
+                : 'Not detected yet'}
+            </div>
+          </div>
+          <button onClick={detectProducts} disabled={detectingProducts} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: detectingProducts ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: detectingProducts ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+            <FontAwesomeIcon icon={detectingProducts ? faRotateRight : faWandMagicSparkles} style={{ animation: detectingProducts ? 'spin 1s linear infinite' : 'none' }} />
+            {detectingProducts ? 'Detecting...' : products.length > 0 ? 'Re-detect Products' : 'Detect Products'}
+          </button>
+        </div>
+        {products.length > 0 && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {products.map((p, i) => (
+              <div key={i} style={{ border: '1px solid #F3F4F6', borderRadius: 8, padding: 12, background: '#F9FAFB' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5, marginBottom: 3 }}>{p.description}</div>
+                {p.targetCustomer && (
+                  <div style={{ fontSize: 11, color: '#9CA3AF' }}>Target: {p.targetCustomer}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
