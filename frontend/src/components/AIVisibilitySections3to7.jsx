@@ -1,188 +1,353 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faRotateRight, faArrowRight, faHistory, faCircleCheck } from '@fortawesome/free-solid-svg-icons'
+import {
+  faWandMagicSparkles,
+  faRotateRight,
+  faArrowRight,
+  faHistory,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 
-// Matches the exact engine colors already used in AIVisibility.jsx's top score grid
 const ENGINE_STYLE = {
-  chatgpt: { label: 'ChatGPT', bg: '#000', color: '#fff' },
-  claude: { label: 'Claude', bg: '#D85A30', color: '#fff' },
-  gemini: { label: 'Gemini', bg: '#4285F4', color: '#fff' },
-  perplexity: { label: 'Perplexity', bg: '#20808D', color: '#fff' },
+  chatgpt: { label: 'ChatGPT', color: '#10A37F' },
+  claude: { label: 'Claude', color: '#D85A30' },
+  gemini: { label: 'Gemini', color: '#4285F4' },
+  perplexity: { label: 'Perplexity', color: '#20808D' },
 }
 
-// Matches the exact priority badge colors already used for recommendations/tips
 function priorityColors(priority) {
   if (priority === 'High') return { bg: '#FEE2E2', color: '#DC2626' }
   if (priority === 'Medium') return { bg: '#FEF3C7', color: '#D97706' }
-  return { bg: '#F3F4F6', color: '#6B7280' }
+  return { bg: '#DCFCE7', color: '#15803D' }
 }
 
-const cardStyle = { background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }
-const titleStyle = { fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 4 }
-const subStyle = { fontSize: 12, color: '#6B7280', marginBottom: 14 }
-const primaryBtn = (disabled) => ({
-  padding: '10px 24px', borderRadius: 8, border: 'none',
-  background: disabled ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 14,
-  cursor: disabled ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-  display: 'flex', alignItems: 'center', gap: 8,
+const cardStyle = {
+  background: '#fff',
+  border: '1px solid #E5E7EB',
+  borderRadius: 12,
+  padding: 16,
+  boxSizing: 'border-box',
+}
+
+const titleStyle = {
+  fontSize: 14,
+  fontWeight: 700,
+  color: '#111827',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+}
+
+const subStyle = {
+  fontSize: 11,
+  color: '#6B7280',
+  marginTop: 4,
+  marginBottom: 12,
+}
+
+const numberBadge = {
+  width: 22,
+  height: 22,
+  borderRadius: '50%',
+  background: '#F97316',
+  color: '#fff',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontSize: 11,
+  fontWeight: 800,
+  flexShrink: 0,
+}
+
+const emptyStyle = {
+  padding: '14px 0 4px',
+  fontSize: 12,
+  color: '#9CA3AF',
+}
+
+const primaryBtn = disabled => ({
+  padding: '8px 13px',
+  borderRadius: 7,
+  border: '1px solid #F97316',
+  background: disabled ? '#F9FAFB' : '#fff',
+  color: disabled ? '#9CA3AF' : '#F97316',
+  fontWeight: 700,
+  fontSize: 11,
+  cursor: disabled ? 'not-allowed' : 'pointer',
+  fontFamily: 'inherit',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 7,
 })
+
+function normaliseEngine(value = '') {
+  return String(value).toLowerCase().replace(/\s+/g, '')
+}
+
+function dispatchScanComplete() {
+  window.dispatchEvent(new CustomEvent('ai-visibility-scan-complete'))
+}
+
+function useScanRefresh(callback) {
+  useEffect(() => {
+    const handler = () => callback()
+    window.addEventListener('ai-visibility-scan-complete', handler)
+    return () => window.removeEventListener('ai-visibility-scan-complete', handler)
+  }, [callback])
+}
 
 // ---------- Section 3: multi-engine comparison ----------
 export function VisibilityResultsCard({ siteId, siteName, questions }) {
   const [scanning, setScanning] = useState(false)
-  const [scanResults, setScanResults] = useState(null) // { question: { engine: { top10 } } }
+  const [scanResults, setScanResults] = useState(null)
   const [selectedQuestion, setSelectedQuestion] = useState(questions?.[0] || '')
 
   useEffect(() => {
-    if (!selectedQuestion && questions?.length) setSelectedQuestion(questions[0])
-  }, [questions]) // eslint-disable-line
+    if (questions?.length && !questions.includes(selectedQuestion)) {
+      setSelectedQuestion(questions[0])
+    }
+  }, [questions, selectedQuestion])
 
   async function runScan() {
-    if (!questions || !questions.length) return
+    if (!questions?.length || scanning) return
+
     setScanning(true)
     try {
+      // One API call for the complete session. The backend snapshots history once.
+      const res = await api.post('/sites/' + siteId + '/ai-visibility/scan', {
+        siteName,
+        questions,
+      })
+
       const grouped = {}
-      for (const q of questions) {
-        const res = await api.post('/sites/' + siteId + '/ai-visibility/scan', {
-          siteName, questions: [q],
-        })
-        const byEngine = {}
-        for (const r of res.data.results || []) byEngine[r.engine] = r
-        grouped[q] = byEngine
+      for (const r of res.data.results || []) {
+        const question = r.question || r.query
+        const engine = normaliseEngine(r.engine)
+        if (!question || !engine) continue
+        if (!grouped[question]) grouped[question] = {}
+        grouped[question][engine] = r
       }
+
       setScanResults(grouped)
+      dispatchScanComplete()
     } catch (e) {
       console.error('Visibility scan failed', e)
+    } finally {
+      setScanning(false)
     }
-    setScanning(false)
   }
 
   const rowsForQuestion = (scanResults && scanResults[selectedQuestion]) || {}
-  const engines = Object.keys(rowsForQuestion).length ? Object.keys(rowsForQuestion) : ['chatgpt', 'claude']
+  const availableEngines = ['chatgpt', 'claude', 'gemini', 'perplexity']
+  const engines = availableEngines.filter(e => rowsForQuestion[e])
+  const displayEngines = engines.length ? engines : availableEngines
 
   const rowsByRank = Array.from({ length: 10 }, (_, i) => {
     const rank = i + 1
     const row = { rank }
-    engines.forEach(engine => {
+    displayEngines.forEach(engine => {
       const top10 = rowsForQuestion[engine]?.top10 || []
-      const hit = top10.find(r => r.rank === rank)
-      row[engine] = hit?.name || null
+      const hit = top10.find(r => Number(r.rank) === rank)
+      row[engine] = hit?.name || hit?.brand || hit?.product || null
     })
     return row
   })
 
   return (
     <div style={cardStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-        <div>
-          <div style={titleStyle}>AI Visibility Results</div>
-          <div style={subStyle}>Ranked top-10 answers across engines, per question.</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div style={titleStyle}>
+          <span style={numberBadge}>3</span>
+          AI Visibility Results
         </div>
+
         <button onClick={runScan} disabled={scanning || !questions?.length} style={primaryBtn(scanning || !questions?.length)}>
           <FontAwesomeIcon icon={scanning ? faRotateRight : faWandMagicSparkles} style={{ animation: scanning ? 'spin 1s linear infinite' : 'none' }} />
           {scanning ? 'Scanning...' : 'Run Visibility Scan'}
         </button>
       </div>
 
-      {!questions?.length && (
-        <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>Generate questions above first.</div>
-      )}
+      <div style={subStyle}>Top-10 recommendations across AI engines for each customer-intent question.</div>
 
-      {!!questions?.length && (
-        <select
-          value={selectedQuestion}
-          onChange={e => setSelectedQuestion(e.target.value)}
-          style={{ padding: '9px 12px', borderRadius: 7, border: '1px solid #E5E7EB', fontSize: 13, fontFamily: 'inherit', width: '100%', marginTop: 12, marginBottom: 14, color: '#111827' }}
-        >
-          {questions.map(q => <option key={q} value={q}>{q}</option>)}
-        </select>
-      )}
+      {!questions?.length ? (
+        <div style={emptyStyle}>Generate AI questions first to run the Top 10 visibility analysis.</div>
+      ) : (
+        <>
+          <select
+            value={selectedQuestion}
+            onChange={e => setSelectedQuestion(e.target.value)}
+            style={{
+              padding: '8px 10px',
+              borderRadius: 7,
+              border: '1px solid #E5E7EB',
+              fontSize: 11,
+              fontFamily: 'inherit',
+              width: '100%',
+              marginBottom: 12,
+              color: '#111827',
+              background: '#fff',
+            }}
+          >
+            {questions.map(q => <option key={q} value={q}>{q}</option>)}
+          </select>
 
-      {scanResults && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {rowsByRank.map(row => (
-            <div key={row.rank} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '6px 0', borderBottom: '1px solid #F3F4F6' }}>
-              <span style={{ fontSize: 11, color: '#9CA3AF', width: 18, flexShrink: 0, fontWeight: 600 }}>{row.rank}</span>
-              {engines.map(e => (
-                <span key={e} style={{ fontSize: 12, flex: 1, color: '#111827' }}>
-                  {row[e]
-                    ? <span><span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: ENGINE_STYLE[e]?.bg, color: ENGINE_STYLE[e]?.color, marginRight: 6 }}>{ENGINE_STYLE[e]?.label || e}</span>{row[e]}</span>
-                    : <span style={{ color: '#D1D5DB' }}>-</span>}
-                </span>
-              ))}
+          {!scanResults ? (
+            <div style={emptyStyle}>Run a visibility scan to see which brands AI engines recommend.</div>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5 }}>
+                <thead>
+                  <tr style={{ color: '#6B7280' }}>
+                    <th style={{ textAlign: 'left', padding: '6px 5px', width: 34 }}>Rank</th>
+                    {displayEngines.map(e => (
+                      <th key={e} style={{ textAlign: 'left', padding: '6px 5px', whiteSpace: 'nowrap' }}>
+                        <span style={{ color: ENGINE_STYLE[e]?.color }}>{ENGINE_STYLE[e]?.label || e}</span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rowsByRank.map(row => (
+                    <tr key={row.rank} style={{ borderTop: '1px solid #F3F4F6' }}>
+                      <td style={{ padding: '6px 5px', color: '#6B7280' }}>{row.rank}</td>
+                      {displayEngines.map(e => (
+                        <td key={e} style={{ padding: '6px 5px', color: row[e] ? '#111827' : '#D1D5DB' }}>
+                          {row[e] || '-'}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   )
 }
 
-// ---------- Section 4: summary score card ----------
-export function VisibilitySummaryCard({ siteId }) {
+// ---------- Section 4: summary ----------
+export function VisibilitySummaryCard({ siteId, siteName, productName }) {
   const [summary, setSummary] = useState(null)
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    api.get('/sites/' + siteId + '/ai-visibility/summary').then(res => setSummary(res.data)).catch(() => {})
+  const loadSummary = useCallback(() => {
+    setLoading(true)
+    api.get('/sites/' + siteId + '/ai-visibility/summary')
+      .then(res => setSummary(res.data || null))
+      .catch(() => setSummary(null))
+      .finally(() => setLoading(false))
   }, [siteId])
 
-  if (!summary) return null
+  useEffect(() => loadSummary(), [loadSummary])
+  useScanRefresh(loadSummary)
 
-  const color = summary.label === 'Strong' ? '#16A34A' : summary.label === 'Moderate' ? '#D97706' : '#DC2626'
-  const bg = summary.label === 'Strong' ? '#DCFCE7' : summary.label === 'Moderate' ? '#FEF3C7' : '#FEE2E2'
+  const score = Number(summary?.overallScore || 0)
+  const label = summary?.label || (score >= 60 ? 'Strong' : score >= 30 ? 'Moderate' : 'Low')
+  const color = label === 'Strong' ? '#16A34A' : label === 'Moderate' ? '#D97706' : '#DC2626'
 
   return (
     <div style={cardStyle}>
-      <div style={titleStyle}>AI Visibility Summary</div>
-      <div style={subStyle}>Overall score across all tested questions and engines.</div>
-
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }}>
-        <div style={{ fontSize: 32, fontWeight: 800, color }}>{summary.overallScore}<span style={{ fontSize: 16, fontWeight: 400 }}>%</span></div>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 6, background: bg, color }}>{summary.label}</span>
+      <div style={titleStyle}>
+        <span style={numberBadge}>4</span>
+        AI Visibility Summary{productName ? ` (${productName})` : ''}
       </div>
+      <div style={subStyle}>Overall visibility across tested questions and AI engines.</div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
-        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Top 10 Presence</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.top10Presence}</div></div>
-        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Average Rank</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.averageRank}</div></div>
-        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Questions Tested</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.questionsTested}</div></div>
-        <div><div style={{ fontSize: 11, color: '#9CA3AF' }}>Total Mentions</div><div style={{ fontSize: 15, fontWeight: 700, color: '#111827' }}>{summary.totalMentions}</div></div>
-      </div>
+      {loading ? (
+        <div style={emptyStyle}>Loading visibility summary...</div>
+      ) : !summary ? (
+        <div style={emptyStyle}>No visibility scan yet. Run Section 3 to generate your first summary.</div>
+      ) : (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: '112px minmax(0,1fr)', gap: 14, alignItems: 'center' }}>
+            <div
+              style={{
+                width: 88,
+                height: 88,
+                borderRadius: '50%',
+                background: `conic-gradient(${color} ${Math.max(0, Math.min(100, score)) * 3.6}deg, #F3F4F6 0deg)`,
+                display: 'grid',
+                placeItems: 'center',
+              }}
+            >
+              <div style={{ width: 66, height: 66, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center' }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#111827' }}>{score}%</span>
+              </div>
+            </div>
+
+            <div>
+              <div style={{ fontSize: 11, color: '#6B7280' }}>Overall Visibility Score</div>
+              <div style={{ fontSize: 13, fontWeight: 800, color, marginTop: 2 }}>{label}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 12px', marginTop: 10, fontSize: 10.5 }}>
+                <span style={{ color: '#6B7280' }}>Top 10 Presence</span><strong>{summary.top10Presence ?? '-'}</strong>
+                <span style={{ color: '#6B7280' }}>Average Rank</span><strong>{summary.averageRank ?? '-'}</strong>
+                <span style={{ color: '#6B7280' }}>Questions Tested</span><strong>{summary.questionsTested ?? 0}</strong>
+                <span style={{ color: '#6B7280' }}>Total Mentions</span><strong>{summary.totalMentions ?? 0}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12, padding: '9px 10px', borderRadius: 7, background: score >= 60 ? '#F0FDF4' : '#FEF2F2', color: score >= 60 ? '#166534' : '#B91C1C', fontSize: 10.5, display: 'flex', gap: 7, alignItems: 'center' }}>
+            <FontAwesomeIcon icon={faTriangleExclamation} />
+            {score >= 60
+              ? `${siteName || 'Your brand'} has solid AI visibility, with room to improve consistency.`
+              : `${siteName || 'Your brand'} is not consistently recommended by AI engines.`}
+          </div>
+        </>
+      )}
     </div>
   )
 }
 
-// ---------- Section 5: reasoning ("why not in Top 10") ----------
-export function VisibilityReasoningCard({ siteId, siteName }) {
+// ---------- Section 5: why not Top 10 ----------
+export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   const [reasons, setReasons] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
+  const loadReasons = useCallback(() => {
+    if (!siteName) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName })
+    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName })
       .then(res => setReasons(res.data.reasoning || []))
-      .catch(() => {})
+      .catch(() => setReasons([]))
       .finally(() => setLoading(false))
-  }, [siteId, siteName])
+  }, [siteId, siteName, productName])
+
+  useEffect(() => loadReasons(), [loadReasons])
+  useScanRefresh(loadReasons)
+
+  const displayName = [siteName, productName].filter(Boolean).join(' - ') || 'this project'
 
   return (
     <div style={cardStyle}>
-      <div style={titleStyle}>Why is {siteName} not in the Top 10?</div>
-      <div style={subStyle}>{loading ? 'Analysing...' : 'Based on your latest visibility scan.'}</div>
-      {reasons.map((r, i) => {
+      <div style={titleStyle}>
+        <span style={numberBadge}>5</span>
+        Why is {displayName} not in the Top 10?
+      </div>
+      <div style={subStyle}>{loading ? 'Analysing latest scan...' : 'Based on your latest visibility scan.'}</div>
+
+      {!loading && !reasons.length && (
+        <div style={emptyStyle}>Run a visibility scan first. The reasons will be generated from the actual AI results.</div>
+      )}
+
+      {reasons.slice(0, 5).map((r, i) => {
         const p = priorityColors(r.severity)
         return (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < reasons.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
-            <div style={{ width: 28, height: 28, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-              <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 12 }} />
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '22px minmax(0,1fr) auto', gap: 8, padding: '8px 0', borderBottom: i < Math.min(reasons.length, 5) - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'start' }}>
+            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#FFF7ED', display: 'grid', placeItems: 'center' }}>
+              <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 9 }} />
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.issue}</span>
-                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 600 }}>{r.severity}</span>
-              </div>
-              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.detail}</div>
+            <div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: '#111827' }}>{r.issue}</div>
+              {r.detail && <div style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.45, marginTop: 2 }}>{r.detail}</div>}
             </div>
+            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 700 }}>{r.severity || 'Low'}</span>
           </div>
         )
       })}
@@ -191,94 +356,169 @@ export function VisibilityReasoningCard({ siteId, siteName }) {
 }
 
 // ---------- Section 6: recommendations ----------
-export function VisibilityRecommendationsCard({ siteId, siteName }) {
+export function VisibilityRecommendationsCard({ siteId, siteName, productName }) {
   const [recs, setRecs] = useState([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(null)
+  const [showAll, setShowAll] = useState(false)
 
-  useEffect(() => {
+  const loadRecommendations = useCallback(() => {
+    if (!siteName) {
+      setLoading(false)
+      return
+    }
     setLoading(true)
-    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName })
-      .then(res => api.post('/sites/' + siteId + '/ai-visibility/recommendations', { siteName, reasoning: res.data.reasoning || [] }))
+
+    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName })
+      .then(res => api.post('/sites/' + siteId + '/ai-visibility/recommendations', {
+        siteName,
+        productName,
+        reasoning: res.data.reasoning || [],
+      }))
       .then(res => setRecs(res.data.recommendations || []))
-      .catch(() => {})
+      .catch(() => setRecs([]))
       .finally(() => setLoading(false))
-  }, [siteId, siteName])
+  }, [siteId, siteName, productName])
+
+  useEffect(() => loadRecommendations(), [loadRecommendations])
+  useScanRefresh(loadRecommendations)
+
+  const visibleRecs = showAll ? recs : recs.slice(0, 3)
 
   return (
     <div style={cardStyle}>
-      <div style={titleStyle}>Actionable Recommendations</div>
-      <div style={subStyle}>{loading ? 'Generating...' : 'Prioritised fixes to improve AI visibility.'}</div>
-      {recs.map((r, i) => {
+      <div style={titleStyle}>
+        <span style={numberBadge}>6</span>
+        Actionable Recommendations
+        {!!recs.length && <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Top {Math.min(3, recs.length)})</span>}
+      </div>
+      <div style={subStyle}>{loading ? 'Generating recommendations...' : 'Prioritised AEO & GEO actions from the latest visibility scan.'}</div>
+
+      {!loading && !recs.length && (
+        <div style={emptyStyle}>Recommendations will appear after the first visibility scan.</div>
+      )}
+
+      {visibleRecs.map((r, i) => {
         const p = priorityColors(r.priority)
         return (
-          <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < recs.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'flex-start' }}>
-            <div style={{ width: 24, height: 42, borderRadius: 5, background: p.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, fontSize: 11, fontWeight: 700, color: p.color }}>{i + 1}</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>{r.title}</span>
-                <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 600 }}>{r.priority}</span>
+          <div key={i} style={{ display: 'grid', gridTemplateColumns: '24px minmax(0,1fr) auto', gap: 9, padding: '9px 0', borderBottom: i < visibleRecs.length - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'start' }}>
+            <div style={{ width: 22, height: 34, borderRadius: 5, background: p.bg, display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: p.color }}>{i + 1}</div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#111827' }}>{r.title}</span>
+                <span style={{ fontSize: 9, padding: '2px 5px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 700 }}>{r.priority || 'Low'}</span>
               </div>
-              <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>{r.detail}</div>
+              <div style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.45, marginTop: 2 }}>{r.detail}</div>
+
               {expanded === i && Array.isArray(r.plan) && (
-                <ol style={{ fontSize: 12, color: '#6B7280', marginTop: 6, paddingLeft: 18 }}>
+                <ol style={{ fontSize: 10, color: '#6B7280', marginTop: 6, paddingLeft: 17 }}>
                   {r.plan.map((step, si) => <li key={si} style={{ marginBottom: 3 }}>{step}</li>)}
                 </ol>
               )}
-              {Array.isArray(r.plan) && r.plan.length > 0 && (
-                <button onClick={() => setExpanded(expanded === i ? null : i)} style={{ marginTop: 4, fontSize: 11, color: '#F97316', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontWeight: 600 }}>
-                  {expanded === i ? 'Hide plan' : 'View plan'}
-                </button>
-              )}
             </div>
+
+            {Array.isArray(r.plan) && r.plan.length > 0 && (
+              <button onClick={() => setExpanded(expanded === i ? null : i)} style={{ border: '1px solid #FDBA74', background: '#fff', color: '#EA580C', borderRadius: 6, padding: '5px 7px', fontSize: 9, fontWeight: 700, cursor: 'pointer' }}>
+                {expanded === i ? 'Hide' : 'View Plan'}
+              </button>
+            )}
           </div>
         )
       })}
+
+      {recs.length > 3 && (
+        <button onClick={() => setShowAll(v => !v)} style={{ width: '100%', marginTop: 8, border: 0, borderTop: '1px solid #F3F4F6', paddingTop: 9, background: 'transparent', color: '#F97316', fontSize: 10, fontWeight: 700, cursor: 'pointer' }}>
+          {showAll ? 'Show Top 3' : `View all ${recs.length} recommendations`}
+        </button>
+      )}
     </div>
   )
 }
 
 // ---------- Section 7: history trend ----------
-export function VisibilityHistoryCard({ siteId }) {
+export function VisibilityHistoryCard({ siteId, productName }) {
   const [history, setHistory] = useState([])
+  const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    api.get('/sites/' + siteId + '/ai-visibility/history').then(res => setHistory(res.data.history || [])).catch(() => {})
+  const loadHistory = useCallback(() => {
+    setLoading(true)
+    api.get('/sites/' + siteId + '/ai-visibility/history')
+      .then(res => setHistory(res.data.history || []))
+      .catch(() => setHistory([]))
+      .finally(() => setLoading(false))
   }, [siteId])
+
+  useEffect(() => loadHistory(), [loadHistory])
+  useScanRefresh(loadHistory)
 
   const bucketOrder = { top3: 0, top10: 1, top20: 2, not_in_top20: 3 }
   const dates = [...new Set(history.map(h => h.snapshot_date))].sort()
-  const engines = [...new Set(history.map(h => h.engine))]
+  const engines = [...new Set(history.map(h => normaliseEngine(h.engine)))].filter(Boolean)
+  const chartWidth = Math.max(300, dates.length * 64 + 55)
 
   return (
     <div style={cardStyle}>
-      <div style={{ ...titleStyle, display: 'flex', alignItems: 'center', gap: 8 }}>
-        <FontAwesomeIcon icon={faHistory} style={{ color: '#6B7280' }} /> AI Visibility History
+      <div style={{ ...titleStyle, justifyContent: 'space-between' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={numberBadge}>7</span>
+          AI Visibility History{productName ? ` (${productName})` : ''}
+        </span>
+        <FontAwesomeIcon icon={faHistory} style={{ color: '#9CA3AF', fontSize: 12 }} />
       </div>
-      {!history.length && <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>No history yet - run a scan weekly to build the trend.</div>}
-      {!!history.length && (
-        <svg viewBox={`0 0 ${dates.length * 80 + 40} 140`} style={{ width: '100%', height: 120, marginTop: 12 }}>
-          {engines.map(engine => {
-            const points = dates.map((d, i) => {
-              const point = history.find(h => h.snapshot_date === d && h.engine === engine)
-              const y = point ? bucketOrder[point.bucket] * 35 + 10 : 115
-              return `${i * 80 + 20},${y}`
-            }).join(' ')
-            return <polyline key={engine} points={points} fill="none" stroke={ENGINE_STYLE[engine]?.bg || '#9CA3AF'} strokeWidth="2.5" />
-          })}
-        </svg>
-      )}
-      {!!engines.length && (
-        <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
-          {engines.map(e => (
-            <span key={e} style={{ fontSize: 11, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 5 }}>
-              <span style={{ width: 8, height: 8, borderRadius: 4, background: ENGINE_STYLE[e]?.bg || '#9CA3AF', display: 'inline-block' }} />
-              {ENGINE_STYLE[e]?.label || e}
-            </span>
-          ))}
-        </div>
+
+      {loading ? (
+        <div style={emptyStyle}>Loading history...</div>
+      ) : !history.length ? (
+        <div style={emptyStyle}>No history yet - run visibility scans over time to build the trend.</div>
+      ) : (
+        <>
+          <div style={{ overflowX: 'auto', marginTop: 10 }}>
+            <svg viewBox={`0 0 ${chartWidth} 150`} style={{ width: '100%', minWidth: 300, height: 135 }}>
+              {['Top 3', 'Top 10', 'Top 20', 'Not Top 20'].map((label, i) => (
+                <g key={label}>
+                  <line x1="52" x2={chartWidth - 10} y1={16 + i * 34} y2={16 + i * 34} stroke="#F3F4F6" strokeWidth="1" />
+                  <text x="4" y={20 + i * 34} fontSize="9" fill="#9CA3AF">{label}</text>
+                </g>
+              ))}
+
+              {engines.map(engine => {
+                const points = dates.map((d, i) => {
+                  const point = history.find(h => h.snapshot_date === d && normaliseEngine(h.engine) === engine)
+                  const y = point ? (bucketOrder[point.bucket] ?? 3) * 34 + 16 : 118
+                  const x = 62 + i * 62
+                  return `${x},${y}`
+                }).join(' ')
+
+                return (
+                  <g key={engine}>
+                    <polyline points={points} fill="none" stroke={ENGINE_STYLE[engine]?.color || '#9CA3AF'} strokeWidth="2.5" />
+                    {dates.map((d, i) => {
+                      const point = history.find(h => h.snapshot_date === d && normaliseEngine(h.engine) === engine)
+                      const y = point ? (bucketOrder[point.bucket] ?? 3) * 34 + 16 : 118
+                      return <circle key={d} cx={62 + i * 62} cy={y} r="2.7" fill={ENGINE_STYLE[engine]?.color || '#9CA3AF'} />
+                    })}
+                  </g>
+                )
+              })}
+
+              {dates.map((d, i) => (
+                <text key={d} x={62 + i * 62} y="145" textAnchor="middle" fontSize="8.5" fill="#9CA3AF">
+                  {new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                </text>
+              ))}
+            </svg>
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginTop: 6 }}>
+            {engines.map(e => (
+              <span key={e} style={{ fontSize: 9.5, color: '#6B7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: ENGINE_STYLE[e]?.color || '#9CA3AF', display: 'inline-block' }} />
+                {ENGINE_STYLE[e]?.label || e}
+              </span>
+            ))}
+          </div>
+        </>
       )}
     </div>
   )
 }
-

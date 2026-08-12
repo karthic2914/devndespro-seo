@@ -568,7 +568,8 @@ export default function AIVisibility() {
 
         <div className="ai-vis-right">
           {/* 4. AI Visibility Summary */}
-          <VisibilitySummaryCard siteId={siteId} />
+          <VisibilitySummaryCard siteId={siteId} siteName={visibilitySiteName}
+/>
 
           {/* 5. Why not Top 10 */}
           <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
