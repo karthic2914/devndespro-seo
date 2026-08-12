@@ -1,10 +1,18 @@
-const express = require('express')
+﻿const express = require('express')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
 const { detectSiteProducts, getCachedProducts, saveProducts, generateAllProductQuestions } = require('../utils/productDetect')
+const {
+  runFullVisibilityScan,
+  getSummary,
+  generateReasoning,
+  generateRecommendations,
+  snapshotHistory,
+  getHistory,
+} = require('../utils/aiVisibilityEngine')
 
 const router = express.Router()
 
@@ -456,4 +464,69 @@ router.post('/:siteId/products/questions', auth, verifySite, async (req, res) =>
   }
 })
 
+// Section 3 - run the multi-engine scan. Expensive: call from an explicit
+// "Run Visibility Scan" button, not on page load. `questions` = flat array
+// pulled from your existing generateAllProductQuestions() output.
+router.post('/:siteId/ai-visibility/scan', auth, verifySite, async (req, res) => {
+  try {
+    const { siteName, questions } = req.body
+    if (!siteName || !Array.isArray(questions) || !questions.length) {
+      return res.status(400).json({ error: 'siteName and questions[] are required' })
+    }
+    const results = await runFullVisibilityScan(req.siteId, siteName, questions)
+    await snapshotHistory(req.siteId) // also updates section 7 trend
+    res.json({ results })
+  } catch (err) {
+    console.error('ai-visibility/scan error:', err)
+    res.status(500).json({ error: 'Scan failed' })
+  }
+})
+
+// Section 4 - summary score card
+router.get('/:siteId/ai-visibility/summary', auth, verifySite, async (req, res) => {
+  try {
+    const summary = await getSummary(req.siteId)
+    res.json(summary)
+  } catch (err) {
+    console.error('ai-visibility/summary error:', err)
+    res.status(500).json({ error: 'Failed to load summary' })
+  }
+})
+
+// Section 5 - reasoning ("why not in Top 10")
+router.post('/:siteId/ai-visibility/reasoning', auth, verifySite, async (req, res) => {
+  try {
+    const { siteName } = req.body
+    const reasoning = await generateReasoning(req.siteId, siteName)
+    res.json({ reasoning })
+  } catch (err) {
+    console.error('ai-visibility/reasoning error:', err)
+    res.status(500).json({ error: 'Failed to generate reasoning' })
+  }
+})
+
+// Section 6 - recommendations (run after reasoning; pass it in)
+router.post('/:siteId/ai-visibility/recommendations', auth, verifySite, async (req, res) => {
+  try {
+    const { siteName, reasoning } = req.body
+    const recommendations = await generateRecommendations(req.siteId, siteName, reasoning || [])
+    res.json({ recommendations })
+  } catch (err) {
+    console.error('ai-visibility/recommendations error:', err)
+    res.status(500).json({ error: 'Failed to generate recommendations' })
+  }
+})
+
+// Section 7 - history trend
+router.get('/:siteId/ai-visibility/history', auth, verifySite, async (req, res) => {
+  try {
+    const history = await getHistory(req.siteId)
+    res.json({ history })
+  } catch (err) {
+    console.error('ai-visibility/history error:', err)
+    res.status(500).json({ error: 'Failed to load history' })
+  }
+})
+
 module.exports = router
+
