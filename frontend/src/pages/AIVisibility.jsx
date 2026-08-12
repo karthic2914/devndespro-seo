@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -16,32 +16,6 @@ import {
   VisibilityAlertsPanel,
   VisibilitySentimentPanel,
 } from '../components/AIVisibilitySections3to7'
-
-function genQueries(domain, brand, keywords) {
-  const kw1 = keywords[0] || (brand + ' services')
-  const kw2 = keywords[1] || (brand + ' tool')
-  if (keywords.length > 0) {
-    return [kw1, brand + ' ' + (keywords[1] || 'review'), 'best ' + kw1]
-  }
-  return [brand, brand + ' review', 'best ' + brand + ' alternatives']
-}
-
-const SCORE_LABEL = s => s >= 80 ? 'Excellent' : s >= 50 ? 'Average' : s > 0 ? 'Below average' : 'Poor'
-const SCORE_COLOR = s => s >= 80 ? '#16A34A' : s >= 50 ? '#D97706' : '#DC2626'
-const SCORE_BG = s => s >= 80 ? '#DCFCE7' : s >= 50 ? '#FEF3C7' : '#FEE2E2'
-
-const ENGINES = [
-  { key: 'Claude', label: 'Claude (Anthropic)', desc: 'Fast, accurate, reads your site content', color: '#D85A30' },
-  { key: 'ChatGPT', label: 'ChatGPT (OpenAI)', desc: 'GPT-4o mini, ~.02 per analysis', color: '#10A37F' },
-  { key: 'Both', label: 'Both engines', desc: 'Compare recommendations side by side', color: '#6366F1' },
-]
-
-function calculateScoreFromResults(results) {
-  const arr = Array.isArray(results) ? results : []
-  if (arr.length === 0) return null
-  const cited = arr.filter(r => r.cited).length
-  return Math.round((cited / arr.length) * 100)
-}
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -76,60 +50,35 @@ function getProductIcon(name = '', index = 0) {
   return PRODUCT_ICON_FALLBACK[index % PRODUCT_ICON_FALLBACK.length]
 }
 
-function getLatestEngineScore(history, engineName) {
-  const engine = engineName.toLowerCase()
-  const rows = Array.isArray(history) ? history : []
+// The 6-step process shown at the top of the page. Purely navigational -
+// clicking a step smooth-scrolls to the matching section id below.
+const PROCESS_STEPS = [
+  { n: 1, label: 'Products', sub: 'Add your products & services', anchor: 'step-products' },
+  { n: 2, label: 'Questions', sub: 'Discover questions AI users ask', anchor: 'step-questions' },
+  { n: 3, label: 'Scan AI Engines', sub: 'Run visibility scan across LLMs', anchor: 'step-scan' },
+  { n: 4, label: 'Analyze Visibility', sub: 'View results & key insights', anchor: 'step-analyze' },
+  { n: 5, label: 'Improve AEO/GEO', sub: 'Get recommendations', anchor: 'step-improve' },
+  { n: 6, label: 'Track Progress', sub: 'Monitor & get alerts', anchor: 'step-track', icon: faHistory },
+]
 
-  for (const row of rows) {
-    const rowEngine = String(row.engine || row.provider || row.ai_engine || '').toLowerCase()
-
-    if (rowEngine === engine && row.score != null) return Number(row.score)
-
-    if (rowEngine === engine && Array.isArray(row.results)) {
-      const score = calculateScoreFromResults(row.results)
-      if (score != null) return score
-    }
-
-    if (!rowEngine && Array.isArray(row.results)) {
-      const hasEngine = row.results.some(r => String(r.engine || '').toLowerCase() === engine)
-      if (hasEngine) {
-        const score = calculateScoreFromResults(row.results)
-        if (score != null) return score
-      }
-    }
-  }
-
-  return null
+function scrollToStep(anchor) {
+  const el = document.getElementById(anchor)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 export default function AIVisibility() {
   const { siteId } = useParams()
   const showSnackbar = useSnackbar()
   const reportRef = useRef(null)
-  const menuRef = useRef(null)
   const [site, setSite] = useState(null)
-  const [queries, setQueries] = useState(['', '', ''])
-  const [results, setResults] = useState(null)
-  const [history, setHistory] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [claudeLoading, setClaudeLoading] = useState(false)
-  const [claudeResults, setClaudeResults] = useState(null)
-  const [engineScores, setEngineScores] = useState({ chatgpt: null, claude: null })
-  const [improvements, setImprovements] = useState([])
-  const [analyseLoading, setAnalyseLoading] = useState(false)
-  const [aiRecommendations, setAiRecommendations] = useState(null)
   const [sharing, setSharing] = useState(false)
   const [domain, setDomain] = useState('')
-  const [showEngineMenu, setShowEngineMenu] = useState(false)
-  const [selectedEngine, setSelectedEngine] = useState('Claude')
-  const [aiCronEnabled, setAiCronEnabled] = useState(false)
   const [products, setProducts] = useState([])
   const [productsDetectedAt, setProductsDetectedAt] = useState(null)
   const [productsStale, setProductsStale] = useState(true)
   const [detectingProducts, setDetectingProducts] = useState(false)
   const [questionSets, setQuestionSets] = useState([])
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
-  const [scoreHistory, setScoreHistory] = useState([])
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
   const [customQuestionText, setCustomQuestionText] = useState('')
@@ -160,16 +109,6 @@ export default function AIVisibility() {
       generateProductQuestions()
     }
   }, [products.length])
-  const toggleCron = async (val) => {
-    setAiCronEnabled(val)
-    await api.patch('/sites/' + siteId + '/ai-cron', { enabled: val }).catch(() => {})
-  }
-
-  useEffect(() => {
-    const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
 
   useEffect(() => {
     const handleClick = e => { if (moreTabsRef.current && !moreTabsRef.current.contains(e.target)) setShowMoreTabs(false) }
@@ -199,51 +138,12 @@ export default function AIVisibility() {
         setSite(s)
         const d = (() => { try { return new URL(s.url).hostname.replace('www.', '') } catch { return s.url } })()
         setDomain(d)
-        const brand = d.split('.')[0]
-        // Claude score is loaded from score-history, not old site field
-        setAiCronEnabled(!!s.enable_ai_cron)
-        api.post('/sites/' + siteId + '/ai-visibility/suggest-queries', {})
-          .then(r => {
-            if (r.data.queries && r.data.queries.length > 0) {
-              setQueries(r.data.queries)
-            } else {
-              api.get('/sites/' + siteId + '/keywords').then(kr => {
-                const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
-                setQueries(genQueries(d, brand, kws))
-              }).catch(() => setQueries(genQueries(d, brand, [])))
-            }
-          })
-          .catch(() => {
-            api.get('/sites/' + siteId + '/keywords').then(kr => {
-              const kws = (kr.data || []).slice(0, 3).map(k => k.keyword || k.query || '').filter(Boolean)
-              setQueries(genQueries(d, brand, kws))
-            }).catch(() => setQueries(genQueries(d, brand, [])))
-          })
       }
     }).catch(() => {})
-    api.get('/sites/' + siteId + '/ai-visibility/improvements').then(res => setImprovements(res.data.tips || [])).catch(() => {})
     api.get('/sites/' + siteId + '/products').then(res => {
       setProducts(res.data.products || [])
       setProductsDetectedAt(res.data.detectedAt || null)
       setProductsStale(res.data.isStale !== false)
-    }).catch(() => {})
-    api.get('/sites/' + siteId + '/ai-visibility/score-history').then(res => {
-      const h = res.data.history || []
-      setScoreHistory(h)
-
-      const latestChatGPT = getLatestEngineScore(h, 'chatgpt')
-      const latestClaude = getLatestEngineScore(h, 'claude')
-
-      setEngineScores(prev => ({
-        ...prev,
-        chatgpt: latestChatGPT,
-        claude: latestClaude
-      }))
-    }).catch(() => {})
-    api.get('/sites/' + siteId + '/ai-visibility/history').then(res => {
-      const h = res.data || []
-      setHistory(h)
-      if (h.length > 0) setResults(h[0].results || [])
     }).catch(() => {})
     // Load previously saved custom questions from the database
     api.get('/sites/' + siteId + '/custom-questions').then(res => {
@@ -259,66 +159,10 @@ export default function AIVisibility() {
     }).catch(() => {})
   }, [siteId])
 
-  async function runTest() {
-    if (isTesting) return
-    const q = queries.filter(q => q.trim())
-    if (!q.length) {
-      showSnackbar('Please enter at least one query', 'warning')
-      return
-    }
-
-    setLoading(true)
-    try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q })
-      const chatgptItems = res.data.results || []
-      setResults(chatgptItems)
-      setEngineScores(prev => ({ ...prev, chatgpt: calcEngineScore(chatgptItems) }))
-      setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar('ChatGPT Analysis Complete', 'success', 3500, { engine: 'chatgpt' })
-    } catch (e) {
-      showSnackbar('ChatGPT test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-    }
-    setLoading(false)
-  }
-
-  async function runClaudeTest() {
-    if (isTesting) return
-    const q = queries.filter(q => q.trim())
-    if (!q.length) {
-      showSnackbar('Please enter at least one query', 'warning')
-      return
-    }
-
-    setClaudeLoading(true)
-    try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/test', { queries: q, engine: 'claude' })
-      const claudeItems = (res.data.results || []).map(r => ({ ...r, engine: 'Claude' }))
-      setResults(claudeItems)
-      setEngineScores(prev => ({ ...prev, claude: calcEngineScore(claudeItems) }))
-      setClaudeResults({ score: res.data.score ?? 0 })
-      setHistory(h => [{ results: res.data.results, created_at: new Date().toISOString() }, ...h].slice(0, 10))
-      showSnackbar('Claude Analysis Complete', 'success', 3500, { engine: 'claude' })
-    } catch (e) {
-      showSnackbar('Claude test failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-    }
-    setClaudeLoading(false)
-  }
-  async function analyseWithEngine(engine) {
-    setSelectedEngine(engine)
-    setShowEngineMenu(false)
-    setAnalyseLoading(true)
-    try {
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/analyse', { engine })
-      setAiRecommendations({ ...res.data, engine })
-      showSnackbar(engine + ' analysis complete!', 'success')
-    } catch (e) { showSnackbar('Analysis failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error') }
-    setAnalyseLoading(false)
-  }
-
   async function detectProducts() {
     setDetectingProducts(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/products/detect', { engine: selectedEngine.toLowerCase() })
+      const res = await api.post('/sites/' + siteId + '/products/detect', { engine: 'claude' })
       setProducts(res.data.products || [])
       setProductsDetectedAt(res.data.detectedAt || null)
       setProductsStale(false)
@@ -332,7 +176,7 @@ export default function AIVisibility() {
   async function generateProductQuestions() {
     setGeneratingQuestions(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/products/questions', { engine: selectedEngine.toLowerCase() })
+      const res = await api.post('/sites/' + siteId + '/products/questions', { engine: 'claude' })
       setQuestionSets(res.data.questionSets || [])
       showSnackbar((res.data.totalQuestions || 0) + ' questions generated across ' + (res.data.questionSets || []).length + ' products', 'success')
     } catch (e) {
@@ -415,34 +259,6 @@ export default function AIVisibility() {
     } catch { showSnackbar('Download failed', 'error') }
     setSharing(false)
   }
-
-  const cited = (results || []).filter(r => r.cited).length
-  const total = (results || []).length
-  const score = total > 0 ? Math.round((cited / total) * 100) : null
-
-  const tipsToShow = improvements.length > 0 ? improvements : [
-    { title: 'Submit sitemap to Bing Webmaster Tools', message: 'ChatGPT uses Bing. Not indexed on Bing = invisible to ChatGPT. Takes 10 mins at webmaster.bing.com.', priority: 'High' },
-    { title: 'Get listed on Trustpilot or G2', message: 'AI engines use review platforms as trust signals. A free Trustpilot listing is enough to start.', priority: 'High' },
-    { title: 'Add author schema to content pages', message: 'Named authors with credentials make content more citable by AI engines.', priority: 'Medium' },
-    { title: 'Build Reddit presence', message: 'Perplexity heavily cites Reddit. Comment in relevant subreddits before posting.', priority: 'Medium' },
-  ]
-
-  const selectedEngineObj = ENGINES.find(e => e.key === selectedEngine) || ENGINES[0]
-
-  const calcEngineScore = (items) => {
-    const arr = Array.isArray(items) ? items : []
-    if (arr.length === 0) return 0
-    const citedCount = arr.filter(x => x.cited).length
-    return Math.round((citedCount / arr.length) * 100)
-  }
-  const isTesting = loading || claudeLoading || analyseLoading
-
-  const engines = [
-    { key: 'chatgpt', label: 'ChatGPT', bg: '#000', color: '#fff', initial: 'G', score: engineScores.chatgpt ?? score, active: true },
-    { key: 'claude', label: 'Claude', bg: '#D85A30', color: '#fff', initial: 'C', score: engineScores.claude ?? claudeResults?.score ?? null, pending: engineScores.claude === null && claudeResults === null },
-    { key: 'perplexity', label: 'Perplexity', bg: '#20808D', color: '#fff', initial: 'P', soon: true },
-    { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
-  ]
 
   // AI-generated questionSets plus a "Custom Questions" group built from the
   // database-backed customQuestions state. Kept as a computed merge (not
@@ -642,6 +458,29 @@ export default function AIVisibility() {
         </div>
       </div>
 
+      {/* 6-step process stepper - click a step to jump to that section */}
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '14px 10px', marginBottom: 14, display: 'flex', alignItems: 'center', overflowX: 'auto' }}>
+        {PROCESS_STEPS.map((step, i) => (
+          <div key={step.n} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+            <button
+              onClick={() => scrollToStep(step.anchor)}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, border: 0, background: 'transparent', cursor: 'pointer', padding: '0 14px', textAlign: 'left' }}
+            >
+              <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#F97316', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
+                {step.icon ? <FontAwesomeIcon icon={step.icon} style={{ fontSize: 11 }} /> : step.n}
+              </span>
+              <span>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap' }}>{step.label}</div>
+                <div style={{ fontSize: 10, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{step.sub}</div>
+              </span>
+            </button>
+            {i < PROCESS_STEPS.length - 1 && (
+              <FontAwesomeIcon icon={faChevronDown} style={{ transform: 'rotate(-90deg)', fontSize: 11, color: '#D1D5DB', flexShrink: 0 }} />
+            )}
+          </div>
+        ))}
+      </div>
+
       {currentSession && (
         <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontWeight: 700 }}>Active session:</span> {currentSession.name}
@@ -654,12 +493,14 @@ export default function AIVisibility() {
       {/* Overview dashboard: KPI cards, per-engine table + trend, and the
           Competitors/Alerts/Sentiment panels (last 3 are honest "coming
           soon" states - no fake data). */}
-      <VisibilityKPICards siteId={siteId} />
+      <div id="step-analyze">
+        <VisibilityKPICards siteId={siteId} />
+      </div>
 
       <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
         <div className="ai-vis-left">
           <VisibilityEngineTable siteId={siteId} />
-          <VisibilityHistoryCard siteId={siteId} />
+          <div id="step-track"><VisibilityHistoryCard siteId={siteId} /></div>
         </div>
         <div className="ai-vis-right">
           <VisibilityCompetitorsPanel />
@@ -672,7 +513,7 @@ export default function AIVisibility() {
         <div className="ai-vis-left">
 
           {/* 1. Detected products & services */}
-          <div style={sectionCard}>
+          <div id="step-products" style={sectionCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div>
                 <div style={sectionTitle}>
@@ -727,7 +568,7 @@ export default function AIVisibility() {
           </div>
 
           {/* 2. Questions AI users ask */}
-          <div style={sectionCard}>
+          <div id="step-questions" style={sectionCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={sectionTitle}>
                 <span style={numberBadge}>2</span>
@@ -854,16 +695,18 @@ export default function AIVisibility() {
           </div>
 
           {/* 3. AI Visibility Results */}
-          {flatQuestions.length > 0 ? (
-            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
-          ) : (
-            <div style={sectionCard}>
-              <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>
-              <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
-                Generate AI questions first to run Top 10 visibility analysis.
+          <div id="step-scan">
+            {flatQuestions.length > 0 ? (
+              <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
+            ) : (
+              <div style={sectionCard}>
+                <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>
+                <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
+                  Generate AI questions first to run Top 10 visibility analysis.
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div className="ai-vis-right">
@@ -871,11 +714,13 @@ export default function AIVisibility() {
           <VisibilitySummaryCard siteId={siteId} siteName={visibilitySiteName}
 />
 
-          {/* 5. Why not Top 10 */}
-          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
-
-          {/* 6. Actionable Recommendations */}
-          <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
+          {/* 5. Why not Top 10 + 6. Actionable Recommendations = "Improve AEO/GEO" step */}
+          <div id="step-improve">
+            <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
+            <div style={{ marginTop: 14 }}>
+              <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
+            </div>
+          </div>
 
           {/* Recent Sessions */}
           <div style={sectionCard}>
