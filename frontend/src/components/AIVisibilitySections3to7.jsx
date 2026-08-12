@@ -123,6 +123,14 @@ export function VisibilityResultsCard({
     { key: 'perplexity', label: 'Perplexity', status: 'Coming soon' },
   ]
 
+  // When Compare Engines is ON, show all 4 engine columns side by side.
+  // When OFF, show only the currently selected engine tab's column.
+  const visibleEngines = compareEngines
+    ? ['chatgpt', 'claude', 'gemini', 'perplexity']
+    : [activeEngine]
+
+  const tableColumns = `55px minmax(180px, 2fr) repeat(${visibleEngines.length}, minmax(80px, 1fr))`
+
   useEffect(() => {
     if (
       questions?.length &&
@@ -363,12 +371,24 @@ export function VisibilityResultsCard({
         </div>
 
         <div
+          onClick={() => setCompareEngines(v => !v)}
+          role="switch"
+          aria-checked={compareEngines}
+          tabIndex={0}
+          onKeyDown={e => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              setCompareEngines(v => !v)
+            }
+          }}
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             fontSize: 11,
             color: '#374151',
+            cursor: 'pointer',
+            userSelect: 'none',
           }}
         >
           <span>Compare Engines</span>
@@ -377,9 +397,10 @@ export function VisibilityResultsCard({
             style={{
               width: 30,
               height: 17,
-              background: '#E5E7EB',
+              background: compareEngines ? '#F97316' : '#E5E7EB',
               borderRadius: 10,
               padding: 2,
+              transition: 'background 0.15s ease',
             }}
           >
             <div
@@ -388,6 +409,8 @@ export function VisibilityResultsCard({
                 height: 13,
                 borderRadius: '50%',
                 background: '#fff',
+                transform: compareEngines ? 'translateX(13px)' : 'translateX(0)',
+                transition: 'transform 0.15s ease',
               }}
             />
           </div>
@@ -520,8 +543,7 @@ export function VisibilityResultsCard({
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns:
-                '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+              gridTemplateColumns: tableColumns,
               padding: '8px 10px',
               borderBottom:
                 '1px solid #E5E7EB',
@@ -532,10 +554,9 @@ export function VisibilityResultsCard({
           >
             <span>Rank</span>
             <span>Brand / Product</span>
-            <span>ChatGPT</span>
-            <span>Claude</span>
-            <span>Gemini</span>
-            <span>Perplexity</span>
+            {visibleEngines.map(engine => (
+              <span key={engine}>{ENGINE_STYLE[engine]?.label || engine}</span>
+            ))}
           </div>
 
           {/* TOP 10 */}
@@ -551,8 +572,7 @@ export function VisibilityResultsCard({
                   key={`${item.name}-${rank}`}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns:
-                      '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+                    gridTemplateColumns: tableColumns,
                     alignItems: 'center',
                     padding: '7px 10px',
                     borderBottom:
@@ -571,12 +591,7 @@ export function VisibilityResultsCard({
                     {item.name}
                   </span>
 
-                  {[
-                    'chatgpt',
-                    'claude',
-                    'gemini',
-                    'perplexity',
-                  ].map(engine => (
+                  {visibleEngines.map(engine => (
                     <span key={engine}>
                       {renderEngineRank(
                         engine,
@@ -594,8 +609,7 @@ export function VisibilityResultsCard({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns:
-                  '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+                gridTemplateColumns: tableColumns,
                 alignItems: 'center',
                 padding: '9px 10px',
                 background: '#FFF1F2',
@@ -622,12 +636,7 @@ export function VisibilityResultsCard({
                 {siteName}
               </span>
 
-              {[
-                'chatgpt',
-                'claude',
-                'gemini',
-                'perplexity',
-              ].map(engine => (
+              {visibleEngines.map(engine => (
                 <span key={engine}>
                   {renderOwnBrandRank(engine)}
                 </span>
@@ -987,3 +996,4 @@ export function VisibilityHistoryCard({ siteId, productName }) {
     </div>
   )
 }
+
