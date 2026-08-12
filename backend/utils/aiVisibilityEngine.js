@@ -3,7 +3,7 @@
 // Reuses callAIEngine() pattern from productDetect.js  -  same engine-agnostic wrapper.
 
 const { callAIEngine } = require('./productDetect');
-const pool = require('../db'); // adjust to your actual pg pool import
+const { pool } = require('../clients'); // adjust to your actual pg pool import
 
 const ENGINES = ['chatgpt', 'claude']; // gemini, perplexity stay "coming soon" until integrated
 
