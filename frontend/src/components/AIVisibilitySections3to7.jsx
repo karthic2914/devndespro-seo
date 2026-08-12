@@ -110,6 +110,7 @@ export function VisibilityResultsCard({
     questions?.[0] || ''
   )
   const [activeEngine, setActiveEngine] = useState('chatgpt')
+  const [compareEngines, setCompareEngines] = useState(false)
 
   const scannedQuestionsRef = useRef(new Set())
 
