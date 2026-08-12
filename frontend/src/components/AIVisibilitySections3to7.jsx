@@ -115,6 +115,7 @@ export function VisibilityResultsCard({
   )
   const [activeEngine, setActiveEngine] = useState('chatgpt')
   const [compareEngines, setCompareEngines] = useState(false)
+  const [showFullAnswers, setShowFullAnswers] = useState(false)
 
   const scannedQuestionsRef = useRef(new Set())
 
@@ -703,6 +704,38 @@ export function VisibilityResultsCard({
           </span>
         </div>
       )}
+
+      {/* VIEW FULL AI ANSWERS - real raw response text from the scan,
+          not the extracted top-10 list */}
+      {!scanning && baseTop10.length > 0 && (
+        <>
+          <button
+            onClick={() => setShowFullAnswers(v => !v)}
+            style={{ width: '100%', marginTop: 12, padding: '9px 0', border: '1px solid #E5E7EB', background: '#7C3AED', color: '#fff', borderRadius: 7, fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {showFullAnswers ? 'Hide Full AI Answers' : 'View Full AI Answers'}
+          </button>
+
+          {showFullAnswers && (
+            <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {liveEngines.map(engine => {
+                const raw = currentResults?.[engine]?.raw_response
+                if (!raw) return null
+                return (
+                  <div key={engine} style={{ border: '1px solid #E5E7EB', borderRadius: 8, padding: 10 }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: ENGINE_STYLE[engine]?.color, marginBottom: 4 }}>
+                      {ENGINE_STYLE[engine]?.label} said:
+                    </div>
+                    <div style={{ fontSize: 10.5, color: '#374151', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                      {raw}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </>
+      )}
     </div>
   )
 }
@@ -715,26 +748,29 @@ const KPI_META = {
   enginesInTop10: { label: 'Engines in Top 10', icon: faSquareCheck, color: '#D97706', bg: '#FFFBEB' },
 }
 
-export function VisibilityKPICards({ siteId }) {
+export function VisibilityKPICards({ siteId, onSummaryLoaded }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(() => {
     setLoading(true)
     api.get('/sites/' + siteId + '/ai-visibility/summary')
-      .then(res => setSummary(res.data || null))
+      .then(res => {
+        setSummary(res.data || null)
+        if (onSummaryLoaded) onSummaryLoaded(res.data || null)
+      })
       .catch(() => setSummary(null))
       .finally(() => setLoading(false))
-  }, [siteId])
+  }, [siteId]) // eslint-disable-line
 
   useEffect(() => load(), [load])
   useScanRefresh(load)
 
   const cards = summary ? [
-    { key: 'overallScore', value: summary.overallScore + '%' },
-    { key: 'mentionRate', value: summary.mentionRate + '%' },
-    { key: 'averageRank', value: summary.averageRank },
-    { key: 'enginesInTop10', value: summary.enginesInTop10 },
+    { key: 'overallScore', value: summary.overallScore + '%', delta: summary.deltas?.overallScore, unit: 'pt' },
+    { key: 'mentionRate', value: summary.mentionRate + '%', delta: summary.deltas?.mentionRate, unit: 'pt' },
+    { key: 'averageRank', value: summary.averageRank, delta: summary.deltas?.averageRank, unit: '' },
+    { key: 'enginesInTop10', value: summary.enginesInTop10, delta: summary.deltas?.enginesInTop10, unit: '' },
   ] : []
 
   return (
@@ -745,6 +781,9 @@ export function VisibilityKPICards({ siteId }) {
         </div>
       ) : cards.map(c => {
         const meta = KPI_META[c.key]
+        const hasDelta = c.delta !== null && c.delta !== undefined
+        const positive = hasDelta && c.delta > 0
+        const negative = hasDelta && c.delta < 0
         return (
           <div key={c.key} style={cardStyle}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -753,7 +792,16 @@ export function VisibilityKPICards({ siteId }) {
               </div>
               <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{meta.label}</span>
             </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{c.value}</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{c.value}</div>
+              {hasDelta && c.delta !== 0 && (
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: positive ? '#16A34A' : '#DC2626', display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <FontAwesomeIcon icon={faArrowRight} style={{ transform: positive ? 'rotate(-90deg)' : 'rotate(90deg)', fontSize: 9 }} />
+                  {Math.abs(c.delta)}{c.unit}
+                </span>
+              )}
+            </div>
+            <div style={{ fontSize: 9.5, color: '#9CA3AF', marginTop: 2 }}>{summary.comparisonLabel}</div>
           </div>
         )
       })}
@@ -822,16 +870,45 @@ export function VisibilityEngineTable({ siteId }) {
           </div>
         )
       })}
+
+      {rows.some(r => r.hasData) && (
+        <button
+          onClick={() => scrollToId('step-analyze')}
+          style={{ width: '100%', marginTop: 10, padding: '8px 0', border: '1px solid #E5E7EB', background: '#fff', color: '#374151', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+        >
+          View Engine Comparison
+        </button>
+      )}
     </div>
   )
 }
 
+function scrollToId(id) {
+  const el = document.getElementById(id)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+}
+
 // ---------- Overview: honest placeholder panels for not-yet-built features ----------
+// Each has a "View..." button, but since the feature genuinely isn't built,
+// clicking shows a brief "Coming soon" note instead of pretending to work.
+function ComingSoonButton({ label }) {
+  const [clicked, setClicked] = useState(false)
+  return (
+    <button
+      onClick={() => { setClicked(true); setTimeout(() => setClicked(false), 2000) }}
+      style={{ width: '100%', marginTop: 10, padding: '8px 0', border: '1px solid #E5E7EB', background: '#fff', color: clicked ? '#9CA3AF' : '#374151', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+    >
+      {clicked ? 'Coming soon' : label}
+    </button>
+  )
+}
+
 export function VisibilityCompetitorsPanel() {
   return (
     <div style={cardStyle}>
       <div style={titleStyle}>Top Competitors</div>
       <div style={emptyStyle}>Competitor tracking isn't built yet. This will let you track named competitors and compare visibility share directly against them.</div>
+      <ComingSoonButton label="View Competitor Benchmarking" />
     </div>
   )
 }
@@ -841,6 +918,7 @@ export function VisibilityAlertsPanel() {
     <div style={cardStyle}>
       <div style={titleStyle}>Alerts</div>
       <div style={emptyStyle}>Alerts aren't built yet. This will notify you when your visibility score changes significantly between scans.</div>
+      <ComingSoonButton label="View All Alerts" />
     </div>
   )
 }
@@ -850,6 +928,38 @@ export function VisibilitySentimentPanel() {
     <div style={cardStyle}>
       <div style={titleStyle}>Sentiment</div>
       <div style={emptyStyle}>Sentiment analysis isn't built yet. This will show whether AI engines describe your brand positively, neutrally, or negatively.</div>
+      <ComingSoonButton label="View Sentiment Analysis" />
+    </div>
+  )
+}
+
+// ---------- Overview: Quick Actions panel ----------
+// Wires real handlers passed down from the page - nothing here is decorative,
+// each button does exactly what its label says.
+export function VisibilityQuickActions({ onRunScan, onAddQuestion, onGenerateQuestions, onCompareAnswers, onExport }) {
+  const btnStyle = (primary) => ({
+    width: '100%',
+    textAlign: 'left',
+    padding: '9px 12px',
+    borderRadius: 7,
+    border: primary ? 'none' : '1px solid #E5E7EB',
+    background: primary ? '#7C3AED' : '#fff',
+    color: primary ? '#fff' : '#374151',
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    marginBottom: 8,
+  })
+  return (
+    <div style={cardStyle}>
+      <div style={titleStyle}>Quick Actions</div>
+      <div style={{ marginTop: 10 }}>
+        <button onClick={onRunScan} style={btnStyle(true)}>Run Visibility Scan</button>
+        <button onClick={onAddQuestion} style={btnStyle(false)}>Add Custom Question</button>
+        <button onClick={onGenerateQuestions} style={btnStyle(false)}>Generate Questions</button>
+        <button onClick={onCompareAnswers} style={btnStyle(false)}>Compare AI Answers</button>
+        <button onClick={onExport} style={{ ...btnStyle(false), marginBottom: 0 }}>Export Report</button>
+      </div>
     </div>
   )
 }
