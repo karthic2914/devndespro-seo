@@ -137,24 +137,24 @@ async function listSessions(siteId) {
 
 // ---------- Section 4: summary score card ----------
 
-async function getSummary(siteId) {
+// Computes summary metrics for one date window - shared by getSummary()
+// for both the current 30-day period and the prior 30-day period, so the
+// deltas shown on the KPI cards are real comparisons, not guesses.
+async function computeSummaryWindow(siteId, start, end) {
   const { rows } = await pool.query(
     `SELECT engine, brand_rank FROM ai_visibility_results
-     WHERE site_id = $1 AND tested_at > NOW() - INTERVAL '30 days'`,
-    [siteId]
+     WHERE site_id = $1 AND tested_at >= $2 AND tested_at < $3`,
+    [siteId, start, end]
   );
 
-  const questionsTested = new Set();
   const { rows: qRows } = await pool.query(
     `SELECT DISTINCT question FROM ai_visibility_results
-     WHERE site_id = $1 AND tested_at > NOW() - INTERVAL '30 days'`,
-    [siteId]
+     WHERE site_id = $1 AND tested_at >= $2 AND tested_at < $3`,
+    [siteId, start, end]
   );
-  qRows.forEach(r => questionsTested.add(r.question));
 
   const mentioned = rows.filter(r => r.brand_rank !== null);
   const inTop10 = mentioned.filter(r => r.brand_rank <= 10);
-
   const avgRank = mentioned.length
     ? mentioned.reduce((sum, r) => sum + r.brand_rank, 0) / mentioned.length
     : null;
@@ -166,14 +166,55 @@ async function getSummary(siteId) {
   const enginesWithTop10 = new Set(inTop10.map(r => r.engine));
 
   return {
-    top10Presence: `${inTop10.length} / ${rows.length}`,
-    averageRank: avgRank ? Number(avgRank.toFixed(1)) : 'N/A',
-    questionsTested: questionsTested.size,
+    totalTests: rows.length,
+    questionsTested: qRows.length,
     totalMentions: mentioned.length,
     overallScore,
     mentionRate,
-    enginesInTop10: `${enginesWithTop10.size} / ${enginesTracked.size || ENGINES.length}`,
-    label: overallScore >= 70 ? 'Strong' : overallScore >= 40 ? 'Moderate' : 'Low',
+    averageRank: avgRank,
+    enginesInTop10Count: enginesWithTop10.size,
+    enginesTrackedCount: enginesTracked.size,
+    top10Count: inTop10.length,
+  };
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+async function getSummary(siteId) {
+  const now = new Date();
+  const periodStart = new Date(now); periodStart.setDate(periodStart.getDate() - 30);
+  const prevStart = new Date(now); prevStart.setDate(prevStart.getDate() - 60);
+  const prevEnd = periodStart;
+
+  const current = await computeSummaryWindow(siteId, periodStart, now);
+  const previous = await computeSummaryWindow(siteId, prevStart, prevEnd);
+
+  // null delta (not 0) when there's no prior-period data to compare against -
+  // the frontend treats null as "no comparison available" rather than "no change".
+  const hasPrevious = previous.totalTests > 0;
+  const delta = (curr, prev) => hasPrevious ? Number((curr - prev).toFixed(1)) : null;
+
+  return {
+    top10Presence: `${current.top10Count} / ${current.totalTests}`,
+    averageRank: current.averageRank ? Number(current.averageRank.toFixed(1)) : 'N/A',
+    questionsTested: current.questionsTested,
+    totalMentions: current.totalMentions,
+    overallScore: current.overallScore,
+    mentionRate: current.mentionRate,
+    enginesInTop10: `${current.enginesInTop10Count} / ${current.enginesTrackedCount || ENGINES.length}`,
+    label: current.overallScore >= 70 ? 'Strong' : current.overallScore >= 40 ? 'Moderate' : 'Low',
+    deltas: {
+      overallScore: delta(current.overallScore, previous.overallScore),
+      mentionRate: delta(current.mentionRate, previous.mentionRate),
+      averageRank: (current.averageRank !== null && previous.averageRank !== null)
+        ? Number((current.averageRank - previous.averageRank).toFixed(1))
+        : null,
+      enginesInTop10: hasPrevious ? (current.enginesInTop10Count - previous.enginesInTop10Count) : null,
+    },
+    periodLabel: `${fmtDate(periodStart)} - ${fmtDate(now)}`,
+    comparisonLabel: hasPrevious ? `vs ${fmtDate(prevStart)} - ${fmtDate(prevEnd)}` : 'No prior period to compare',
   };
 }
 
