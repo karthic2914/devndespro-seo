@@ -326,7 +326,11 @@ Return ONLY a JSON array, no markdown:
       messages: [{ role: 'user', content: prompt }],
     })
 
-    const text = r.content[0].text.trim()
+    const textBlock = Array.isArray(r.content) ? r.content.find(b => b?.type === 'text') : null
+    if (!textBlock?.text) {
+      throw new Error('Claude returned no text content (possible rate limit or empty response)')
+    }
+    const text = textBlock.text.trim()
     const start = text.indexOf('[')
     const end = text.lastIndexOf(']')
     let recommendations = []
@@ -382,7 +386,11 @@ router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (r
       max_tokens: 200,
       messages: [{ role: 'user', content: prompt }]
     })
-    const text = r.content[0].text.trim()
+    const textBlock = Array.isArray(r.content) ? r.content.find(b => b?.type === 'text') : null
+    if (!textBlock?.text) {
+      throw new Error('Claude returned no text content (possible rate limit or empty response)')
+    }
+    const text = textBlock.text.trim()
     const start = text.indexOf('[')
     const end = text.lastIndexOf(']')
     const queries = JSON.parse(text.slice(start, end + 1))
