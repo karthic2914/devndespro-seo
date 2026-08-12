@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -93,6 +93,11 @@ export default function AIVisibility() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [scoreHistory, setScoreHistory] = useState([])
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
+  const [addingQuestion, setAddingQuestion] = useState(false)
+  const [customQuestionText, setCustomQuestionText] = useState('')
+  // Custom questions persisted to the database - [{id, question, created_at}]
+  const [customQuestions, setCustomQuestions] = useState([])
+  const [savingQuestion, setSavingQuestion] = useState(false)
 
   // AUTO-GENERATE PRODUCT QUESTIONS
   useEffect(() => {
@@ -167,6 +172,10 @@ export default function AIVisibility() {
       const h = res.data || []
       setHistory(h)
       if (h.length > 0) setResults(h[0].results || [])
+    }).catch(() => {})
+    // Load previously saved custom questions from the database
+    api.get('/sites/' + siteId + '/custom-questions').then(res => {
+      setCustomQuestions(res.data.questions || [])
     }).catch(() => {})
   }, [siteId])
 
@@ -252,6 +261,37 @@ export default function AIVisibility() {
     setGeneratingQuestions(false)
   }
 
+  // Saves the question to the database so it survives a page refresh.
+  // On success, it's added to customQuestions, which flows into
+  // combinedQuestionSets below and becomes selectable/testable in
+  // AI Visibility Results (section 3), same as AI-generated questions.
+  async function addCustomQuestion() {
+    const text = customQuestionText.trim()
+    if (!text || savingQuestion) return
+
+    setSavingQuestion(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/custom-questions', { question: text })
+      setCustomQuestions(prev => [...prev, res.data])
+      setSelectedProduct('Custom Questions')
+      setCustomQuestionText('')
+      setAddingQuestion(false)
+      showSnackbar('Question saved - select it in AI Visibility Results below to test it against AI.', 'success')
+    } catch (e) {
+      showSnackbar('Failed to save question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setSavingQuestion(false)
+  }
+
+  async function deleteCustomQuestion(id) {
+    try {
+      await api.delete('/sites/' + siteId + '/custom-questions/' + id)
+      setCustomQuestions(prev => prev.filter(q => q.id !== id))
+    } catch (e) {
+      showSnackbar('Failed to delete question', 'error')
+    }
+  }
+
   async function shareReport() {
     setSharing(true)
     try {
@@ -306,14 +346,24 @@ export default function AIVisibility() {
     { key: 'gemini', label: 'Gemini', bg: '#4285F4', color: '#fff', initial: 'G', soon: true },
   ]
 
-  // Flat list of all auto-generated questions across products, used by the
-  // AI Visibility Results scan (section 3). Built from questionSets (section 2).
-  const flatQuestions = (questionSets || []).flatMap(qs => qs.questions || [])
+  // AI-generated questionSets plus a "Custom Questions" group built from the
+  // database-backed customQuestions state. Kept as a computed merge (not
+  // mutated into questionSets directly) so regenerating AI questions never
+  // wipes out saved custom ones.
+  const combinedQuestionSets = customQuestions.length
+    ? [...questionSets, { product: 'Custom Questions', questions: customQuestions.map(q => q.question) }]
+    : questionSets
+
+  // Flat list of all questions across products AND custom questions, used by
+  // the AI Visibility Results scan (section 3).
+  const flatQuestions = combinedQuestionSets.flatMap(qs => qs.questions || [])
   const visibilitySiteName = site?.name || domain
 
+  const isCustomTab = selectedProduct === 'Custom Questions'
+
   const visibleQuestionSets = selectedProduct === 'All Questions'
-    ? questionSets
-    : questionSets.filter(set => set.product === selectedProduct)
+    ? combinedQuestionSets
+    : combinedQuestionSets.filter(set => set.product === selectedProduct)
 
   const visibleQuestions = visibleQuestionSets.flatMap(set => set.questions || []).slice(0, 5)
 
@@ -528,19 +578,43 @@ export default function AIVisibility() {
 
           {/* 2. Questions AI users ask */}
           <div style={sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
               <div style={sectionTitle}>
                 <span style={numberBadge}>2</span>
                 Questions AI users ask
                 <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Auto-generated)</span>
               </div>
-              <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ border: 0, background: 'transparent', color: '#F97316', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                {generatingQuestions ? 'Generating...' : '+ Generate Questions'}
-              </button>
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+                <button onClick={() => setAddingQuestion(v => !v)} style={{ border: 0, background: 'transparent', color: '#6366F1', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                  {addingQuestion ? 'Cancel' : '+ Add Custom Question'}
+                </button>
+                <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ border: 0, background: 'transparent', color: '#F97316', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                  {generatingQuestions ? 'Generating...' : '+ Generate Questions'}
+                </button>
+              </div>
             </div>
 
+            {addingQuestion && (
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <input
+                  autoFocus
+                  value={customQuestionText}
+                  onChange={e => setCustomQuestionText(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') addCustomQuestion()
+                    if (e.key === 'Escape') { setAddingQuestion(false); setCustomQuestionText('') }
+                  }}
+                  placeholder="e.g. What's the best UI/UX design agency for a startup?"
+                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 7, fontSize: 12, color: '#111827' }}
+                />
+                <button onClick={addCustomQuestion} disabled={!customQuestionText.trim() || savingQuestion} style={{ padding: '9px 16px', borderRadius: 7, border: 'none', background: (customQuestionText.trim() && !savingQuestion) ? '#F97316' : '#D1D5DB', color: '#fff', fontWeight: 700, fontSize: 11, cursor: (customQuestionText.trim() && !savingQuestion) ? 'pointer' : 'not-allowed' }}>
+                  {savingQuestion ? 'Saving...' : 'Add'}
+                </button>
+              </div>
+            )}
+
             <div className="ai-question-tabs">
-              {['All Questions', ...questionSets.map(s => s.product)].slice(0, 5).map(tab => (
+              {['All Questions', ...combinedQuestionSets.map(s => s.product)].map(tab => (
                 <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
                   {tab}
                 </button>
@@ -548,7 +622,21 @@ export default function AIVisibility() {
             </div>
 
             <div style={{ marginTop: 5 }}>
-              {visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => (
+              {isCustomTab && customQuestions.length > 0 ? (
+                customQuestions.slice(0, 5).map((q, i) => (
+                  <div className="ai-question-row" style={{ gridTemplateColumns: '28px minmax(0,1fr) 28px' }} key={q.id}>
+                    <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
+                    <span style={{ color: '#111827', fontWeight: 500 }}>{q.question}</span>
+                    <button
+                      onClick={() => deleteCustomQuestion(q.id)}
+                      title="Delete question"
+                      style={{ justifySelf: 'end', border: 0, background: 'transparent', color: '#9CA3AF', cursor: 'pointer', padding: 4 }}
+                    >
+                      <FontAwesomeIcon icon={faXmark} style={{ fontSize: 11 }} />
+                    </button>
+                  </div>
+                ))
+              ) : visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => (
                 <div className="ai-question-row" key={i}>
                   <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
                   <span style={{ color: '#111827', fontWeight: 500 }}>{q}</span>
@@ -558,7 +646,7 @@ export default function AIVisibility() {
                 </div>
               )) : (
                 <div style={{ padding: '18px 4px 8px', fontSize: 12, color: '#9CA3AF' }}>
-                  {products.length ? 'Generate questions to see real customer-intent prompts.' : 'Detect products first.'}
+                  {products.length ? 'Generate questions to see real customer-intent prompts, or add your own above.' : 'Detect products first, or add your own question above.'}
                 </div>
               )}
             </div>
