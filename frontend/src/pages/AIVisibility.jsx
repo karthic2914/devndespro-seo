@@ -350,7 +350,7 @@ export default function AIVisibility() {
         }
         .ai-vis-layout {
           display: grid;
-          grid-template-columns: minmax(0, 1.75fr) minmax(330px, 1fr);
+          grid-template-columns: minmax(0, 2.1fr) minmax(300px, 340px);
           gap: 14px;
           align-items: start;
         }

@@ -1218,15 +1218,14 @@ export function VisibilityHistoryCard({ siteId, productName }) {
   return (
     <div style={cardStyle}>
       <div style={{ ...titleStyle, justifyContent: 'space-between' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={numberBadge}>7</span>
-          AI Visibility History{productName ? ` (${productName})` : ''}
+        <span>
+          Visibility Trend{productName ? ` (${productName})` : ''}
         </span>
         <FontAwesomeIcon icon={faHistory} style={{ color: '#9CA3AF', fontSize: 12 }} />
       </div>
 
       {loading ? (
-        <div style={emptyStyle}>Loading history...</div>
+        <div style={emptyStyle}>Loading trend...</div>
       ) : !history.length ? (
         <div style={emptyStyle}>No history yet - run visibility scans over time to build the trend.</div>
       ) : (
