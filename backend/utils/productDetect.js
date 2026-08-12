@@ -160,11 +160,33 @@ async function generateQuestionsForProduct(product, siteName, engine = 'claude')
  * scales naturally with how many products the site has.
  */
 async function generateAllProductQuestions(products, siteName, engine = 'claude') {
-  const results = []
-  for (const product of products) {
-    const questions = await generateQuestionsForProduct(product, siteName, engine)
-    results.push({ product: product.name, questions })
-  }
+  const results = await Promise.all(
+    products.map(async (product) => {
+      try {
+        const questions = await generateQuestionsForProduct(
+          product,
+          siteName,
+          engine
+        )
+
+        return {
+          product: product.name,
+          questions
+        }
+      } catch (error) {
+        console.error(
+          `Question generation failed for ${product.name}:`,
+          error.message
+        )
+
+        return {
+          product: product.name,
+          questions: []
+        }
+      }
+    })
+  )
+
   return results
 }
 
