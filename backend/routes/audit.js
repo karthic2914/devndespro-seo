@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
@@ -627,8 +627,10 @@ router.post('/:siteId/ai-visibility/test-claude', auth, verifySite, async (req, 
 
 // AI Visibility - Get site-specific improvement tips from last audit
 router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, res) => {
+  // Skip multipage crawl rows -- they store results as { multipage:true, pages:[...] }
+  // with no top-level 'checks' array, which silently produced 0 tips before this fix.
   const { rows } = await pool.query(
-    'SELECT results FROM audit_results WHERE site_id=$1 ORDER BY id DESC LIMIT 1',
+    "SELECT results FROM audit_results WHERE site_id=$1 AND (results->>'multipage') IS NULL AND status = 'complete' ORDER BY id DESC LIMIT 1",
     [req.siteId]
   )
   if (!rows.length) return res.json({ tips: [] })
