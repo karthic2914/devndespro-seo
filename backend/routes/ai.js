@@ -464,6 +464,51 @@ router.post('/:siteId/products/questions', auth, verifySite, async (req, res) =>
   }
 })
 
+// Custom questions - user-added questions, persisted to the database so
+// they survive a page refresh (unlike AI-generated questionSets, which
+// are ephemeral and regenerate each session).
+router.get('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT id, question, created_at FROM custom_questions WHERE site_id=$1 ORDER BY created_at ASC',
+      [req.siteId]
+    )
+    res.json({ questions: rows })
+  } catch (e) {
+    console.error('Get custom questions failed:', e.message)
+    res.status(500).json({ error: 'Failed to load custom questions' })
+  }
+})
+
+router.post('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
+  try {
+    const question = String(req.body?.question || '').trim()
+    if (!question) return res.status(400).json({ error: 'question is required' })
+
+    const { rows } = await pool.query(
+      'INSERT INTO custom_questions (site_id, question) VALUES ($1, $2) RETURNING id, question, created_at',
+      [req.siteId, question]
+    )
+    res.json(rows[0])
+  } catch (e) {
+    console.error('Add custom question failed:', e.message)
+    res.status(500).json({ error: 'Failed to save question' })
+  }
+})
+
+router.delete('/:siteId/custom-questions/:questionId', auth, verifySite, async (req, res) => {
+  try {
+    await pool.query(
+      'DELETE FROM custom_questions WHERE id=$1 AND site_id=$2',
+      [req.params.questionId, req.siteId]
+    )
+    res.json({ deleted: true })
+  } catch (e) {
+    console.error('Delete custom question failed:', e.message)
+    res.status(500).json({ error: 'Failed to delete question' })
+  }
+})
+
 // Section 3 - run the multi-engine scan. Expensive: call from an explicit
 // "Run Visibility Scan" button, not on page load. `questions` = flat array
 // pulled from your existing generateAllProductQuestions() output.
