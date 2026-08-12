@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faLightbulb, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -36,6 +36,39 @@ function calculateScoreFromResults(results) {
   if (arr.length === 0) return null
   const cited = arr.filter(r => r.cited).length
   return Math.round((cited / arr.length) * 100)
+}
+
+// Picks a colored icon for a detected product card based on what it actually
+// is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
+// matching the "icon + colored box" look from the reference mockup.
+const PRODUCT_ICON_FALLBACK = [
+  { icon: faLayerGroup, bg: '#EFF6FF', color: '#2563EB' },
+  { icon: faMagnifyingGlass, bg: '#F5F3FF', color: '#7C3AED' },
+  { icon: faWandMagicSparkles, bg: '#FFF7ED', color: '#F97316' },
+  { icon: faLink, bg: '#ECFDF5', color: '#059669' },
+]
+
+function getProductIcon(name = '', index = 0) {
+  const n = name.toLowerCase()
+  if (n.includes('ui') || n.includes('ux') || n.includes('design')) {
+    return { icon: faPalette, bg: '#EFF6FF', color: '#2563EB' }
+  }
+  if (n.includes('web') || n.includes('development') || n.includes('react') || n.includes('app') || n.includes('full stack')) {
+    return { icon: faCode, bg: '#F5F3FF', color: '#7C3AED' }
+  }
+  if (n.includes('ai') || n.includes('visibility') || n.includes('geo') || n.includes('aeo')) {
+    return { icon: faWandMagicSparkles, bg: '#FFF7ED', color: '#F97316' }
+  }
+  if (n.includes('backlink') || n.includes('keyword') || n.includes('link')) {
+    return { icon: faLink, bg: '#ECFDF5', color: '#059669' }
+  }
+  if (n.includes('cloud') || n.includes('devops') || n.includes('infrastructure') || n.includes('deploy')) {
+    return { icon: faServer, bg: '#FEF2F2', color: '#DC2626' }
+  }
+  if (n.includes('seo') || n.includes('audit') || n.includes('technical')) {
+    return { icon: faMagnifyingGlass, bg: '#EFF6FF', color: '#2563EB' }
+  }
+  return PRODUCT_ICON_FALLBACK[index % PRODUCT_ICON_FALLBACK.length]
 }
 
 function getLatestEngineScore(history, engineName) {
@@ -552,17 +585,23 @@ export default function AIVisibility() {
             {products.length > 0 ? (
               <>
                 <div className="ai-product-grid">
-                  {products.slice(0, 4).map((p, i) => (
-                    <div className="ai-product-card" key={i} onClick={() => setSelectedProduct(p.name)}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 7 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{p.name}</div>
-                        {i === 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803D', background: '#DCFCE7', borderRadius: 4, padding: '2px 5px' }}>Primary</span>}
+                  {products.slice(0, 4).map((p, i) => {
+                    const iconMeta = getProductIcon(p.name, i)
+                    return (
+                      <div className="ai-product-card" key={i} onClick={() => setSelectedProduct(p.name)}>
+                        <div style={{ width: 32, height: 32, borderRadius: 8, background: iconMeta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 9 }}>
+                          <FontAwesomeIcon icon={iconMeta.icon} style={{ color: iconMeta.color, fontSize: 13 }} />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 7 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{p.name}</div>
+                          {i === 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803D', background: '#DCFCE7', borderRadius: 4, padding: '2px 5px' }}>Primary</span>}
+                        </div>
+                        <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.45 }}>
+                          {p.description || p.targetCustomer || 'Detected from website content'}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.45 }}>
-                        {p.description || p.targetCustomer || 'Detected from website content'}
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
                   <button style={{ border: '1px solid #E5E7EB', background: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 10.5, cursor: 'pointer' }}>Edit Products</button>
