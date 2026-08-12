@@ -1,4 +1,4 @@
-﻿const axios = require('axios')
+const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
 
@@ -120,9 +120,59 @@ async function saveProducts(siteId, products, engine) {
   )
 }
 
+/**
+ * Generate real-world customer questions for a single detected product.
+ * Question count is not fixed -- the AI decides 2-4 based on how broad
+ * or narrow the product/service is.
+ */
+async function generateQuestionsForProduct(product, siteName, engine = 'claude') {
+  const prompt = [
+    'A business offers this specific product/service:',
+    `Name: ${product.name}`,
+    `Description: ${product.description}`,
+    `Target customer: ${product.targetCustomer || 'not specified'}`,
+    `Business: ${siteName}`,
+    '',
+    'Generate the real questions a potential customer would type into ChatGPT or Claude',
+    'when looking for exactly this kind of product/service.',
+    'Rules:',
+    '- Generate between 2 and 4 questions -- however many genuinely make sense for this product, not a fixed count',
+    '- Questions should be natural, conversational, the way real people ask AI assistants',
+    '- Do not force the brand name into every question -- most real searches are generic',
+    '- Vary intent: some commercial ("best X for Y"), some comparison ("X vs Y"), some direct',
+    '',
+    'Return ONLY a JSON array of strings, no markdown: ["question1","question2",...]',
+  ].join('\n')
+
+  const text = await callAIEngine(engine, prompt, 400)
+  const start = text.indexOf('[')
+  const end = text.lastIndexOf(']')
+  try {
+    const parsed = JSON.parse(start >= 0 ? text.slice(start, end + 1) : text)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Generate questions for ALL products of a site. Total question count
+ * scales naturally with how many products the site has.
+ */
+async function generateAllProductQuestions(products, siteName, engine = 'claude') {
+  const results = []
+  for (const product of products) {
+    const questions = await generateQuestionsForProduct(product, siteName, engine)
+    results.push({ product: product.name, questions })
+  }
+  return results
+}
+
 module.exports = {
   callAIEngine,
   detectSiteProducts,
   getCachedProducts,
   saveProducts,
+  generateQuestionsForProduct,
+  generateAllProductQuestions,
 }

@@ -82,6 +82,8 @@ export default function AIVisibility() {
   const [productsDetectedAt, setProductsDetectedAt] = useState(null)
   const [productsStale, setProductsStale] = useState(true)
   const [detectingProducts, setDetectingProducts] = useState(false)
+  const [questionSets, setQuestionSets] = useState([])
+  const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [scoreHistory, setScoreHistory] = useState([])
   const toggleCron = async (val) => {
     setAiCronEnabled(val)
@@ -223,6 +225,18 @@ export default function AIVisibility() {
       showSnackbar('Product detection failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
     }
     setDetectingProducts(false)
+  }
+
+  async function generateProductQuestions() {
+    setGeneratingQuestions(true)
+    try {
+      const res = await api.post('/sites/' + siteId + '/products/questions', { engine: selectedEngine.toLowerCase() })
+      setQuestionSets(res.data.questionSets || [])
+      showSnackbar((res.data.totalQuestions || 0) + ' questions generated across ' + (res.data.questionSets || []).length + ' products', 'success')
+    } catch (e) {
+      showSnackbar('Question generation failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    }
+    setGeneratingQuestions(false)
   }
 
   async function shareReport() {
@@ -385,6 +399,40 @@ function getLatestEngineScore(history, engineName) {
                 {p.targetCustomer && (
                   <div style={{ fontSize: 11, color: '#9CA3AF' }}>Target: {p.targetCustomer}</div>
                 )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: 20, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>Questions AI users ask</div>
+            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>
+              Auto-generated per product -- count varies based on what {domain} actually offers.
+            </div>
+          </div>
+          <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: (generatingQuestions || products.length === 0) ? '#D1D5DB' : '#F97316', color: '#fff', fontWeight: 700, fontSize: 13, cursor: (generatingQuestions || products.length === 0) ? 'not-allowed' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+            <FontAwesomeIcon icon={generatingQuestions ? faRotateRight : faWandMagicSparkles} style={{ animation: generatingQuestions ? 'spin 1s linear infinite' : 'none' }} />
+            {generatingQuestions ? 'Generating...' : questionSets.length > 0 ? 'Regenerate Questions' : 'Generate Questions'}
+          </button>
+        </div>
+        {products.length === 0 && (
+          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 10 }}>Detect products first to generate relevant questions.</div>
+        )}
+        {questionSets.length > 0 && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {questionSets.map((set, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#F97316', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.03em' }}>{set.product}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {set.questions.map((q, qi) => (
+                    <div key={qi} style={{ fontSize: 13, color: '#111827', background: '#F9FAFB', border: '1px solid #F3F4F6', borderRadius: 8, padding: '9px 12px' }}>
+                      {q}
+                    </div>
+                  ))}
+                </div>
               </div>
             ))}
           </div>

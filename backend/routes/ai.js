@@ -4,7 +4,7 @@ const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
-const { detectSiteProducts, getCachedProducts, saveProducts } = require('../utils/productDetect')
+const { detectSiteProducts, getCachedProducts, saveProducts, generateAllProductQuestions } = require('../utils/productDetect')
 
 const router = express.Router()
 
@@ -428,6 +428,31 @@ router.post('/:siteId/products/detect', auth, verifySite, async (req, res) => {
   } catch (e) {
     console.error('Product detection failed:', e.message)
     res.status(500).json({ error: 'Product detection failed' })
+  }
+})
+
+// Generate dynamic per-product AI-visibility test questions.
+// Count scales with number of detected products, not fixed at 3.
+router.post('/:siteId/products/questions', auth, verifySite, async (req, res) => {
+  try {
+    const engine = String(req.body?.engine || 'claude')
+    const { rows: s } = await pool.query('SELECT name FROM sites WHERE id=$1', [req.siteId])
+    const site = s[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const cached = await getCachedProducts(req.siteId)
+    const products = cached?.products || []
+    if (!products.length) {
+      return res.status(400).json({ error: 'No products detected yet. Run product detection first.' })
+    }
+
+    const questionSets = await generateAllProductQuestions(products, site.name, engine)
+    const totalQuestions = questionSets.reduce((sum, q) => sum + q.questions.length, 0)
+
+    res.json({ questionSets, totalQuestions, engine })
+  } catch (e) {
+    console.error('Product questions generation failed:', e.message)
+    res.status(500).json({ error: 'Failed to generate product questions' })
   }
 })
 
