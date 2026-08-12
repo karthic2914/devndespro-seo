@@ -12,19 +12,72 @@ const ENGINES = ['chatgpt', 'claude']; // gemini, perplexity stay "coming soon" 
 // Prompts each engine with the question and asks for a ranked top-10 list.
 // We ask for strict JSON to avoid fragile regex parsing of prose answers.
 function buildRankingPrompt(question) {
-  return `Answer this question as you normally would, then extract your answer into a ranked list.
-Question: "${question}"
+  return `You are evaluating AI visibility for a business/product search query.
 
-Respond with ONLY valid JSON, no markdown fences, no preamble:
-{"top10": [{"rank": 1, "name": "Brand Name"}, ...up to 10 entries]}
+Question:
+"${question}"
 
-If fewer than 10 distinct brands/tools are genuinely relevant, return fewer entries. Do not pad with irrelevant names.`;
+Return ONLY a ranked list of actual:
+- companies
+- brands
+- SaaS products
+- software tools
+- agencies
+- platforms
+- named services/providers
+
+Do NOT return:
+- advice
+- skills
+- evaluation criteria
+- features
+- concepts
+- job titles
+- generic phrases such as "portfolio quality", "experience", "communication skills", "user research", etc.
+
+The "name" field MUST contain a real identifiable brand, company, product, platform, agency, or tool.
+
+Respond ONLY with valid JSON, no markdown, no explanation:
+
+{
+  "top10": [
+    { "rank": 1, "name": "Brand or Product Name" },
+    { "rank": 2, "name": "Brand or Product Name" }
+  ]
+}
+
+Rules:
+- Maximum 10 entries.
+- Do not invent companies.
+- Do not pad the list.
+- Keep only genuinely relevant named entities.
+- If no appropriate named brands/products can be identified, return:
+  {"top10":[]}`;
 }
 
 function findBrandRank(top10, siteName) {
-  const needle = siteName.toLowerCase();
-  const hit = top10.find(r => r.name && r.name.toLowerCase().includes(needle));
-  return hit ? hit.rank : null; // null = not mentioned at all
+  if (!siteName) return null;
+
+  const normalize = value =>
+    String(value || '')
+      .toLowerCase()
+      .replace(/^www\./, '')
+      .replace(/\.(com|no|net|org|io|co)$/g, '')
+      .replace(/[^a-z0-9]/g, '');
+
+  const needle = normalize(siteName);
+
+  const hit = top10.find(item => {
+    const candidate = normalize(item?.name);
+
+    return (
+      candidate === needle ||
+      candidate.includes(needle) ||
+      needle.includes(candidate)
+    );
+  });
+
+  return hit ? Number(hit.rank) : null;
 }
 
 async function testQuestionOnEngine(question, engine, siteName) {
