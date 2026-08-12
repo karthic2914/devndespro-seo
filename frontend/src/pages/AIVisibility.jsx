@@ -128,6 +128,8 @@ export default function AIVisibility() {
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
   const [customQuestionText, setCustomQuestionText] = useState('')
+  const [showMoreTabs, setShowMoreTabs] = useState(false)
+  const moreTabsRef = useRef(null)
   // Custom questions persisted to the database - [{id, question, created_at}]
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
@@ -149,6 +151,12 @@ export default function AIVisibility() {
 
   useEffect(() => {
     const handleClick = e => { if (menuRef.current && !menuRef.current.contains(e.target)) setShowEngineMenu(false) }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  useEffect(() => {
+    const handleClick = e => { if (moreTabsRef.current && !moreTabsRef.current.contains(e.target)) setShowMoreTabs(false) }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
@@ -394,6 +402,10 @@ export default function AIVisibility() {
 
   const isCustomTab = selectedProduct === 'Custom Questions'
 
+  const allTabs = ['All Questions', ...combinedQuestionSets.map(s => s.product)]
+  const visibleTabs = allTabs.slice(0, 5)
+  const overflowTabs = allTabs.slice(5)
+
   const visibleQuestionSets = selectedProduct === 'All Questions'
     ? combinedQuestionSets
     : combinedQuestionSets.filter(set => set.product === selectedProduct)
@@ -482,8 +494,8 @@ export default function AIVisibility() {
         }
         .ai-question-tabs {
           display: flex;
+          align-items: center;
           gap: 18px;
-          overflow-x: auto;
           border-bottom: 1px solid #E5E7EB;
           margin-top: 12px;
         }
@@ -653,11 +665,47 @@ export default function AIVisibility() {
             )}
 
             <div className="ai-question-tabs">
-              {['All Questions', ...combinedQuestionSets.map(s => s.product)].map(tab => (
+              {visibleTabs.map(tab => (
                 <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
                   {tab}
                 </button>
               ))}
+
+              {overflowTabs.length > 0 && (
+                <div ref={moreTabsRef} style={{ position: 'relative', marginLeft: 'auto' }}>
+                  <button
+                    className={'ai-question-tab ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
+                    onClick={() => setShowMoreTabs(v => !v)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                  >
+                    More ({overflowTabs.length})
+                    <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9, transition: 'transform 0.15s', transform: showMoreTabs ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+                  </button>
+
+                  {showMoreTabs && (
+                    <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, minWidth: 190, overflow: 'hidden' }}>
+                      {overflowTabs.map(tab => (
+                        <div
+                          key={tab}
+                          onClick={() => { setSelectedProduct(tab); setShowMoreTabs(false) }}
+                          style={{
+                            padding: '9px 14px',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            color: selectedProduct === tab ? '#F97316' : '#374151',
+                            fontWeight: selectedProduct === tab ? 700 : 500,
+                            background: selectedProduct === tab ? '#FFF7ED' : '#fff',
+                          }}
+                          onMouseEnter={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#F9FAFB' }}
+                          onMouseLeave={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#fff' }}
+                        >
+                          {tab}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div style={{ marginTop: 5 }}>
