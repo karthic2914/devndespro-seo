@@ -110,33 +110,47 @@ export function VisibilityResultsCard({ siteId, siteName, questions }) {
   }, [questions, selectedQuestion])
 
   async function runScan() {
-    if (!questions?.length || scanning) return
+  if (!selectedQuestion || scanning) return
 
-    setScanning(true)
-    try {
-      // One API call for the complete session. The backend snapshots history once.
-      const res = await api.post('/sites/' + siteId + '/ai-visibility/scan', {
+  setScanning(true)
+
+  try {
+    const res = await api.post(
+      '/sites/' + siteId + '/ai-visibility/scan',
+      {
         siteName,
-        questions,
-      })
-
-      const grouped = {}
-      for (const r of res.data.results || []) {
-        const question = r.question || r.query
-        const engine = normaliseEngine(r.engine)
-        if (!question || !engine) continue
-        if (!grouped[question]) grouped[question] = {}
-        grouped[question][engine] = r
+        questions: [selectedQuestion]
       }
+    )
 
-      setScanResults(grouped)
-      dispatchScanComplete()
-    } catch (e) {
-      console.error('Visibility scan failed', e)
-    } finally {
-      setScanning(false)
+    const byEngine = {}
+
+    const questionResult = (res.data.results || []).find(
+      item => item.question === selectedQuestion
+    )
+
+    for (const r of questionResult?.results || []) {
+      byEngine[r.engine] = r
     }
+
+    setScanResults(prev => ({
+      ...(prev || {}),
+      [selectedQuestion]: byEngine
+    }))
+
+    window.dispatchEvent(
+      new CustomEvent('ai-visibility-scan-complete')
+    )
+
+  } catch (e) {
+    console.error(
+      'Visibility scan failed:',
+      e?.response?.data || e
+    )
+  } finally {
+    setScanning(false)
   }
+}
 
   const rowsForQuestion = (scanResults && scanResults[selectedQuestion]) || {}
   const availableEngines = ['chatgpt', 'claude', 'gemini', 'perplexity']
