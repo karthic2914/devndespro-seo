@@ -482,31 +482,6 @@ export default function AIVisibility() {
           box-shadow: 0 3px 10px rgba(249,115,22,.08);
           transform: translateY(-1px);
         }
-        .ai-question-tabs {
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 10px 18px;
-          border-bottom: 1px solid #E5E7EB;
-          padding-bottom: 4px;
-          margin-top: 12px;
-        }
-        .ai-question-tab {
-          border: 0;
-          background: transparent;
-          padding: 8px 2px;
-          white-space: nowrap;
-          font: inherit;
-          font-size: 11px;
-          cursor: pointer;
-          color: #6B7280;
-          border-bottom: 2px solid transparent;
-        }
-        .ai-question-tab.active {
-          color: #F97316;
-          border-bottom-color: #F97316;
-          font-weight: 700;
-        }
         .ai-question-row {
           display: grid;
           grid-template-columns: 28px minmax(0,1fr) 140px;
@@ -656,13 +631,27 @@ export default function AIVisibility() {
               </div>
             )}
 
-            <div className="ai-question-tabs">
+            <select
+              value={selectedProduct}
+              onChange={e => setSelectedProduct(e.target.value)}
+              style={{
+                marginTop: 12,
+                marginBottom: 4,
+                padding: '9px 12px',
+                border: '1px solid #D1D5DB',
+                borderRadius: 7,
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#111827',
+                background: '#fff',
+                width: '100%',
+                maxWidth: 340,
+              }}
+            >
               {allTabs.map(tab => (
-                <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
-                  {tab}
-                </button>
+                <option key={tab} value={tab}>{tab}</option>
               ))}
-            </div>
+            </select>
 
             <div style={{ marginTop: 5 }}>
               {isCustomTab && customQuestions.length > 0 ? (
