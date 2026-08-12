@@ -566,7 +566,7 @@ export default function AIVisibility() {
 
           {/* 3. AI Visibility Results */}
           {flatQuestions.length > 0 ? (
-            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} />
+            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} />
           ) : (
             <div style={sectionCard}>
               <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>

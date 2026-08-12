@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWandMagicSparkles,
@@ -98,145 +98,595 @@ function useScanRefresh(callback) {
 }
 
 // ---------- Section 3: multi-engine comparison ----------
-export function VisibilityResultsCard({ siteId, siteName, questions }) {
+export function VisibilityResultsCard({
+  siteId,
+  siteName,
+  questions,
+  productName = ''
+}) {
   const [scanning, setScanning] = useState(false)
-  const [scanResults, setScanResults] = useState(null)
-  const [selectedQuestion, setSelectedQuestion] = useState(questions?.[0] || '')
+  const [scanResults, setScanResults] = useState({})
+  const [selectedQuestion, setSelectedQuestion] = useState(
+    questions?.[0] || ''
+  )
+  const [activeEngine, setActiveEngine] = useState('chatgpt')
+
+  const scannedQuestionsRef = useRef(new Set())
+
+  const liveEngines = ['chatgpt', 'claude']
+
+  const allEngines = [
+    { key: 'chatgpt', label: 'ChatGPT', status: 'Top 10' },
+    { key: 'claude', label: 'Claude', status: 'Top 10' },
+    { key: 'gemini', label: 'Gemini', status: 'Coming soon' },
+    { key: 'perplexity', label: 'Perplexity', status: 'Coming soon' },
+  ]
 
   useEffect(() => {
-    if (questions?.length && !questions.includes(selectedQuestion)) {
+    if (
+      questions?.length &&
+      !questions.includes(selectedQuestion)
+    ) {
       setSelectedQuestion(questions[0])
     }
   }, [questions, selectedQuestion])
 
-  async function runScan() {
-  if (!selectedQuestion || scanning) return
+  async function scanQuestion(question) {
+    if (!question || scanning) return
 
-  setScanning(true)
-
-  try {
-    const res = await api.post(
-      '/sites/' + siteId + '/ai-visibility/scan',
-      {
-        siteName,
-        questions: [selectedQuestion]
-      }
-    )
-
-    const byEngine = {}
-
-    const questionResult = (res.data.results || []).find(
-      item => item.question === selectedQuestion
-    )
-
-    for (const r of questionResult?.results || []) {
-      byEngine[r.engine] = r
+    if (scannedQuestionsRef.current.has(question)) {
+      return
     }
 
-    setScanResults(prev => ({
-      ...(prev || {}),
-      [selectedQuestion]: byEngine
-    }))
+    setScanning(true)
 
-    window.dispatchEvent(
-      new CustomEvent('ai-visibility-scan-complete')
-    )
+    try {
+      const res = await api.post(
+        '/sites/' + siteId + '/ai-visibility/scan',
+        {
+          siteName,
+          questions: [question],
+        }
+      )
 
-  } catch (e) {
-    console.error(
-      'Visibility scan failed:',
-      e?.response?.data || e
-    )
-  } finally {
-    setScanning(false)
+      const questionResult = (res.data.results || []).find(
+        item => item.question === question
+      )
+
+      const byEngine = {}
+
+      for (const result of questionResult?.results || []) {
+        byEngine[result.engine] = result
+      }
+
+      setScanResults(prev => ({
+        ...prev,
+        [question]: byEngine,
+      }))
+
+      scannedQuestionsRef.current.add(question)
+
+      window.dispatchEvent(
+        new CustomEvent('ai-visibility-scan-complete')
+      )
+    } catch (e) {
+      console.error(
+        'Visibility scan failed:',
+        e?.response?.data || e
+      )
+    } finally {
+      setScanning(false)
+    }
   }
-}
 
-  const rowsForQuestion = (scanResults && scanResults[selectedQuestion]) || {}
-  const availableEngines = ['chatgpt', 'claude', 'gemini', 'perplexity']
-  const engines = availableEngines.filter(e => rowsForQuestion[e])
-  const displayEngines = engines.length ? engines : availableEngines
+  // AUTO-SCAN
+  // First generated question is scanned automatically.
+  useEffect(() => {
+    if (
+      selectedQuestion &&
+      !scannedQuestionsRef.current.has(selectedQuestion)
+    ) {
+      scanQuestion(selectedQuestion)
+    }
+  }, [selectedQuestion])
 
-  const rowsByRank = Array.from({ length: 10 }, (_, i) => {
-    const rank = i + 1
-    const row = { rank }
-    displayEngines.forEach(engine => {
-      const top10 = rowsForQuestion[engine]?.top10 || []
-      const hit = top10.find(r => Number(r.rank) === rank)
-      row[engine] = hit?.name || hit?.brand || hit?.product || null
-    })
-    return row
-  })
+  const currentResults =
+    scanResults[selectedQuestion] || {}
+
+  function normalize(value) {
+    return String(value || '')
+      .toLowerCase()
+      .replace(/^www\./, '')
+      .replace(/\.(com|no|net|org|io|co)$/g, '')
+      .replace(/[^a-z0-9]/g, '')
+  }
+
+  function getEngineTop10(engine) {
+    return currentResults?.[engine]?.top10 || []
+  }
+
+  function getRank(engine, brand) {
+    const needle = normalize(brand)
+
+    const hit = getEngineTop10(engine).find(
+      item => normalize(item.name) === needle
+    )
+
+    return hit ? Number(hit.rank) : null
+  }
+
+  /*
+   * The selected engine defines the main ranking/order.
+   * This matches the approved UX:
+   *
+   * Rank | Brand/Product | ChatGPT | Claude | ...
+   */
+  const activeTop10 = getEngineTop10(activeEngine)
+
+  /*
+   * If selected active engine has no data, fall back
+   * to the first live engine that has results.
+   */
+  const baseTop10 =
+    activeTop10.length > 0
+      ? activeTop10
+      : getEngineTop10('chatgpt').length
+        ? getEngineTop10('chatgpt')
+        : getEngineTop10('claude')
+
+  const brandNeedle = normalize(siteName)
+
+  const siteAlreadyInRows = baseTop10.some(
+    item => {
+      const candidate = normalize(item.name)
+
+      return (
+        candidate === brandNeedle ||
+        candidate.includes(brandNeedle) ||
+        brandNeedle.includes(candidate)
+      )
+    }
+  )
+
+  function renderEngineRank(engine, brand, rowRank) {
+    if (!liveEngines.includes(engine)) {
+      return (
+        <span style={{ color: '#9CA3AF' }}>-</span>
+      )
+    }
+
+    const rank = getRank(engine, brand)
+
+    if (!rank) {
+      return (
+        <span style={{ color: '#9CA3AF' }}>-</span>
+      )
+    }
+
+    if (rank === rowRank) {
+      return (
+        <span
+          style={{
+            color: '#16A34A',
+            fontWeight: 800,
+            fontSize: 15,
+          }}
+        >
+          ✓
+        </span>
+      )
+    }
+
+    return (
+      <span
+        style={{
+          color: '#111827',
+          fontWeight: 700,
+        }}
+      >
+        {rank}
+      </span>
+    )
+  }
+
+  function renderOwnBrandRank(engine) {
+    if (!liveEngines.includes(engine)) {
+      return (
+        <span style={{ color: '#9CA3AF' }}>-</span>
+      )
+    }
+
+    const rank = getRank(engine, siteName)
+
+    if (rank) {
+      return (
+        <span
+          style={{
+            fontWeight: 800,
+            color: '#16A34A',
+          }}
+        >
+          {rank}
+        </span>
+      )
+    }
+
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          padding: '3px 7px',
+          borderRadius: 5,
+          border: '1px solid #FCA5A5',
+          background: '#FEF2F2',
+          color: '#DC2626',
+          fontSize: 10,
+          fontWeight: 700,
+          whiteSpace: 'nowrap',
+        }}
+      >
+        Not in Top 10
+      </span>
+    )
+  }
 
   return (
     <div style={cardStyle}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div style={titleStyle}>
-          <span style={numberBadge}>3</span>
-          AI Visibility Results
+
+      {/* HEADER */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div>
+          <div style={titleStyle}>
+            AI Visibility Results
+            {productName &&
+              productName !== 'All Questions' && (
+                <span
+                  style={{
+                    fontWeight: 500,
+                    marginLeft: 5,
+                    color: '#374151',
+                  }}
+                >
+                  ({productName})
+                </span>
+              )}
+          </div>
         </div>
 
-        <button onClick={runScan} disabled={scanning || !questions?.length} style={primaryBtn(scanning || !questions?.length)}>
-          <FontAwesomeIcon icon={scanning ? faRotateRight : faWandMagicSparkles} style={{ animation: scanning ? 'spin 1s linear infinite' : 'none' }} />
-          {scanning ? 'Scanning...' : 'Run Visibility Scan'}
-        </button>
-      </div>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 11,
+            color: '#374151',
+          }}
+        >
+          <span>Compare Engines</span>
 
-      <div style={subStyle}>Top-10 recommendations across AI engines for each customer-intent question.</div>
-
-      {!questions?.length ? (
-        <div style={emptyStyle}>Generate AI questions first to run the Top 10 visibility analysis.</div>
-      ) : (
-        <>
-          <select
-            value={selectedQuestion}
-            onChange={e => setSelectedQuestion(e.target.value)}
+          <div
             style={{
-              padding: '8px 10px',
-              borderRadius: 7,
-              border: '1px solid #E5E7EB',
-              fontSize: 11,
-              fontFamily: 'inherit',
-              width: '100%',
-              marginBottom: 12,
-              color: '#111827',
-              background: '#fff',
+              width: 30,
+              height: 17,
+              background: '#E5E7EB',
+              borderRadius: 10,
+              padding: 2,
             }}
           >
-            {questions.map(q => <option key={q} value={q}>{q}</option>)}
-          </select>
+            <div
+              style={{
+                width: 13,
+                height: 13,
+                borderRadius: '50%',
+                background: '#fff',
+              }}
+            />
+          </div>
+        </div>
+      </div>
 
-          {!scanResults ? (
-            <div style={emptyStyle}>Run a visibility scan to see which brands AI engines recommend.</div>
-          ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10.5 }}>
-                <thead>
-                  <tr style={{ color: '#6B7280' }}>
-                    <th style={{ textAlign: 'left', padding: '6px 5px', width: 34 }}>Rank</th>
-                    {displayEngines.map(e => (
-                      <th key={e} style={{ textAlign: 'left', padding: '6px 5px', whiteSpace: 'nowrap' }}>
-                        <span style={{ color: ENGINE_STYLE[e]?.color }}>{ENGINE_STYLE[e]?.label || e}</span>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rowsByRank.map(row => (
-                    <tr key={row.rank} style={{ borderTop: '1px solid #F3F4F6' }}>
-                      <td style={{ padding: '6px 5px', color: '#6B7280' }}>{row.rank}</td>
-                      {displayEngines.map(e => (
-                        <td key={e} style={{ padding: '6px 5px', color: row[e] ? '#111827' : '#D1D5DB' }}>
-                          {row[e] || '-'}
-                        </td>
-                      ))}
-                    </tr>
+      {/* QUESTION SELECT */}
+      {!!questions?.length && (
+        <select
+          value={selectedQuestion}
+          onChange={e =>
+            setSelectedQuestion(e.target.value)
+          }
+          style={{
+            width: '100%',
+            maxWidth: 400,
+            padding: '9px 12px',
+            border: '1px solid #D1D5DB',
+            borderRadius: 7,
+            marginBottom: 12,
+            fontSize: 12,
+            color: '#111827',
+            background: '#fff',
+          }}
+        >
+          {questions.map(q => (
+            <option key={q} value={q}>
+              {q}
+            </option>
+          ))}
+        </select>
+      )}
+
+      {/* ENGINE TABS */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns:
+            'repeat(4, minmax(0, 1fr))',
+          border: '1px solid #E5E7EB',
+          borderRadius: '8px 8px 0 0',
+          overflow: 'hidden',
+        }}
+      >
+        {allEngines.map(engine => {
+          const active =
+            activeEngine === engine.key
+
+          const disabled =
+            !liveEngines.includes(engine.key)
+
+          return (
+            <button
+              key={engine.key}
+              disabled={disabled}
+              onClick={() =>
+                !disabled &&
+                setActiveEngine(engine.key)
+              }
+              style={{
+                padding: '11px 12px',
+                textAlign: 'left',
+                border: 0,
+                borderRight:
+                  '1px solid #E5E7EB',
+                borderBottom: active
+                  ? '3px solid #6366F1'
+                  : '3px solid transparent',
+                background: '#fff',
+                cursor: disabled
+                  ? 'default'
+                  : 'pointer',
+                opacity: disabled ? 0.55 : 1,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 800,
+                  color:
+                    engine.key === 'chatgpt'
+                      ? '#10A37F'
+                      : engine.key === 'claude'
+                        ? '#D85A30'
+                        : '#6366F1',
+                }}
+              >
+                {engine.label}
+              </div>
+
+              <div
+                style={{
+                  fontSize: 10,
+                  color: '#6B7280',
+                  marginTop: 2,
+                }}
+              >
+                {engine.status}
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      {/* LOADING */}
+      {scanning && (
+        <div
+          style={{
+            padding: 28,
+            textAlign: 'center',
+            color: '#F97316',
+            fontSize: 12,
+            fontWeight: 700,
+          }}
+        >
+          Analysing AI visibility...
+        </div>
+      )}
+
+      {/* RESULTS TABLE */}
+      {!scanning && baseTop10.length > 0 && (
+        <div
+          style={{
+            borderLeft: '1px solid #E5E7EB',
+            borderRight: '1px solid #E5E7EB',
+            borderBottom: '1px solid #E5E7EB',
+          }}
+        >
+          {/* TABLE HEADER */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns:
+                '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+              padding: '8px 10px',
+              borderBottom:
+                '1px solid #E5E7EB',
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#374151',
+            }}
+          >
+            <span>Rank</span>
+            <span>Brand / Product</span>
+            <span>ChatGPT</span>
+            <span>Claude</span>
+            <span>Gemini</span>
+            <span>Perplexity</span>
+          </div>
+
+          {/* TOP 10 */}
+          {baseTop10
+            .slice(0, 10)
+            .map((item, index) => {
+              const rank =
+                Number(item.rank) ||
+                index + 1
+
+              return (
+                <div
+                  key={`${item.name}-${rank}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns:
+                      '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+                    alignItems: 'center',
+                    padding: '7px 10px',
+                    borderBottom:
+                      '1px solid #F3F4F6',
+                    fontSize: 11,
+                  }}
+                >
+                  <span>{rank}</span>
+
+                  <span
+                    style={{
+                      fontWeight: 600,
+                      color: '#111827',
+                    }}
+                  >
+                    {item.name}
+                  </span>
+
+                  {[
+                    'chatgpt',
+                    'claude',
+                    'gemini',
+                    'perplexity',
+                  ].map(engine => (
+                    <span key={engine}>
+                      {renderEngineRank(
+                        engine,
+                        item.name,
+                        rank
+                      )}
+                    </span>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              )
+            })}
+
+          {/* OWN BRAND */}
+          {!siteAlreadyInRows && (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns:
+                  '55px minmax(180px, 2fr) repeat(4, minmax(80px, 1fr))',
+                alignItems: 'center',
+                padding: '9px 10px',
+                background: '#FFF1F2',
+                borderTop:
+                  '1px solid #FECACA',
+                fontSize: 11,
+              }}
+            >
+              <span
+                style={{
+                  color: '#DC2626',
+                  fontWeight: 800,
+                }}
+              >
+                —
+              </span>
+
+              <span
+                style={{
+                  color: '#DC2626',
+                  fontWeight: 800,
+                }}
+              >
+                {siteName}
+              </span>
+
+              {[
+                'chatgpt',
+                'claude',
+                'gemini',
+                'perplexity',
+              ].map(engine => (
+                <span key={engine}>
+                  {renderOwnBrandRank(engine)}
+                </span>
+              ))}
             </div>
           )}
-        </>
+        </div>
+      )}
+
+      {/* EMPTY */}
+      {!scanning &&
+        selectedQuestion &&
+        !baseTop10.length && (
+          <div
+            style={{
+              padding: 28,
+              textAlign: 'center',
+              color: '#9CA3AF',
+              fontSize: 12,
+            }}
+          >
+            Waiting for AI visibility results...
+          </div>
+        )}
+
+      {/* LEGEND */}
+      {!scanning && baseTop10.length > 0 && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 22,
+            flexWrap: 'wrap',
+            marginTop: 12,
+            fontSize: 10,
+            color: '#374151',
+          }}
+        >
+          <span>
+            <b style={{ color: '#16A34A' }}>
+              ✓
+            </b>{' '}
+            Same rank
+          </span>
+
+          <span>
+            <b>3</b> Rank position
+          </span>
+
+          <span>
+            <b style={{ color: '#DC2626' }}>
+              ⊗
+            </b>{' '}
+            Not in Top 10
+          </span>
+
+          <span>
+            <b>–</b> Not mentioned /
+            unavailable
+          </span>
+        </div>
       )}
     </div>
   )
