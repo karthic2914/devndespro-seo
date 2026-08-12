@@ -11,7 +11,7 @@ const {
   SUPPORTED_ENGINES,
   buildHeuristicKeywordSuggestions,
 } = require('../utils/helpers')
-const { fetchSerpVisibility, scanSiteKeywordTransitions } = require('../utils/serp')
+const { fetchSerpVisibility, scanSiteKeywordTransitions, getDfsRankedPosition } = require('../utils/serp')
 const { sendRankScanReportEmail } = require('../utils/email')
 const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
 const { runKeywordAutoDiscover, getCachedDiscovery } = require('../utils/keywordDiscover')
@@ -623,8 +623,16 @@ router.post('/:siteId/keywords/first-page-status', auth, verifySite, async (req,
     const local = snapshot.local || []
     const organicHit = organic.find((r) => isDomainMatch(r.domain, targetDomain))
     const localHit = findLocalMatch(local, { domain: targetDomain, brandName: site.name })
-    const position = organicHit ? organicHit.position : null
+    let position = organicHit ? organicHit.position : null
     const localPosition = localHit ? localHit.position : null
+
+    // Not found in the shallow (page-1) live scan — fall back to the
+    // cached DataForSEO ranked_keywords position instead of reporting
+    // "not ranked" when the site actually ranks deeper than page 1.
+    if (position == null) {
+      const dfsPosition = await getDfsRankedPosition(req.siteId, k.keyword)
+      if (dfsPosition != null) position = dfsPosition
+    }
     const inFirstPage = localPosition != null || (!!position && position <= 10)
     details.push({
       id: k.id,
