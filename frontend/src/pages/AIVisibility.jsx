@@ -322,6 +322,29 @@ export default function AIVisibility() {
       setSelectedQuestion(visibleQuestions[0])
     }
   }, [visibleQuestions, selectedQuestion])
+
+  // QUESTION MENU OUTSIDE CLICK
+  useEffect(() => {
+    if (!openQuestionMenu) return
+
+    const handleOutsideClick = (event) => {
+      const target = event.target
+
+      if (
+        target.closest('.ai-question-menu-wrap')
+      ) {
+        return
+      }
+
+      setOpenQuestionMenu(null)
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+    }
+  }, [openQuestionMenu])
 const sectionCard = {
     background: '#fff',
     border: '1px solid #E5E7EB',
@@ -1397,6 +1420,86 @@ const sectionCard = {
           color: #334155;
         }
 
+
+        .ai-question-table {
+          width: 100%;
+          table-layout: fixed;
+          border-collapse: collapse;
+        }
+
+        .ai-question-table .q-col-question {
+          width: 42%;
+        }
+
+        .ai-question-table .q-col-intent {
+          width: 13%;
+        }
+
+        .ai-question-table .q-col-status {
+          width: 12%;
+        }
+
+        .ai-question-table .q-col-chatgpt {
+          width: 9%;
+        }
+
+        .ai-question-table .q-col-claude {
+          width: 9%;
+        }
+
+        .ai-question-table .q-col-tested {
+          width: 11%;
+        }
+
+        .ai-question-table .q-col-actions {
+          width: 4%;
+        }
+
+        .ai-question-table th,
+        .ai-question-table td {
+          box-sizing: border-box;
+          vertical-align: middle;
+        }
+
+        .ai-question-table th:first-child,
+        .ai-question-table td:first-child {
+          text-align: left;
+        }
+
+        .ai-question-table th:not(:first-child),
+        .ai-question-table td:not(:first-child) {
+          text-align: center;
+        }
+
+        .ai-question-table thead th {
+          height: 40px;
+          padding: 0 10px;
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #475569;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+        }
+
+        .ai-question-table tbody td {
+          padding: 10px;
+          border-bottom: 1px solid #EEF2F7;
+        }
+
+        .ai-question-table tbody td:first-child {
+          padding-left: 12px;
+          padding-right: 16px;
+        }
+
+        .ai-question-actions-cell {
+          width: auto !important;
+          min-width: 0 !important;
+          padding-left: 4px !important;
+          padding-right: 6px !important;
+          text-align: center !important;
+          position: relative;
+          overflow: visible !important;
+        }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
@@ -1676,6 +1779,16 @@ const sectionCard = {
 
               <div className="ai-question-table-wrap">
                 <table className="ai-question-table">
+                  <colgroup>
+                    <col className="q-col-question" />
+                    <col className="q-col-intent" />
+                    <col className="q-col-status" />
+                    <col className="q-col-chatgpt" />
+                    <col className="q-col-claude" />
+                    <col className="q-col-tested" />
+                    <col className="q-col-actions" />
+                  </colgroup>
+
                   <thead>
                     <tr>
                       <th>Question</th>
