@@ -1556,6 +1556,168 @@ const sectionCard = {
           text-align: center !important;
         }
 
+
+        /* =====================================================
+           FINAL QUESTION TABLE LAYOUT
+           Header and rows use the exact same CSS Grid
+           ===================================================== */
+
+        .ai-question-table {
+          display: block !important;
+          width: 100% !important;
+          table-layout: auto !important;
+          border-collapse: collapse;
+        }
+
+        .ai-question-table colgroup {
+          display: none !important;
+        }
+
+        .ai-question-table thead,
+        .ai-question-table tbody {
+          display: block !important;
+          width: 100% !important;
+        }
+
+        .ai-question-table thead tr,
+        .ai-question-table tbody tr {
+          display: grid !important;
+
+          grid-template-columns:
+            minmax(0, 3.5fr)
+            minmax(90px, 1fr)
+            minmax(85px, .9fr)
+            minmax(65px, .7fr)
+            minmax(65px, .7fr)
+            minmax(105px, 1.05fr)
+            38px;
+
+          width: 100% !important;
+          box-sizing: border-box !important;
+          align-items: center;
+        }
+
+        /* HEADER */
+        .ai-question-table thead tr {
+          min-height: 42px;
+          background: #F8FAFC;
+          border-top: 1px solid #E2E8F0;
+          border-bottom: 1px solid #E2E8F0;
+        }
+
+        .ai-question-table thead th {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+
+          width: auto !important;
+          min-width: 0 !important;
+          height: 42px !important;
+
+          margin: 0 !important;
+          padding: 0 8px !important;
+
+          border: 0 !important;
+          box-sizing: border-box !important;
+
+          font-size: 10.5px;
+          font-weight: 600;
+          color: #475569;
+          white-space: nowrap;
+        }
+
+        .ai-question-table thead th:first-child {
+          justify-content: flex-start !important;
+          text-align: left !important;
+          padding-left: 14px !important;
+        }
+
+
+        /* BODY ROW */
+        .ai-question-table tbody tr {
+          min-height: 62px;
+          border-bottom: 1px solid #EEF2F7;
+        }
+
+        .ai-question-table tbody td {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+
+          width: auto !important;
+          min-width: 0 !important;
+
+          margin: 0 !important;
+          padding: 10px 8px !important;
+
+          border: 0 !important;
+          box-sizing: border-box !important;
+          text-align: center !important;
+        }
+
+        /* QUESTION */
+        .ai-question-table tbody td:first-child {
+          justify-content: flex-start !important;
+          text-align: left !important;
+          padding-left: 14px !important;
+          padding-right: 18px !important;
+        }
+
+        .ai-question-text {
+          width: 100%;
+          line-height: 1.35;
+          text-align: left !important;
+          white-space: normal !important;
+          overflow-wrap: break-word;
+        }
+
+
+        /* INTENT */
+        .ai-question-table tbody td:nth-child(2) {
+          justify-content: center !important;
+        }
+
+
+        /* STATUS */
+        .ai-question-table tbody td:nth-child(3) {
+          justify-content: center !important;
+        }
+
+
+        /* CHATGPT + CLAUDE */
+        .ai-question-table tbody td:nth-child(4),
+        .ai-question-table tbody td:nth-child(5) {
+          justify-content: center !important;
+        }
+
+
+        /* LAST TESTED */
+        .ai-question-table tbody td:nth-child(6) {
+          justify-content: center !important;
+          white-space: nowrap !important;
+        }
+
+
+        /* THREE DOT ACTION */
+        .ai-question-table tbody td:nth-child(7) {
+          justify-content: center !important;
+          overflow: visible !important;
+          padding: 0 4px !important;
+        }
+
+        .ai-question-actions-cell {
+          width: auto !important;
+          min-width: 0 !important;
+          position: relative !important;
+          overflow: visible !important;
+        }
+
+
+        /* Selected question */
+        .ai-question-table tbody tr.ai-question-row-selected {
+          background: #FFF7ED !important;
+        }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
