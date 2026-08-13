@@ -577,17 +577,58 @@ const sectionCard = {
         }
 
         .ai-question-table-wrap {
-          overflow-x: visible;
+          width: 100%;
+          overflow: hidden;
           padding: 0 10px 8px;
+          box-sizing: border-box;
         }
 
         .ai-question-table {
           width: 100%;
           border-collapse: collapse;
+          table-layout: fixed;
           font-size: 10.5px;
-          min-width: 660px;
         }
 
+
+        .ai-question-table th:nth-child(1),
+        .ai-question-table td:nth-child(1) {
+          width: 42%;
+        }
+
+        .ai-question-table th:nth-child(2),
+        .ai-question-table td:nth-child(2) {
+          width: 12%;
+        }
+
+        .ai-question-table th:nth-child(3),
+        .ai-question-table td:nth-child(3) {
+          width: 11%;
+        }
+
+        .ai-question-table th:nth-child(4),
+        .ai-question-table td:nth-child(4) {
+          width: 9%;
+          text-align: center;
+        }
+
+        .ai-question-table th:nth-child(5),
+        .ai-question-table td:nth-child(5) {
+          width: 9%;
+          text-align: center;
+        }
+
+        .ai-question-table th:nth-child(6),
+        .ai-question-table td:nth-child(6) {
+          width: 14%;
+          white-space: nowrap;
+        }
+
+        .ai-question-table th:nth-child(7),
+        .ai-question-table td:nth-child(7) {
+          width: 3%;
+          text-align: center;
+        }
         .ai-question-table thead th {
           background: #F8FAFC;
           color: #475569;
@@ -618,7 +659,11 @@ const sectionCard = {
         .ai-question-text {
           color: #111827 !important;
           font-weight: 650;
-          line-height: 1.35;
+          line-height: 1.4;
+          white-space: normal;
+          word-break: normal;
+          overflow-wrap: break-word;
+          padding-right: 16px !important;
         }
 
         .ai-intent-pill {
@@ -1332,13 +1377,13 @@ const sectionCard = {
                       {flatQuestions.length} Generated
                     </span>
 
-                    <span>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢</span>
+                    <span>|</span>
 
                     <span className="tested">
                       {testedQuestionsCount} Tested
                     </span>
 
-                    <span>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢</span>
+                    <span>|</span>
 
                     <span className="ready">
                       {readyQuestionsCount} Ready
@@ -1357,8 +1402,7 @@ const sectionCard = {
                     cursor: 'pointer'
                   }}
                 >
-                  View all answers ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢
-                </button>
+                  View all answers</button>
               </div>
 
 
@@ -1429,14 +1473,14 @@ const sectionCard = {
                             <td>
                               {chatgptRank
                                 ? <span className="ai-rank-good">#{chatgptRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â</span>
+                                : <span style={{ color: '#94A3B8' }}>--</span>
                               }
                             </td>
 
                             <td>
                               {claudeRank
                                 ? <span className="ai-rank-good">#{claudeRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â</span>
+                                : <span style={{ color: '#94A3B8' }}>--</span>
                               }
                             </td>
 
@@ -1450,8 +1494,8 @@ const sectionCard = {
                               }
                             </td>
 
-                            <td style={{ color: '#64748B' }}>
-                              ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹Ãƒâ€šÃ‚Â®
+                            <td style={{ color: '#64748B', textAlign: 'center' }}>
+                              ...
                             </td>
                           </tr>
                         )
@@ -1488,7 +1532,7 @@ const sectionCard = {
                   <span className="ai-page-button">2</span>
                   <span className="ai-page-button">3</span>
                   <span className="ai-page-button">4</span>
-                  <span className="ai-page-button">ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Âº</span>
+                  <span className="ai-page-button">&gt;</span>
                 </div>
               </div>
             </section>
@@ -1517,8 +1561,7 @@ const sectionCard = {
                       cursor: 'pointer'
                     }}
                   >
-                    View full answers ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
-                  </button>
+                    View full answers</button>
                 </div>
 
                 <div className="ai-response-selected-question">
