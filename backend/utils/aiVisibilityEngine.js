@@ -1,4 +1,4 @@
-﻿// backend/utils/aiVisibilityEngine.js
+// backend/utils/aiVisibilityEngine.js
 // Powers sections 3-7 of AI Visibility: comparison table, summary, reasoning, recommendations, history.
 // Reuses callAIEngine() pattern from productDetect.js - same engine-agnostic wrapper.
 
@@ -306,6 +306,36 @@ async function getQuestionStatus(siteId) {
   return Object.values(byQuestion);
 }
 
+
+// ---------- Selected question: latest real AI responses ----------
+//
+// Returns the latest stored result for each engine for one exact question.
+// This powers the compact AI Responses panel in the Questions tab.
+async function getQuestionResponses(siteId, question) {
+  const { rows } = await pool.query(
+    `SELECT DISTINCT ON (engine)
+       engine,
+       question,
+       rankings,
+       brand_rank,
+       raw_response,
+       tested_at
+     FROM ai_visibility_results
+     WHERE site_id = $1
+       AND question = $2
+     ORDER BY engine, tested_at DESC`,
+    [siteId, question]
+  );
+
+  return rows.map(row => ({
+    engine: row.engine,
+    question: row.question,
+    rankings: Array.isArray(row.rankings) ? row.rankings : [],
+    brandRank: row.brand_rank,
+    rawResponse: row.raw_response || '',
+    testedAt: row.tested_at,
+  }));
+}
 // ---------- Section 5: reasoning ("why not in Top 10") ----------
 
 async function generateReasoning(siteId, siteName) {
@@ -426,6 +456,7 @@ module.exports = {
   getSummary,
   getEngineBreakdown,
   getQuestionStatus,
+  getQuestionResponses,
   generateReasoning,
   generateRecommendations,
   saveRecommendations,

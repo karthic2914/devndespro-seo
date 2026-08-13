@@ -111,6 +111,9 @@ export default function AIVisibility() {
   const [questionSearch, setQuestionSearch] = useState('')
   const [selectedQuestion, setSelectedQuestion] = useState('')
   const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
+  const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
+  const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
+  const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
 
   // AUTO-GENERATE PRODUCT QUESTIONS
   useEffect(() => {
@@ -345,6 +348,91 @@ export default function AIVisibility() {
       document.removeEventListener('mousedown', handleOutsideClick)
     }
   }, [openQuestionMenu])
+
+  // Load the real stored AI results for the selected question.
+  async function loadSelectedQuestionResults(question) {
+    if (!question) {
+      setSelectedQuestionResults([])
+      return
+    }
+
+    setLoadingQuestionResults(true)
+
+    try {
+      const res = await api.get(
+        '/sites/' + siteId + '/ai-visibility/question-response',
+        {
+          params: { question }
+        }
+      )
+
+      setSelectedQuestionResults(
+        res.data?.results || []
+      )
+    } catch (error) {
+      console.error(
+        'Failed to load selected question AI responses:',
+        error
+      )
+
+      setSelectedQuestionResults([])
+    } finally {
+      setLoadingQuestionResults(false)
+    }
+  }
+
+
+  // Whenever the user selects another question, load its actual
+  // ChatGPT / Claude results from the database.
+  useEffect(() => {
+    loadSelectedQuestionResults(selectedQuestion)
+  }, [selectedQuestion, siteId])
+
+
+  // Run/re-run only the selected question.
+  async function testSelectedQuestion() {
+    if (!selectedQuestion) return
+
+    setLoadingQuestionResults(true)
+
+    try {
+      await api.post(
+        '/sites/' + siteId + '/ai-visibility/scan',
+        {
+          siteName: visibilitySiteName,
+          questions: [selectedQuestion],
+          sessionId: currentSession?.id || null
+        }
+      )
+
+      await loadSelectedQuestionResults(selectedQuestion)
+
+      const statusRes = await api.get(
+        '/sites/' + siteId + '/ai-visibility/question-status'
+      )
+
+      setQuestionStatuses(
+        statusRes.data?.statuses || []
+      )
+
+      showSnackbar(
+        'Question tested successfully',
+        'success'
+      )
+    } catch (error) {
+      console.error(
+        'Question test failed:',
+        error
+      )
+
+      showSnackbar(
+        'Question test failed',
+        'error'
+      )
+    } finally {
+      setLoadingQuestionResults(false)
+    }
+  }
 const sectionCard = {
     background: '#fff',
     border: '1px solid #E5E7EB',
@@ -1718,6 +1806,16 @@ const sectionCard = {
           background: #FFF7ED !important;
         }
 
+
+        .ai-response-not-mentioned {
+          display: inline-flex;
+          padding: 3px 7px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 700;
+          background: #FEE2E2;
+          color: #DC2626;
+        }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
@@ -2257,76 +2355,249 @@ const sectionCard = {
 
                 <div className="ai-response-engine-grid">
 
-                  <div className="ai-response-engine-card">
-                    <div className="ai-response-engine-top">
-                      <div className="ai-response-engine-name">
-                        ChatGPT
+                  {loadingQuestionResults ? (
+                    <div
+                      style={{
+                        gridColumn: '1 / -1',
+                        padding: '36px 16px',
+                        textAlign: 'center',
+                        color: '#64748B',
+                        fontSize: 11
+                      }}
+                    >
+                      Loading AI responses...
+                    </div>
+
+                  ) : selectedQuestionResults.length === 0 ? (
+
+                    <div
+                      style={{
+                        gridColumn: '1 / -1',
+                        padding: '28px 18px',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div
+                        style={{
+                          color: '#64748B',
+                          fontSize: 11,
+                          marginBottom: 12
+                        }}
+                      >
+                        This question has not been tested yet.
                       </div>
 
-                      <span className="ai-response-mentioned">
-                        Mentioned: Yes
-                      </span>
+                      <button
+                        type="button"
+                        className="ai-primary-action"
+                        onClick={testSelectedQuestion}
+                      >
+                        Test Question
+                      </button>
                     </div>
 
-                    <div className="ai-response-rank">
-                      Rank: <strong>#4</strong>
-                    </div>
+                  ) : (
 
-                    <div className="ai-response-list-title">
-                      Top Mentions
-                    </div>
+                    ['chatgpt', 'claude'].map(engine => {
 
-                    <ol className="ai-response-mentions">
-                      <li>Ahrefs</li>
-                      <li>Semrush</li>
-                      <li>Moz</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} - You</span></li>
-                      <li>Ubersuggest</li>
-                    </ol>
+                      const result = selectedQuestionResults.find(
+                        item =>
+                          String(item.engine || '').toLowerCase() === engine
+                      )
 
-                    <button
-                      className="ai-response-full-button"
-                      onClick={() => setActiveTab('responses')}
-                    >
-                      View Full Answer
-                    </button>
-                  </div>
+                      if (!result) {
+                        return (
+                          <div
+                            key={engine}
+                            className="ai-response-engine-card"
+                          >
+                            <div className="ai-response-engine-top">
+                              <div className="ai-response-engine-name">
+                                {engine === 'chatgpt'
+                                  ? 'ChatGPT'
+                                  : 'Claude'
+                                }
+                              </div>
+
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  color: '#94A3B8'
+                                }}
+                              >
+                                Not tested
+                              </span>
+                            </div>
+
+                            <div
+                              style={{
+                                padding: '22px 0',
+                                color: '#94A3B8',
+                                fontSize: 10
+                              }}
+                            >
+                              No response available.
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      const rankings =
+                        Array.isArray(result.rankings)
+                          ? result.rankings
+                          : []
+
+                      const mentioned =
+                        result.brandRank !== null &&
+                        result.brandRank !== undefined
+
+                      return (
+                        <div
+                          key={engine}
+                          className="ai-response-engine-card"
+                        >
+                          <div className="ai-response-engine-top">
+
+                            <div className="ai-response-engine-name">
+                              {engine === 'chatgpt'
+                                ? 'ChatGPT'
+                                : 'Claude'
+                              }
+                            </div>
+
+                            <span
+                              className={
+                                mentioned
+                                  ? 'ai-response-mentioned'
+                                  : 'ai-response-not-mentioned'
+                              }
+                            >
+                              {mentioned
+                                ? 'Mentioned: Yes'
+                                : 'Mentioned: No'
+                              }
+                            </span>
+
+                          </div>
 
 
-                  <div className="ai-response-engine-card">
-                    <div className="ai-response-engine-top">
-                      <div className="ai-response-engine-name">
-                        Claude
-                      </div>
+                          <div className="ai-response-rank">
+                            Rank:{' '}
 
-                      <span className="ai-response-mentioned">
-                        Mentioned: Yes
-                      </span>
-                    </div>
+                            <strong>
+                              {mentioned
+                                ? '#' + result.brandRank
+                                : 'Not in Top 10'
+                              }
+                            </strong>
+                          </div>
 
-                    <div className="ai-response-rank">
-                      Rank: <strong>#8</strong>
-                    </div>
 
-                    <div className="ai-response-list-title">
-                      Top Mentions
-                    </div>
+                          <div className="ai-response-list-title">
+                            Top Mentions
+                          </div>
 
-                    <ol className="ai-response-mentions">
-                      <li>Ahrefs</li>
-                      <li>Semrush</li>
-                      <li>Moz</li>
-                      <li>Surfer SEO</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} - You</span></li>
-                    </ol>
 
-                    <button
-                      className="ai-response-full-button"
-                      onClick={() => setActiveTab('responses')}
-                    >
-                      View Full Answer
-                    </button>
-                  </div>
+                          {rankings.length > 0 ? (
+                            <ol className="ai-response-mentions">
+
+                              {rankings
+                                .slice(0, 5)
+                                .map(item => {
+
+                                  const name =
+                                    String(item?.name || '')
+
+                                  const brand =
+                                    String(
+                                      visibilitySiteName || ''
+                                    ).toLowerCase()
+
+                                  const isYou =
+                                    brand &&
+                                    name
+                                      .toLowerCase()
+                                      .includes(brand)
+
+                                  return (
+                                    <li
+                                      key={
+                                        engine +
+                                        '-' +
+                                        item.rank +
+                                        '-' +
+                                        name
+                                      }
+                                    >
+                                      {isYou ? (
+                                        <span className="ai-response-you">
+                                          {name} - You
+                                        </span>
+                                      ) : (
+                                        name
+                                      )}
+                                    </li>
+                                  )
+                                })}
+
+                            </ol>
+                          ) : (
+                            <div
+                              style={{
+                                color: '#94A3B8',
+                                fontSize: 10,
+                                padding: '8px 0 12px'
+                              }}
+                            >
+                              No ranked brands returned.
+                            </div>
+                          )}
+
+
+                          {selectedAnswerEngine === engine && (
+                            <div
+                              style={{
+                                marginTop: 10,
+                                padding: 10,
+                                background: '#F8FAFC',
+                                borderRadius: 6,
+                                fontSize: 10,
+                                lineHeight: 1.55,
+                                color: '#475569',
+                                maxHeight: 180,
+                                overflowY: 'auto',
+                                whiteSpace: 'pre-wrap'
+                              }}
+                            >
+                              {result.rawResponse ||
+                                'No raw AI answer stored.'
+                              }
+                            </div>
+                          )}
+
+
+                          <button
+                            type="button"
+                            className="ai-response-full-button"
+                            onClick={() =>
+                              setSelectedAnswerEngine(
+                                selectedAnswerEngine === engine
+                                  ? null
+                                  : engine
+                              )
+                            }
+                          >
+                            {selectedAnswerEngine === engine
+                              ? 'Hide Full Answer'
+                              : 'View Full Answer'
+                            }
+                          </button>
+
+                        </div>
+                      )
+                    })
+
+                  )}
 
                 </div>
               </div>

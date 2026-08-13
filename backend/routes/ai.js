@@ -1,4 +1,4 @@
-﻿const express = require('express')
+const express = require('express')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
@@ -10,6 +10,7 @@ const {
   getSummary,
   getEngineBreakdown,
   getQuestionStatus,
+  getQuestionResponses,
   generateReasoning,
   generateRecommendations,
   saveRecommendations,
@@ -590,6 +591,38 @@ router.get('/:siteId/ai-visibility/question-status', auth, verifySite, async (re
   }
 })
 
+
+// Selected question - latest real response from each AI engine
+router.get('/:siteId/ai-visibility/question-response', auth, verifySite, async (req, res) => {
+  try {
+    const question = String(req.query?.question || '').trim()
+
+    if (!question) {
+      return res.status(400).json({
+        error: 'question query parameter is required'
+      })
+    }
+
+    const results = await getQuestionResponses(
+      req.siteId,
+      question
+    )
+
+    res.json({
+      question,
+      results
+    })
+  } catch (err) {
+    console.error(
+      'ai-visibility/question-response error:',
+      err
+    )
+
+    res.status(500).json({
+      error: 'Failed to load AI responses'
+    })
+  }
+})
 // Section 5 - reasoning ("why not in Top 10")
 router.post('/:siteId/ai-visibility/reasoning', auth, verifySite, async (req, res) => {
   try {
