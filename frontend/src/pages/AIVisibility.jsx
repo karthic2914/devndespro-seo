@@ -2443,9 +2443,16 @@ export default function AIVisibility() {
 
             <button
               className="ai-question-add-button"
-              onClick={() => setAddingQuestion(v => !v)}
+              onClick={() => {
+                if (addingQuestion) {
+                  setAddingQuestion(false)
+                  setCustomQuestionText('')
+                } else {
+                  setAddingQuestion(true)
+                }
+              }}
             >
-              + Add Question
+              {addingQuestion ? 'Cancel' : '+ Add Question'}
             </button>
           </div>
 
@@ -2481,6 +2488,18 @@ export default function AIVisibility() {
                   fontSize: 11
                 }}
               />
+
+              <button
+                className="ai-soft-button"
+                type="button"
+                onClick={() => {
+                  setAddingQuestion(false)
+                  setCustomQuestionText('')
+                }}
+                disabled={savingQuestion}
+              >
+                Cancel
+              </button>
 
               <button
                 className="ai-primary-action"
