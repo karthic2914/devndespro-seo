@@ -1181,7 +1181,7 @@ const sectionCard = {
         }
 
         .ai-question-actions-cell {
-          width: 38px !important;
+          width: 40px !important;
           text-align: center !important;
           overflow: visible !important;
           position: relative;
@@ -1208,22 +1208,34 @@ const sectionCard = {
           color: #64748B;
         }
 
-        .ai-question-menu-button::before {
-          content: "\22EE";
-          display: block;
-          font-size: 20px;
-          line-height: 1;
-          font-weight: 700;
-          color: #64748B;
-        }
-
         .ai-question-menu-button:hover {
           background: #F1F5F9;
           border-color: #E2E8F0;
         }
 
-        .ai-question-menu-button:hover::before {
-          color: #111827;
+        .ai-question-menu-dots {
+          width: 14px;
+          height: 20px;
+          display: inline-flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 2px;
+          pointer-events: none;
+        }
+
+        .ai-question-menu-dots span {
+          display: block;
+          width: 3px;
+          height: 3px;
+          min-width: 3px;
+          min-height: 3px;
+          border-radius: 50%;
+          background: #64748B;
+        }
+
+        .ai-question-menu-button:hover .ai-question-menu-dots span {
+          background: #111827;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
@@ -1513,7 +1525,6 @@ const sectionCard = {
                       <th>Claude</th>
                       <th>Last Tested</th>
                       <th className="ai-question-actions-header"></th>
-                      <th></th>
                     </tr>
                   </thead>
 
@@ -1603,7 +1614,13 @@ const sectionCard = {
         )
       }}
       title="Question actions"
-    ></button>
+    >
+                                  <span className="ai-question-menu-dots">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                  </span>
+                                </button>
 
     {openQuestionMenu === q && (
       <div
