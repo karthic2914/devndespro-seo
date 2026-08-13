@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
@@ -84,20 +84,44 @@ if (snackbar.engine === 'claude') {
 
   return (
     <div
-      onClick={onClose}
       role="alert"
       style={{
         position: 'fixed', bottom: 36, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 999999, minWidth: 220, maxWidth: 420,
-        padding: '14px 28px', borderRadius: 8, fontSize: 15, fontWeight: 500,
-        boxShadow: '0 4px 24px rgba(0,0,0,0.4)',
+        zIndex: 999999, minWidth: 260, maxWidth: 460,
+        padding: '12px 12px 12px 16px', borderRadius: 10, fontSize: 14, fontWeight: 600,
+        boxShadow: '0 8px 28px rgba(0,0,0,0.28)',
         borderLeft: engineColor ? `5px solid ${engineColor}` : 'none',
         display: 'flex', alignItems: 'center', gap: 12,
-        cursor: 'pointer', background: c.background, color: c.color,
+        background: c.background, color: c.color,
       }}
     >
       <FontAwesomeIcon icon={icon} style={{ fontSize: 16, flexShrink: 0 }} />
-      <span style={{ whiteSpace: 'pre-line', lineHeight: 1.4 }}>{snackbar.message}</span>
+      <span style={{ flex: 1, minWidth: 0, whiteSpace: 'pre-line', lineHeight: 1.4 }}>{snackbar.message}</span>
+      <button
+        type="button"
+        aria-label="Close notification"
+        title="Close"
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+        style={{
+          flexShrink: 0,
+          width: 28,
+          height: 28,
+          border: '1px solid rgba(255,255,255,0.28)',
+          borderRadius: 7,
+          background: 'rgba(255,255,255,0.12)',
+          color: '#fff',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        <FontAwesomeIcon icon={faXmark} style={{ fontSize: 13 }} />
+      </button>
     </div>
   )
 }

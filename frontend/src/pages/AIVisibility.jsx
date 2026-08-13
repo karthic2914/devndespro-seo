@@ -2298,6 +2298,81 @@ export default function AIVisibility() {
           flex-shrink: 0;
         }
 
+        /* =====================================================
+           AI RESPONSE PANEL POLISH (final)
+           ===================================================== */
+        .ai-response-shell {
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+
+        .ai-response-selected-question {
+          padding: 11px 12px !important;
+          background: linear-gradient(180deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+          border: 1px solid #FED7AA !important;
+          border-radius: 8px !important;
+          line-height: 1.4;
+        }
+
+        .ai-response-engine-card {
+          border-radius: 10px !important;
+          padding: 13px !important;
+          background: #FAFAFA;
+          transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+        }
+
+        .ai-response-engine-card:hover {
+          border-color: #FDBA74;
+          box-shadow: 0 4px 12px rgba(249, 115, 22, 0.08);
+          background: #fff;
+        }
+
+        .ai-response-engine-top {
+          margin-bottom: 10px !important;
+        }
+
+        .ai-response-rank {
+          font-size: 11px !important;
+          color: #64748B !important;
+          margin-bottom: 12px !important;
+          padding-bottom: 10px;
+          border-bottom: 1px solid #F1F5F9;
+        }
+
+        .ai-response-rank strong {
+          color: #0F172A;
+          font-weight: 800;
+        }
+
+        .ai-response-list-title {
+          font-size: 10px !important;
+          font-weight: 800 !important;
+          color: #64748B !important;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-bottom: 7px !important;
+        }
+
+        .ai-response-mentions {
+          font-size: 11px !important;
+          color: #334155 !important;
+          line-height: 1.7 !important;
+        }
+
+        .ai-response-mentioned,
+        .ai-response-not-mentioned {
+          padding: 3px 8px !important;
+        }
+
+        .ai-response-full-button {
+          margin-top: 12px !important;
+          padding: 8px !important;
+          border-radius: 7px !important;
+        }
+
+        .ai-response-full-button:hover {
+          background: #FFEDD5 !important;
+        }
+
       `}
         </style>
 
@@ -2890,8 +2965,11 @@ export default function AIVisibility() {
                       color: '#F97316',
                       fontSize: 10,
                       fontWeight: 700,
-                      cursor: '--'
-                              }}
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
                   >
                     <span>View full answers</span>
                     <FontAwesomeIcon
