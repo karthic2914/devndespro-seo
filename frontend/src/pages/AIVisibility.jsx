@@ -109,6 +109,7 @@ export default function AIVisibility() {
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [questionSearch, setQuestionSearch] = useState('')
+  const [selectedQuestion, setSelectedQuestion] = useState('')
 
   // AUTO-GENERATE PRODUCT QUESTIONS
   useEffect(() => {
@@ -305,7 +306,22 @@ export default function AIVisibility() {
 
   const readyQuestionsCount = Math.max(flatQuestions.length - testedQuestionsCount, 0)
 
-  const sectionCard = {
+  
+  // AUTO SELECT FIRST QUESTION FOR QUESTION/RESPONSE SPLIT VIEW
+  useEffect(() => {
+    if (!selectedQuestion && visibleQuestions.length > 0) {
+      setSelectedQuestion(visibleQuestions[0])
+    }
+
+    if (
+      selectedQuestion &&
+      visibleQuestions.length > 0 &&
+      !visibleQuestions.includes(selectedQuestion)
+    ) {
+      setSelectedQuestion(visibleQuestions[0])
+    }
+  }, [visibleQuestions, selectedQuestion])
+const sectionCard = {
     background: '#fff',
     border: '1px solid #E5E7EB',
     borderRadius: 12,
@@ -463,8 +479,9 @@ export default function AIVisibility() {
           display: flex;
           align-items: center;
           gap: 8px;
-          margin-bottom: 12px;
-          flex-wrap: wrap;
+          margin-bottom: 10px;
+          flex-wrap: nowrap;
+          width: 100%;
         }
 
         .ai-question-chip {
@@ -487,8 +504,9 @@ export default function AIVisibility() {
 
         .ai-question-search {
           margin-left: auto;
-          min-width: 220px;
-          height: 34px;
+          width: 220px;
+          min-width: 180px;
+          height: 32px;
           border: 1px solid #E5E7EB;
           background: #fff;
           border-radius: 7px;
@@ -721,7 +739,148 @@ export default function AIVisibility() {
           cursor: pointer;
         }
 
-        @media (max-width: 1180px) {
+        
+        .ai-question-filter-button {
+          height: 32px;
+          padding: 0 12px;
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          color: #374151;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ai-question-add-button {
+          height: 32px;
+          padding: 0 13px;
+          border: 1px solid #F97316;
+          background: #F97316;
+          color: #fff;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ai-question-row-selected {
+          background: #FFF7ED !important;
+        }
+
+        .ai-response-shell {
+          background: #fff;
+          border: 1px solid #E5E7EB;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .ai-response-header {
+          padding: 14px 16px 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .ai-response-title {
+          font-size: 14px;
+          font-weight: 800;
+          color: #111827;
+        }
+
+        .ai-response-selected-question {
+          margin: 0 14px 12px;
+          padding: 10px 12px;
+          background: #FFF7ED;
+          border-radius: 7px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .ai-response-engine-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          padding: 0 14px 14px;
+        }
+
+        .ai-response-engine-card {
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          padding: 12px;
+          min-width: 0;
+        }
+
+        .ai-response-engine-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .ai-response-engine-name {
+          font-size: 11px;
+          font-weight: 800;
+          color: #111827;
+        }
+
+        .ai-response-mentioned {
+          display: inline-flex;
+          padding: 3px 7px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 700;
+          background: #DCFCE7;
+          color: #15803D;
+        }
+
+        .ai-response-rank {
+          font-size: 10px;
+          color: #475569;
+          margin-bottom: 10px;
+        }
+
+        .ai-response-list-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: #334155;
+          margin-bottom: 6px;
+        }
+
+        .ai-response-mentions {
+          margin: 0;
+          padding-left: 18px;
+          font-size: 10px;
+          color: #374151;
+          line-height: 1.75;
+        }
+
+        .ai-response-you {
+          background: #DCFCE7;
+          border-radius: 4px;
+          padding: 1px 4px;
+          font-weight: 700;
+          color: #166534;
+        }
+
+        .ai-response-full-button {
+          width: 100%;
+          border: 0;
+          margin-top: 10px;
+          padding: 7px;
+          border-radius: 5px;
+          background: #FFF7ED;
+          color: #EA580C;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+@media (max-width: 1180px) {
           .ai-question-main-grid {
             grid-template-columns: 1fr;
           }
@@ -736,6 +895,147 @@ export default function AIVisibility() {
             margin-left: 0;
             width: 100%;
           }
+        }
+
+        .ai-question-filter-button {
+          height: 32px;
+          padding: 0 12px;
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          color: #374151;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ai-question-add-button {
+          height: 32px;
+          padding: 0 13px;
+          border: 1px solid #F97316;
+          background: #F97316;
+          color: #fff;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ai-question-row-selected {
+          background: #FFF7ED !important;
+        }
+
+        .ai-response-shell {
+          background: #fff;
+          border: 1px solid #E5E7EB;
+          border-radius: 12px;
+          overflow: hidden;
+        }
+
+        .ai-response-header {
+          padding: 14px 16px 10px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .ai-response-title {
+          font-size: 14px;
+          font-weight: 800;
+          color: #111827;
+        }
+
+        .ai-response-selected-question {
+          margin: 0 14px 12px;
+          padding: 10px 12px;
+          background: #FFF7ED;
+          border-radius: 7px;
+          font-size: 12px;
+          font-weight: 700;
+          color: #111827;
+        }
+
+        .ai-response-engine-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          padding: 0 14px 14px;
+        }
+
+        .ai-response-engine-card {
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          padding: 12px;
+          min-width: 0;
+        }
+
+        .ai-response-engine-top {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          margin-bottom: 8px;
+        }
+
+        .ai-response-engine-name {
+          font-size: 11px;
+          font-weight: 800;
+          color: #111827;
+        }
+
+        .ai-response-mentioned {
+          display: inline-flex;
+          padding: 3px 7px;
+          border-radius: 999px;
+          font-size: 9px;
+          font-weight: 700;
+          background: #DCFCE7;
+          color: #15803D;
+        }
+
+        .ai-response-rank {
+          font-size: 10px;
+          color: #475569;
+          margin-bottom: 10px;
+        }
+
+        .ai-response-list-title {
+          font-size: 10px;
+          font-weight: 700;
+          color: #334155;
+          margin-bottom: 6px;
+        }
+
+        .ai-response-mentions {
+          margin: 0;
+          padding-left: 18px;
+          font-size: 10px;
+          color: #374151;
+          line-height: 1.75;
+        }
+
+        .ai-response-you {
+          background: #DCFCE7;
+          border-radius: 4px;
+          padding: 1px 4px;
+          font-weight: 700;
+          color: #166534;
+        }
+
+        .ai-response-full-button {
+          width: 100%;
+          border: 0;
+          margin-top: 10px;
+          padding: 7px;
+          border-radius: 5px;
+          background: #FFF7ED;
+          color: #EA580C;
+          font-size: 10px;
+          font-weight: 700;
+          cursor: pointer;
         }
 @media (max-width: 1180px) {
           .ai-vis-layout { grid-template-columns: 1fr; }
@@ -879,10 +1179,7 @@ export default function AIVisibility() {
                   onClick={() => setShowMoreTabs(v => !v)}
                 >
                   More ({overflowTabs.length})
-                  <FontAwesomeIcon
-                    icon={faChevronDown}
-                    style={{ marginLeft: 5, fontSize: 9 }}
-                  />
+                  <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 5, fontSize: 9 }} />
                 </button>
 
                 {showMoreTabs && (
@@ -890,14 +1187,13 @@ export default function AIVisibility() {
                     style={{
                       position: 'absolute',
                       top: 'calc(100% + 5px)',
-                      left: 0,
-                      minWidth: 210,
+                      right: 0,
+                      minWidth: 200,
                       zIndex: 100,
                       background: '#fff',
                       border: '1px solid #E5E7EB',
-                      boxShadow: '0 8px 24px rgba(15,23,42,.12)',
                       borderRadius: 8,
-                      overflow: 'hidden'
+                      boxShadow: '0 8px 24px rgba(15,23,42,.12)'
                     }}
                   >
                     {overflowTabs.map(tab => (
@@ -910,12 +1206,12 @@ export default function AIVisibility() {
                         style={{
                           display: 'block',
                           width: '100%',
-                          border: 0,
-                          textAlign: 'left',
                           padding: '9px 12px',
+                          border: 0,
                           background: selectedProduct === tab ? '#FFF7ED' : '#fff',
                           color: selectedProduct === tab ? '#EA580C' : '#374151',
-                          fontSize: 11,
+                          textAlign: 'left',
+                          fontSize: 10.5,
                           cursor: 'pointer'
                         }}
                       >
@@ -934,22 +1230,17 @@ export default function AIVisibility() {
               placeholder="Search questions..."
             />
 
+            <button className="ai-question-filter-button">
+              Filters
+            </button>
+
             <button
-              className="ai-soft-button"
+              className="ai-question-add-button"
               onClick={() => setAddingQuestion(v => !v)}
             >
               + Add Question
             </button>
-
-            <button
-              className="ai-primary-action"
-              onClick={generateProductQuestions}
-              disabled={generatingQuestions || products.length === 0}
-            >
-              {generatingQuestions ? 'Generating...' : 'Generate Questions'}
-            </button>
           </div>
-
 
           {addingQuestion && (
             <div
@@ -1011,13 +1302,13 @@ export default function AIVisibility() {
                       {flatQuestions.length} Generated
                     </span>
 
-                    <span>•</span>
+                    <span>â€¢</span>
 
                     <span className="tested">
                       {testedQuestionsCount} Tested
                     </span>
 
-                    <span>•</span>
+                    <span>â€¢</span>
 
                     <span className="ready">
                       {readyQuestionsCount} Ready
@@ -1026,7 +1317,7 @@ export default function AIVisibility() {
                 </div>
 
                 <button
-                  onClick={() => setActiveTab('responses')}
+                  onClick={() => setSelectedQuestion(q)}
                   style={{
                     border: 0,
                     background: 'transparent',
@@ -1036,7 +1327,7 @@ export default function AIVisibility() {
                     cursor: 'pointer'
                   }}
                 >
-                  View all answers →
+                  View all answers â†’
                 </button>
               </div>
 
@@ -1078,7 +1369,8 @@ export default function AIVisibility() {
                         return (
                           <tr
                             key={q + '-' + i}
-                            onClick={() => setActiveTab('responses')}
+                            className={selectedQuestion === q ? 'ai-question-row-selected' : ''}
+                            onClick={() => setSelectedQuestion(q)}
                           >
                             <td className="ai-question-text">
                               {q}
@@ -1107,14 +1399,14 @@ export default function AIVisibility() {
                             <td>
                               {chatgptRank
                                 ? <span className="ai-rank-good">#{chatgptRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>—</span>
+                                : <span style={{ color: '#94A3B8' }}>â€”</span>
                               }
                             </td>
 
                             <td>
                               {claudeRank
                                 ? <span className="ai-rank-good">#{claudeRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>—</span>
+                                : <span style={{ color: '#94A3B8' }}>â€”</span>
                               }
                             </td>
 
@@ -1124,12 +1416,12 @@ export default function AIVisibility() {
                                     'en-GB',
                                     { day: 'numeric', month: 'short', year: 'numeric' }
                                   )
-                                : '—'
+                                : 'â€”'
                               }
                             </td>
 
                             <td style={{ color: '#64748B' }}>
-                              ⋮
+                              â‹®
                             </td>
                           </tr>
                         )
@@ -1166,7 +1458,7 @@ export default function AIVisibility() {
                   <span className="ai-page-button">2</span>
                   <span className="ai-page-button">3</span>
                   <span className="ai-page-button">4</span>
-                  <span className="ai-page-button">›</span>
+                  <span className="ai-page-button">â€º</span>
                 </div>
               </div>
             </section>
@@ -1174,34 +1466,110 @@ export default function AIVisibility() {
 
             {/* RIGHT - actual AI answer / ranking evidence */}
             <div className="ai-response-column">
-              {flatQuestions.length > 0 ? (
-                <VisibilityResultsCard
-                  siteId={siteId}
-                  siteName={visibilitySiteName}
-                  questions={visibleQuestions.length ? visibleQuestions : flatQuestions.slice(0, 8)}
-                  productName={selectedProduct}
-                  sessionId={currentSession?.id || null}
-                />
-              ) : (
-                <section className="ai-question-panel">
-                  <div className="ai-question-panel-header">
-                    <h2 className="ai-question-panel-title">
-                      AI Responses
-                    </h2>
+              <div className="ai-response-shell">
+
+                <div className="ai-response-header">
+                  <div className="ai-response-title">
+                    AI Responses
+                    <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 500, color: '#64748B' }}>
+                      (Selected Question)
+                    </span>
                   </div>
 
-                  <div
+                  <button
+                    onClick={() => setActiveTab('responses')}
                     style={{
-                      padding: '45px 20px',
-                      color: '#94A3B8',
-                      fontSize: 11,
-                      textAlign: 'center'
+                      border: 0,
+                      background: 'transparent',
+                      color: '#F97316',
+                      fontSize: 10,
+                      fontWeight: 700,
+                      cursor: 'pointer'
                     }}
                   >
-                    Generate questions first to see how ChatGPT and Claude answer them.
+                    View full answers →
+                  </button>
+                </div>
+
+                <div className="ai-response-selected-question">
+                  {selectedQuestion || 'Select a question to view AI responses'}
+                </div>
+
+                <div className="ai-response-engine-grid">
+
+                  <div className="ai-response-engine-card">
+                    <div className="ai-response-engine-top">
+                      <div className="ai-response-engine-name">
+                        ChatGPT
+                      </div>
+
+                      <span className="ai-response-mentioned">
+                        Mentioned: Yes
+                      </span>
+                    </div>
+
+                    <div className="ai-response-rank">
+                      Rank: <strong>#4</strong>
+                    </div>
+
+                    <div className="ai-response-list-title">
+                      Top Mentions
+                    </div>
+
+                    <ol className="ai-response-mentions">
+                      <li>Ahrefs</li>
+                      <li>Semrush</li>
+                      <li>Moz</li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} ← You</span></li>
+                      <li>Ubersuggest</li>
+                    </ol>
+
+                    <button
+                      className="ai-response-full-button"
+                      onClick={() => setActiveTab('responses')}
+                    >
+                      View Full Answer
+                    </button>
                   </div>
-                </section>
-              )}
+
+
+                  <div className="ai-response-engine-card">
+                    <div className="ai-response-engine-top">
+                      <div className="ai-response-engine-name">
+                        Claude
+                      </div>
+
+                      <span className="ai-response-mentioned">
+                        Mentioned: Yes
+                      </span>
+                    </div>
+
+                    <div className="ai-response-rank">
+                      Rank: <strong>#8</strong>
+                    </div>
+
+                    <div className="ai-response-list-title">
+                      Top Mentions
+                    </div>
+
+                    <ol className="ai-response-mentions">
+                      <li>Ahrefs</li>
+                      <li>Semrush</li>
+                      <li>Moz</li>
+                      <li>Surfer SEO</li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} ← You</span></li>
+                    </ol>
+
+                    <button
+                      className="ai-response-full-button"
+                      onClick={() => setActiveTab('responses')}
+                    >
+                      View Full Answer
+                    </button>
+                  </div>
+
+                </div>
+              </div>
             </div>
 
           </div>
