@@ -69,6 +69,113 @@ const ENGINE_STYLE_MAP = {
   perplexity: { label: 'Perplexity', color: '#20808D' },
 }
 
+
+function ChatGPTLogo({ size = 24 }) {
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        background: '#10A37F',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+    >
+      <svg
+        width={size * 0.72}
+        height={size * 0.72}
+        viewBox="0 0 24 24"
+        fill="none"
+        aria-hidden="true"
+      >
+        <path
+          d="M12 3.2a4.3 4.3 0 0 1 4.15 3.15 4.3 4.3 0 0 1 2.35 6.95 4.3 4.3 0 0 1-3.6 6.25 4.3 4.3 0 0 1-6.75-.75 4.3 4.3 0 0 1-5.35-4.75 4.3 4.3 0 0 1 1.95-6.3A4.3 4.3 0 0 1 12 3.2Z"
+          stroke="white"
+          strokeWidth="1.65"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M8.2 7.2 12 9.4l3.8-2.2M8.2 16.8V12.4L4.5 10.2M15.8 16.8 12 14.6l-3.8 2.2M15.8 7.2v4.4l3.7 2.2M12 9.4v5.2"
+          stroke="white"
+          strokeWidth="1.45"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
+  )
+}
+
+function ClaudeLogo({ size = 24 }) {
+  const rays = Array.from({ length: 12 })
+
+  return (
+    <span
+      style={{
+        width: size,
+        height: size,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexShrink: 0
+      }}
+    >
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 32 32"
+        fill="none"
+        aria-hidden="true"
+      >
+        {rays.map((_, i) => (
+          <line
+            key={i}
+            x1="16"
+            y1="3"
+            x2="16"
+            y2="10"
+            stroke="#F97316"
+            strokeWidth="2.4"
+            strokeLinecap="round"
+            transform={`rotate(${i * 30} 16 16)`}
+          />
+        ))}
+        <circle cx="16" cy="16" r="3.2" fill="#F97316" />
+      </svg>
+    </span>
+  )
+}
+
+function ExternalAnswerIcon() {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true"
+    >
+      <path
+        d="M14 4h6v6M20 4l-9 9"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 13v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h6"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
 export default function AIVisibility() {
   const { siteId } = useParams()
   const showSnackbar = useSnackbar()
@@ -1911,6 +2018,95 @@ const sectionCard = {
           color: #DC2626;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      /* =====================================================
+           AI RESPONSE ENGINE ICON POLISH
+           ===================================================== */
+
+        .ai-response-engine-name {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 7px !important;
+        }
+
+        .ai-engine-icon {
+          width: 25px;
+          height: 25px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          flex-shrink: 0;
+          font-size: 12px;
+        }
+
+        .ai-engine-icon-chatgpt {
+          background: #ECFDF5;
+          color: #10A37F;
+        }
+
+        .ai-engine-icon-claude {
+          background: #FFF7ED;
+          color: #D85A30;
+        }
+
+        .ai-response-full-button {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 7px !important;
+        }
+
+        .ai-full-answer-icon {
+          font-size: 9px;
+          transition: transform .15s ease;
+        }
+
+        .ai-response-full-button:hover .ai-full-answer-icon {
+          transform: translateX(2px);
+        }
+
+      
+        /* =====================================================
+           REFERENCE RESPONSE ENGINE POLISH
+           ===================================================== */
+
+        .ai-response-engine-name {
+          display: inline-flex !important;
+          align-items: center !important;
+          gap: 7px !important;
+        }
+
+        .ai-engine-label {
+          font-size: 11px;
+          font-weight: 800;
+          color: #111827;
+        }
+
+        .ai-response-engine-card {
+          padding: 12px !important;
+        }
+
+        .ai-response-engine-top {
+          min-height: 28px;
+          align-items: center !important;
+        }
+
+        .ai-response-mentioned,
+        .ai-response-not-mentioned {
+          white-space: nowrap;
+        }
+
+        .ai-response-full-button {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          gap: 8px !important;
+        }
+
+        .ai-response-full-button svg {
+          flex-shrink: 0;
+        }
+
       `}
         </style>
 
@@ -2438,7 +2634,12 @@ const sectionCard = {
                       cursor: '--'
                               }}
                   >
-                    View full answers</button>
+                    <span>View full answers</span>
+                    <FontAwesomeIcon
+                      icon={faArrowRight}
+                      style={{ fontSize: 9 }}
+                    />
+                  </button>
                 </div>
 
                 <div className="ai-response-selected-question">
@@ -2505,11 +2706,18 @@ const sectionCard = {
                           >
                             <div className="ai-response-engine-top">
                               <div className="ai-response-engine-name">
+                              {engine === 'chatgpt'
+  ? <ChatGPTLogo size={25} />
+  : <ClaudeLogo size={25} />
+}
+
+                              <span>
                                 {engine === 'chatgpt'
                                   ? 'ChatGPT'
                                   : 'Claude'
                                 }
-                              </div>
+                              </span>
+                            </div>
 
                               <span
                                 style={{
@@ -2552,9 +2760,16 @@ const sectionCard = {
 
                             <div className="ai-response-engine-name">
                               {engine === 'chatgpt'
-                                ? 'ChatGPT'
-                                : 'Claude'
-                              }
+  ? <ChatGPTLogo size={25} />
+  : <ClaudeLogo size={25} />
+}
+
+                              <span>
+                                {engine === 'chatgpt'
+                                  ? 'ChatGPT'
+                                  : 'Claude'
+                                }
+                              </span>
                             </div>
 
                             <span
@@ -2586,7 +2801,7 @@ const sectionCard = {
 
 
                           <div className="ai-response-list-title">
-                            Top Mentions
+                            Top Results
                           </div>
 
 
@@ -2679,10 +2894,14 @@ const sectionCard = {
                               )
                             }
                           >
-                            {selectedAnswerEngine === engine
-                              ? 'Hide Full Answer'
-                              : 'View Full Answer'
-                            }
+                            <span>
+                              {selectedAnswerEngine === engine
+                                ? 'Hide Full Answer'
+                                : 'View Full Answer'
+                              }
+                            </span>
+
+                            <ExternalAnswerIcon />
                           </button>
 
                         </div>
