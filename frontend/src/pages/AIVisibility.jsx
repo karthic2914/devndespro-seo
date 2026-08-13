@@ -1265,6 +1265,138 @@ const sectionCard = {
         .ai-question-menu-delete:hover .ai-question-menu-icon {
           color: #B91C1C;
         }
+
+        /* =====================================================
+           Questions table - final alignment/polish
+           ===================================================== */
+
+        .ai-questions-table {
+          width: 100%;
+          table-layout: fixed;
+          border-collapse: collapse;
+        }
+
+        /* Question */
+        .ai-questions-table th:nth-child(1),
+        .ai-questions-table td:nth-child(1) {
+          width: 40%;
+          text-align: left;
+        }
+
+        /* Intent */
+        .ai-questions-table th:nth-child(2),
+        .ai-questions-table td:nth-child(2) {
+          width: 13%;
+          text-align: center;
+        }
+
+        /* Status */
+        .ai-questions-table th:nth-child(3),
+        .ai-questions-table td:nth-child(3) {
+          width: 12%;
+          text-align: center;
+        }
+
+        /* ChatGPT */
+        .ai-questions-table th:nth-child(4),
+        .ai-questions-table td:nth-child(4) {
+          width: 9%;
+          text-align: center;
+        }
+
+        /* Claude */
+        .ai-questions-table th:nth-child(5),
+        .ai-questions-table td:nth-child(5) {
+          width: 9%;
+          text-align: center;
+        }
+
+        /* Last Tested */
+        .ai-questions-table th:nth-child(6),
+        .ai-questions-table td:nth-child(6) {
+          width: 13%;
+          text-align: center;
+          white-space: nowrap;
+        }
+
+        /* Action */
+        .ai-questions-table th:nth-child(7),
+        .ai-questions-table td:nth-child(7) {
+          width: 4%;
+          min-width: 42px;
+          text-align: center;
+        }
+
+        /* Header */
+        .ai-questions-table thead th {
+          height: 40px;
+          padding: 0 10px;
+          vertical-align: middle;
+          font-size: 11px;
+          font-weight: 600;
+          color: #475569;
+          background: #F8FAFC;
+          border-bottom: 1px solid #E2E8F0;
+        }
+
+        /* Explicitly center every header except Question */
+        .ai-questions-table thead th:not(:first-child) {
+          text-align: center !important;
+        }
+
+        .ai-questions-table tbody td {
+          padding: 11px 10px;
+          vertical-align: middle;
+          border-bottom: 1px solid #EEF2F7;
+        }
+
+        /* Question text */
+        .ai-questions-table tbody td:first-child {
+          padding-left: 12px;
+          padding-right: 18px;
+          line-height: 1.35;
+        }
+
+        /* Keep badges visually centered */
+        .ai-questions-table tbody td:nth-child(2) > *,
+        .ai-questions-table tbody td:nth-child(3) > * {
+          margin-left: auto;
+          margin-right: auto;
+        }
+
+        /* Dedicated action space */
+        .ai-question-actions-cell {
+          width: 44px !important;
+          min-width: 44px !important;
+          padding-left: 6px !important;
+          padding-right: 8px !important;
+          text-align: center !important;
+          position: relative;
+          overflow: visible !important;
+        }
+
+        .ai-question-menu-button {
+          width: 28px;
+          height: 28px;
+          margin: 0 auto;
+          padding: 0;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid transparent;
+          border-radius: 6px;
+          background: transparent;
+          color: #64748B;
+          cursor: pointer;
+        }
+
+        .ai-question-menu-button:hover,
+        .ai-question-menu-button[aria-expanded="true"] {
+          background: #F1F5F9;
+          border-color: #E2E8F0;
+          color: #334155;
+        }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
