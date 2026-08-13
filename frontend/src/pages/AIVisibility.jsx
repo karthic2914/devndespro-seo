@@ -2067,20 +2067,23 @@ export default function AIVisibility() {
         /* HEADER */
         .ai-question-table thead tr {
           min-height: 42px;
+          height: 42px;
           background: #F8FAFC;
           border-top: 1px solid #E2E8F0;
           border-bottom: 1px solid #E2E8F0;
+          align-items: center !important;
         }
 
         .ai-question-table thead th {
-          display: table-cell !important;
-          align-items: unset !important;
-          justify-content: unset !important;
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
           vertical-align: middle !important;
 
           width: auto !important;
           min-width: 0 !important;
           height: 42px !important;
+          min-height: 42px !important;
 
           margin: 0 !important;
           padding: 0 8px !important;
@@ -2094,10 +2097,11 @@ export default function AIVisibility() {
           white-space: nowrap;
           background: #F8FAFC;
           text-align: center;
+          line-height: 1.2;
         }
 
         .ai-question-table thead th:first-child {
-          justify-content: unset !important;
+          justify-content: flex-start !important;
           text-align: left !important;
           padding-left: 14px !important;
         }
@@ -2105,6 +2109,7 @@ export default function AIVisibility() {
         .ai-question-table thead th:last-child,
         .ai-question-actions-header {
           border-top-right-radius: 0;
+          justify-content: center !important;
         }
 
 
