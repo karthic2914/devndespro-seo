@@ -1128,69 +1128,6 @@ const sectionCard = {
         }
 
         .ai-question-actions-header,
-        .ai-question-actions-cell {
-          width: 34px !important;
-          text-align: center !important;
-        }
-
-        .ai-question-menu-button {
-          width: 26px;
-          height: 26px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 0;
-          border: 0;
-          background: transparent;
-          color: #64748B;
-          border-radius: 5px;
-          font-size: 15px;
-          font-weight: 700;
-          line-height: 1;
-          cursor: pointer;
-        }
-
-        .ai-question-menu-button:hover {
-          background: #F1F5F9;
-          color: #111827;
-        }
-
-        .ai-question-actions-header,
-        .ai-question-actions-cell {
-          width: 40px !important;
-          text-align: center !important;
-          overflow: visible !important;
-        }
-
-        .ai-question-menu-wrap {
-          position: relative;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .ai-question-menu-button {
-          width: 28px;
-          height: 28px;
-          padding: 0;
-          border: 1px solid transparent;
-          background: transparent;
-          color: #64748B;
-          border-radius: 6px;
-          font-size: 18px;
-          font-weight: 700;
-          line-height: 1;
-          cursor: pointer;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .ai-question-menu-button:hover {
-          background: #F8FAFC;
-          border-color: #E2E8F0;
-          color: #111827;
-        }
 
         .ai-question-menu-dropdown {
           position: absolute;
@@ -1241,6 +1178,52 @@ const sectionCard = {
         .ai-question-menu-delete:hover {
           background: #FEF2F2;
           color: #B91C1C;
+        }
+
+        .ai-question-actions-cell {
+          width: 38px !important;
+          text-align: center !important;
+          overflow: visible !important;
+          position: relative;
+        }
+
+        .ai-question-menu-wrap {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ai-question-menu-button {
+          width: 28px;
+          height: 28px;
+          padding: 0;
+          border: 1px solid transparent;
+          background: transparent;
+          border-radius: 6px;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          color: #64748B;
+        }
+
+        .ai-question-menu-button::before {
+          content: "\22EE";
+          display: block;
+          font-size: 20px;
+          line-height: 1;
+          font-weight: 700;
+          color: #64748B;
+        }
+
+        .ai-question-menu-button:hover {
+          background: #F1F5F9;
+          border-color: #E2E8F0;
+        }
+
+        .ai-question-menu-button:hover::before {
+          color: #111827;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
@@ -1608,9 +1591,73 @@ const sectionCard = {
                               }
                             </td>
 
-                            <td style={{ color: '#64748B', textAlign: 'center' }}>
-                              ...
-                            </td>
+                            <td className="ai-question-actions-cell">
+  <div className="ai-question-menu-wrap">
+    <button
+      type="button"
+      className="ai-question-menu-button"
+      onClick={(e) => {
+        e.stopPropagation()
+        setOpenQuestionMenu(
+          openQuestionMenu === q ? null : q
+        )
+      }}
+      title="Question actions"
+    ></button>
+
+    {openQuestionMenu === q && (
+      <div
+        className="ai-question-menu-dropdown"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="ai-question-menu-item"
+          onClick={() => {
+            setSelectedQuestion(q)
+            setOpenQuestionMenu(null)
+            setActiveTab('responses')
+          }}
+        >
+          View AI Responses
+        </button>
+
+        <button
+          type="button"
+          className="ai-question-menu-item"
+          onClick={() => {
+            setSelectedQuestion(q)
+            setOpenQuestionMenu(null)
+          }}
+        >
+          {isTested ? 'Re-test Question' : 'Test Question'}
+        </button>
+
+        <button
+          type="button"
+          className="ai-question-menu-item"
+          onClick={() => {
+            setOpenQuestionMenu(null)
+          }}
+        >
+          Edit Question
+        </button>
+
+        <div className="ai-question-menu-separator"></div>
+
+        <button
+          type="button"
+          className="ai-question-menu-item ai-question-menu-delete"
+          onClick={() => {
+            setOpenQuestionMenu(null)
+          }}
+        >
+          Delete Question
+        </button>
+      </div>
+    )}
+  </div>
+</td>
                           </tr>
                         )
                       })
