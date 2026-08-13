@@ -110,6 +110,7 @@ export default function AIVisibility() {
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [questionSearch, setQuestionSearch] = useState('')
   const [selectedQuestion, setSelectedQuestion] = useState('')
+  const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
 
   // AUTO-GENERATE PRODUCT QUESTIONS
   useEffect(() => {
@@ -578,7 +579,7 @@ const sectionCard = {
 
         .ai-question-table-wrap {
           width: 100%;
-          overflow: hidden;
+          overflow: visible;
           padding: 0 10px 8px;
           box-sizing: border-box;
         }
@@ -1152,6 +1153,94 @@ const sectionCard = {
         .ai-question-menu-button:hover {
           background: #F1F5F9;
           color: #111827;
+        }
+
+        .ai-question-actions-header,
+        .ai-question-actions-cell {
+          width: 40px !important;
+          text-align: center !important;
+          overflow: visible !important;
+        }
+
+        .ai-question-menu-wrap {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ai-question-menu-button {
+          width: 28px;
+          height: 28px;
+          padding: 0;
+          border: 1px solid transparent;
+          background: transparent;
+          color: #64748B;
+          border-radius: 6px;
+          font-size: 18px;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ai-question-menu-button:hover {
+          background: #F8FAFC;
+          border-color: #E2E8F0;
+          color: #111827;
+        }
+
+        .ai-question-menu-dropdown {
+          position: absolute;
+          right: 0;
+          top: 32px;
+          z-index: 999;
+          width: 185px;
+          padding: 6px;
+          background: #FFFFFF;
+          border: 1px solid #E5E7EB;
+          border-radius: 9px;
+          box-shadow:
+            0 12px 28px rgba(15, 23, 42, 0.14),
+            0 2px 6px rgba(15, 23, 42, 0.06);
+        }
+
+        .ai-question-menu-item {
+          width: 100%;
+          min-height: 34px;
+          display: flex;
+          align-items: center;
+          padding: 7px 9px;
+          border: 0;
+          border-radius: 6px;
+          background: transparent;
+          color: #334155;
+          font-size: 10.5px;
+          font-weight: 600;
+          text-align: left;
+          cursor: pointer;
+        }
+
+        .ai-question-menu-item:hover {
+          background: #F8FAFC;
+          color: #111827;
+        }
+
+        .ai-question-menu-separator {
+          height: 1px;
+          background: #EEF2F7;
+          margin: 4px 2px;
+        }
+
+        .ai-question-menu-delete {
+          color: #DC2626;
+        }
+
+        .ai-question-menu-delete:hover {
+          background: #FEF2F2;
+          color: #B91C1C;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
