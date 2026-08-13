@@ -1131,27 +1131,28 @@ const sectionCard = {
 
         .ai-question-menu-dropdown {
           position: absolute;
-          right: 0;
-          top: 32px;
+          right: 8px;
+          top: 34px;
           z-index: 999;
-          width: 185px;
+          width: 205px;
           padding: 6px;
           background: #FFFFFF;
           border: 1px solid #E5E7EB;
-          border-radius: 9px;
+          border-radius: 10px;
           box-shadow:
-            0 12px 28px rgba(15, 23, 42, 0.14),
-            0 2px 6px rgba(15, 23, 42, 0.06);
+            0 14px 32px rgba(15, 23, 42, 0.14),
+            0 3px 8px rgba(15, 23, 42, 0.06);
         }
 
         .ai-question-menu-item {
           width: 100%;
-          min-height: 34px;
+          min-height: 38px;
           display: flex;
           align-items: center;
-          padding: 7px 9px;
+          gap: 10px;
+          padding: 8px 10px;
           border: 0;
-          border-radius: 6px;
+          border-radius: 7px;
           background: transparent;
           color: #334155;
           font-size: 10.5px;
@@ -1181,10 +1182,13 @@ const sectionCard = {
         }
 
         .ai-question-actions-cell {
-          width: 40px !important;
+          width: 46px !important;
+          min-width: 46px !important;
           text-align: center !important;
           overflow: visible !important;
           position: relative;
+          padding-left: 8px !important;
+          padding-right: 8px !important;
         }
 
         .ai-question-menu-wrap {
@@ -1195,17 +1199,22 @@ const sectionCard = {
         }
 
         .ai-question-menu-button {
-          width: 28px;
-          height: 28px;
+          width: 30px;
+          height: 30px;
           padding: 0;
+          margin: 0 auto;
           border: 1px solid transparent;
           background: transparent;
-          border-radius: 6px;
+          border-radius: 7px;
           cursor: pointer;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           color: #64748B;
+          transition:
+            background .15s ease,
+            border-color .15s ease,
+            color .15s ease;
         }
 
         .ai-question-menu-button:hover {
@@ -1236,6 +1245,25 @@ const sectionCard = {
 
         .ai-question-menu-button:hover .ai-question-menu-dots span {
           background: #111827;
+        }
+
+        .ai-question-menu-icon {
+          width: 14px;
+          min-width: 14px;
+          font-size: 12px;
+          color: #64748B;
+        }
+
+        .ai-question-menu-item:hover .ai-question-menu-icon {
+          color: #F97316;
+        }
+
+        .ai-question-menu-delete .ai-question-menu-icon {
+          color: #DC2626;
+        }
+
+        .ai-question-menu-delete:hover .ai-question-menu-icon {
+          color: #B91C1C;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
@@ -1636,7 +1664,11 @@ const sectionCard = {
             setActiveTab('responses')
           }}
         >
-          View AI Responses
+          <FontAwesomeIcon
+            icon={faComments}
+            className="ai-question-menu-icon"
+          />
+          <span>View AI Responses</span>
         </button>
 
         <button
@@ -1647,7 +1679,13 @@ const sectionCard = {
             setOpenQuestionMenu(null)
           }}
         >
-          {isTested ? 'Re-test Question' : 'Test Question'}
+          <FontAwesomeIcon
+            icon={faRotateRight}
+            className="ai-question-menu-icon"
+          />
+          <span>
+            {isTested ? 'Re-test Question' : 'Test Question'}
+          </span>
         </button>
 
         <button
@@ -1657,7 +1695,11 @@ const sectionCard = {
             setOpenQuestionMenu(null)
           }}
         >
-          Edit Question
+          <FontAwesomeIcon
+            icon={faCode}
+            className="ai-question-menu-icon"
+          />
+          <span>Edit Question</span>
         </button>
 
         <div className="ai-question-menu-separator"></div>
@@ -1669,7 +1711,11 @@ const sectionCard = {
             setOpenQuestionMenu(null)
           }}
         >
-          Delete Question
+          <FontAwesomeIcon
+            icon={faXmark}
+            className="ai-question-menu-icon"
+          />
+          <span>Delete Question</span>
         </button>
       </div>
     )}
