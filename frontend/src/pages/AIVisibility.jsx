@@ -95,6 +95,10 @@ export default function AIVisibility() {
   // functional filter yet - just an honest display of the fixed 30-day
   // window the numbers are actually computed from.
   const [summaryPeriod, setSummaryPeriod] = useState(null)
+  // AI Visibility Results is collapsed by default - "AI Visibility by Engine"
+  // already covers the summary on this page, so the detailed scan table
+  // only needs to show when someone actually wants to dig in or scan.
+  const [showResults, setShowResults] = useState(false)
   const [customQuestionText, setCustomQuestionText] = useState('')
   const [showMoreTabs, setShowMoreTabs] = useState(false)
   const moreTabsRef = useRef(null)
@@ -536,22 +540,6 @@ export default function AIVisibility() {
             <VisibilityEngineTable siteId={siteId} />
             <div id="step-track"><VisibilityHistoryCard siteId={siteId} /></div>
           </div>
-        </div>
-        <div className="ai-vis-right">
-          <VisibilityAlertsPanel />
-          <VisibilitySentimentPanel />
-          <VisibilityQuickActions
-            onRunScan={() => scrollToStep('step-scan')}
-            onAddQuestion={() => { setAddingQuestion(true); scrollToStep('step-questions') }}
-            onGenerateQuestions={() => { generateProductQuestions(); scrollToStep('step-questions') }}
-            onCompareAnswers={() => scrollToStep('step-scan')}
-            onExport={downloadImage}
-          />
-        </div>
-      </div>
-
-      <div className="ai-vis-layout">
-        <div className="ai-vis-left">
 
           {/* 1. Detected products & services */}
           <div id="step-products" style={sectionCard}>
@@ -735,22 +723,105 @@ export default function AIVisibility() {
             </div>
           </div>
 
-          {/* 3. AI Visibility Results */}
-          <div id="step-scan">
-            {flatQuestions.length > 0 ? (
-              <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
-            ) : (
-              <div style={sectionCard}>
-                <div style={sectionTitle}><span style={numberBadge}>3</span>AI Visibility Results</div>
-                <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
+          {/* 3. AI Visibility Results - collapsed by default */}
+          <div id="step-scan" style={sectionCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={sectionTitle}>
+                <span style={numberBadge}>3</span>
+                AI Visibility Results
+              </div>
+              <button
+                onClick={() => setShowResults(v => !v)}
+                style={{ border: '1px solid #E5E7EB', background: '#fff', color: '#374151', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              >
+                {showResults ? 'Hide Full Results' : 'Show Full Results'}
+              </button>
+            </div>
+            {!showResults && (
+              <div style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 8 }}>
+                Per-engine summary already shown above in AI Visibility by Engine. Click Show Full Results to see the ranked Top 10 list, compare engines, and run new scans.
+              </div>
+            )}
+            {showResults && (
+              flatQuestions.length > 0 ? (
+                <div style={{ marginTop: 12 }}>
+                  <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
+                </div>
+              ) : (
+                <div style={{ padding: '20px 0 4px', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
                   Generate AI questions first to run Top 10 visibility analysis.
                 </div>
+              )
+            )}
+          </div>
+
+          {/* Recent Sessions - moved up next to Questions/Results to close
+              the gap that used to sit below this column */}
+          <div style={sectionCard}>
+            <div style={sectionTitle}>Recent Sessions</div>
+            {!sessions.length ? (
+              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
+                No sessions yet. Click + New Session above to start tracking scans over time.
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto', marginTop: 10 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 560 }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #E5E7EB' }}>
+                      <th style={{ padding: '0 10px 8px 0', fontWeight: 700, color: '#374151' }}>Session</th>
+                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Date</th>
+                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Questions</th>
+                      {Object.keys(sessions[0]?.engineStatus || {}).map(engine => (
+                        <th key={engine} style={{ padding: '0 10px 8px', fontWeight: 700, color: ENGINE_STYLE_MAP[engine]?.color || '#374151' }}>
+                          {ENGINE_STYLE_MAP[engine]?.label || engine}
+                        </th>
+                      ))}
+                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Score</th>
+                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Avg. Position</th>
+                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Top 10 Engines</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sessions.slice(0, 5).map(s => (
+                      <tr key={s.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
+                        <td style={{ padding: '9px 10px 9px 0', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{s.name}</td>
+                        <td style={{ padding: '9px 10px', color: '#6B7280', whiteSpace: 'nowrap' }}>
+                          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </td>
+                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.questionsTested}</td>
+                        {Object.entries(s.engineStatus || {}).map(([engine, status]) => (
+                          <td key={engine} style={{ padding: '9px 10px' }}>
+                            <FontAwesomeIcon
+                              icon={status.tested ? faCircleCheck : faCircleXmark}
+                              style={{ color: status.tested ? (status.inTop10 ? '#16A34A' : '#DC2626') : '#D1D5DB', fontSize: 12 }}
+                            />
+                          </td>
+                        ))}
+                        <td style={{ padding: '9px 10px', fontWeight: 800, color: s.score >= 60 ? '#16A34A' : s.score >= 30 ? '#D97706' : '#DC2626' }}>
+                          {s.score}%
+                        </td>
+                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.averageRank ?? '-'}</td>
+                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.topEnginesCount} / {s.totalEngines}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             )}
           </div>
         </div>
 
         <div className="ai-vis-right">
+          <VisibilityAlertsPanel />
+          <VisibilitySentimentPanel />
+          <VisibilityQuickActions
+            onRunScan={() => scrollToStep('step-scan')}
+            onAddQuestion={() => { setAddingQuestion(true); scrollToStep('step-questions') }}
+            onGenerateQuestions={() => { generateProductQuestions(); scrollToStep('step-questions') }}
+            onCompareAnswers={() => scrollToStep('step-scan')}
+            onExport={downloadImage}
+          />
+
           {/* Why not Top 10 + Actionable Recommendations = "Improve AEO/GEO" step.
               Overall score is already shown in the KPI cards above - no
               separate summary widget here to avoid showing it twice. */}
@@ -761,61 +832,6 @@ export default function AIVisibility() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Recent Sessions - full-width table, matches Session/Date/Questions
-          Tested/per-engine icons/Score/Avg Position/Top 10 Engines columns */}
-      <div style={sectionCard}>
-        <div style={sectionTitle}>Recent Sessions</div>
-        {!sessions.length ? (
-          <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
-            No sessions yet. Click + New Session above to start tracking scans over time.
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto', marginTop: 10 }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 640 }}>
-              <thead>
-                <tr style={{ textAlign: 'left', borderBottom: '1px solid #E5E7EB' }}>
-                  <th style={{ padding: '0 10px 8px 0', fontWeight: 700, color: '#374151' }}>Session</th>
-                  <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Date</th>
-                  <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Questions Tested</th>
-                  {Object.keys(sessions[0]?.engineStatus || {}).map(engine => (
-                    <th key={engine} style={{ padding: '0 10px 8px', fontWeight: 700, color: ENGINE_STYLE_MAP[engine]?.color || '#374151' }}>
-                      {ENGINE_STYLE_MAP[engine]?.label || engine}
-                    </th>
-                  ))}
-                  <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Visibility Score</th>
-                  <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Avg. Position (Top 10)</th>
-                  <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Top 10 Engines</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sessions.slice(0, 5).map(s => (
-                  <tr key={s.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                    <td style={{ padding: '9px 10px 9px 0', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{s.name}</td>
-                    <td style={{ padding: '9px 10px', color: '#6B7280', whiteSpace: 'nowrap' }}>
-                      {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </td>
-                    <td style={{ padding: '9px 10px', color: '#111827' }}>{s.questionsTested}</td>
-                    {Object.entries(s.engineStatus || {}).map(([engine, status]) => (
-                      <td key={engine} style={{ padding: '9px 10px' }}>
-                        <FontAwesomeIcon
-                          icon={status.tested ? faCircleCheck : faCircleXmark}
-                          style={{ color: status.tested ? (status.inTop10 ? '#16A34A' : '#DC2626') : '#D1D5DB', fontSize: 12 }}
-                        />
-                      </td>
-                    ))}
-                    <td style={{ padding: '9px 10px', fontWeight: 800, color: s.score >= 60 ? '#16A34A' : s.score >= 30 ? '#D97706' : '#DC2626' }}>
-                      {s.score}%
-                    </td>
-                    <td style={{ padding: '9px 10px', color: '#111827' }}>{s.averageRank ?? '-'}</td>
-                    <td style={{ padding: '9px 10px', color: '#111827' }}>{s.topEnginesCount} / {s.totalEngines}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   )
