@@ -13,13 +13,56 @@ const TOTAL_ENGINE_COLUMNS = 4; // chatgpt, claude, gemini, perplexity - matches
 // Prompts each engine with the question and asks for a ranked top-10 list.
 // We ask for strict JSON to avoid fragile regex parsing of prose answers.
 function buildRankingPrompt(question) {
-  return `Answer this question as you normally would, then extract your answer into a ranked list.
-Question: "${question}"
+  return `
+You are measuring brand visibility in an AI assistant response.
 
-Respond with ONLY valid JSON, no markdown fences, no preamble:
-{"top10": [{"rank": 1, "name": "Brand Name"}, ...up to 10 entries]}
+User question:
+"${question}"
 
-If fewer than 10 distinct brands/tools are genuinely relevant, return fewer entries. Do not pad with irrelevant names.`;
+First, determine how you would naturally answer this question as a helpful AI assistant.
+
+Then identify ONLY the real named commercial entities that would naturally
+appear in that answer, such as:
+
+- companies
+- brands
+- agencies
+- products
+- software tools
+- platforms
+- vendors
+- service providers
+
+IMPORTANT:
+
+- Do NOT force brand recommendations if the question does not naturally call for them.
+- Do NOT convert generic criteria into brands.
+- Do NOT return concepts such as:
+  "Portfolio Quality",
+  "Experience",
+  "Pricing",
+  "Customer Support",
+  "Design Skills",
+  "User Research",
+  etc.
+- Do NOT invent companies or products.
+- Include an entity only if you would genuinely mention or recommend it
+  while naturally answering the user's question.
+- Rank entities according to the order/prominence in which they would appear.
+- Return a maximum of 10 entities.
+- If no named commercial entities would naturally appear, return an empty array.
+
+Respond ONLY with valid JSON:
+
+{
+  "top10": [
+    {
+      "rank": 1,
+      "name": "Actual Brand or Company"
+    }
+  ]
+}
+`.trim()
 }
 
 function findBrandRank(top10, siteName) {
