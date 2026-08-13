@@ -1,4 +1,4 @@
-﻿/* ============================================
+/* ============================================
    GLOBAL RESPONSIVE GRID OVERRIDES
    Covers all pages: mobile/tablet/desktop/large
    ============================================ */
@@ -51,10 +51,7 @@
   }
 }
 
-/* Large screens: 1440px+ */
-@media (min-width: 1440px) {
-  .app-main { max-width: 1400px; margin: 0 auto; }
-}
+
 /* -- Site Audit responsive -- */
 .crawl-snapshot-grid { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 10px; }
 
