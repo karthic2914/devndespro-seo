@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faGauge, faListCheck, faComments, faUsers, faLightbulb, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
@@ -85,7 +85,7 @@ export default function AIVisibility() {
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
   // Which of the 6 tabs is currently showing
-  const [activeTab, setActiveTab] = useState('summary')
+  const [activeTab, setActiveTab] = useState('questions')
   // Real period label ("Jul 13 - Aug 12, 2026") and comparison label from
   // the summary endpoint, shown in the header date-range box. Not a
   // functional filter yet - just an honest display of the fixed 30-day
@@ -108,6 +108,7 @@ export default function AIVisibility() {
   // Custom questions persisted to the database - [{id, question, created_at}]
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
+  const [questionSearch, setQuestionSearch] = useState('')
 
   // AUTO-GENERATE PRODUCT QUESTIONS
   useEffect(() => {
@@ -293,7 +294,16 @@ export default function AIVisibility() {
     ? combinedQuestionSets
     : combinedQuestionSets.filter(set => set.product === selectedProduct)
 
-  const visibleQuestions = visibleQuestionSets.flatMap(set => set.questions || []).slice(0, 5)
+  const visibleQuestions = visibleQuestionSets
+    .flatMap(set => set.questions || [])
+    .filter(q => !questionSearch.trim() || String(q).toLowerCase().includes(questionSearch.trim().toLowerCase()))
+    .slice(0, 8)
+
+  const testedQuestionsCount = flatQuestions.filter(q =>
+    questionStatuses.some(s => s.question === q)
+  ).length
+
+  const readyQuestionsCount = Math.max(flatQuestions.length - testedQuestionsCount, 0)
 
   const sectionCard = {
     background: '#fff',
@@ -444,7 +454,290 @@ export default function AIVisibility() {
         .ai-vis-left > div, .ai-vis-right > div {
           margin-bottom: 0 !important;
         }
+        
+        /* =====================================================
+           Questions UX - target AI Visibility design
+           ===================================================== */
+
+        .ai-questions-toolbar {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+          flex-wrap: wrap;
+        }
+
+        .ai-question-chip {
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          color: #475569;
+          padding: 6px 12px;
+          border-radius: 999px;
+          font-size: 10.5px;
+          font-weight: 600;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+
+        .ai-question-chip.active {
+          border-color: #F97316;
+          color: #EA580C;
+          background: #FFF7ED;
+        }
+
+        .ai-question-search {
+          margin-left: auto;
+          min-width: 220px;
+          height: 34px;
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          border-radius: 7px;
+          padding: 0 11px;
+          font-size: 11px;
+          color: #111827;
+          outline: none;
+          box-sizing: border-box;
+        }
+
+        .ai-question-search:focus {
+          border-color: #F97316;
+          box-shadow: 0 0 0 2px rgba(249,115,22,.08);
+        }
+
+        .ai-question-main-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+          gap: 14px;
+          align-items: start;
+        }
+
+        .ai-question-panel {
+          background: #fff;
+          border: 1px solid #E5E7EB;
+          border-radius: 12px;
+          min-width: 0;
+          overflow: hidden;
+        }
+
+        .ai-question-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 14px 16px 11px;
+        }
+
+        .ai-question-panel-title {
+          margin: 0;
+          color: #111827;
+          font-size: 14px;
+          font-weight: 800;
+        }
+
+        .ai-question-stats {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 10.5px;
+          color: #64748B;
+          flex-wrap: wrap;
+        }
+
+        .ai-question-stats .generated {
+          color: #475569;
+        }
+
+        .ai-question-stats .tested {
+          color: #16A34A;
+          font-weight: 700;
+        }
+
+        .ai-question-stats .ready {
+          color: #2563EB;
+          font-weight: 700;
+        }
+
+        .ai-question-table-wrap {
+          overflow-x: auto;
+          padding: 0 10px 8px;
+        }
+
+        .ai-question-table {
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 10.5px;
+          min-width: 660px;
+        }
+
+        .ai-question-table thead th {
+          background: #F8FAFC;
+          color: #475569;
+          text-align: left;
+          font-size: 9.5px;
+          font-weight: 700;
+          padding: 8px 9px;
+          border-top: 1px solid #E5E7EB;
+          border-bottom: 1px solid #E5E7EB;
+        }
+
+        .ai-question-table tbody td {
+          padding: 9px;
+          border-bottom: 1px solid #F1F5F9;
+          color: #374151;
+          vertical-align: middle;
+        }
+
+        .ai-question-table tbody tr {
+          cursor: pointer;
+          transition: background .12s;
+        }
+
+        .ai-question-table tbody tr:hover {
+          background: #FFF7ED;
+        }
+
+        .ai-question-text {
+          color: #111827 !important;
+          font-weight: 650;
+          line-height: 1.35;
+        }
+
+        .ai-intent-pill {
+          display: inline-flex;
+          padding: 3px 7px;
+          border-radius: 999px;
+          background: #FFEDD5;
+          color: #C2410C;
+          font-size: 9px;
+          font-weight: 600;
+        }
+
+        .ai-status-tested,
+        .ai-status-ready {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 9.5px;
+          font-weight: 700;
+          white-space: nowrap;
+        }
+
+        .ai-status-tested {
+          color: #15803D;
+        }
+
+        .ai-status-ready {
+          color: #2563EB;
+        }
+
+        .ai-rank-good {
+          color: #15803D;
+          font-weight: 800;
+        }
+
+        .ai-question-footer {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 9px 14px 12px;
+          font-size: 10px;
+          color: #64748B;
+          gap: 10px;
+        }
+
+        .ai-question-pagination {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+        }
+
+        .ai-page-button {
+          width: 27px;
+          height: 27px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          border-radius: 5px;
+          color: #475569;
+          font-size: 10px;
+        }
+
+        .ai-page-button.active {
+          background: #F97316;
+          color: #fff;
+          border-color: #F97316;
+        }
+
+        .ai-response-column {
+          min-width: 0;
+        }
+
+        .ai-question-lower-grid {
+          display: grid;
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+          gap: 14px;
+          margin-top: 14px;
+          align-items: start;
+        }
+
+        .ai-question-actions-bar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          padding: 0 16px 14px;
+          flex-wrap: wrap;
+        }
+
+        .ai-question-action-group {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+
+        .ai-soft-button {
+          height: 32px;
+          padding: 0 11px;
+          border: 1px solid #E5E7EB;
+          background: #fff;
+          color: #374151;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 650;
+          cursor: pointer;
+        }
+
+        .ai-primary-action {
+          height: 32px;
+          padding: 0 13px;
+          border: 1px solid #F97316;
+          background: #F97316;
+          color: #fff;
+          border-radius: 6px;
+          font-size: 10.5px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+
         @media (max-width: 1180px) {
+          .ai-question-main-grid {
+            grid-template-columns: 1fr;
+          }
+
+          .ai-question-lower-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 760px) {
+          .ai-question-search {
+            margin-left: 0;
+            width: 100%;
+          }
+        }
+@media (max-width: 1180px) {
           .ai-vis-layout { grid-template-columns: 1fr; }
           .ai-product-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
         }
@@ -562,186 +855,368 @@ export default function AIVisibility() {
       )}
 
       {activeTab === 'questions' && (
-      <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div id="step-products" style={sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div>
-                <div style={sectionTitle}>
-                  <span style={numberBadge}>1</span>
-                  Detected products & services
-                  <span style={{ fontSize: 10, fontWeight: 500, color: '#F97316' }}>How it works?</span>
-                </div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, marginLeft: 30 }}>
-                  {productsDetectedAt
-                    ? 'Last detected ' + new Date(productsDetectedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
-                    : 'Detect your website products and services to begin.'}
-                </div>
-              </div>
+        <div style={{ marginBottom: 14 }}>
 
-              <button onClick={detectProducts} disabled={detectingProducts} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #F97316', background: '#fff', color: '#F97316', fontWeight: 700, fontSize: 11, cursor: detectingProducts ? 'not-allowed' : 'pointer' }}>
-                <FontAwesomeIcon icon={faRotateRight} style={{ marginRight: 6, animation: detectingProducts ? 'spin 1s linear infinite' : 'none' }} />
-                {detectingProducts ? 'Detecting...' : products.length ? 'Re-detect Products' : 'Detect Products'}
+          {/* Product / question filters */}
+          <div className="ai-questions-toolbar">
+            {visibleTabs.map(tab => (
+              <button
+                key={tab}
+                className={'ai-question-chip ' + (selectedProduct === tab ? 'active' : '')}
+                onClick={() => setSelectedProduct(tab)}
+              >
+                {tab === 'All Questions'
+                  ? `All (${flatQuestions.length})`
+                  : `${tab} (${combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0})`
+                }
               </button>
-            </div>
+            ))}
 
-            {products.length > 0 ? (
-              <>
-                <div className="ai-product-grid">
-                  {products.slice(0, 4).map((p, i) => {
-                    const iconMeta = getProductIcon(p.name, i)
-                    return (
-                      <div className="ai-product-card" key={i} onClick={() => setSelectedProduct(p.name)}>
-                        <div style={{ width: 32, height: 32, borderRadius: 8, background: iconMeta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 9 }}>
-                          <FontAwesomeIcon icon={iconMeta.icon} style={{ color: iconMeta.color, fontSize: 13 }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 6, alignItems: 'center', marginBottom: 7 }}>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: '#111827' }}>{p.name}</div>
-                          {i === 0 && <span style={{ fontSize: 9, fontWeight: 700, color: '#15803D', background: '#DCFCE7', borderRadius: 4, padding: '2px 5px' }}>Primary</span>}
-                        </div>
-                        <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.45 }}>
-                          {p.description || p.targetCustomer || 'Detected from website content'}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-                <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                  <button style={{ border: '1px solid #E5E7EB', background: '#fff', borderRadius: 6, padding: '6px 10px', fontSize: 10.5, cursor: 'pointer' }}>Edit Products</button>
-                  {products.length > 4 && <span style={{ fontSize: 10.5, color: '#6B7280', alignSelf: 'center' }}>+{products.length - 4} more detected</span>}
-                </div>
-              </>
-            ) : (
-              <div style={{ marginTop: 14, padding: 16, border: '1px dashed #FDBA74', background: '#FFF7ED', borderRadius: 8, color: '#9A3412', fontSize: 12 }}>
-                No products detected yet. Click <strong>Detect Products</strong>.
-              </div>
-            )}
-          </div>
+            {overflowTabs.length > 0 && (
+              <div ref={moreTabsRef} style={{ position: 'relative' }}>
+                <button
+                  className={'ai-question-chip ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
+                  onClick={() => setShowMoreTabs(v => !v)}
+                >
+                  More ({overflowTabs.length})
+                  <FontAwesomeIcon
+                    icon={faChevronDown}
+                    style={{ marginLeft: 5, fontSize: 9 }}
+                  />
+                </button>
 
-          {/* 2. Questions AI users ask */}
-          <div id="step-questions" style={sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <div style={sectionTitle}>
-                <span style={numberBadge}>2</span>
-                Questions AI users ask
-                <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Auto-generated)</span>
-              </div>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', flexWrap: 'wrap' }}>
-                {overflowTabs.length > 0 && (
-                  <div ref={moreTabsRef} style={{ position: 'relative' }}>
-                    <button
-                      onClick={() => setShowMoreTabs(v => !v)}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        border: '1px solid ' + (overflowTabs.includes(selectedProduct) ? '#FDBA74' : '#E5E7EB'),
-                        background: overflowTabs.includes(selectedProduct) ? '#FFF7ED' : '#fff',
-                        color: overflowTabs.includes(selectedProduct) ? '#F97316' : '#374151',
-                        borderRadius: 6, padding: '5px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer',
-                      }}
-                    >
-                      More ({overflowTabs.length})
-                      <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 9, transition: 'transform 0.15s', transform: showMoreTabs ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-                    </button>
-
-                    {showMoreTabs && (
-                      <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 100, minWidth: 190, overflow: 'hidden' }}>
-                        {overflowTabs.map(tab => (
-                          <div
-                            key={tab}
-                            onClick={() => { setSelectedProduct(tab); setShowMoreTabs(false) }}
-                            style={{
-                              padding: '9px 14px',
-                              fontSize: 12,
-                              cursor: 'pointer',
-                              color: selectedProduct === tab ? '#F97316' : '#374151',
-                              fontWeight: selectedProduct === tab ? 700 : 500,
-                              background: selectedProduct === tab ? '#FFF7ED' : '#fff',
-                            }}
-                            onMouseEnter={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#F9FAFB' }}
-                            onMouseLeave={e => { if (selectedProduct !== tab) e.currentTarget.style.background = '#fff' }}
-                          >
-                            {tab}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                {showMoreTabs && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 5px)',
+                      left: 0,
+                      minWidth: 210,
+                      zIndex: 100,
+                      background: '#fff',
+                      border: '1px solid #E5E7EB',
+                      boxShadow: '0 8px 24px rgba(15,23,42,.12)',
+                      borderRadius: 8,
+                      overflow: 'hidden'
+                    }}
+                  >
+                    {overflowTabs.map(tab => (
+                      <button
+                        key={tab}
+                        onClick={() => {
+                          setSelectedProduct(tab)
+                          setShowMoreTabs(false)
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          border: 0,
+                          textAlign: 'left',
+                          padding: '9px 12px',
+                          background: selectedProduct === tab ? '#FFF7ED' : '#fff',
+                          color: selectedProduct === tab ? '#EA580C' : '#374151',
+                          fontSize: 11,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {tab}
+                      </button>
+                    ))}
                   </div>
                 )}
-                <button onClick={() => setAddingQuestion(v => !v)} style={{ border: 0, background: 'transparent', color: '#6366F1', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                  {addingQuestion ? 'Cancel' : '+ Add Custom Question'}
-                </button>
-                <button onClick={generateProductQuestions} disabled={generatingQuestions || products.length === 0} style={{ border: 0, background: 'transparent', color: '#F97316', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
-                  {generatingQuestions ? 'Generating...' : '+ Generate Questions'}
-                </button>
-              </div>
-            </div>
-
-            {addingQuestion && (
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                <input
-                  autoFocus
-                  value={customQuestionText}
-                  onChange={e => setCustomQuestionText(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') addCustomQuestion()
-                    if (e.key === 'Escape') { setAddingQuestion(false); setCustomQuestionText('') }
-                  }}
-                  placeholder="e.g. What's the best UI/UX design agency for a startup?"
-                  style={{ flex: 1, padding: '9px 12px', border: '1px solid #D1D5DB', borderRadius: 7, fontSize: 12, color: '#111827' }}
-                />
-                <button onClick={addCustomQuestion} disabled={!customQuestionText.trim() || savingQuestion} style={{ padding: '9px 16px', borderRadius: 7, border: 'none', background: (customQuestionText.trim() && !savingQuestion) ? '#F97316' : '#D1D5DB', color: '#fff', fontWeight: 700, fontSize: 11, cursor: (customQuestionText.trim() && !savingQuestion) ? 'pointer' : 'not-allowed' }}>
-                  {savingQuestion ? 'Saving...' : 'Add'}
-                </button>
               </div>
             )}
 
-            <div className="ai-question-tabs">
-              {visibleTabs.map(tab => (
-                <button key={tab} className={'ai-question-tab ' + (selectedProduct === tab ? 'active' : '')} onClick={() => setSelectedProduct(tab)}>
-                  {tab}
-                </button>
-              ))}
-            </div>
+            <input
+              className="ai-question-search"
+              value={questionSearch}
+              onChange={e => setQuestionSearch(e.target.value)}
+              placeholder="Search questions..."
+            />
 
-            <div style={{ marginTop: 5 }}>
-              {isCustomTab && customQuestions.length > 0 ? (
-                customQuestions.slice(0, 5).map((q, i) => (
-                  <div className="ai-question-row" style={{ gridTemplateColumns: '28px minmax(0,1fr) 28px' }} key={q.id}>
-                    <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
-                    <span style={{ color: '#111827', fontWeight: 500 }}>{q.question}</span>
-                    <button
-                      onClick={() => deleteCustomQuestion(q.id)}
-                      title="Delete question"
-                      style={{ justifySelf: 'end', border: 0, background: 'transparent', color: '#9CA3AF', cursor: 'pointer', padding: 4 }}
-                    >
-                      <FontAwesomeIcon icon={faXmark} style={{ fontSize: 11 }} />
-                    </button>
+            <button
+              className="ai-soft-button"
+              onClick={() => setAddingQuestion(v => !v)}
+            >
+              + Add Question
+            </button>
+
+            <button
+              className="ai-primary-action"
+              onClick={generateProductQuestions}
+              disabled={generatingQuestions || products.length === 0}
+            >
+              {generatingQuestions ? 'Generating...' : 'Generate Questions'}
+            </button>
+          </div>
+
+
+          {addingQuestion && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 8,
+                marginBottom: 12,
+                background: '#fff',
+                border: '1px solid #E5E7EB',
+                padding: 12,
+                borderRadius: 9
+              }}
+            >
+              <input
+                autoFocus
+                value={customQuestionText}
+                onChange={e => setCustomQuestionText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addCustomQuestion()
+                  if (e.key === 'Escape') {
+                    setAddingQuestion(false)
+                    setCustomQuestionText('')
+                  }
+                }}
+                placeholder="Ask a question you want to track across AI engines..."
+                style={{
+                  flex: 1,
+                  padding: '8px 10px',
+                  border: '1px solid #D1D5DB',
+                  borderRadius: 6,
+                  fontSize: 11
+                }}
+              />
+
+              <button
+                className="ai-primary-action"
+                onClick={addCustomQuestion}
+                disabled={!customQuestionText.trim() || savingQuestion}
+              >
+                {savingQuestion ? 'Saving...' : 'Add'}
+              </button>
+            </div>
+          )}
+
+
+          {/* Questions + AI response evidence */}
+          <div className="ai-question-main-grid">
+
+            {/* LEFT - Questions */}
+            <section className="ai-question-panel">
+              <div className="ai-question-panel-header">
+                <div>
+                  <h2 className="ai-question-panel-title">
+                    Questions AI Users Ask
+                  </h2>
+
+                  <div className="ai-question-stats" style={{ marginTop: 5 }}>
+                    <span className="generated">
+                      {flatQuestions.length} Generated
+                    </span>
+
+                    <span>•</span>
+
+                    <span className="tested">
+                      {testedQuestionsCount} Tested
+                    </span>
+
+                    <span>•</span>
+
+                    <span className="ready">
+                      {readyQuestionsCount} Ready
+                    </span>
                   </div>
-                ))
-              ) : visibleQuestions.length > 0 ? visibleQuestions.map((q, i) => {
-                const status = questionStatuses.find(s => s.question === q)
-                const isTested = !!status
-                return (
-                  <div className="ai-question-row" key={i}>
-                    <span style={{ color: '#9CA3AF' }}>{i + 1}</span>
-                    <span style={{ color: '#111827', fontWeight: 500 }}>{q}</span>
-                    <span className="intent" style={{ fontSize: 9.5, color: '#C2410C', background: '#FFEDD5', borderRadius: 4, padding: '2px 6px', justifySelf: 'start' }}>
-                      Commercial
-                    </span>
-                    <span style={{ fontSize: 10.5, color: isTested ? '#16A34A' : '#2563EB', display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>
-                      <FontAwesomeIcon icon={isTested ? faCircleCheck : faRotateRight} style={{ fontSize: 10 }} />
-                      {isTested ? 'Tested' : 'Ready'}
-                    </span>
-                    <span style={{ fontSize: 10, color: '#9CA3AF' }}>
-                      {isTested ? new Date(status.lastTested).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
-                    </span>
-                  </div>
-                )
-              }) : (
-                <div style={{ padding: '18px 4px 8px', fontSize: 12, color: '#9CA3AF' }}>
-                  {products.length ? 'Generate questions to see real customer-intent prompts, or add your own above.' : 'Detect products first, or add your own question above.'}
                 </div>
+
+                <button
+                  onClick={() => setActiveTab('responses')}
+                  style={{
+                    border: 0,
+                    background: 'transparent',
+                    color: '#F97316',
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  View all answers →
+                </button>
+              </div>
+
+
+              <div className="ai-question-table-wrap">
+                <table className="ai-question-table">
+                  <thead>
+                    <tr>
+                      <th>Question</th>
+                      <th>Intent</th>
+                      <th>Status</th>
+                      <th>ChatGPT</th>
+                      <th>Claude</th>
+                      <th>Last Tested</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {visibleQuestions.length > 0 ? (
+                      visibleQuestions.map((q, i) => {
+                        const status = questionStatuses.find(s => s.question === q)
+                        const isTested = !!status
+
+                        const chatgptRank =
+                          status?.engines?.chatgpt?.brandRank ??
+                          status?.engines?.chatgpt?.rank ??
+                          status?.chatgptRank ??
+                          status?.chatgpt_rank ??
+                          null
+
+                        const claudeRank =
+                          status?.engines?.claude?.brandRank ??
+                          status?.engines?.claude?.rank ??
+                          status?.claudeRank ??
+                          status?.claude_rank ??
+                          null
+
+                        return (
+                          <tr
+                            key={q + '-' + i}
+                            onClick={() => setActiveTab('responses')}
+                          >
+                            <td className="ai-question-text">
+                              {q}
+                            </td>
+
+                            <td>
+                              <span className="ai-intent-pill">
+                                Commercial
+                              </span>
+                            </td>
+
+                            <td>
+                              {isTested ? (
+                                <span className="ai-status-tested">
+                                  <FontAwesomeIcon icon={faCircleCheck} />
+                                  Tested
+                                </span>
+                              ) : (
+                                <span className="ai-status-ready">
+                                  <FontAwesomeIcon icon={faRotateRight} />
+                                  Ready
+                                </span>
+                              )}
+                            </td>
+
+                            <td>
+                              {chatgptRank
+                                ? <span className="ai-rank-good">#{chatgptRank}</span>
+                                : <span style={{ color: '#94A3B8' }}>—</span>
+                              }
+                            </td>
+
+                            <td>
+                              {claudeRank
+                                ? <span className="ai-rank-good">#{claudeRank}</span>
+                                : <span style={{ color: '#94A3B8' }}>—</span>
+                              }
+                            </td>
+
+                            <td style={{ color: '#64748B', whiteSpace: 'nowrap' }}>
+                              {isTested && status?.lastTested
+                                ? new Date(status.lastTested).toLocaleDateString(
+                                    'en-GB',
+                                    { day: 'numeric', month: 'short', year: 'numeric' }
+                                  )
+                                : '—'
+                              }
+                            </td>
+
+                            <td style={{ color: '#64748B' }}>
+                              ⋮
+                            </td>
+                          </tr>
+                        )
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          style={{
+                            padding: 30,
+                            textAlign: 'center',
+                            color: '#94A3B8'
+                          }}
+                        >
+                          {products.length
+                            ? 'Generate questions or add your own question.'
+                            : 'Detect your website products first.'
+                          }
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+
+              <div className="ai-question-footer">
+                <span>
+                  Showing {visibleQuestions.length} of {flatQuestions.length} questions
+                </span>
+
+                <div className="ai-question-pagination">
+                  <span className="ai-page-button active">1</span>
+                  <span className="ai-page-button">2</span>
+                  <span className="ai-page-button">3</span>
+                  <span className="ai-page-button">4</span>
+                  <span className="ai-page-button">›</span>
+                </div>
+              </div>
+            </section>
+
+
+            {/* RIGHT - actual AI answer / ranking evidence */}
+            <div className="ai-response-column">
+              {flatQuestions.length > 0 ? (
+                <VisibilityResultsCard
+                  siteId={siteId}
+                  siteName={visibilitySiteName}
+                  questions={visibleQuestions.length ? visibleQuestions : flatQuestions.slice(0, 8)}
+                  productName={selectedProduct}
+                  sessionId={currentSession?.id || null}
+                />
+              ) : (
+                <section className="ai-question-panel">
+                  <div className="ai-question-panel-header">
+                    <h2 className="ai-question-panel-title">
+                      AI Responses
+                    </h2>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: '45px 20px',
+                      color: '#94A3B8',
+                      fontSize: 11,
+                      textAlign: 'center'
+                    }}
+                  >
+                    Generate questions first to see how ChatGPT and Claude answer them.
+                  </div>
+                </section>
               )}
             </div>
+
+          </div>
+
+
+          {/* Lower intelligence cards - like target UX */}
+          <div className="ai-question-lower-grid">
+            <VisibilityEngineTable siteId={siteId} />
+
+            <VisibilityReasoningCard
+              siteId={siteId}
+              siteName={visibilitySiteName}
+            />
+
+            <VisibilityCompetitorsPanel />
           </div>
 
         </div>
