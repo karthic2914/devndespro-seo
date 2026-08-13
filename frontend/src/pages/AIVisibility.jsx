@@ -216,6 +216,8 @@ export default function AIVisibility() {
   const [customQuestions, setCustomQuestions] = useState([])
   const [savingQuestion, setSavingQuestion] = useState(false)
   const [questionSearch, setQuestionSearch] = useState('')
+  const [questionPage, setQuestionPage] = useState(1)
+  const QUESTIONS_PER_PAGE = 5
   const [selectedQuestion, setSelectedQuestion] = useState('')
   const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
@@ -406,10 +408,32 @@ export default function AIVisibility() {
     ? combinedQuestionSets
     : combinedQuestionSets.filter(set => set.product === selectedProduct)
 
-  const visibleQuestions = visibleQuestionSets
+  const filteredQuestions = visibleQuestionSets
     .flatMap(set => set.questions || [])
-    .filter(q => !questionSearch.trim() || String(q).toLowerCase().includes(questionSearch.trim().toLowerCase()))
-    .slice(0, 5)
+    .filter(q =>
+      !questionSearch.trim() ||
+      String(q)
+        .toLowerCase()
+        .includes(questionSearch.trim().toLowerCase())
+    )
+
+  const questionPageCount = Math.max(
+    Math.ceil(filteredQuestions.length / QUESTIONS_PER_PAGE),
+    1
+  )
+
+  const safeQuestionPage = Math.min(
+    questionPage,
+    questionPageCount
+  )
+
+  const questionStartIndex =
+    (safeQuestionPage - 1) * QUESTIONS_PER_PAGE
+
+  const visibleQuestions = filteredQuestions.slice(
+    questionStartIndex,
+    questionStartIndex + QUESTIONS_PER_PAGE
+  )
 
   const testedQuestionsCount = flatQuestions.filter(q =>
     questionStatuses.some(s => s.question === q)
@@ -418,6 +442,31 @@ export default function AIVisibility() {
   const readyQuestionsCount = Math.max(flatQuestions.length - testedQuestionsCount, 0)
 
   
+  
+  // RESET QUESTION PAGINATION
+  // Changing product/category or search should always return to page 1.
+  useEffect(() => {
+    setQuestionPage(1)
+  }, [selectedProduct, questionSearch])
+
+  // If question count shrinks while on a later page,
+  // automatically move back to the last valid page.
+  useEffect(() => {
+    if (questionPage > questionPageCount) {
+      setQuestionPage(questionPageCount)
+    }
+  }, [questionPage, questionPageCount])
+  
+  // QUESTION PAGINATION RESET
+  useEffect(() => {
+    setQuestionPage(1)
+  }, [selectedProduct, questionSearch])
+
+  useEffect(() => {
+    if (questionPage > questionPageCount) {
+      setQuestionPage(questionPageCount)
+    }
+  }, [questionPage, questionPageCount])
   // AUTO SELECT FIRST QUESTION FOR QUESTION/RESPONSE SPLIT VIEW
   useEffect(() => {
     if (!selectedQuestion && visibleQuestions.length > 0) {
@@ -1089,6 +1138,24 @@ export default function AIVisibility() {
           font-size: 10px;
           color: #64748B;
           gap: 10px;
+        }
+
+        
+        /* PAGINATION BUTTON RESET */
+        .ai-question-pagination .ai-page-button {
+          appearance: none;
+          font-family: inherit;
+          cursor: pointer;
+        }
+
+        .ai-question-pagination .ai-page-button:hover:not(.active) {
+          background: #FFF7ED;
+          border-color: #FDBA74;
+          color: #EA580C;
+        }
+
+        .ai-question-pagination .ai-page-button.active {
+          cursor: default;
         }
 
         .ai-question-pagination {
@@ -2673,15 +2740,71 @@ export default function AIVisibility() {
 
               <div className="ai-question-footer">
                 <span>
-                  Showing {visibleQuestions.length} of {flatQuestions.length} questions
+                  Showing {filteredQuestions.length === 0
+                    ? 0
+                    : questionStartIndex + 1
+                  }-{Math.min(
+                    questionStartIndex + visibleQuestions.length,
+                    filteredQuestions.length
+                  )} of {filteredQuestions.length} questions
                 </span>
 
                 <div className="ai-question-pagination">
-                  <span className="ai-page-button active">1</span>
-                  <span className="ai-page-button">2</span>
-                  <span className="ai-page-button">3</span>
-                  <span className="ai-page-button">4</span>
-                  <span className="ai-page-button">&gt;</span>
+
+                  {safeQuestionPage > 1 && (
+                    <button
+                      type="button"
+                      className="ai-page-button"
+                      onClick={() =>
+                        setQuestionPage(page =>
+                          Math.max(page - 1, 1)
+                        )
+                      }
+                      aria-label="Previous page"
+                    >
+                      &lt;
+                    </button>
+                  )}
+
+                  {Array.from(
+                    { length: questionPageCount },
+                    (_, index) => index + 1
+                  ).map(page => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={
+                        'ai-page-button' +
+                        (
+                          safeQuestionPage === page
+                            ? ' active'
+                            : ''
+                        )
+                      }
+                      onClick={() => setQuestionPage(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
+
+                  {safeQuestionPage < questionPageCount && (
+                    <button
+                      type="button"
+                      className="ai-page-button"
+                      onClick={() =>
+                        setQuestionPage(page =>
+                          Math.min(
+                            page + 1,
+                            questionPageCount
+                          )
+                        )
+                      }
+                      aria-label="Next page"
+                    >
+                      &gt;
+                    </button>
+                  )}
+
                 </div>
               </div>
             </section>
