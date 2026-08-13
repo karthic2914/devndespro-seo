@@ -6,7 +6,6 @@ import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
   VisibilityResultsCard,
-  VisibilitySummaryCard,
   VisibilityReasoningCard,
   VisibilityRecommendationsCard,
   VisibilityHistoryCard,
@@ -752,11 +751,9 @@ export default function AIVisibility() {
         </div>
 
         <div className="ai-vis-right">
-          {/* 4. AI Visibility Summary */}
-          <VisibilitySummaryCard siteId={siteId} siteName={visibilitySiteName}
-/>
-
-          {/* 5. Why not Top 10 + 6. Actionable Recommendations = "Improve AEO/GEO" step */}
+          {/* Why not Top 10 + Actionable Recommendations = "Improve AEO/GEO" step.
+              Overall score is already shown in the KPI cards above - no
+              separate summary widget here to avoid showing it twice. */}
           <div id="step-improve">
             <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
             <div style={{ marginTop: 14 }}>

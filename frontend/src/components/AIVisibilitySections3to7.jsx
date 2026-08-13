@@ -5,7 +5,6 @@ import {
   faRotateRight,
   faArrowRight,
   faHistory,
-  faTriangleExclamation,
   faSquareCheck,
   faSquare,
   faLink,
@@ -47,20 +46,6 @@ const subStyle = {
   color: '#6B7280',
   marginTop: 4,
   marginBottom: 12,
-}
-
-const numberBadge = {
-  width: 22,
-  height: 22,
-  borderRadius: '50%',
-  background: '#F97316',
-  color: '#fff',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontSize: 11,
-  fontWeight: 800,
-  flexShrink: 0,
 }
 
 const emptyStyle = {
@@ -964,80 +949,6 @@ export function VisibilityQuickActions({ onRunScan, onAddQuestion, onGenerateQue
   )
 }
 
-// ---------- Section 4: summary ----------
-export function VisibilitySummaryCard({ siteId, siteName, productName }) {
-  const [summary, setSummary] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  const loadSummary = useCallback(() => {
-    setLoading(true)
-    api.get('/sites/' + siteId + '/ai-visibility/summary')
-      .then(res => setSummary(res.data || null))
-      .catch(() => setSummary(null))
-      .finally(() => setLoading(false))
-  }, [siteId])
-
-  useEffect(() => loadSummary(), [loadSummary])
-  useScanRefresh(loadSummary)
-
-  const score = Number(summary?.overallScore || 0)
-  const label = summary?.label || (score >= 60 ? 'Strong' : score >= 30 ? 'Moderate' : 'Low')
-  const color = label === 'Strong' ? '#16A34A' : label === 'Moderate' ? '#D97706' : '#DC2626'
-
-  return (
-    <div style={cardStyle}>
-      <div style={titleStyle}>
-        <span style={numberBadge}>4</span>
-        AI Visibility Summary{productName ? ` (${productName})` : ''}
-      </div>
-      <div style={subStyle}>Overall visibility across tested questions and AI engines.</div>
-
-      {loading ? (
-        <div style={emptyStyle}>Loading visibility summary...</div>
-      ) : !summary ? (
-        <div style={emptyStyle}>No visibility scan yet. Run Section 3 to generate your first summary.</div>
-      ) : (
-        <>
-          <div style={{ display: 'grid', gridTemplateColumns: '112px minmax(0,1fr)', gap: 14, alignItems: 'center' }}>
-            <div
-              style={{
-                width: 88,
-                height: 88,
-                borderRadius: '50%',
-                background: `conic-gradient(${color} ${Math.max(0, Math.min(100, score)) * 3.6}deg, #F3F4F6 0deg)`,
-                display: 'grid',
-                placeItems: 'center',
-              }}
-            >
-              <div style={{ width: 66, height: 66, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center' }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: '#111827' }}>{score}%</span>
-              </div>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 11, color: '#6B7280' }}>Overall Visibility Score</div>
-              <div style={{ fontSize: 13, fontWeight: 800, color, marginTop: 2 }}>{label}</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '6px 12px', marginTop: 10, fontSize: 10.5 }}>
-                <span style={{ color: '#6B7280' }}>Top 10 Presence</span><strong>{summary.top10Presence ?? '-'}</strong>
-                <span style={{ color: '#6B7280' }}>Average Rank</span><strong>{summary.averageRank ?? '-'}</strong>
-                <span style={{ color: '#6B7280' }}>Questions Tested</span><strong>{summary.questionsTested ?? 0}</strong>
-                <span style={{ color: '#6B7280' }}>Total Mentions</span><strong>{summary.totalMentions ?? 0}</strong>
-              </div>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 12, padding: '9px 10px', borderRadius: 7, background: score >= 60 ? '#F0FDF4' : '#FEF2F2', color: score >= 60 ? '#166534' : '#B91C1C', fontSize: 10.5, display: 'flex', gap: 7, alignItems: 'center' }}>
-            <FontAwesomeIcon icon={faTriangleExclamation} />
-            {score >= 60
-              ? `${siteName || 'Your brand'} has solid AI visibility, with room to improve consistency.`
-              : `${siteName || 'Your brand'} is not consistently recommended by AI engines.`}
-          </div>
-        </>
-      )}
-    </div>
-  )
-}
-
 // ---------- Section 5: why not Top 10 ----------
 export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   const [reasons, setReasons] = useState([])
@@ -1063,7 +974,6 @@ export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   return (
     <div style={cardStyle}>
       <div style={titleStyle}>
-        <span style={numberBadge}>5</span>
         Why is {displayName} not in the Top 10?
       </div>
       <div style={subStyle}>{loading ? 'Analysing latest scan...' : 'Based on your latest visibility scan.'}</div>
@@ -1137,7 +1047,6 @@ export function VisibilityRecommendationsCard({ siteId, siteName, productName })
   return (
     <div style={cardStyle}>
       <div style={titleStyle}>
-        <span style={numberBadge}>6</span>
         Actionable Recommendations
         {!!recs.length && <span style={{ fontSize: 10, color: '#9CA3AF', fontWeight: 500 }}>(Top {Math.min(3, recs.length)})</span>}
       </div>
