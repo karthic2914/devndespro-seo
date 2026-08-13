@@ -298,7 +298,7 @@ export default function AIVisibility() {
   const visibleQuestions = visibleQuestionSets
     .flatMap(set => set.questions || [])
     .filter(q => !questionSearch.trim() || String(q).toLowerCase().includes(questionSearch.trim().toLowerCase()))
-    .slice(0, 8)
+    .slice(0, 5)
 
   const testedQuestionsCount = flatQuestions.filter(q =>
     questionStatuses.some(s => s.question === q)
@@ -1296,8 +1296,8 @@ const sectionCard = {
                       background: '#fff',
                       border: '1px solid #E5E7EB',
                       borderRadius: 8,
-                      boxShadow: '0 8px 24px rgba(15,23,42,.12)'
-                    }}
+                      boxShadow: '--'
+                              }}
                   >
                     {overflowTabs.map(tab => (
                       <button
@@ -1315,8 +1315,8 @@ const sectionCard = {
                           color: selectedProduct === tab ? '#EA580C' : '#374151',
                           textAlign: 'left',
                           fontSize: 10.5,
-                          cursor: 'pointer'
-                        }}
+                          cursor: '--'
+                              }}
                       >
                         {tab}
                       </button>
@@ -1405,15 +1405,11 @@ const sectionCard = {
                       {flatQuestions.length} Generated
                     </span>
 
-                    <span>|</span>
-
-                    <span className="tested">
+                    <span className="ai-stat-divider">|</span><span className="tested">
                       {testedQuestionsCount} Tested
                     </span>
 
-                    <span>|</span>
-
-                    <span className="ready">
+                    <span className="ai-stat-divider">|</span><span className="ready">
                       {readyQuestionsCount} Ready
                     </span>
                   </div>
@@ -1427,8 +1423,8 @@ const sectionCard = {
                     color: '#F97316',
                     fontSize: 10.5,
                     fontWeight: 700,
-                    cursor: 'pointer'
-                  }}
+                    cursor: '--'
+                              }}
                 >
                   View all answers</button>
               </div>
@@ -1444,6 +1440,7 @@ const sectionCard = {
                       <th>ChatGPT</th>
                       <th>Claude</th>
                       <th>Last Tested</th>
+                      <th className="ai-question-actions-header"></th>
                       <th></th>
                     </tr>
                   </thead>
@@ -1518,7 +1515,7 @@ const sectionCard = {
                                     'en-GB',
                                     { day: 'numeric', month: 'short', year: 'numeric' }
                                   )
-                                : 'ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â'
+                                : '--'
                               }
                             </td>
 
@@ -1535,13 +1532,13 @@ const sectionCard = {
                           style={{
                             padding: 30,
                             textAlign: 'center',
-                            color: '#94A3B8'
-                          }}
+                            color: '--'
+                              }}
                         >
                           {products.length
                             ? 'Generate questions or add your own question.'
-                            : 'Detect your website products first.'
-                          }
+                            : '--'
+                              }
                         </td>
                       </tr>
                     )}
@@ -1586,8 +1583,8 @@ const sectionCard = {
                       color: '#F97316',
                       fontSize: 10,
                       fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
+                      cursor: '--'
+                              }}
                   >
                     View full answers</button>
                 </div>
@@ -1621,7 +1618,7 @@ const sectionCard = {
                       <li>Ahrefs</li>
                       <li>Semrush</li>
                       <li>Moz</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} ÃƒÂ¢Ã¢â‚¬Â Ã‚Â You</span></li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} - You</span></li>
                       <li>Ubersuggest</li>
                     </ol>
 
@@ -1658,7 +1655,7 @@ const sectionCard = {
                       <li>Semrush</li>
                       <li>Moz</li>
                       <li>Surfer SEO</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} ÃƒÂ¢Ã¢â‚¬Â Ã‚Â You</span></li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} - You</span></li>
                     </ol>
 
                     <button
