@@ -1587,6 +1587,19 @@ export default function AIVisibility() {
           -ms-overflow-style: none;
         }
 
+        /* AI Visibility scrolls inside .app-main, not the document.
+           Hide only the visual scrollbar while keeping wheel/trackpad scrolling. */
+        .app-main {
+          scrollbar-width: none !important;
+          -ms-overflow-style: none !important;
+        }
+
+        .app-main::-webkit-scrollbar {
+          width: 0 !important;
+          height: 0 !important;
+          display: none !important;
+        }
+
         html::-webkit-scrollbar,
         body::-webkit-scrollbar {
           width: 0;
