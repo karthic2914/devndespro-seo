@@ -433,6 +433,100 @@ export default function AIVisibility() {
       setLoadingQuestionResults(false)
     }
   }
+
+  // Run a fresh ChatGPT + Claude visibility scan for one exact question.
+  async function reTestVisibilityQuestion(question) {
+    if (!question) return
+
+    setSelectedQuestion(question)
+    setOpenQuestionMenu(null)
+    setLoadingQuestionResults(true)
+
+    try {
+
+      const scanRes = await api.post(
+        '/sites/' + siteId + '/ai-visibility/scan',
+        {
+          siteName: visibilitySiteName,
+          questions: [question],
+          sessionId: currentSession?.id || null
+        }
+      )
+
+      // Immediately use the NEW scan response instead of waiting for
+      // another database request. This makes the right panel update at once.
+      const scannedQuestion = (scanRes.data?.results || []).find(
+        item => item.question === question
+      )
+
+      if (scannedQuestion) {
+
+        const freshResults = (scannedQuestion.results || []).map(result => ({
+          engine: result.engine,
+          question,
+          rankings: result.top10 || result.rankings || [],
+          brandRank:
+            result.brand_rank !== undefined
+              ? result.brand_rank
+              : result.brandRank ?? null,
+          rawResponse:
+            result.raw_response ||
+            result.rawResponse ||
+            '',
+          testedAt: new Date().toISOString()
+        }))
+
+        setSelectedQuestionResults(freshResults)
+      }
+
+
+      // Refresh question status so:
+      // Tested / Ready,
+      // ChatGPT rank,
+      // Claude rank,
+      // Last Tested
+      // all come from the newly stored DB result.
+      const statusRes = await api.get(
+        '/sites/' + siteId + '/ai-visibility/question-status'
+      )
+
+      setQuestionStatuses(
+        statusRes.data?.statuses || []
+      )
+
+
+      // Re-read the stored result as final source of truth.
+      await loadSelectedQuestionResults(question)
+
+
+      showSnackbar(
+        'Question re-tested with ChatGPT and Claude',
+        'success'
+      )
+
+    } catch (error) {
+
+      console.error(
+        'Question re-test failed:',
+        error
+      )
+
+      showSnackbar(
+        'Question re-test failed: ' +
+        (
+          error?.response?.data?.error ||
+          error?.message ||
+          'Unknown error'
+        ),
+        'error'
+      )
+
+    } finally {
+
+      setLoadingQuestionResults(false)
+
+    }
+  }
 const sectionCard = {
     background: '#fff',
     border: '1px solid #E5E7EB',
@@ -2124,15 +2218,13 @@ const sectionCard = {
                         const isTested = !!status
 
                         const chatgptRank =
-                          status?.engines?.chatgpt?.brandRank ??
-                          status?.engines?.chatgpt?.rank ??
+                          status?.engines?.chatgpt ??
                           status?.chatgptRank ??
                           status?.chatgpt_rank ??
                           null
 
                         const claudeRank =
-                          status?.engines?.claude?.brandRank ??
-                          status?.engines?.claude?.rank ??
+                          status?.engines?.claude ??
                           status?.claudeRank ??
                           status?.claude_rank ??
                           null
@@ -2235,9 +2327,9 @@ const sectionCard = {
         <button
           type="button"
           className="ai-question-menu-item"
-          onClick={() => {
-            setSelectedQuestion(q)
-            setOpenQuestionMenu(null)
+          onClick={async (e) => {
+            e.stopPropagation()
+            await reTestVisibilityQuestion(q)
           }}
         >
           <FontAwesomeIcon
