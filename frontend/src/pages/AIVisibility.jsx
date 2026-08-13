@@ -1500,6 +1500,62 @@ const sectionCard = {
           position: relative;
           overflow: visible !important;
         }
+
+        /* FINAL Questions table header alignment */
+        .ai-question-table thead th {
+          box-sizing: border-box !important;
+          vertical-align: middle !important;
+          padding: 0 10px !important;
+        }
+
+        /* Question stays left aligned */
+        .ai-question-table thead th:nth-child(1),
+        .ai-question-table tbody td:nth-child(1) {
+          text-align: left !important;
+        }
+
+        /* All remaining columns centered exactly */
+        .ai-question-table thead th:nth-child(2),
+        .ai-question-table tbody td:nth-child(2),
+
+        .ai-question-table thead th:nth-child(3),
+        .ai-question-table tbody td:nth-child(3),
+
+        .ai-question-table thead th:nth-child(4),
+        .ai-question-table tbody td:nth-child(4),
+
+        .ai-question-table thead th:nth-child(5),
+        .ai-question-table tbody td:nth-child(5),
+
+        .ai-question-table thead th:nth-child(6),
+        .ai-question-table tbody td:nth-child(6),
+
+        .ai-question-table thead th:nth-child(7),
+        .ai-question-table tbody td:nth-child(7) {
+          text-align: center !important;
+        }
+
+        /* Same horizontal padding for header/body */
+        .ai-question-table tbody td {
+          box-sizing: border-box !important;
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+
+        /* Question needs a little extra breathing room */
+        .ai-question-table thead th:first-child,
+        .ai-question-table tbody td:first-child {
+          padding-left: 12px !important;
+          padding-right: 16px !important;
+        }
+
+        /* Do not let action-cell custom padding shift alignment */
+        .ai-question-table .ai-question-actions-cell {
+          padding-left: 4px !important;
+          padding-right: 4px !important;
+          text-align: center !important;
+        }
+
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
