@@ -1013,14 +1013,16 @@ export default function AIVisibility() {
 
         .ai-question-table-wrap {
           width: 100%;
-          overflow: visible;
-          padding: 0 10px 8px;
+          overflow: hidden;
+          padding: 0 0 8px;
           box-sizing: border-box;
+          border-radius: 0 0 12px 12px;
         }
 
         .ai-question-table {
           width: 100%;
-          border-collapse: collapse;
+          border-collapse: separate;
+          border-spacing: 0;
           table-layout: fixed;
           font-size: 10.5px;
         }
@@ -1607,7 +1609,15 @@ export default function AIVisibility() {
           display: none;
         }
 
-        .ai-question-actions-header,
+        .ai-question-actions-header {
+          position: static !important;
+          right: auto !important;
+          top: auto !important;
+          width: auto !important;
+          padding: 0 10px !important;
+          background: #F8FAFC !important;
+          border-top-right-radius: 0;
+        }
 
         .ai-question-menu-dropdown {
           position: absolute;
@@ -2063,9 +2073,10 @@ export default function AIVisibility() {
         }
 
         .ai-question-table thead th {
-          display: flex !important;
-          align-items: center !important;
-          justify-content: center !important;
+          display: table-cell !important;
+          align-items: unset !important;
+          justify-content: unset !important;
+          vertical-align: middle !important;
 
           width: auto !important;
           min-width: 0 !important;
@@ -2081,12 +2092,19 @@ export default function AIVisibility() {
           font-weight: 600;
           color: #475569;
           white-space: nowrap;
+          background: #F8FAFC;
+          text-align: center;
         }
 
         .ai-question-table thead th:first-child {
-          justify-content: flex-start !important;
+          justify-content: unset !important;
           text-align: left !important;
           padding-left: 14px !important;
+        }
+
+        .ai-question-table thead th:last-child,
+        .ai-question-actions-header {
+          border-top-right-radius: 0;
         }
 
 
