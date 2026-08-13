@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWandMagicSparkles,
@@ -733,7 +733,12 @@ const KPI_META = {
   enginesInTop10: { label: 'Engines in Top 10', icon: faSquareCheck, color: '#D97706', bg: '#FFFBEB' },
 }
 
-export function VisibilityKPICards({ siteId, onSummaryLoaded, totalQuestions = 0 }) {
+export function VisibilityKPICards({
+  siteId,
+  onSummaryLoaded,
+  totalQuestions = 0,
+  testedQuestions = 0
+}) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -758,8 +763,19 @@ export function VisibilityKPICards({ siteId, onSummaryLoaded, totalQuestions = 0
     { key: 'enginesInTop10', value: summary.enginesInTop10, delta: summary.deltas?.enginesInTop10, unit: '' },
   ] : []
 
-  const questionsTested = summary?.questionsTested ?? 0
-  const testedPct = totalQuestions > 0 ? Math.round((questionsTested / totalQuestions) * 100) : 0
+  const safeQuestionsTested = Math.min(
+    Math.max(Number(testedQuestions) || 0, 0),
+    Math.max(Number(totalQuestions) || 0, 0)
+  )
+
+  const testedPct = totalQuestions > 0
+    ? Math.min(
+        100,
+        Math.round(
+          (safeQuestionsTested / totalQuestions) * 100
+        )
+      )
+    : 0
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 10, marginBottom: 0 }}>
@@ -803,7 +819,7 @@ export function VisibilityKPICards({ siteId, onSummaryLoaded, totalQuestions = 0
           <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>Questions Tested</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{questionsTested} / {totalQuestions}</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{safeQuestionsTested} / {totalQuestions}</div>
           {totalQuestions > 0 && (
             <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16A34A' }}>{testedPct}%</span>
           )}

@@ -443,7 +443,26 @@ export default function AIVisibility() {
 
   
   
-  // RESET QUESTION PAGINATION
+  
+  // Current generated-question KPI.
+  // Do not use the historical 30-day question count here because
+  // regenerated/old questions may no longer belong to the current project set.
+  const currentQuestionTotal = flatQuestions.length
+
+  const currentQuestionsTested = Math.min(
+    testedQuestionsCount,
+    currentQuestionTotal
+  )
+
+  const questionsTestedPercent = currentQuestionTotal > 0
+    ? Math.min(
+        100,
+        Math.round(
+          (currentQuestionsTested / currentQuestionTotal) * 100
+        )
+      )
+    : 0
+// RESET QUESTION PAGINATION
   // Changing product/category or search should always return to page 1.
   useEffect(() => {
     setQuestionPage(1)
@@ -2321,7 +2340,12 @@ export default function AIVisibility() {
       </div>
 
       {/* KPI cards stay visible on every tab - the shared "at a glance" row */}
-      <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} totalQuestions={flatQuestions.length} />
+      <VisibilityKPICards
+        siteId={siteId}
+        onSummaryLoaded={setSummaryPeriod}
+        totalQuestions={currentQuestionTotal}
+        testedQuestions={currentQuestionsTested}
+      />
 
       {activeTab === 'summary' && (
       <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
