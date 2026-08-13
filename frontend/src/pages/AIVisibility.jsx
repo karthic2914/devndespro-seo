@@ -1,20 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faGauge, faListCheck, faComments, faUsers, faLightbulb, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faComments } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
-  VisibilityResultsCard,
   VisibilityReasoningCard,
-  VisibilityRecommendationsCard,
-  VisibilityHistoryCard,
   VisibilityKPICards,
   VisibilityEngineTable,
   VisibilityCompetitorsPanel,
-  VisibilityAlertsPanel,
-  VisibilitySentimentPanel,
-  VisibilityQuickActions,
 } from '../components/AIVisibilitySections3to7'
 
 // Picks a colored icon for a detected product card based on what it actually
@@ -49,26 +43,6 @@ function getProductIcon(name = '', index = 0) {
   }
   return PRODUCT_ICON_FALLBACK[index % PRODUCT_ICON_FALLBACK.length]
 }
-
-// The 6 tabs shown below the header, above the KPI cards.
-const TABS = [
-  { key: 'summary', label: 'Summary', icon: faGauge },
-  { key: 'questions', label: 'Questions', icon: faListCheck },
-  { key: 'responses', label: 'AI Responses', icon: faComments },
-  { key: 'competitors', label: 'Competitors', icon: faUsers },
-  { key: 'recommendations', label: 'Recommendations', icon: faLightbulb },
-  { key: 'history', label: 'History', icon: faClockRotateLeft },
-]
-
-// Matches the engine colors already used elsewhere on this page (KPI cards,
-// engine breakdown table) - used for the Recent Sessions table headers.
-const ENGINE_STYLE_MAP = {
-  chatgpt: { label: 'ChatGPT', color: '#10A37F' },
-  claude: { label: 'Claude', color: '#D85A30' },
-  gemini: { label: 'Gemini', color: '#4285F4' },
-  perplexity: { label: 'Perplexity', color: '#20808D' },
-}
-
 
 function ChatGPTLogo({ size = 24 }) {
   return (
@@ -191,8 +165,6 @@ export default function AIVisibility() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
-  // Which of the 6 tabs is currently showing
-  const [activeTab, setActiveTab] = useState('questions')
   // Real period label ("Jul 13 - Aug 12, 2026") and comparison label from
   // the summary endpoint, shown in the header date-range box. Not a
   // functional filter yet - just an honest display of the fixed 30-day
@@ -803,35 +775,6 @@ export default function AIVisibility() {
           justify-content: space-between;
           gap: 16px;
           margin-bottom: 16px;
-        }
-        .ai-vis-tabbar {
-          display: flex;
-          gap: 4px;
-          overflow-x: visible;
-          border-bottom: 1px solid #E5E7EB;
-          margin-bottom: 14px;
-          padding-bottom: 1px;
-        }
-        .ai-vis-tab {
-          display: flex;
-          align-items: center;
-          gap: 7px;
-          border: 0;
-          background: transparent;
-          padding: 9px 14px;
-          font-size: 12.5px;
-          font-weight: 600;
-          color: #6B7280;
-          cursor: pointer;
-          white-space: nowrap;
-          border-bottom: 2px solid transparent;
-          font-family: inherit;
-        }
-        .ai-vis-tab.active {
-          color: #F97316;
-          border-bottom-color: #F97316;
-          background: #FFF7ED;
-          border-radius: 6px 6px 0 0;
         }
         .ai-vis-layout {
           display: grid;
@@ -2435,22 +2378,6 @@ export default function AIVisibility() {
         </div>
       )}
 
-      {/* Tab bar sits above the KPI cards. Each tab shows only its own
-          focused content below instead of one long scrolling page. */}
-      <div className="ai-vis-tabbar">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={'ai-vis-tab ' + (activeTab === tab.key ? 'active' : '')}
-          >
-            <FontAwesomeIcon icon={tab.icon} style={{ fontSize: 12 }} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* KPI cards stay visible on every tab - the shared "at a glance" row */}
       <VisibilityKPICards
         siteId={siteId}
         onSummaryLoaded={setSummaryPeriod}
@@ -2458,31 +2385,7 @@ export default function AIVisibility() {
         testedQuestions={currentQuestionsTested}
       />
 
-      {activeTab === 'summary' && (
-      <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
-        <div className="ai-vis-left">
-          <div className="ai-vis-engine-trend-row">
-            <VisibilityEngineTable siteId={siteId} />
-            <VisibilityHistoryCard siteId={siteId} />
-          </div>
-        </div>
-        <div className="ai-vis-right">
-          <VisibilityCompetitorsPanel />
-          <VisibilityAlertsPanel />
-          <VisibilitySentimentPanel />
-          <VisibilityQuickActions
-            onRunScan={() => setActiveTab('responses')}
-            onAddQuestion={() => { setAddingQuestion(true); setActiveTab('questions') }}
-            onGenerateQuestions={() => { generateProductQuestions(); setActiveTab('questions') }}
-            onCompareAnswers={() => setActiveTab('responses')}
-            onExport={downloadImage}
-          />
-        </div>
-      </div>
-      )}
-
-      {activeTab === 'questions' && (
-        <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 14 }}>
 
           {/* Product / question filters */}
           <div className="ai-questions-toolbar">
@@ -2788,7 +2691,6 @@ export default function AIVisibility() {
           onClick={() => {
             setSelectedQuestion(q)
             setOpenQuestionMenu(null)
-            setActiveTab('responses')
           }}
         >
           <FontAwesomeIcon
@@ -2956,27 +2858,6 @@ export default function AIVisibility() {
                       (Selected Question)
                     </span>
                   </div>
-
-                  <button
-                    onClick={() => setActiveTab('responses')}
-                    style={{
-                      border: 0,
-                      background: 'transparent',
-                      color: '#F97316',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 5,
-                    }}
-                  >
-                    <span>View full answers</span>
-                    <FontAwesomeIcon
-                      icon={faArrowRight}
-                      style={{ fontSize: 9 }}
-                    />
-                  </button>
                 </div>
 
                 <div className="ai-response-selected-question">
@@ -3267,94 +3148,7 @@ export default function AIVisibility() {
           </div>
 
         </div>
-      )}
 
-      {activeTab === 'responses' && (
-        <div style={{ marginBottom: 14 }}>
-          {flatQuestions.length > 0 ? (
-            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
-          ) : (
-            <div style={sectionCard}>
-              <div style={sectionTitle}>AI Responses</div>
-              <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
-                Generate AI questions first (Questions tab), then come back here to scan and see full responses.
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === 'competitors' && (
-        <div style={{ marginBottom: 14 }}>
-          <VisibilityCompetitorsPanel />
-        </div>
-      )}
-
-      {activeTab === 'recommendations' && (
-        <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
-          <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
-        </div>
-      )}
-
-      {activeTab === 'history' && (
-        <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <VisibilityHistoryCard siteId={siteId} />
-
-          <div style={sectionCard}>
-            <div style={sectionTitle}>Recent Sessions</div>
-            {!sessions.length ? (
-              <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
-                No sessions yet. Click + New Session above to start tracking scans over time.
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto', marginTop: 10 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 640 }}>
-                  <thead>
-                    <tr style={{ textAlign: 'left', borderBottom: '1px solid #E5E7EB' }}>
-                      <th style={{ padding: '0 10px 8px 0', fontWeight: 700, color: '#374151' }}>Session</th>
-                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Date</th>
-                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Questions</th>
-                      {Object.keys(sessions[0]?.engineStatus || {}).map(engine => (
-                        <th key={engine} style={{ padding: '0 10px 8px', fontWeight: 700, color: ENGINE_STYLE_MAP[engine]?.color || '#374151' }}>
-                          {ENGINE_STYLE_MAP[engine]?.label || engine}
-                        </th>
-                      ))}
-                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Score</th>
-                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Avg. Position</th>
-                      <th style={{ padding: '0 10px 8px', fontWeight: 700, color: '#374151' }}>Top 10 Engines</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sessions.slice(0, 5).map(s => (
-                      <tr key={s.id} style={{ borderBottom: '1px solid #F3F4F6' }}>
-                        <td style={{ padding: '9px 10px 9px 0', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{s.name}</td>
-                        <td style={{ padding: '9px 10px', color: '#6B7280', whiteSpace: 'nowrap' }}>
-                          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </td>
-                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.questionsTested}</td>
-                        {Object.entries(s.engineStatus || {}).map(([engine, status]) => (
-                          <td key={engine} style={{ padding: '9px 10px' }}>
-                            <FontAwesomeIcon
-                              icon={status.tested ? faCircleCheck : faCircleXmark}
-                              style={{ color: status.tested ? (status.inTop10 ? '#16A34A' : '#DC2626') : '#D1D5DB', fontSize: 12 }}
-                            />
-                          </td>
-                        ))}
-                        <td style={{ padding: '9px 10px', fontWeight: 800, color: s.score >= 60 ? '#16A34A' : s.score >= 30 ? '#D97706' : '#DC2626' }}>
-                          {s.score}%
-                        </td>
-                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.averageRank ?? '-'}</td>
-                        <td style={{ padding: '9px 10px', color: '#111827' }}>{s.topEnginesCount} / {s.totalEngines}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
