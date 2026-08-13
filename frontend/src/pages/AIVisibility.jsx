@@ -2443,16 +2443,11 @@ export default function AIVisibility() {
 
             <button
               className="ai-question-add-button"
-              onClick={() => {
-                if (addingQuestion) {
-                  setAddingQuestion(false)
-                  setCustomQuestionText('')
-                } else {
-                  setAddingQuestion(true)
-                }
-              }}
+              onClick={() => setAddingQuestion(true)}
+              disabled={addingQuestion}
+              style={addingQuestion ? { opacity: 0.55, cursor: 'default' } : undefined}
             >
-              {addingQuestion ? 'Cancel' : '+ Add Question'}
+              + Add Question
             </button>
           </div>
 
