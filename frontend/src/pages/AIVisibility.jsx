@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faGauge, faListCheck, faComments, faUsers, faCircleExclamation, faLightbulb, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faGauge, faListCheck, faComments, faUsers, faLightbulb, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -50,15 +50,12 @@ function getProductIcon(name = '', index = 0) {
   return PRODUCT_ICON_FALLBACK[index % PRODUCT_ICON_FALLBACK.length]
 }
 
-// The 7 tabs shown below the header - replaces the old numbered stepper.
-// Each tab shows only its own focused content instead of everything
-// stacked on one long scrolling page.
+// The 6 tabs shown below the header, above the KPI cards.
 const TABS = [
-  { key: 'dashboard', label: 'Dashboard', icon: faGauge },
+  { key: 'summary', label: 'Summary', icon: faGauge },
   { key: 'questions', label: 'Questions', icon: faListCheck },
-  { key: 'responses', label: 'Responses', icon: faComments },
+  { key: 'responses', label: 'AI Responses', icon: faComments },
   { key: 'competitors', label: 'Competitors', icon: faUsers },
-  { key: 'reasons', label: 'Reasons', icon: faCircleExclamation },
   { key: 'recommendations', label: 'Recommendations', icon: faLightbulb },
   { key: 'history', label: 'History', icon: faClockRotateLeft },
 ]
@@ -87,8 +84,8 @@ export default function AIVisibility() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
-  // Which of the 7 tabs is currently showing
-  const [activeTab, setActiveTab] = useState('dashboard')
+  // Which of the 6 tabs is currently showing
+  const [activeTab, setActiveTab] = useState('summary')
   // Real period label ("Jul 13 - Aug 12, 2026") and comparison label from
   // the summary endpoint, shown in the header date-range box. Not a
   // functional filter yet - just an honest display of the fixed 30-day
@@ -523,11 +520,8 @@ export default function AIVisibility() {
         </div>
       )}
 
-      {/* KPI cards stay visible on every tab - the shared "at a glance" row */}
-      <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} />
-
-      {/* Tab bar - replaces the old numbered stepper. Each tab shows only
-          its own focused content below instead of one long scrolling page. */}
+      {/* Tab bar sits above the KPI cards. Each tab shows only its own
+          focused content below instead of one long scrolling page. */}
       <div className="ai-vis-tabbar">
         {TABS.map(tab => (
           <button
@@ -541,7 +535,10 @@ export default function AIVisibility() {
         ))}
       </div>
 
-      {activeTab === 'dashboard' && (
+      {/* KPI cards stay visible on every tab - the shared "at a glance" row */}
+      <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} totalQuestions={flatQuestions.length} />
+
+      {activeTab === 'summary' && (
       <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
         <div className="ai-vis-left">
           <div className="ai-vis-engine-trend-row">
@@ -771,14 +768,9 @@ export default function AIVisibility() {
         </div>
       )}
 
-      {activeTab === 'reasons' && (
-        <div style={{ marginBottom: 14 }}>
-          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
-        </div>
-      )}
-
       {activeTab === 'recommendations' && (
-        <div style={{ marginBottom: 14 }}>
+        <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
           <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
         </div>
       )}

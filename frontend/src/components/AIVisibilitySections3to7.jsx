@@ -7,7 +7,7 @@ import {
   faHistory,
   faSquareCheck,
   faSquare,
-  faLink,
+  faListCheck,
 } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 
@@ -733,7 +733,7 @@ const KPI_META = {
   enginesInTop10: { label: 'Engines in Top 10', icon: faSquareCheck, color: '#D97706', bg: '#FFFBEB' },
 }
 
-export function VisibilityKPICards({ siteId, onSummaryLoaded }) {
+export function VisibilityKPICards({ siteId, onSummaryLoaded, totalQuestions = 0 }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -757,6 +757,9 @@ export function VisibilityKPICards({ siteId, onSummaryLoaded }) {
     { key: 'averageRank', value: summary.averageRank, delta: summary.deltas?.averageRank, unit: '' },
     { key: 'enginesInTop10', value: summary.enginesInTop10, delta: summary.deltas?.enginesInTop10, unit: '' },
   ] : []
+
+  const questionsTested = summary?.questionsTested ?? 0
+  const testedPct = totalQuestions > 0 ? Math.round((questionsTested / totalQuestions) * 100) : 0
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 10, marginBottom: 0 }}>
@@ -790,15 +793,26 @@ export function VisibilityKPICards({ siteId, onSummaryLoaded }) {
           </div>
         )
       })}
-      {/* Citation Rate isn't built yet - honest placeholder, not a fake number */}
+      {/* Questions Tested - real data (how many generated/custom questions
+          have actually been scanned at least once), not a fake placeholder */}
       <div style={cardStyle}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FontAwesomeIcon icon={faLink} style={{ color: '#9CA3AF', fontSize: 11 }} />
+          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FontAwesomeIcon icon={faListCheck} style={{ color: '#F97316', fontSize: 11 }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>Citation Rate</span>
+          <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>Questions Tested</span>
         </div>
-        <div style={{ fontSize: 13, color: '#9CA3AF', fontWeight: 600 }}>Coming soon</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{questionsTested} / {totalQuestions}</div>
+          {totalQuestions > 0 && (
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16A34A' }}>{testedPct}%</span>
+          )}
+        </div>
+        {totalQuestions > 0 && (
+          <div style={{ background: '#F3F4F6', borderRadius: 3, height: 5, overflow: 'hidden', marginTop: 8 }}>
+            <div style={{ width: testedPct + '%', height: '100%', background: '#F97316', borderRadius: 3 }} />
+          </div>
+        )}
       </div>
     </div>
   )
