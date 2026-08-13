@@ -476,7 +476,7 @@ router.post('/:siteId/products/questions', auth, verifySite, async (req, res) =>
 router.get('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT id, question, created_at FROM custom_questions WHERE site_id=$1 ORDER BY created_at ASC',
+      'SELECT id, question, created_at FROM custom_questions WHERE site_id=$1 ORDER BY created_at DESC',
       [req.siteId]
     )
     res.json({ questions: rows })

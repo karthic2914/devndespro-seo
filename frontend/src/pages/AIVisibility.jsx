@@ -293,11 +293,14 @@ export default function AIVisibility() {
     setSavingQuestion(true)
     try {
       const res = await api.post('/sites/' + siteId + '/custom-questions', { question: text })
-      setCustomQuestions(prev => [...prev, res.data])
-      setSelectedProduct('Custom Questions')
+      // Newest custom question first so it leads the All list.
+      setCustomQuestions(prev => [res.data, ...prev])
+      setSelectedProduct('All Questions')
+      setQuestionPage(1)
+      setSelectedQuestion(res.data.question || text)
       setCustomQuestionText('')
       setAddingQuestion(false)
-      showSnackbar('Question saved - select it in AI Visibility Results below to test it against AI.', 'success')
+      showSnackbar('Question saved and added to the top of the list.', 'success')
     } catch (e) {
       showSnackbar('Failed to save question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
     }
@@ -358,11 +361,14 @@ export default function AIVisibility() {
   }
 
   // AI-generated questionSets plus a "Custom Questions" group built from the
-  // database-backed customQuestions state. Kept as a computed merge (not
-  // mutated into questionSets directly) so regenerating AI questions never
-  // wipes out saved custom ones.
+  // database-backed customQuestions state. Custom questions lead the All list
+  // so newly added ones show first. Kept as a computed merge (not mutated into
+  // questionSets directly) so regenerating AI questions never wipes custom ones.
   const combinedQuestionSets = customQuestions.length
-    ? [...questionSets, { product: 'Custom Questions', questions: customQuestions.map(q => q.question) }]
+    ? [
+        { product: 'Custom Questions', questions: customQuestions.map(q => q.question) },
+        ...questionSets,
+      ]
     : questionSets
 
   // Flat list of all questions across products AND custom questions, used by
