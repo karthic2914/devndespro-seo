@@ -133,46 +133,96 @@ async function generateQuestionsForProduct(product, siteName, engine = 'claude')
     `Target customer: ${product.targetCustomer || 'not specified'}`,
     `Business: ${siteName}`,
     '',
-    'Generate the real questions a potential customer would type into ChatGPT or Claude',
-    'when looking for exactly this kind of product/service.',
-    'Rules:',
-    '- Generate between 2 and 4 questions -- however many genuinely make sense for this product, not a fixed count',
-    '- Questions should be natural, conversational, the way real people ask AI assistants',
-    '- Do not force the brand name into every question -- most real searches are generic',
-    '- Vary intent: some commercial ("best X for Y"), some comparison ("X vs Y"), some direct',
+    'Generate real questions a potential customer would type into ChatGPT, Claude, Gemini, or Perplexity',
+    'when researching this type of product or service.',
     '',
-    'Return ONLY a JSON array of strings, no markdown: ["question1","question2",...]',
+    'For EACH question also classify the search intent.',
+    '',
+    'Allowed intents:',
+    '- commercial: user is evaluating, hiring, buying, choosing, pricing, looking for best providers/tools/services',
+    '- informational: user wants to learn, understand, solve, explain, discover, or get guidance',
+    '- comparison: user is explicitly comparing alternatives, products, companies, approaches, or X vs Y',
+    '',
+    'Rules:',
+    '- Generate between 2 and 4 genuinely useful questions',
+    '- Questions must sound natural and conversational',
+    '- Do not force the business brand name into the question',
+    '- Use the most accurate intent for each individual question',
+    '- If a question explicitly compares alternatives, use comparison',
+    '- Questions about cost, best providers, hiring, recommendations, agencies, tools or purchasing should normally be commercial',
+    '- Questions asking what, why, how, guides, explanations or processes should normally be informational',
+    '',
+    'Return ONLY valid JSON with no markdown:',
+    '[{"question":"...","intent":"commercial"},{"question":"...","intent":"informational"}]'
   ].join('\n')
 
-  const text = await callAIEngine(engine, prompt, 400)
+  const text = await callAIEngine(engine, prompt, 700)
+
   const start = text.indexOf('[')
   const end = text.lastIndexOf(']')
+
   try {
-    const parsed = JSON.parse(start >= 0 ? text.slice(start, end + 1) : text)
-    return Array.isArray(parsed) ? parsed : []
+    const parsed = JSON.parse(
+      start >= 0 ? text.slice(start, end + 1) : text
+    )
+
+    if (!Array.isArray(parsed)) return []
+
+    return parsed
+      .map(item => {
+        if (typeof item === 'string') {
+          return {
+            question: item.trim(),
+            intent: 'informational'
+          }
+        }
+
+        const question = String(item?.question || '').trim()
+
+        let intent = String(
+          item?.intent || 'informational'
+        ).toLowerCase()
+
+        if (!['commercial', 'informational', 'comparison'].includes(intent)) {
+          intent = 'informational'
+        }
+
+        return {
+          question,
+          intent
+        }
+      })
+      .filter(item => item.question)
+
   } catch {
     return []
   }
 }
 
-/**
- * Generate questions for ALL products of a site. Total question count
- * scales naturally with how many products the site has.
- */
 async function generateAllProductQuestions(products, siteName, engine = 'claude') {
   const results = await Promise.all(
     products.map(async (product) => {
       try {
-        const questions = await generateQuestionsForProduct(
+        const generated = await generateQuestionsForProduct(
           product,
           siteName,
           engine
         )
 
+        const questions = generated.map(item => item.question)
+
+        const intents = {}
+
+        generated.forEach(item => {
+          intents[item.question] = item.intent
+        })
+
         return {
           product: product.name,
-          questions
+          questions,
+          intents
         }
+
       } catch (error) {
         console.error(
           `Question generation failed for ${product.name}:`,
@@ -181,7 +231,8 @@ async function generateAllProductQuestions(products, siteName, engine = 'claude'
 
         return {
           product: product.name,
-          questions: []
+          questions: [],
+          intents: {}
         }
       }
     })

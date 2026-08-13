@@ -634,7 +634,61 @@ export default function AIVisibility() {
 
     }
   }
-const sectionCard = {
+
+  function getQuestionIntent(question) {
+    const q = String(question || '')
+
+    for (const set of combinedQuestionSets) {
+      const intent = set?.intents?.[q]
+
+      if (intent) {
+        return String(intent).toLowerCase()
+      }
+    }
+
+    // Custom/legacy questions may not yet have AI intent metadata.
+    // Use a sensible dynamic fallback instead of hard-coding Commercial.
+    const lower = q.toLowerCase()
+
+    if (
+      /\bvs\b/.test(lower) ||
+      lower.includes('versus') ||
+      lower.includes('compare') ||
+      lower.includes('comparison') ||
+      lower.includes('difference between') ||
+      lower.includes('which is better')
+    ) {
+      return 'comparison'
+    }
+
+    if (
+      lower.includes('best ') ||
+      lower.includes('top ') ||
+      lower.includes('cost') ||
+      lower.includes('price') ||
+      lower.includes('pricing') ||
+      lower.includes('hire') ||
+      lower.includes('hiring') ||
+      lower.includes('agency') ||
+      lower.includes('agencies') ||
+      lower.includes('company') ||
+      lower.includes('companies') ||
+      lower.includes('provider') ||
+      lower.includes('providers') ||
+      lower.includes('recommend')
+    ) {
+      return 'commercial'
+    }
+
+    return 'informational'
+  }
+
+  function getIntentLabel(intent) {
+    if (intent === 'comparison') return 'Comparison'
+    if (intent === 'informational') return 'Informational'
+    return 'Commercial'
+  }
+  const sectionCard = {
     background: '#fff',
     border: '1px solid #E5E7EB',
     borderRadius: 12,
@@ -989,6 +1043,21 @@ const sectionCard = {
           font-weight: 600;
         }
 
+
+        .ai-intent-commercial {
+          background: #FFEDD5 !important;
+          color: #C2410C !important;
+        }
+
+        .ai-intent-informational {
+          background: #DBEAFE !important;
+          color: #2563EB !important;
+        }
+
+        .ai-intent-comparison {
+          background: #EDE9FE !important;
+          color: #6D28D9 !important;
+        }
         .ai-status-tested,
         .ai-status-ready {
           display: inline-flex;
@@ -2436,8 +2505,15 @@ const sectionCard = {
                             </td>
 
                             <td>
-                              <span className="ai-intent-pill">
-                                Commercial
+                              <span
+                                className={
+                                  'ai-intent-pill ai-intent-' +
+                                  getQuestionIntent(q)
+                                }
+                              >
+                                {getIntentLabel(
+                                  getQuestionIntent(q)
+                                )}
                               </span>
                             </td>
 
