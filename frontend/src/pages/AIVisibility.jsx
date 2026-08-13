@@ -1516,40 +1516,10 @@ export default function AIVisibility() {
           margin-top: 16px !important;
         }
 
-        /*
-         * Keep normal page scrolling but hide the visual scrollbar.
-         * The user can still scroll with mouse wheel / trackpad.
-         */
         .ai-vis-page {
           height: auto !important;
           max-height: none !important;
           overflow: visible !important;
-        }
-
-        html,
-        body {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-
-        /* AI Visibility scrolls inside .app-main, not the document.
-           Hide only the visual scrollbar while keeping wheel/trackpad scrolling. */
-        .app-main {
-          scrollbar-width: none !important;
-          -ms-overflow-style: none !important;
-        }
-
-        .app-main::-webkit-scrollbar {
-          width: 0 !important;
-          height: 0 !important;
-          display: none !important;
-        }
-
-        html::-webkit-scrollbar,
-        body::-webkit-scrollbar {
-          width: 0;
-          height: 0;
-          display: none;
         }
 
         .ai-question-actions-header {
