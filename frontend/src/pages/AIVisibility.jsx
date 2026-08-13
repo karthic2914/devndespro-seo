@@ -768,6 +768,7 @@ export default function AIVisibility() {
           margin: 0 auto;
           padding: 18px 22px 28px;
           box-sizing: border-box;
+          overflow-x: hidden;
         }
         .ai-vis-header {
           display: flex;
@@ -859,8 +860,11 @@ export default function AIVisibility() {
           align-items: center;
           gap: 8px;
           margin-bottom: 10px;
-          flex-wrap: nowrap;
+          flex-wrap: wrap;
           width: 100%;
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
 
         .ai-question-chip {
@@ -903,9 +907,12 @@ export default function AIVisibility() {
 
         .ai-question-main-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1.12fr) minmax(360px, .88fr);
+          grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
           gap: 14px;
           align-items: start;
+          width: 100%;
+          max-width: 100%;
+          min-width: 0;
         }
 
         .ai-question-panel {

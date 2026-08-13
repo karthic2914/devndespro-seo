@@ -133,8 +133,25 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 .logo-lg { height: 56px; }
 
 /* -- Layout Shell -- */
-.app-shell { display: flex; height: 100vh; overflow: hidden; }
-.app-main  { flex: 1; overflow: auto; background: var(--dark); display: flex; flex-direction: column; }
+.app-shell { display: flex; height: 100vh; height: 100dvh; overflow: hidden; }
+.app-main  {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  background: var(--dark);
+  display: flex;
+  flex-direction: column;
+}
+
+/* App pages scroll inside .app-main only — avoid a second document scrollbar. */
+html:has(.app-shell),
+body:has(.app-shell),
+#root:has(.app-shell) {
+  height: 100%;
+  overflow: hidden;
+}
 
 /* -- Sidebar -- */
 .sidebar {
@@ -1546,7 +1563,7 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
 }
 
 .app-main {
-  min-height: 100vh;
+  min-height: 0;
   background: var(--saas-bg);
   color: var(--saas-text);
   -webkit-font-smoothing: antialiased;

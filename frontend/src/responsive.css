@@ -1043,11 +1043,15 @@ body {
 
 /* PREMIUM VERTICAL SCROLL AND ACTIVE HEADER */
 
-/* Smooth vertical scrolling */
+/* Smooth vertical scrolling (landing / marketing pages).
+   App shell pages scroll inside .app-main instead. */
 html {
   scroll-behavior: smooth;
-  overflow-y: scroll;
   overflow-x: hidden;
+}
+
+html:not(:has(.app-shell)) {
+  overflow-y: auto;
 }
 
 /* Thin Firefox scrollbar */
