@@ -1125,6 +1125,34 @@ const sectionCard = {
           height: 0;
           display: none;
         }
+
+        .ai-question-actions-header,
+        .ai-question-actions-cell {
+          width: 34px !important;
+          text-align: center !important;
+        }
+
+        .ai-question-menu-button {
+          width: 26px;
+          height: 26px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0;
+          border: 0;
+          background: transparent;
+          color: #64748B;
+          border-radius: 5px;
+          font-size: 15px;
+          font-weight: 700;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .ai-question-menu-button:hover {
+          background: #F1F5F9;
+          color: #111827;
+        }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
         </style>
