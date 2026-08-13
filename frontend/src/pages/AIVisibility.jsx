@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faCircleXmark, faArrowRight, faRotateRight, faHistory, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faGauge, faListCheck, faComments, faUsers, faCircleExclamation, faLightbulb, faClockRotateLeft } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -50,21 +50,18 @@ function getProductIcon(name = '', index = 0) {
   return PRODUCT_ICON_FALLBACK[index % PRODUCT_ICON_FALLBACK.length]
 }
 
-// The 6-step process shown at the top of the page. Purely navigational -
-// clicking a step smooth-scrolls to the matching section id below.
-const PROCESS_STEPS = [
-  { n: 1, label: 'Products', sub: 'Add your products & services', anchor: 'step-products' },
-  { n: 2, label: 'Questions', sub: 'Discover questions AI users ask', anchor: 'step-questions' },
-  { n: 3, label: 'Scan AI Engines', sub: 'Run visibility scan across LLMs', anchor: 'step-scan' },
-  { n: 4, label: 'Analyze Visibility', sub: 'View results & key insights', anchor: 'step-analyze' },
-  { n: 5, label: 'Improve AEO/GEO', sub: 'Get recommendations', anchor: 'step-improve' },
-  { n: 6, label: 'Track Progress', sub: 'Monitor & get alerts', anchor: 'step-track', icon: faHistory },
+// The 7 tabs shown below the header - replaces the old numbered stepper.
+// Each tab shows only its own focused content instead of everything
+// stacked on one long scrolling page.
+const TABS = [
+  { key: 'dashboard', label: 'Dashboard', icon: faGauge },
+  { key: 'questions', label: 'Questions', icon: faListCheck },
+  { key: 'responses', label: 'Responses', icon: faComments },
+  { key: 'competitors', label: 'Competitors', icon: faUsers },
+  { key: 'reasons', label: 'Reasons', icon: faCircleExclamation },
+  { key: 'recommendations', label: 'Recommendations', icon: faLightbulb },
+  { key: 'history', label: 'History', icon: faClockRotateLeft },
 ]
-
-function scrollToStep(anchor) {
-  const el = document.getElementById(anchor)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
 
 // Matches the engine colors already used elsewhere on this page (KPI cards,
 // engine breakdown table) - used for the Recent Sessions table headers.
@@ -90,15 +87,13 @@ export default function AIVisibility() {
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
+  // Which of the 7 tabs is currently showing
+  const [activeTab, setActiveTab] = useState('dashboard')
   // Real period label ("Jul 13 - Aug 12, 2026") and comparison label from
   // the summary endpoint, shown in the header date-range box. Not a
   // functional filter yet - just an honest display of the fixed 30-day
   // window the numbers are actually computed from.
   const [summaryPeriod, setSummaryPeriod] = useState(null)
-  // AI Visibility Results is collapsed by default - "AI Visibility by Engine"
-  // already covers the summary on this page, so the detailed scan table
-  // only needs to show when someone actually wants to dig in or scan.
-  const [showResults, setShowResults] = useState(false)
   const [customQuestionText, setCustomQuestionText] = useState('')
   const [showMoreTabs, setShowMoreTabs] = useState(false)
   const moreTabsRef = useRef(null)
@@ -351,6 +346,35 @@ export default function AIVisibility() {
           gap: 16px;
           margin-bottom: 16px;
         }
+        .ai-vis-tabbar {
+          display: flex;
+          gap: 4px;
+          overflow-x: auto;
+          border-bottom: 1px solid #E5E7EB;
+          margin-bottom: 14px;
+          padding-bottom: 1px;
+        }
+        .ai-vis-tab {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          border: 0;
+          background: transparent;
+          padding: 9px 14px;
+          font-size: 12.5px;
+          font-weight: 600;
+          color: #6B7280;
+          cursor: pointer;
+          white-space: nowrap;
+          border-bottom: 2px solid transparent;
+          font-family: inherit;
+        }
+        .ai-vis-tab.active {
+          color: #F97316;
+          border-bottom-color: #F97316;
+          background: #FFF7ED;
+          border-radius: 6px 6px 0 0;
+        }
         .ai-vis-layout {
           display: grid;
           grid-template-columns: minmax(0, 2.1fr) minmax(300px, 340px);
@@ -490,29 +514,6 @@ export default function AIVisibility() {
         </div>
       </div>
 
-      {/* 6-step process stepper - click a step to jump to that section */}
-      <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, padding: '14px 10px', marginBottom: 14, display: 'flex', alignItems: 'center', overflowX: 'auto' }}>
-        {PROCESS_STEPS.map((step, i) => (
-          <div key={step.n} style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-            <button
-              onClick={() => scrollToStep(step.anchor)}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, border: 0, background: 'transparent', cursor: 'pointer', padding: '0 14px', textAlign: 'left' }}
-            >
-              <span style={{ width: 26, height: 26, borderRadius: '50%', background: '#F97316', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                {step.icon ? <FontAwesomeIcon icon={step.icon} style={{ fontSize: 11 }} /> : step.n}
-              </span>
-              <span>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap' }}>{step.label}</div>
-                <div style={{ fontSize: 10, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{step.sub}</div>
-              </span>
-            </button>
-            {i < PROCESS_STEPS.length - 1 && (
-              <FontAwesomeIcon icon={faChevronDown} style={{ transform: 'rotate(-90deg)', fontSize: 11, color: '#D1D5DB', flexShrink: 0 }} />
-            )}
-          </div>
-        ))}
-      </div>
-
       {currentSession && (
         <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
           <span style={{ fontWeight: 700 }}>Active session:</span> {currentSession.name}
@@ -522,26 +523,49 @@ export default function AIVisibility() {
         </div>
       )}
 
-      {/* Overview dashboard: KPI cards, per-engine table + trend, and the
-          Competitors/Alerts/Sentiment panels (last 3 are honest "coming
-          soon" states - no fake data). */}
-      <div className="ai-vis-layout" style={{ marginBottom: 14 }} id="step-analyze">
-        <div className="ai-vis-left">
-          <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} />
-        </div>
-        <div className="ai-vis-right">
-          <VisibilityCompetitorsPanel />
-        </div>
+      {/* KPI cards stay visible on every tab - the shared "at a glance" row */}
+      <VisibilityKPICards siteId={siteId} onSummaryLoaded={setSummaryPeriod} />
+
+      {/* Tab bar - replaces the old numbered stepper. Each tab shows only
+          its own focused content below instead of one long scrolling page. */}
+      <div className="ai-vis-tabbar">
+        {TABS.map(tab => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={'ai-vis-tab ' + (activeTab === tab.key ? 'active' : '')}
+          >
+            <FontAwesomeIcon icon={tab.icon} style={{ fontSize: 12 }} />
+            {tab.label}
+          </button>
+        ))}
       </div>
 
+      {activeTab === 'dashboard' && (
       <div className="ai-vis-layout" style={{ marginBottom: 14 }}>
         <div className="ai-vis-left">
           <div className="ai-vis-engine-trend-row">
             <VisibilityEngineTable siteId={siteId} />
-            <div id="step-track"><VisibilityHistoryCard siteId={siteId} /></div>
+            <VisibilityHistoryCard siteId={siteId} />
           </div>
+        </div>
+        <div className="ai-vis-right">
+          <VisibilityCompetitorsPanel />
+          <VisibilityAlertsPanel />
+          <VisibilitySentimentPanel />
+          <VisibilityQuickActions
+            onRunScan={() => setActiveTab('responses')}
+            onAddQuestion={() => { setAddingQuestion(true); setActiveTab('questions') }}
+            onGenerateQuestions={() => { generateProductQuestions(); setActiveTab('questions') }}
+            onCompareAnswers={() => setActiveTab('responses')}
+            onExport={downloadImage}
+          />
+        </div>
+      </div>
+      )}
 
-          {/* 1. Detected products & services */}
+      {activeTab === 'questions' && (
+      <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div id="step-products" style={sectionCard}>
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div>
@@ -723,40 +747,46 @@ export default function AIVisibility() {
             </div>
           </div>
 
-          {/* 3. AI Visibility Results - collapsed by default */}
-          <div id="step-scan" style={sectionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              <div style={sectionTitle}>
-                <span style={numberBadge}>3</span>
-                AI Visibility Results
-              </div>
-              <button
-                onClick={() => setShowResults(v => !v)}
-                style={{ border: '1px solid #E5E7EB', background: '#fff', color: '#374151', borderRadius: 6, padding: '6px 12px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
-              >
-                {showResults ? 'Hide Full Results' : 'Show Full Results'}
-              </button>
-            </div>
-            {!showResults && (
-              <div style={{ fontSize: 11.5, color: '#9CA3AF', marginTop: 8 }}>
-                Per-engine summary already shown above in AI Visibility by Engine. Click Show Full Results to see the ranked Top 10 list, compare engines, and run new scans.
-              </div>
-            )}
-            {showResults && (
-              flatQuestions.length > 0 ? (
-                <div style={{ marginTop: 12 }}>
-                  <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
-                </div>
-              ) : (
-                <div style={{ padding: '20px 0 4px', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
-                  Generate AI questions first to run Top 10 visibility analysis.
-                </div>
-              )
-            )}
-          </div>
+        </div>
+      )}
 
-          {/* Recent Sessions - moved up next to Questions/Results to close
-              the gap that used to sit below this column */}
+      {activeTab === 'responses' && (
+        <div style={{ marginBottom: 14 }}>
+          {flatQuestions.length > 0 ? (
+            <VisibilityResultsCard siteId={siteId} siteName={visibilitySiteName} questions={flatQuestions} productName={selectedProduct} sessionId={currentSession?.id || null} />
+          ) : (
+            <div style={sectionCard}>
+              <div style={sectionTitle}>AI Responses</div>
+              <div style={{ padding: '28px 0', textAlign: 'center', color: '#9CA3AF', fontSize: 12 }}>
+                Generate AI questions first (Questions tab), then come back here to scan and see full responses.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'competitors' && (
+        <div style={{ marginBottom: 14 }}>
+          <VisibilityCompetitorsPanel />
+        </div>
+      )}
+
+      {activeTab === 'reasons' && (
+        <div style={{ marginBottom: 14 }}>
+          <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
+        </div>
+      )}
+
+      {activeTab === 'recommendations' && (
+        <div style={{ marginBottom: 14 }}>
+          <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div style={{ marginBottom: 14, display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <VisibilityHistoryCard siteId={siteId} />
+
           <div style={sectionCard}>
             <div style={sectionTitle}>Recent Sessions</div>
             {!sessions.length ? (
@@ -765,7 +795,7 @@ export default function AIVisibility() {
               </div>
             ) : (
               <div style={{ overflowX: 'auto', marginTop: 10 }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 560 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5, minWidth: 640 }}>
                   <thead>
                     <tr style={{ textAlign: 'left', borderBottom: '1px solid #E5E7EB' }}>
                       <th style={{ padding: '0 10px 8px 0', fontWeight: 700, color: '#374151' }}>Session</th>
@@ -810,29 +840,7 @@ export default function AIVisibility() {
             )}
           </div>
         </div>
-
-        <div className="ai-vis-right">
-          <VisibilityAlertsPanel />
-          <VisibilitySentimentPanel />
-          <VisibilityQuickActions
-            onRunScan={() => scrollToStep('step-scan')}
-            onAddQuestion={() => { setAddingQuestion(true); scrollToStep('step-questions') }}
-            onGenerateQuestions={() => { generateProductQuestions(); scrollToStep('step-questions') }}
-            onCompareAnswers={() => scrollToStep('step-scan')}
-            onExport={downloadImage}
-          />
-
-          {/* Why not Top 10 + Actionable Recommendations = "Improve AEO/GEO" step.
-              Overall score is already shown in the KPI cards above - no
-              separate summary widget here to avoid showing it twice. */}
-          <div id="step-improve">
-            <VisibilityReasoningCard siteId={siteId} siteName={visibilitySiteName} />
-            <div style={{ marginTop: 14 }}>
-              <VisibilityRecommendationsCard siteId={siteId} siteName={visibilitySiteName} />
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
