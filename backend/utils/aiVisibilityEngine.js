@@ -6,6 +6,7 @@ const { callAIEngine } = require('./productDetect');
 const { pool } = require('../clients');
 
 const ENGINES = ['chatgpt', 'claude']; // gemini, perplexity stay "coming soon" until integrated
+const TOTAL_ENGINE_COLUMNS = 4; // chatgpt, claude, gemini, perplexity - matches the 4 columns shown everywhere in the UI
 
 // ---------- Section 3: multi-engine comparison ----------
 
@@ -203,7 +204,7 @@ async function getSummary(siteId) {
     totalMentions: current.totalMentions,
     overallScore: current.overallScore,
     mentionRate: current.mentionRate,
-    enginesInTop10: `${current.enginesInTop10Count} / ${current.enginesTrackedCount || ENGINES.length}`,
+    enginesInTop10: `${current.enginesInTop10Count} / ${TOTAL_ENGINE_COLUMNS}`,
     label: current.overallScore >= 70 ? 'Strong' : current.overallScore >= 40 ? 'Moderate' : 'Low',
     deltas: {
       overallScore: delta(current.overallScore, previous.overallScore),
