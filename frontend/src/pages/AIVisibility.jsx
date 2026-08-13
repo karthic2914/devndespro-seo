@@ -893,8 +893,8 @@ const sectionCard = {
 
         @media (max-width: 760px) {
           .ai-question-search {
-            margin-left: 0;
-            width: 100%;
+            margin-left: auto;
+            width: 220px;
           }
         }
 
@@ -1051,6 +1051,34 @@ const sectionCard = {
           .ai-product-grid { grid-template-columns: 1fr; }
           .ai-question-row { grid-template-columns: 24px minmax(0,1fr); }
           .ai-question-row .intent { display: none; }
+        }
+
+        /* Questions UX spacing */
+        .ai-questions-toolbar {
+          margin-top: 16px !important;
+        }
+
+        /*
+         * Keep normal page scrolling but hide the visual scrollbar.
+         * The user can still scroll with mouse wheel / trackpad.
+         */
+        .ai-vis-page {
+          height: auto !important;
+          max-height: none !important;
+          overflow: visible !important;
+        }
+
+        html,
+        body {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+
+        html::-webkit-scrollbar,
+        body::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+          display: none;
         }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}
@@ -1318,13 +1346,13 @@ const sectionCard = {
                       {flatQuestions.length} Generated
                     </span>
 
-                    <span>Ã¢â‚¬Â¢</span>
+                    <span>ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢</span>
 
                     <span className="tested">
                       {testedQuestionsCount} Tested
                     </span>
 
-                    <span>Ã¢â‚¬Â¢</span>
+                    <span>ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢</span>
 
                     <span className="ready">
                       {readyQuestionsCount} Ready
@@ -1343,7 +1371,7 @@ const sectionCard = {
                     cursor: 'pointer'
                   }}
                 >
-                  View all answers Ã¢â€ â€™
+                  View all answers ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
                 </button>
               </div>
 
@@ -1415,14 +1443,14 @@ const sectionCard = {
                             <td>
                               {chatgptRank
                                 ? <span className="ai-rank-good">#{chatgptRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>Ã¢â‚¬â€</span>
+                                : <span style={{ color: '#94A3B8' }}>ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â</span>
                               }
                             </td>
 
                             <td>
                               {claudeRank
                                 ? <span className="ai-rank-good">#{claudeRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>Ã¢â‚¬â€</span>
+                                : <span style={{ color: '#94A3B8' }}>ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â</span>
                               }
                             </td>
 
@@ -1432,12 +1460,12 @@ const sectionCard = {
                                     'en-GB',
                                     { day: 'numeric', month: 'short', year: 'numeric' }
                                   )
-                                : 'Ã¢â‚¬â€'
+                                : 'ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â'
                               }
                             </td>
 
                             <td style={{ color: '#64748B' }}>
-                              Ã¢â€¹Â®
+                              ÃƒÂ¢Ã¢â‚¬Â¹Ã‚Â®
                             </td>
                           </tr>
                         )
@@ -1474,7 +1502,7 @@ const sectionCard = {
                   <span className="ai-page-button">2</span>
                   <span className="ai-page-button">3</span>
                   <span className="ai-page-button">4</span>
-                  <span className="ai-page-button">Ã¢â‚¬Âº</span>
+                  <span className="ai-page-button">ÃƒÂ¢Ã¢â€šÂ¬Ã‚Âº</span>
                 </div>
               </div>
             </section>
@@ -1503,7 +1531,7 @@ const sectionCard = {
                       cursor: 'pointer'
                     }}
                   >
-                    View full answers â†’
+                    View full answers Ã¢â€ â€™
                   </button>
                 </div>
 
@@ -1536,7 +1564,7 @@ const sectionCard = {
                       <li>Ahrefs</li>
                       <li>Semrush</li>
                       <li>Moz</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} â† You</span></li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} Ã¢â€ Â You</span></li>
                       <li>Ubersuggest</li>
                     </ol>
 
@@ -1573,7 +1601,7 @@ const sectionCard = {
                       <li>Semrush</li>
                       <li>Moz</li>
                       <li>Surfer SEO</li>
-                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} â† You</span></li>
+                      <li><span className="ai-response-you">{visibilitySiteName || 'Your Brand'} Ã¢â€ Â You</span></li>
                     </ol>
 
                     <button
