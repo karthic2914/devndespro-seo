@@ -983,8 +983,8 @@ export default function AIVisibility() {
               Unlock full AI Visibility on Pro
             </div>
             <div style={{ fontSize: 13, color: '#78716C', lineHeight: 1.5, marginBottom: 12 }}>
-              Engine breakdown, question tests, competitors, reasoning, and recommendations —
-              from <strong>199 kr/mo</strong> (Pro) or <strong>499 kr/mo</strong> (Agency).
+              Engine breakdown, question tests, competitors, reasoning, and recommendations.
+              From <strong>199 kr/mo</strong> (Pro) or <strong>499 kr/mo</strong> (Agency).
             </div>
             <button
               type="button"

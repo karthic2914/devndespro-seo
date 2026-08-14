@@ -786,7 +786,7 @@ export function VisibilityKPICards({
     <div className="ai-vis-kpi-grid" style={{ display: 'grid', gridTemplateColumns: freeTeaser ? '1fr' : 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
       {(loading || !summary) ? (
         <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
-          <div style={emptyStyle}>{loading ? 'Loading overview...' : (freeTeaser ? 'No score yet — upgrade to Pro to run AI visibility scans.' : 'No visibility scan yet. Run a scan below to populate this.')}</div>
+          <div style={emptyStyle}>{loading ? 'Loading overview...' : (freeTeaser ? 'No score yet. Upgrade to Pro to run AI visibility scans.' : 'No visibility scan yet. Run a scan below to populate this.')}</div>
         </div>
       ) : cards.map(c => {
         const meta = KPI_META[c.key]

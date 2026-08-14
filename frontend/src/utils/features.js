@@ -8,7 +8,7 @@ export const PLAN_META = {
     bullets: [
       'Keywords basic (view & track)',
       'Overview & Site Audit',
-      'AI Visibility — overall score only',
+      'AI Visibility (overall score only)',
       'Alerts & Integrations',
     ],
   },

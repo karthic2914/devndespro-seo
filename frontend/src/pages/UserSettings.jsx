@@ -55,7 +55,7 @@ export default function UserSettings() {
     const planParam = params.get('plan') || 'paid'
 
     if (params.get('checkout') === 'cancel') {
-      setError('Checkout cancelled — no charge was made.')
+      setError('Checkout cancelled. No charge was made.')
       window.history.replaceState({}, '', '/settings')
       return
     }
@@ -72,10 +72,10 @@ export default function UserSettings() {
         const me = await api.get('/settings/me')
         if (cancelled) return
         setAccess(me.data?.access || null)
-        setMsg(`You're on ${planParam} — welcome! Features are unlocked.`)
+        setMsg(`You're on ${planParam}. Welcome! Features are unlocked.`)
       } catch (e) {
         if (!cancelled) {
-          setMsg(`Payment received — activating ${planParam}. Refresh in a moment if features are still locked.`)
+          setMsg(`Payment received. Activating ${planParam}. Refresh in a moment if features are still locked.`)
           if (refreshUser) refreshUser()
         }
       } finally {
@@ -284,7 +284,7 @@ export default function UserSettings() {
                         {checkoutPlan === p.id
                           ? 'Redirecting…'
                           : checkoutEnabled
-                          ? `Select ${p.label} — pay`
+                          ? `Select ${p.label}`
                           : `Request ${p.label}`}
                       </button>
                     )}
@@ -297,7 +297,7 @@ export default function UserSettings() {
             </div>
             <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.55, marginBottom: 10 }}>
               {checkoutEnabled
-                ? 'Low launch pricing: Pro 199 kr/mo · Agency 499 kr/mo. Pay with card via Stripe — unlocks instantly after checkout.'
+                ? 'Low launch pricing: Pro 199 kr/mo · Agency 499 kr/mo. Pay with card via Stripe. Unlocks instantly after checkout.'
                 : 'Stripe is not configured yet (add STRIPE_SECRET_KEY on the server). Until then an admin can assign your plan on Users.'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
