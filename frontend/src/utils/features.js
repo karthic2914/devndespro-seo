@@ -15,3 +15,10 @@ export function canUseKeywords(user) {
   if (user.features?.keywords != null) return Boolean(user.features.keywords)
   return Boolean(user.keywords_enabled || user.is_paid)
 }
+
+export function canUseAiAssistant(user) {
+  if (!user) return false
+  if (isAdminUser(user)) return true
+  if (user.features?.ai_assistant != null) return Boolean(user.features.ai_assistant)
+  return Boolean(user.ai_assistant_enabled || user.is_paid)
+}

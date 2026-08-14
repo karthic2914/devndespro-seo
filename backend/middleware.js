@@ -4,6 +4,7 @@ const {
   ensureUserFeatureSchema,
   canUseBacklinks,
   canUseKeywords,
+  canUseAiAssistant,
   isAdminUser,
 } = require('./utils/features')
 
@@ -54,7 +55,7 @@ const requireFeature = (feature) => async (req, res, next) => {
     if (isAdminUser(req.user)) return next()
 
     const { rows } = await pool.query(
-      `SELECT id, is_paid, backlinks_enabled, keywords_enabled
+      `SELECT id, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled
        FROM users WHERE id = $1 LIMIT 1`,
       [req.user.id]
     )
@@ -64,6 +65,7 @@ const requireFeature = (feature) => async (req, res, next) => {
     const allowed =
       feature === 'backlinks' ? canUseBacklinks(user)
       : feature === 'keywords' ? canUseKeywords(user)
+      : feature === 'ai_assistant' ? canUseAiAssistant(user)
       : false
 
     if (!allowed) {

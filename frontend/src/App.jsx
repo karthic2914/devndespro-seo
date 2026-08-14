@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
-import { canUseBacklinks, canUseKeywords } from './utils/features'
+import { canUseBacklinks, canUseKeywords, canUseAiAssistant } from './utils/features'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import Sites from './pages/Sites'
@@ -24,7 +24,7 @@ import RankNo1 from './pages/RankNo1'
 import Layout from './components/Layout'
 import Users from './pages/Users'
 import AcceptInvite from './pages/AcceptInvite'
-import AdminSettings from './components/admin/AdminSettings'
+import Settings from './pages/Settings'
 import Reports from './pages/Reports'
 
 // -- Global Snackbar context --------------------------------------------------
@@ -162,6 +162,8 @@ function FeatureRoute({ feature, children }) {
     ? canUseBacklinks(user)
     : feature === 'keywords'
     ? canUseKeywords(user)
+    : feature === 'ai_assistant'
+    ? canUseAiAssistant(user)
     : false
   if (!allowed) return <Navigate to=".." replace />
   return children
@@ -200,13 +202,14 @@ export default function App() {
           <Route path="/" element={<HomeRoute />} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="keywords" element={<Keywords />} />
             <Route path="backlinks" element={<FeatureRoute feature="backlinks"><Backlinks /></FeatureRoute>} />
             <Route path="competitors" element={<Competitors />} />
             <Route path="actions" element={<Actions />} />
-            <Route path="ai" element={<AiAssistant />} />
+            <Route path="ai" element={<FeatureRoute feature="ai_assistant"><AiAssistant /></FeatureRoute>} />
               <Route path="ai-visibility" element={<AIVisibility />} />
             <Route path="audit" element={<SiteAudit />} />
             <Route path="alerts" element={<Alerts />} />
@@ -215,7 +218,7 @@ export default function App() {
             <Route path="cold-emails" element={<ColdEmails />} />
             <Route path="rank" element={<RankNo1 />} />
             <Route path="users" element={<Users />} />
-            <Route path="admin-settings" element={<AdminSettings />} />
+            <Route path="admin-settings" element={<Navigate to="/settings" replace />} />
             <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>

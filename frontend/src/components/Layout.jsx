@@ -12,20 +12,20 @@ import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
-import { canUseBacklinks } from '../utils/features'
+import { canUseBacklinks, canUseAiAssistant } from '../utils/features'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
   { to: 'keywords',      label: 'Keywords',      icon: faKey },
-  { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks' },
+  { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks' },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
-  { to: 'ai',            label: 'AI Assistant',  icon: faRobot },
-  { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles },
+  { to: 'ai',            label: 'AI Assistant',  icon: faRobot, feature: 'ai_assistant', module: 'ai_assistant' },
+  { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles, module: 'ai_visibility' },
   { to: 'integrations',  label: 'Integrations',  icon: faPlug },
-  { to: 'email-reports', label: 'Email Reports', icon: faEnvelope },
-  { to: 'cold-emails',   label: 'Cold Email',    icon: faPaperPlane },
-  { to: 'competitors',   label: 'Competitors',   icon: faUsers },
+  { to: 'email-reports', label: 'Email Reports', icon: faEnvelope, module: 'email_reports' },
+  { to: 'cold-emails',   label: 'Cold Email',    icon: faPaperPlane, module: 'cold_emails' },
+  { to: 'competitors',   label: 'Competitors',   icon: faUsers, module: 'competitors' },
   { to: 'alerts',        label: 'Alerts',        icon: faBell },
 ]
 
@@ -37,6 +37,14 @@ export default function Layout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [unreadAlerts, setUnreadAlerts] = useState(0)
+  const [modules, setModules] = useState({
+    backlinks: true,
+    ai_assistant: true,
+    ai_visibility: true,
+    cold_emails: true,
+    competitors: true,
+    email_reports: true,
+  })
 
   useEffect(() => {
     const stored = localStorage.getItem('activeSite')
@@ -44,9 +52,17 @@ export default function Layout() {
     api.get(`/sites/${siteId}/alerts`)
       .then(r => setUnreadAlerts((r.data || []).filter(a => !a.read).length))
       .catch(() => {})
+    api.get('/settings/modules')
+      .then(r => setModules(prev => ({ ...prev, ...(r.data || {}) })))
+      .catch(() => {})
   }, [siteId])
 
   const handleLogout = () => { logout(); navigate('/login') }
+
+  const visibleNav = NAV.filter(item => {
+    if (item.module && modules[item.module] === false) return false
+    return true
+  })
 
   return (
     <div className="app-shell">
@@ -114,12 +130,16 @@ export default function Layout() {
         )}
 
         <nav className="sidebar__nav">
-          {NAV.map(({ to, label, icon, end, feature }) => {
+          {visibleNav.map(({ to, label, icon, end, feature }) => {
             if (to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)) {
               return null
             }
 
-            const locked = feature === 'backlinks' ? !canUseBacklinks(user) : false
+            const locked = feature === 'backlinks'
+              ? !canUseBacklinks(user)
+              : feature === 'ai_assistant'
+              ? !canUseAiAssistant(user)
+              : false
 
             if (locked) {
               return (

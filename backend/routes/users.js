@@ -300,7 +300,7 @@ router.get('/accounts', auth, requireAdmin, async (req, res) => {
   try {
     await ensureUserFeatureSchema()
     const { rows } = await pool.query(
-      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled,
+      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled,
               features_updated_at, created_at
        FROM users
        ORDER BY id ASC`
@@ -324,6 +324,7 @@ router.patch('/:id/features', auth, requireAdmin, async (req, res) => {
       is_paid: typeof req.body?.is_paid === 'boolean' ? req.body.is_paid : undefined,
       backlinks_enabled: typeof req.body?.backlinks_enabled === 'boolean' ? req.body.backlinks_enabled : undefined,
       keywords_enabled: typeof req.body?.keywords_enabled === 'boolean' ? req.body.keywords_enabled : undefined,
+      ai_assistant_enabled: typeof req.body?.ai_assistant_enabled === 'boolean' ? req.body.ai_assistant_enabled : undefined,
     })
 
     if (!updated) return res.status(404).json({ error: 'User not found or nothing to update' })
@@ -342,7 +343,7 @@ router.post('/:id/mark-paid', auth, requireAdmin, async (req, res) => {
     const paid = req.body?.paid !== false
     await setUserPaid(userId, paid)
     const { rows } = await pool.query(
-      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, features_updated_at
+      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled, features_updated_at
        FROM users WHERE id=$1`,
       [userId]
     )
@@ -380,7 +381,7 @@ router.post('/billing/confirm', async (req, res) => {
 
     await setUserPaid(userId, paid)
     const { rows } = await pool.query(
-      `SELECT id, email, is_paid, backlinks_enabled, keywords_enabled FROM users WHERE id=$1`,
+      `SELECT id, email, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled FROM users WHERE id=$1`,
       [userId]
     )
     res.json({ ok: true, user: rows[0], features: featureFlagsFor(rows[0]) })

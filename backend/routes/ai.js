@@ -1,6 +1,6 @@
 const express = require('express')
 const { pool, anthropic } = require('../clients')
-const { auth, verifySite } = require('../middleware')
+const { auth, verifySite, requireFeature } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
@@ -24,7 +24,7 @@ const {
 
 const router = express.Router()
 
-router.post('/:siteId/ai/chat', auth, verifySite, async (req, res) => {
+router.post('/:siteId/ai/chat', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   try {
     const trimText = (value, max = 420) => {
       const s = String(value || '')
@@ -68,7 +68,7 @@ Give specific, actionable SEO advice. Be concise and practical.`
   } catch (e) { console.error(e); res.status(500).json({ error: 'AI error' }) }
 })
 
-router.post('/:siteId/ai/visibility', auth, verifySite, async (req, res) => {
+router.post('/:siteId/ai/visibility', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   const { query: q } = req.body
   if (!q) return res.status(400).json({ error: 'query required' })
   const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
@@ -86,7 +86,7 @@ router.post('/:siteId/ai/visibility', auth, verifySite, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'AI error' }) }
 })
 
-router.post('/:siteId/ai/action-plan', auth, verifySite, async (req, res) => {
+router.post('/:siteId/ai/action-plan', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   try {
     const selectedTasks = Array.isArray(req.body?.selectedTasks)
       ? req.body.selectedTasks.filter(t => t && typeof t.text === 'string' && t.text.trim())
@@ -150,7 +150,7 @@ router.post('/:siteId/ai/action-plan', auth, verifySite, async (req, res) => {
   } catch (e) { console.error(e); res.status(500).json({ error: 'Action plan failed' }) }
 })
 
-router.post('/:siteId/seo/rank-forecast', auth, verifySite, async (req, res) => {
+router.post('/:siteId/seo/rank-forecast', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   try {
     const selectedTasks = Array.isArray(req.body?.selectedTasks)
       ? req.body.selectedTasks.filter(t => t && typeof t.text === 'string')
@@ -254,7 +254,7 @@ router.post('/:siteId/seo/rank-forecast', auth, verifySite, async (req, res) => 
   }
 })
 
-router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
+router.post('/:siteId/serp-analysis', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   const { keyword } = req.body
   const engine = normalizeEngine(req.body?.engine)
   if (!keyword || typeof keyword !== 'string' || keyword.trim().length === 0)
@@ -286,7 +286,7 @@ router.post('/:siteId/serp-analysis', auth, verifySite, async (req, res) => {
   res.json({ keyword: kw, engine, results: serpResults, plan })
 })
 
-router.post('/:siteId/ai/link-opportunities', auth, verifySite, async (req, res) => {
+router.post('/:siteId/ai/link-opportunities', auth, verifySite, requireFeature('ai_assistant'), async (req, res) => {
   try {
     const [sR, bR] = await Promise.all([
       pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId]),

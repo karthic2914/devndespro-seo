@@ -76,7 +76,7 @@ export default function Users() {
     try {
       const { data } = await api.post(`/users/${id}/mark-paid`, { paid })
       setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...data } : a)))
-      toast.success(paid ? 'Marked paid — Backlinks & Keywords unlocked' : 'Marked unpaid')
+      toast.success(paid ? 'Marked paid — Backlinks, AI & KW Pro unlocked' : 'Marked unpaid')
     } catch (e) {
       toast.error(e.response?.data?.error || 'Failed to update payment')
     }
@@ -146,8 +146,8 @@ export default function Users() {
         </div>
         <div style={{ fontSize: 12, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
           Admin always has full access. <strong>Keywords basic</strong> (view/track) is available to all project users.
-          <strong> Paid</strong> (or manual toggles) unlocks <strong>Backlinks</strong> and premium keyword tools
-          (discover, enrich, AI suggest, rank scans). Payment webhooks can unlock the same automatically.
+          <strong> Paid</strong> (or manual toggles) unlocks <strong>Backlinks</strong>, <strong>AI Assistant</strong>,
+          and keyword premium tools. Payment webhooks unlock the same automatically.
         </div>
 
         {accountsLoading ? (
@@ -158,7 +158,7 @@ export default function Users() {
           <div style={{ overflowX: 'auto' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'minmax(180px,1.4fr) 70px 90px 90px 110px',
+              gridTemplateColumns: 'minmax(160px,1.3fr) 58px 70px 80px 70px 100px',
               gap: 8,
               padding: '8px 4px',
               borderBottom: `1px solid ${T.border}`,
@@ -171,6 +171,7 @@ export default function Users() {
               <div>Paid</div>
               <div>KW Pro</div>
               <div>Backlinks</div>
+              <div>AI</div>
               <div>Quick</div>
             </div>
             {accounts.map(a => {
@@ -181,7 +182,7 @@ export default function Users() {
                   key={a.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(180px,1.4fr) 70px 90px 90px 110px',
+                    gridTemplateColumns: 'minmax(160px,1.3fr) 58px 70px 80px 70px 100px',
                     gap: 8,
                     padding: '10px 4px',
                     borderBottom: '1px solid #F3F4F6',
@@ -202,7 +203,7 @@ export default function Users() {
                       checked={isAdmin || !!a.is_paid}
                       disabled={isAdmin || busy}
                       onChange={e => patchFeatures(a.id, { is_paid: e.target.checked })}
-                      title="Paid unlocks Keywords + Backlinks"
+                      title="Paid unlocks Backlinks + AI Assistant + KW Pro"
                     />
                   </div>
                   <div>
@@ -211,7 +212,7 @@ export default function Users() {
                       checked={isAdmin || !!a.keywords_enabled || !!a.is_paid}
                       disabled={isAdmin || busy || !!a.is_paid}
                       onChange={e => patchFeatures(a.id, { keywords_enabled: e.target.checked })}
-                      title={a.is_paid ? 'Included with Paid' : 'Enable Keywords'}
+                      title={a.is_paid ? 'Included with Paid' : 'Enable Keywords Pro'}
                     />
                   </div>
                   <div>
@@ -221,6 +222,15 @@ export default function Users() {
                       disabled={isAdmin || busy || !!a.is_paid}
                       onChange={e => patchFeatures(a.id, { backlinks_enabled: e.target.checked })}
                       title={a.is_paid ? 'Included with Paid' : 'Enable Backlinks'}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={isAdmin || !!a.ai_assistant_enabled || !!a.is_paid}
+                      disabled={isAdmin || busy || !!a.is_paid}
+                      onChange={e => patchFeatures(a.id, { ai_assistant_enabled: e.target.checked })}
+                      title={a.is_paid ? 'Included with Paid' : 'Enable AI Assistant'}
                     />
                   </div>
                   <div>

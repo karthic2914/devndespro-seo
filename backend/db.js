@@ -126,6 +126,7 @@ async function initDB() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS backlinks_enabled BOOLEAN DEFAULT FALSE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS keywords_enabled BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_assistant_enabled BOOLEAN DEFAULT FALSE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS features_updated_at TIMESTAMPTZ;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
     ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_connected BOOLEAN DEFAULT FALSE;
@@ -285,6 +286,11 @@ ALTER TABLE keyword_rankings ADD COLUMN IF NOT EXISTS local_status VARCHAR(30);
       site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       UNIQUE(site_id, user_id)
+    );
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY,
+      value TEXT,
+      updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 CREATE TABLE IF NOT EXISTS keyword_searches (
   id SERIAL PRIMARY KEY,
