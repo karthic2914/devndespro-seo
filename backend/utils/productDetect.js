@@ -1,6 +1,6 @@
 const axios = require('axios')
 const cheerio = require('cheerio')
-const { pool, anthropic } = require('../clients')
+const { pool, anthropic, openai } = require('../clients')
 
 const CACHE_DAYS = 90
 
@@ -8,8 +8,9 @@ async function callAIEngine(engine, prompt, maxTokens = 900) {
   const normalizedEngine = String(engine || 'claude').toLowerCase()
 
   if (normalizedEngine === 'chatgpt' || normalizedEngine === 'openai') {
-    const { OpenAI } = require('openai')
-    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    if (!openai) {
+      throw new Error('OPENAI_API_KEY is not configured')
+    }
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: prompt }],
@@ -117,6 +118,41 @@ async function saveProducts(siteId, products, engine) {
      VALUES ($1, $2, $3, NOW())
      ON CONFLICT (site_id) DO UPDATE SET products=$2, engine=$3, detected_at=NOW()`,
     [siteId, JSON.stringify(products), engine]
+  )
+}
+
+async function ensureQuestionSetsColumns() {
+  await pool.query(`
+    ALTER TABLE site_products ADD COLUMN IF NOT EXISTS question_sets JSONB;
+    ALTER TABLE site_products ADD COLUMN IF NOT EXISTS questions_generated_at TIMESTAMPTZ;
+  `)
+}
+
+async function getCachedQuestionSets(siteId) {
+  await ensureQuestionSetsColumns()
+  const { rows } = await pool.query(
+    `SELECT question_sets, questions_generated_at
+     FROM site_products WHERE site_id=$1 LIMIT 1`,
+    [siteId]
+  )
+  if (!rows.length || !rows[0].question_sets) return null
+  const sets = rows[0].question_sets
+  if (!Array.isArray(sets) || !sets.length) return null
+  return {
+    questionSets: sets,
+    generatedAt: rows[0].questions_generated_at,
+    totalQuestions: sets.reduce((sum, q) => sum + (q.questions?.length || 0), 0),
+  }
+}
+
+async function saveQuestionSets(siteId, questionSets) {
+  await ensureQuestionSetsColumns()
+  await pool.query(
+    `INSERT INTO site_products (site_id, products, question_sets, questions_generated_at)
+     VALUES ($1, '[]'::jsonb, $2, NOW())
+     ON CONFLICT (site_id) DO UPDATE
+       SET question_sets=$2, questions_generated_at=NOW()`,
+    [siteId, JSON.stringify(questionSets || [])]
   )
 }
 
@@ -246,6 +282,8 @@ module.exports = {
   detectSiteProducts,
   getCachedProducts,
   saveProducts,
+  getCachedQuestionSets,
+  saveQuestionSets,
   generateQuestionsForProduct,
   generateAllProductQuestions,
 }

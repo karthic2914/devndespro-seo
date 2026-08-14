@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, ProgressBar } from '../components/UI'
 import api from '../utils/api'
+import UsageBar from './UsageBar'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
@@ -155,6 +156,7 @@ export default function Layout() {
       </aside>
 
       <div className="app-main">
+        <UsageBar />
         <Outlet />
       </div>
 

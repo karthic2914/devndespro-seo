@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
+import UsageBar from '../components/UsageBar'
 import api from '../utils/api'
 
 const BENCHMARKS = [
@@ -462,6 +463,7 @@ export default function Sites() {
     <div className="app-shell">
       <AppSidebar />
       <div className="app-main">
+        <UsageBar />
         <div className="topbar">
           <span className="topbar__title">Projects</span>
           <Button variant="primary" size="sm" onClick={() => setShowAdd(true)}>

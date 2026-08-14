@@ -163,6 +163,7 @@ export default function AIVisibility() {
   const [productsStale, setProductsStale] = useState(true)
   const [detectingProducts, setDetectingProducts] = useState(false)
   const [questionSets, setQuestionSets] = useState([])
+  const [questionsHydrated, setQuestionsHydrated] = useState(false)
   const [generatingQuestions, setGeneratingQuestions] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState('All Questions')
   const [addingQuestion, setAddingQuestion] = useState(false)
@@ -198,16 +199,35 @@ export default function AIVisibility() {
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
 
-  // AUTO-GENERATE PRODUCT QUESTIONS
+  // Load cached product questions first (free). Only generate once if none exist.
   useEffect(() => {
+    if (!siteId) return
+    let cancelled = false
+    setQuestionsHydrated(false)
+    api.get('/sites/' + siteId + '/products/questions')
+      .then((res) => {
+        if (cancelled) return
+        setQuestionSets(res.data?.questionSets || [])
+      })
+      .catch(() => {
+        if (!cancelled) setQuestionSets([])
+      })
+      .finally(() => {
+        if (!cancelled) setQuestionsHydrated(true)
+      })
+    return () => { cancelled = true }
+  }, [siteId])
+
+  useEffect(() => {
+    if (!questionsHydrated) return
     if (
       products.length > 0 &&
       questionSets.length === 0 &&
       !generatingQuestions
     ) {
-      generateProductQuestions()
+      generateProductQuestions(false)
     }
-  }, [products.length])
+  }, [products.length, questionSets.length, questionsHydrated])
 
   useEffect(() => {
     const handleClick = e => { if (moreTabsRef.current && !moreTabsRef.current.contains(e.target)) setShowMoreTabs(false) }
@@ -272,12 +292,19 @@ export default function AIVisibility() {
     setDetectingProducts(false)
   }
 
-  async function generateProductQuestions() {
+  async function generateProductQuestions(force = false) {
     setGeneratingQuestions(true)
     try {
-      const res = await api.post('/sites/' + siteId + '/products/questions', { engine: 'claude' })
+      const res = await api.post('/sites/' + siteId + '/products/questions', {
+        engine: 'claude',
+        force: !!force,
+      })
       setQuestionSets(res.data.questionSets || [])
-      showSnackbar((res.data.totalQuestions || 0) + ' questions generated across ' + (res.data.questionSets || []).length + ' products', 'success')
+      if (res.data.cached) {
+        // Silent when served from cache — no spend toast.
+      } else {
+        showSnackbar((res.data.totalQuestions || 0) + ' questions generated across ' + (res.data.questionSets || []).length + ' products', 'success')
+      }
     } catch (e) {
       showSnackbar('Question generation failed: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
     }

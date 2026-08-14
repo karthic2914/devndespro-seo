@@ -19,9 +19,14 @@ const adminEmailRouter = require('./routes/adminEmail')
 const reportsRouter = require('./routes/reports')
 const settingsRouter = require('./routes/settings')
 const publicAuditRouter = require('./routes/publicAudit')
+const usageRouter = require('./routes/usage')
+const { wrapAiClients } = require('./utils/wrapAiClients')
+const { ensureAiUsageTable } = require('./utils/aiUsage')
 
 const app = express()
 const PORT = process.env.PORT || 4000
+
+wrapAiClients()
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }))
 app.use(express.json())
@@ -43,6 +48,7 @@ app.use('/api/extract', extractRouter)
 app.use('/api/admin-email', adminEmailRouter)
 app.use('/api/settings', settingsRouter)
 app.use('/api/public', publicAuditRouter)
+app.use('/api/usage', usageRouter)
 
 
 const cron = require('node-cron')
@@ -82,12 +88,13 @@ cron.schedule('0 8 * * *', async () => {
     }
   } catch (e) { console.error('Cron job failed:', e.message) }
 })
-initDB().then(() => {
+initDB().then(async () => {
   // Auto-migration
 const { pool: _pool } = require('./clients')
 _pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS aeo_score integer').catch(() => {})
 _pool.query('ALTER TABLE sites ADD COLUMN IF NOT EXISTS enable_ai_cron boolean DEFAULT false').catch(() => {})
 _pool.query('ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS bing_score integer').catch(() => {})
+await ensureAiUsageTable().catch((err) => console.error('ai usage table init failed:', err.message))
 
 app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })

@@ -4,7 +4,7 @@ const { auth, verifySite } = require('../middleware')
 const { normalizeEngine, extractDomain, engineLabel } = require('../utils/helpers')
 const { fetchSerpResults } = require('../utils/serp')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
-const { detectSiteProducts, getCachedProducts, saveProducts, generateAllProductQuestions } = require('../utils/productDetect')
+const { detectSiteProducts, getCachedProducts, saveProducts, generateAllProductQuestions, getCachedQuestionSets, saveQuestionSets } = require('../utils/productDetect')
 const {
   runFullVisibilityScan,
   getSummary,
@@ -13,6 +13,7 @@ const {
   getQuestionResponses,
   generateReasoning,
   generateRecommendations,
+  getCachedInsights,
   saveRecommendations,
   snapshotHistory,
   getHistory,
@@ -446,24 +447,54 @@ router.post('/:siteId/products/detect', auth, verifySite, async (req, res) => {
 })
 
 // Generate dynamic per-product AI-visibility test questions.
-// Count scales with number of detected products, not fixed at 3.
+// Cached in DB so page reloads do not spend money regenerating.
+router.get('/:siteId/products/questions', auth, verifySite, async (req, res) => {
+  try {
+    const cached = await getCachedQuestionSets(req.siteId)
+    if (!cached) {
+      return res.json({ questionSets: [], totalQuestions: 0, cached: false })
+    }
+    res.json({ ...cached, cached: true })
+  } catch (e) {
+    console.error('Get product questions failed:', e.message)
+    res.status(500).json({ error: 'Failed to load product questions' })
+  }
+})
+
 router.post('/:siteId/products/questions', auth, verifySite, async (req, res) => {
   try {
     const engine = String(req.body?.engine || 'claude')
+    const force = !!req.body?.force
     const { rows: s } = await pool.query('SELECT name FROM sites WHERE id=$1', [req.siteId])
     const site = s[0]
     if (!site) return res.status(404).json({ error: 'Site not found' })
 
-    const cached = await getCachedProducts(req.siteId)
-    const products = cached?.products || []
+    if (!force) {
+      const cached = await getCachedQuestionSets(req.siteId)
+      if (cached) {
+        return res.json({ ...cached, engine, cached: true })
+      }
+    }
+
+    const cachedProducts = await getCachedProducts(req.siteId)
+    const products = cachedProducts?.products || []
     if (!products.length) {
       return res.status(400).json({ error: 'No products detected yet. Run product detection first.' })
     }
 
-    const questionSets = await generateAllProductQuestions(products, site.name, engine)
+    const { runWithAiUsageContext } = require('../utils/aiUsage')
+    const questionSets = await runWithAiUsageContext(
+      {
+        userId: req.user?.id || null,
+        siteId: req.siteId,
+        feature: 'product-questions',
+      },
+      () => generateAllProductQuestions(products, site.name, engine)
+    )
+    await saveQuestionSets(req.siteId, questionSets)
     const totalQuestions = questionSets.reduce((sum, q) => sum + q.questions.length, 0)
 
-    res.json({ questionSets, totalQuestions, engine })
+    res.json({ questionSets, totalQuestions, engine, cached: false })
   } catch (e) {
     console.error('Product questions generation failed:', e.message)
     res.status(500).json({ error: 'Failed to generate product questions' })
@@ -549,7 +580,15 @@ router.post('/:siteId/ai-visibility/scan', auth, verifySite, async (req, res) =>
     if (!siteName || !Array.isArray(questions) || !questions.length) {
       return res.status(400).json({ error: 'siteName and questions[] are required' })
     }
-    const results = await runFullVisibilityScan(req.siteId, siteName, questions, sessionId || null)
+    const { runWithAiUsageContext } = require('../utils/aiUsage')
+    const results = await runWithAiUsageContext(
+      {
+        userId: req.user?.id || null,
+        siteId: req.siteId,
+        feature: 'ai-visibility-scan',
+      },
+      () => runFullVisibilityScan(req.siteId, siteName, questions, sessionId || null)
+    )
     await snapshotHistory(req.siteId) // also updates section 7 trend
     res.json({ results })
   } catch (err) {
@@ -635,11 +674,27 @@ router.get('/:siteId/ai-visibility/question-response', auth, verifySite, async (
   }
 })
 // Section 5 - reasoning ("why not in Top 10")
+// Returns cached insights by default. Pass force:true to regenerate (costs money).
+router.get('/:siteId/ai-visibility/insights', auth, verifySite, async (req, res) => {
+  try {
+    const cached = await getCachedInsights(req.siteId)
+    res.json({
+      reasoning: cached?.reasoning || [],
+      recommendations: cached?.recommendations || [],
+      generatedAt: cached?.generatedAt || null,
+      cached: !!cached,
+    })
+  } catch (err) {
+    console.error('ai-visibility/insights error:', err)
+    res.status(500).json({ error: 'Failed to load insights' })
+  }
+})
+
 router.post('/:siteId/ai-visibility/reasoning', auth, verifySite, async (req, res) => {
   try {
-    const { siteName } = req.body
-    const reasoning = await generateReasoning(req.siteId, siteName)
-    res.json({ reasoning })
+    const { siteName, force } = req.body
+    const reasoning = await generateReasoning(req.siteId, siteName, { force: !!force })
+    res.json({ reasoning, cached: !force })
   } catch (err) {
     console.error('ai-visibility/reasoning error:', err)
     res.status(500).json({ error: 'Failed to generate reasoning' })
@@ -649,9 +704,14 @@ router.post('/:siteId/ai-visibility/reasoning', auth, verifySite, async (req, re
 // Section 6 - recommendations (run after reasoning; pass it in)
 router.post('/:siteId/ai-visibility/recommendations', auth, verifySite, async (req, res) => {
   try {
-    const { siteName, reasoning } = req.body
-    const recommendations = await generateRecommendations(req.siteId, siteName, reasoning || [])
-    res.json({ recommendations })
+    const { siteName, reasoning, force } = req.body
+    const recommendations = await generateRecommendations(
+      req.siteId,
+      siteName,
+      reasoning || [],
+      { force: !!force }
+    )
+    res.json({ recommendations, cached: !force })
   } catch (err) {
     console.error('ai-visibility/recommendations error:', err)
     res.status(500).json({ error: 'Failed to generate recommendations' })

@@ -411,9 +411,30 @@ async function getQuestionResponses(siteId, question) {
     testedAt: row.tested_at,
   }));
 }
+async function getCachedInsights(siteId) {
+  const { rows } = await pool.query(
+    `SELECT reasoning, recommendations, generated_at
+     FROM ai_visibility_insights WHERE site_id = $1 LIMIT 1`,
+    [siteId]
+  )
+  if (!rows.length) return null
+  return {
+    reasoning: rows[0].reasoning || [],
+    recommendations: rows[0].recommendations || [],
+    generatedAt: rows[0].generated_at,
+  }
+}
+
 // ---------- Section 5: reasoning ("why not in Top 10") ----------
 
-async function generateReasoning(siteId, siteName) {
+async function generateReasoning(siteId, siteName, { force = false } = {}) {
+  if (!force) {
+    const cached = await getCachedInsights(siteId)
+    if (Array.isArray(cached?.reasoning) && cached.reasoning.length) {
+      return cached.reasoning
+    }
+  }
+
   const { rows } = await pool.query(
     `SELECT question, engine, rankings, brand_rank FROM ai_visibility_results
      WHERE site_id = $1 ORDER BY tested_at DESC LIMIT 40`,
@@ -453,7 +474,14 @@ Respond ONLY as JSON: {"reasons": [{"issue": "...", "severity": "High|Medium|Low
 
 // ---------- Section 6: recommendations ----------
 
-async function generateRecommendations(siteId, siteName, reasoning) {
+async function generateRecommendations(siteId, siteName, reasoning, { force = false } = {}) {
+  if (!force) {
+    const cached = await getCachedInsights(siteId)
+    if (Array.isArray(cached?.recommendations) && cached.recommendations.length) {
+      return cached.recommendations
+    }
+  }
+
   const prompt = `Brand: "${siteName}"
 Known visibility issues: ${JSON.stringify(reasoning)}
 
@@ -470,7 +498,9 @@ Give 5-8 prioritized, actionable recommendations to improve AI engine visibility
   }
 
   await pool.query(
-    `UPDATE ai_visibility_insights SET recommendations = $2, generated_at = NOW() WHERE site_id = $1`,
+    `INSERT INTO ai_visibility_insights (site_id, recommendations, generated_at)
+     VALUES ($1, $2, NOW())
+     ON CONFLICT (site_id) DO UPDATE SET recommendations = $2, generated_at = NOW()`,
     [siteId, JSON.stringify(recommendations)]
   );
 
@@ -534,6 +564,7 @@ module.exports = {
   getQuestionResponses,
   generateReasoning,
   generateRecommendations,
+  getCachedInsights,
   saveRecommendations,
   snapshotHistory,
   getHistory,

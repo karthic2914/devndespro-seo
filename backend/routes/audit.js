@@ -536,8 +536,8 @@ router.post('/:siteId/ai-visibility/test', auth, verifySite, async (req, res) =>
   const { rows: s } = await pool.query('SELECT url FROM sites WHERE id=$1', [req.siteId])
   const siteUrl = s[0]?.url || ''
   const domain = (() => { try { return new URL(siteUrl).hostname.replace('www.', '') } catch { return siteUrl } })()
-  const { OpenAI } = require('openai')
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  const { openai } = require('../clients')
+  if (!openai) return res.status(500).json({ error: 'OPENAI_API_KEY is not configured' })
   const results = []
   for (const query of queries.slice(0, 5)) {
     try {

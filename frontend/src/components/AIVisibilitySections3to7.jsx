@@ -179,16 +179,13 @@ export function VisibilityResultsCard({
     }
   }
 
-  // AUTO-SCAN
-  // First generated question is scanned automatically.
-  useEffect(() => {
-    if (
-      selectedQuestion &&
-      !scannedQuestionsRef.current.has(selectedQuestion)
-    ) {
-      scanQuestion(selectedQuestion)
-    }
-  }, [selectedQuestion])
+  // AUTO-SCAN disabled: scanning costs money. Only scan when the user
+  // explicitly clicks Test / Re-test.
+  // useEffect(() => {
+  //   if (selectedQuestion && !scannedQuestionsRef.current.has(selectedQuestion)) {
+  //     scanQuestion(selectedQuestion)
+  //   }
+  // }, [selectedQuestion])
 
   const currentResults =
     scanResults[selectedQuestion] || {}
@@ -984,20 +981,36 @@ export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   const [reasons, setReasons] = useState([])
   const [loading, setLoading] = useState(true)
 
-  const loadReasons = useCallback(() => {
+  const loadReasons = useCallback((opts = {}) => {
     if (!siteName) {
       setLoading(false)
       return
     }
     setLoading(true)
-    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName })
+    // Prefer cached insights (free). Only force regenerate after a new scan.
+    const force = !!opts.force
+    const req = force
+      ? api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName, force: true })
+      : api.get('/sites/' + siteId + '/ai-visibility/insights').then(async (res) => {
+          const cached = res.data?.reasoning || []
+          if (cached.length) return { data: { reasoning: cached } }
+          // First time only: generate once and persist.
+          return api.post('/sites/' + siteId + '/ai-visibility/reasoning', {
+            siteName,
+            productName,
+            force: true,
+          })
+        })
+
+    req
       .then(res => setReasons(res.data.reasoning || []))
       .catch(() => setReasons([]))
       .finally(() => setLoading(false))
   }, [siteId, siteName, productName])
 
-  useEffect(() => loadReasons(), [loadReasons])
-  useScanRefresh(loadReasons)
+  useEffect(() => loadReasons({ force: false }), [loadReasons])
+  // Do not auto-regenerate after scans — that costs money. Cached analysis stays until forced.
+  useScanRefresh(() => loadReasons({ force: false }))
 
   const displayName = [siteName, productName].filter(Boolean).join(' - ') || 'this project'
 
@@ -1038,26 +1051,46 @@ export function VisibilityRecommendationsCard({ siteId, siteName, productName })
   const [expanded, setExpanded] = useState(null)
   const [showAll, setShowAll] = useState(false)
 
-  const loadRecommendations = useCallback(() => {
+  const loadRecommendations = useCallback((opts = {}) => {
     if (!siteName) {
       setLoading(false)
       return
     }
     setLoading(true)
+    const force = !!opts.force
 
-    api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName })
-      .then(res => api.post('/sites/' + siteId + '/ai-visibility/recommendations', {
-        siteName,
-        productName,
-        reasoning: res.data.reasoning || [],
-      }))
+    const start = force
+      ? api.post('/sites/' + siteId + '/ai-visibility/reasoning', { siteName, productName, force: true })
+          .then(res => api.post('/sites/' + siteId + '/ai-visibility/recommendations', {
+            siteName,
+            productName,
+            reasoning: res.data.reasoning || [],
+            force: true,
+          }))
+      : api.get('/sites/' + siteId + '/ai-visibility/insights').then(async (res) => {
+          const cached = res.data?.recommendations || []
+          if (cached.length) return { data: { recommendations: cached } }
+          const reasoningRes = await api.post('/sites/' + siteId + '/ai-visibility/reasoning', {
+            siteName,
+            productName,
+            force: true,
+          })
+          return api.post('/sites/' + siteId + '/ai-visibility/recommendations', {
+            siteName,
+            productName,
+            reasoning: reasoningRes.data.reasoning || [],
+            force: true,
+          })
+        })
+
+    start
       .then(res => setRecs(res.data.recommendations || []))
       .catch(() => setRecs([]))
       .finally(() => setLoading(false))
   }, [siteId, siteName, productName])
 
-  useEffect(() => loadRecommendations(), [loadRecommendations])
-  useScanRefresh(loadRecommendations)
+  useEffect(() => loadRecommendations({ force: false }), [loadRecommendations])
+  useScanRefresh(() => loadRecommendations({ force: false }))
 
   // Marks a recommendation done/not-done. Updates the UI immediately, saves
   // to the database in the background, and rolls back if the save fails so
