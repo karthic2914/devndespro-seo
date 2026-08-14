@@ -1,9 +1,12 @@
-﻿import { useState, useMemo } from 'react'
+﻿import { useState, useMemo, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
   faSortUp, faSortDown, faFileExport, faXmark,
+  faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
+
+const PAGE_SIZE = 10
 
 // â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -103,12 +106,29 @@ function sourceConfig(source) {
 
 // â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onRemove }) {
+export default function BacklinksTable({
+  backlinks,
+  loading,
+  onUpdateStatus,
+  onRemove,
+  searchSeed = '',
+  searchSeedKey = 0,
+}) {
   const [typeFilter, setTypeFilter] = useState('All')   // All | Dofollow | Nofollow
   const [statusFilter, setStatusFilter] = useState('All')
   const [spamFilter, setSpamFilter] = useState('All')   // All | Clean | Spam
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ field: 'domainRank', dir: 'desc' })
+  const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    if (!searchSeedKey) return
+    setSearch(searchSeed || '')
+    setTypeFilter('All')
+    setStatusFilter('All')
+    setSpamFilter('All')
+    setPage(1)
+  }, [searchSeedKey, searchSeed])
 
   const toggleSort = (field) => {
     setSort(prev => prev.field === field
@@ -124,7 +144,7 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
       if (spamFilter === 'Spam' && !isSpam(b)) return false
       if (spamFilter === 'Clean' && isSpam(b)) return false
       if (q) {
-        const hay = `${b.name || ''} ${b.url || ''} ${b.anchor || ''}`.toLowerCase()
+        const hay = `${b.name || ''} ${b.url || ''} ${b.source_domain || ''} ${b.anchor || ''} ${b.target_url || ''}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
@@ -135,13 +155,35 @@ export default function BacklinksTable({ backlinks, loading, onUpdateStatus, onR
     const { field, dir } = sort
     return [...filtered].sort((a, b) => {
       let av = a[field], bv = b[field]
-      if (field === 'dr') { av = Number(av || 0); bv = Number(bv || 0) }
-      else { av = String(av || '').toLowerCase(); bv = String(bv || '').toLowerCase() }
+      if (field === 'dr' || field === 'domainRank') {
+        av = Number(getDomainRank(a) || 0)
+        bv = Number(getDomainRank(b) || 0)
+      } else {
+        av = String(av || '').toLowerCase()
+        bv = String(bv || '').toLowerCase()
+      }
       if (av < bv) return dir === 'asc' ? -1 : 1
       if (av > bv) return dir === 'asc' ? 1 : -1
       return 0
     })
   }, [filtered, sort])
+
+  useEffect(() => {
+    setPage(1)
+  }, [typeFilter, statusFilter, spamFilter, search, sort])
+
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = sorted.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1
+  const pageEnd = Math.min(safePage * PAGE_SIZE, sorted.length)
+  const pageRows = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+
+  const pageNumbers = useMemo(() => {
+    const maxButtons = 5
+    if (totalPages <= maxButtons) return Array.from({ length: totalPages }, (_, i) => i + 1)
+    const start = Math.max(1, Math.min(safePage - 2, totalPages - maxButtons + 1))
+    return Array.from({ length: maxButtons }, (_, i) => start + i)
+  }, [totalPages, safePage])
 
   const exportCsv = () => {
     const headers = ['Domain', 'URL', 'Anchor', 'Type', 'Domain Rank', 'Page Rank', 'Provider Spam', 'Status', 'Source']
@@ -203,9 +245,9 @@ sourceConfig(b.source).label,
         </div>
       </div>
 
-      {/* â”€â”€ Result count â”€â”€ */}
+      {/* Result count */}
       <div className="bl-count-row">
-        <span className="bl-count">{sorted.length} {sorted.length === 1 ? 'backlink' : 'backlinks'}</span>
+        <span className="bl-count">All backlinks {sorted.length}</span>
         {(search || typeFilter !== 'All' || statusFilter !== 'All' || spamFilter !== 'All') && (
           <button className="bl-clear" onClick={() => { setSearch(''); setTypeFilter('All'); setStatusFilter('All'); setSpamFilter('All') }}>
             Clear filters
@@ -216,6 +258,7 @@ sourceConfig(b.source).label,
       {sorted.length === 0
         ? <div className="bl-empty">No backlinks match your filters.</div>
         : (
+          <>
           <div className="bl-table-scroll">
             <table className="bl-table">
               <thead>
@@ -230,17 +273,17 @@ sourceConfig(b.source).label,
                     Type <SortIcon field="type" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('domainRank')}>
-  Domain Rank <SortIcon field="domainRank" sort={sort} />
-</th>
-<th className="bl-th-center">Page Rank</th>
-<th className="bl-th-center">Spam</th>
-<th className="bl-th-center">Status</th>
+                    Domain Rank <SortIcon field="domainRank" sort={sort} />
+                  </th>
+                  <th className="bl-th-center">Page Rank</th>
+                  <th className="bl-th-center">Spam</th>
+                  <th className="bl-th-center">Status</th>
                   <th className="bl-th-center">Source</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {sorted.map(b => {
+                {pageRows.map(b => {
                   const spam = isSpam(b)
                   const source = sourceConfig(b.source)
                   return (
@@ -268,11 +311,11 @@ sourceConfig(b.source).label,
                       <td className="bl-td-anchor">
                         <span className="bl-anchor-text">{b.anchor || <em className="bl-no-anchor">No anchor text</em>}</span>
                         {b.target_url && (
-  <span className="bl-target-url">
-    {normalizeUrl(b.target_url).replace(/^https?:\/\//, '').slice(0, 55)}
-    {normalizeUrl(b.target_url).length > 60 ? '…' : ''}
-  </span>
-)}
+                          <span className="bl-target-url">
+                            {normalizeUrl(b.target_url).replace(/^https?:\/\//, '').slice(0, 55)}
+                            {normalizeUrl(b.target_url).length > 60 ? '…' : ''}
+                          </span>
+                        )}
                       </td>
 
                       {/* Type */}
@@ -281,33 +324,33 @@ sourceConfig(b.source).label,
                       </td>
 
                       {/* Domain Rank */}
-<td className="bl-td-center">
-  <DrBadge dr={getDomainRank(b)} />
-</td>
+                      <td className="bl-td-center">
+                        <DrBadge dr={getDomainRank(b)} />
+                      </td>
 
-{/* Page Rank */}
-<td className="bl-td-center">
-  {getPageRank(b)}
-</td>
+                      {/* Page Rank */}
+                      <td className="bl-td-center">
+                        {getPageRank(b)}
+                      </td>
 
-{/* Provider Spam */}
-<td className="bl-td-center">
-  <span
-    style={{
-      fontWeight: 800,
-      color:
-        getProviderSpamScore(b) >= 50
-          ? '#DC2626'
-          : getProviderSpamScore(b) >= 30
-          ? '#D97706'
-          : '#16A34A'
-    }}
-  >
-    {getProviderSpamScore(b)}
-  </span>
-</td>
+                      {/* Provider Spam */}
+                      <td className="bl-td-center">
+                        <span
+                          style={{
+                            fontWeight: 800,
+                            color:
+                              getProviderSpamScore(b) >= 50
+                                ? '#DC2626'
+                                : getProviderSpamScore(b) >= 30
+                                ? '#D97706'
+                                : '#16A34A'
+                          }}
+                        >
+                          {getProviderSpamScore(b)}
+                        </span>
+                      </td>
 
-{/* Status */}
+                      {/* Status */}
                       <td className="bl-td-center">
                         <StatusBadge status={b.status} id={b.id} onChange={onUpdateStatus} />
                       </td>
@@ -331,6 +374,44 @@ sourceConfig(b.source).label,
               </tbody>
             </table>
           </div>
+
+          <div className="bl-pagination">
+            <span className="bl-pagination-meta">
+              Showing {pageStart} to {pageEnd} of {sorted.length} backlinks
+            </span>
+            <div className="bl-pagination-controls">
+              <button
+                type="button"
+                className="bl-page-btn"
+                disabled={safePage <= 1}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                aria-label="Previous page"
+              >
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+              {pageNumbers.map(n => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`bl-page-btn${n === safePage ? ' bl-page-btn--active' : ''}`}
+                  onClick={() => setPage(n)}
+                >
+                  {n}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="bl-page-btn"
+                disabled={safePage >= totalPages}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                aria-label="Next page"
+              >
+                <FontAwesomeIcon icon={faChevronRight} />
+              </button>
+              <span className="bl-page-size">{PAGE_SIZE} / page</span>
+            </div>
+          </div>
+          </>
         )}
     </div>
   )

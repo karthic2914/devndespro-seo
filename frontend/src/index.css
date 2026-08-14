@@ -1117,6 +1117,75 @@ body:has(.app-shell),
 .bl-clear:hover { text-decoration: underline; }
 .bl-empty { padding: 40px 0; text-align: center; color: var(--muted); font-size: 13px; }
 
+/* Pagination — 10 rows per page */
+.bl-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 2px 2px;
+  border-top: 1px solid var(--dark4);
+  margin-top: 8px;
+}
+.bl-pagination-meta {
+  font-size: 12px;
+  color: var(--text2);
+  font-weight: 600;
+}
+.bl-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.bl-page-btn {
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--dark4);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bl-page-btn:hover:not(:disabled) {
+  background: var(--dark3);
+  color: var(--text);
+}
+.bl-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.bl-page-btn--active {
+  background: #FFF7ED;
+  border-color: #FDBA74;
+  color: #EA580C;
+}
+.bl-page-size {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  padding: 0 8px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--dark4);
+  border-radius: 7px;
+  background: #fff;
+}
+
+@media (max-width: 1100px) {
+  .bl-insight-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 /* Table */
 .bl-table-scroll { overflow-x: auto; }
 

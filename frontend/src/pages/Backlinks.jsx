@@ -6,6 +6,7 @@ import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar
 import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
+import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
 import api from '../utils/api'
 
 export default function Backlinks() {
@@ -24,6 +25,8 @@ export default function Backlinks() {
   const [seeds, setSeeds] = useState('')
   const [showCrawler, setShowCrawler] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [tableSearchSeed, setTableSearchSeed] = useState('')
+  const [tableSearchSeedKey, setTableSearchSeedKey] = useState(0)
   const [integrations, setIntegrations] = useState(null)
   const [loadingOpps, setLoadingOpps] = useState(false)
   const [opportunities, setOpportunities] = useState([])
@@ -555,15 +558,35 @@ export default function Backlinks() {
         </Card>
       )}
 
-      {/* Advanced table */}
-      <Card style={{ marginBottom: 12 }}>
-        <BacklinksTable
+      {!loading && backlinks.length > 0 && (
+        <BacklinksInsightPanels
           backlinks={backlinks}
-          loading={loading}
-          onUpdateStatus={updateStatus}
-          onRemove={remove}
+          onFilterDomain={(domain) => {
+            setTableSearchSeed(domain)
+            setTableSearchSeedKey(k => k + 1)
+            document.getElementById('all-backlinks')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
+          onFilterAnchor={(anchor) => {
+            setTableSearchSeed(anchor)
+            setTableSearchSeedKey(k => k + 1)
+            document.getElementById('all-backlinks')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
         />
-      </Card>
+      )}
+
+      {/* All backlinks table — 10 per page */}
+      <div id="all-backlinks">
+        <Card style={{ marginBottom: 12 }}>
+          <BacklinksTable
+            backlinks={backlinks}
+            loading={loading}
+            onUpdateStatus={updateStatus}
+            onRemove={remove}
+            searchSeed={tableSearchSeed}
+            searchSeedKey={tableSearchSeedKey}
+          />
+        </Card>
+      </div>
 
       {bestPicks.length > 0 && (
         <Card style={{ marginBottom: 12 }}>
