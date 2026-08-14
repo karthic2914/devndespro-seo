@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="14" fill="#0B1220"/>
+  <!-- magnifying glass rim -->
+  <circle cx="28" cy="28" r="16" stroke="url(#g)" stroke-width="4" fill="#111827"/>
+  <!-- bars -->
+  <rect x="20" y="30" width="4.5" height="8" rx="1" fill="#38BDF8"/>
+  <rect x="26.5" y="24" width="4.5" height="14" rx="1" fill="#818CF8"/>
+  <rect x="33" y="18" width="4.5" height="20" rx="1" fill="#A855F7"/>
+  <!-- growth arrow -->
+  <path d="M20 34 L27 27 L32 30 L40 18" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M35 18 H40 V23" stroke="#22C55E" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- handle -->
+  <line x1="39" y1="39" x2="50" y2="50" stroke="url(#g)" stroke-width="5" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="g" x1="12" y1="12" x2="52" y2="52">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#A855F7"/>
+    </linearGradient>
+  </defs>
+</svg>
