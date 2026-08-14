@@ -259,40 +259,41 @@
       }).catch(() => {})
     }, [siteId])
 
-    // Sticky flow: highlight the step whose section is in view while scrolling
+    // Sticky flow: which step is in view (scroll position vs section tops)
     useEffect(() => {
-      const sectionIds = [...new Set(KEYWORDS_PAGE_FLOW.map((s) => s.sectionId).filter(Boolean))]
       const root = document.querySelector('.app-main')
-      if (!root || !sectionIds.length) return undefined
+      if (!root) return undefined
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          const visible = entries
-            .filter((e) => e.isIntersecting)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-          const top = visible[0]
-          if (!top?.target?.id) return
-          const sectionId = top.target.id
-          const matches = KEYWORDS_PAGE_FLOW.filter((s) => s.sectionId === sectionId)
-          if (!matches.length) return
-          // Shared section (track + rank): highlight last matching step id (rank)
-          if (matches.length === 1) setScrollFlowId(matches[0].id)
-          else setScrollFlowId(matches[matches.length - 1].id)
-        },
-        {
-          root,
-          rootMargin: '-12% 0px -55% 0px',
-          threshold: [0.05, 0.2, 0.4, 0.6],
-        }
-      )
-
-      sectionIds.forEach((id) => {
-        const el = document.getElementById(id)
-        if (el) observer.observe(el)
+      // Prefer first step id per section (track before rank for shared section)
+      const sectionSteps = []
+      const seen = new Set()
+      KEYWORDS_PAGE_FLOW.forEach((s) => {
+        if (!s.sectionId || seen.has(s.sectionId)) return
+        seen.add(s.sectionId)
+        sectionSteps.push({ stepId: s.id, sectionId: s.sectionId })
       })
 
-      return () => observer.disconnect()
-    }, [loading, discovery, keywords.length])
+      const update = () => {
+        const stickyOffset = 88
+        let current = sectionSteps[0]?.stepId || null
+        for (const item of sectionSteps) {
+          const el = document.getElementById(item.sectionId)
+          if (!el) continue
+          const top = el.getBoundingClientRect().top
+          // Section has reached the sticky process bar line
+          if (top - stickyOffset <= 8) current = item.stepId
+        }
+        setScrollFlowId(current)
+      }
+
+      update()
+      root.addEventListener('scroll', update, { passive: true })
+      window.addEventListener('resize', update)
+      return () => {
+        root.removeEventListener('scroll', update)
+        window.removeEventListener('resize', update)
+      }
+    }, [loading, discovery, keywords.length, dfsMatching.length, dfsOverview])
 
     const runAutoDiscover = async () => {
       console.log('[Keywords] Rediscover starting', { siteId })
@@ -843,9 +844,9 @@
           padding: '0.65rem 1.5rem',
         }}>
           {(() => {
-            // Research counts as done once a search returned overview, SERP, or idea lists
+            // Research done: search results OR already tracking (moved past research)
             const hasResearch = Boolean(
-              dfsMatching.length || dfsRelated.length || dfsQuestions.length || dfsOverview || dfsOrganic.length
+              dfsMatching.length || dfsRelated.length || dfsQuestions.length || dfsOverview || dfsOrganic.length || keywords.length > 0
             )
             const hasDiscovery = Boolean(discovery)
             const hasTracked = keywords.length > 0
@@ -858,8 +859,6 @@
               track: hasTracked,
               rank: hasRanks,
             }
-            // Only highlight the section currently in view — not “next unfinished”
-            // (that made Research look broken when other steps were green).
             return (
               <PageProcessGuide
                 compact

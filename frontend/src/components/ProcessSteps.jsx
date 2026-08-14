@@ -1,6 +1,11 @@
 /**
  * Numbered process / flow — clickable steps for guided full-page workflows.
  * compact: denser chips for sticky page headers
+ *
+ * Colors:
+ * - active (in view): orange highlight (brand)
+ * - done (not active): green check
+ * - todo: muted gray
  */
 export default function ProcessSteps({ steps = [], style, title, compact = false }) {
   if (!steps.length) return null
@@ -35,6 +40,28 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
           const clickable = typeof step.onClick === 'function'
           const Comp = clickable ? 'button' : 'div'
 
+          let border = '#E2E8F0'
+          let background = '#F8FAFC'
+          let badgeBg = '#E2E8F0'
+          let badgeColor = '#64748B'
+          let labelColor = '#64748B'
+          let boxShadow
+
+          if (active) {
+            border = '#FDBA74'
+            background = '#FFF7ED'
+            badgeBg = '#EA580C'
+            badgeColor = '#fff'
+            labelColor = '#9A3412'
+            boxShadow = '0 0 0 2px #FFEDD5'
+          } else if (done) {
+            border = '#BBF7D0'
+            background = '#F0FDF4'
+            badgeBg = '#DCFCE7'
+            badgeColor = '#15803D'
+            labelColor = '#166534'
+          }
+
           return (
             <Comp
               key={step.id || step.label || i}
@@ -49,12 +76,13 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
                 alignItems: compact ? 'center' : 'flex-start',
                 padding: compact ? '6px 10px' : '10px 12px',
                 borderRadius: compact ? 8 : 10,
-                border: `1px solid ${active && !done ? '#FED7AA' : done ? '#BBF7D0' : '#E2E8F0'}`,
-                background: active && !done ? '#FFF7ED' : done ? '#F0FDF4' : '#F8FAFC',
+                border: `1.5px solid ${border}`,
+                background,
                 cursor: clickable ? 'pointer' : 'default',
                 textAlign: 'left',
                 font: 'inherit',
-                boxShadow: active ? (done ? '0 0 0 2px #BBF7D0' : '0 0 0 2px #FFEDD5') : undefined,
+                boxShadow,
+                transition: 'background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease',
               }}
             >
               <span
@@ -68,8 +96,8 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
                   justifyContent: 'center',
                   fontSize: compact ? 10 : 11,
                   fontWeight: 800,
-                  color: done ? '#15803D' : active ? '#C2410C' : '#64748B',
-                  background: done ? '#DCFCE7' : active ? '#FFEDD5' : '#E2E8F0',
+                  color: badgeColor,
+                  background: badgeBg,
                 }}
               >
                 {done ? '✓' : i + 1}
@@ -78,7 +106,7 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
                 <div style={{
                   fontSize: compact ? 11 : 12,
                   fontWeight: 800,
-                  color: done ? '#166534' : active ? '#9A3412' : '#0F172A',
+                  color: labelColor,
                   lineHeight: 1.25,
                   whiteSpace: compact ? 'nowrap' : undefined,
                 }}>
