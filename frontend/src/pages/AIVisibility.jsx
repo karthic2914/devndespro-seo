@@ -174,6 +174,7 @@ export default function AIVisibility() {
   const [summaryPeriod, setSummaryPeriod] = useState(null)
   const [customQuestionText, setCustomQuestionText] = useState('')
   const [showMoreTabs, setShowMoreTabs] = useState(false)
+  const [moreTabsPos, setMoreTabsPos] = useState(null)
   const moreTabsRef = useRef(null)
   // Sessions: each scan run can be tagged to a named session so it can be
   // compared over time later. currentSession is null until the user creates
@@ -233,11 +234,43 @@ export default function AIVisibility() {
   }, [products.length, questionSets.length, questionsHydrated])
 
   useEffect(() => {
-    const handleClick = e => { if (moreTabsRef.current && !moreTabsRef.current.contains(e.target)) setShowMoreTabs(false) }
+    if (!showMoreTabs) return
+    const handleClick = (e) => {
+      if (
+        e.target.closest('.ai-questions-more-wrap') ||
+        e.target.closest('.ai-questions-more-dropdown')
+      ) return
+      setShowMoreTabs(false)
+      setMoreTabsPos(null)
+    }
+    const close = () => {
+      setShowMoreTabs(false)
+      setMoreTabsPos(null)
+    }
     document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+    window.addEventListener('resize', close)
+    window.addEventListener('scroll', close, true)
+    return () => {
+      document.removeEventListener('mousedown', handleClick)
+      window.removeEventListener('resize', close)
+      window.removeEventListener('scroll', close, true)
+    }
+  }, [showMoreTabs])
 
+  function toggleMoreTabs(event) {
+    event.stopPropagation()
+    if (showMoreTabs) {
+      setShowMoreTabs(false)
+      setMoreTabsPos(null)
+      return
+    }
+    const rect = event.currentTarget.getBoundingClientRect()
+    setMoreTabsPos({
+      top: rect.bottom + 6,
+      left: Math.min(rect.left, window.innerWidth - 260),
+    })
+    setShowMoreTabs(true)
+  }
   // Re-fetch question status (and sessions, so scores stay current) right
   // after any scan finishes, so the tables reflect the new data immediately.
   useEffect(() => {
@@ -945,8 +978,8 @@ export default function AIVisibility() {
 
         .ai-questions-toolbar {
           display: flex;
-          flex-direction: column;
-          align-items: stretch;
+          flex-direction: row;
+          align-items: center;
           gap: 10px;
           margin-top: 16px;
           margin-bottom: 10px;
@@ -954,6 +987,7 @@ export default function AIVisibility() {
           max-width: 100%;
           min-width: 0;
           box-sizing: border-box;
+          flex-wrap: nowrap;
         }
 
         .ai-questions-chips {
@@ -962,8 +996,8 @@ export default function AIVisibility() {
           flex-wrap: nowrap;
           gap: 8px;
           min-width: 0;
-          width: 100%;
-          overflow: hidden;
+          flex: 1 1 auto;
+          overflow: visible;
         }
 
         .ai-questions-actions {
@@ -971,8 +1005,8 @@ export default function AIVisibility() {
           align-items: center;
           justify-content: flex-end;
           gap: 8px;
-          width: 100%;
-          margin-left: 0;
+          width: auto;
+          margin-left: auto;
           flex: 0 0 auto;
         }
 
@@ -986,7 +1020,7 @@ export default function AIVisibility() {
           font-weight: 600;
           cursor: pointer;
           white-space: nowrap;
-          max-width: 200px;
+          max-width: 160px;
           overflow: hidden;
           text-overflow: ellipsis;
           flex: 0 1 auto;
@@ -998,10 +1032,25 @@ export default function AIVisibility() {
           background: #FFF7ED;
         }
 
+        .ai-questions-more-dropdown {
+          position: fixed;
+          z-index: 4200;
+          min-width: 240px;
+          max-width: 320px;
+          max-height: 280px;
+          overflow-y: auto;
+          overflow-x: hidden;
+          background: #fff;
+          border: 1px solid #E5E7EB;
+          border-radius: 8px;
+          box-shadow: 0 8px 20px rgba(15,23,42,0.12);
+          padding: 4px 0;
+        }
+
         .ai-question-search {
           margin-left: 0;
-          width: 220px;
-          min-width: 160px;
+          width: 170px;
+          min-width: 140px;
           height: 32px;
           border: 1px solid #E5E7EB;
           background: #fff;
@@ -1470,9 +1519,13 @@ export default function AIVisibility() {
         }
 
         @media (max-width: 760px) {
+          .ai-questions-toolbar {
+            flex-wrap: wrap;
+          }
           .ai-questions-actions {
             width: 100%;
             margin-left: 0;
+            justify-content: flex-start;
           }
           .ai-question-search {
             margin-left: 0;
@@ -2496,7 +2549,7 @@ export default function AIVisibility() {
 
       <div style={{ marginBottom: 14 }}>
 
-          {/* Row 1: category chips | Row 2: search + actions */}
+          {/* Single row: chips + search + add */}
           <div className="ai-questions-toolbar">
             <div className="ai-questions-chips">
             {visibleTabs.map(tab => (
@@ -2512,61 +2565,17 @@ export default function AIVisibility() {
             ))}
 
             {overflowTabs.length > 0 && (
-              <div ref={moreTabsRef} style={{ position: 'relative', flex: '0 0 auto' }}>
+              <div ref={moreTabsRef} className="ai-questions-more-wrap" style={{ position: 'relative', flex: '0 0 auto' }}>
                 <button
                   type="button"
                   className={'ai-question-chip ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
-                  onClick={() => setShowMoreTabs(v => !v)}
-                  style={{ maxWidth: 'none' }}
+                  onClick={toggleMoreTabs}
+                  aria-expanded={showMoreTabs}
+                  style={{ maxWidth: 'none', overflow: 'visible' }}
                 >
-                  {overflowTabs.includes(selectedProduct)
-                    ? chipLabel(selectedProduct)
-                    : `More (${overflowTabs.length})`}
+                  More ({overflowTabs.length})
                   <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 5, fontSize: 9 }} />
                 </button>
-
-                {showMoreTabs && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 5px)',
-                      left: 0,
-                      minWidth: 240,
-                      maxWidth: 320,
-                      zIndex: 100,
-                      background: '#fff',
-                      border: '1px solid #E5E7EB',
-                      borderRadius: 8,
-                      boxShadow: '0 8px 20px rgba(15,23,42,0.12)',
-                    }}
-                  >
-                    {overflowTabs.map(tab => (
-                      <button
-                        key={tab}
-                        type="button"
-                        onClick={() => {
-                          setSelectedProduct(tab)
-                          setShowMoreTabs(false)
-                        }}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          padding: '9px 12px',
-                          border: 0,
-                          background: selectedProduct === tab ? '#FFF7ED' : '#fff',
-                          color: selectedProduct === tab ? '#EA580C' : '#374151',
-                          textAlign: 'left',
-                          fontSize: 10.5,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {tab === 'All Questions'
-                          ? `All (${flatQuestions.length})`
-                          : `${tab} (${combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0})`}
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
             )}
             </div>
@@ -3210,6 +3219,42 @@ export default function AIVisibility() {
           </div>
 
         </div>
+
+      {showMoreTabs && moreTabsPos && createPortal(
+        <div
+          className="ai-questions-more-dropdown"
+          style={{ top: moreTabsPos.top, left: moreTabsPos.left }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {overflowTabs.map(tab => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => {
+                setSelectedProduct(tab)
+                setShowMoreTabs(false)
+                setMoreTabsPos(null)
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '9px 12px',
+                border: 0,
+                background: selectedProduct === tab ? '#FFF7ED' : '#fff',
+                color: selectedProduct === tab ? '#EA580C' : '#374151',
+                textAlign: 'left',
+                fontSize: 10.5,
+                cursor: 'pointer',
+              }}
+            >
+              {tab === 'All Questions'
+                ? `All (${flatQuestions.length})`
+                : `${tab} (${combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0})`}
+            </button>
+          ))}
+        </div>,
+        document.body
+      )}
 
       {openQuestionMenu && questionMenuPos && createPortal(
         <div
