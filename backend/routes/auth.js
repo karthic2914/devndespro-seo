@@ -22,6 +22,49 @@ function getGscRedirectUri(req) {
   return `${getBackendUrl(req)}/api/auth/gsc/callback`
 }
 
+function parseAllowedEmails() {
+  return (process.env.ALLOWED_EMAILS || '')
+    .split(',')
+    .map(e => e.trim().toLowerCase())
+    .filter(Boolean)
+}
+
+/**
+ * Login is dynamic:
+ * - ALLOWED_EMAILS = bootstrap admins (optional)
+ * - existing users row = already known account (Feature access list)
+ * - invite accepted/granted/pending = invited people
+ */
+async function resolveLoginAccess(email) {
+  const normalized = String(email || '').trim().toLowerCase()
+  const allowed = parseAllowedEmails()
+  const isAllowlisted = allowed.length > 0 && allowed.includes(normalized)
+
+  const { rows: existingRows } = await pool.query(
+    'SELECT id FROM users WHERE LOWER(email)=$1 LIMIT 1',
+    [normalized]
+  )
+  const isExistingUser = existingRows.length > 0
+
+  const { rows: inviteRows } = await pool.query(
+    `SELECT * FROM invited_users
+     WHERE LOWER(email)=$1
+       AND status IN ('accepted', 'granted', 'pending')`,
+    [normalized]
+  )
+  const isInvited = inviteRows.length > 0
+
+  return {
+    email: normalized,
+    allowed,
+    isAllowlisted,
+    isExistingUser,
+    isInvited,
+    inviteRows,
+    canLogin: isAllowlisted || isExistingUser || isInvited,
+  }
+}
+
 router.post('/email', async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase()
@@ -29,37 +72,37 @@ router.post('/email', async (req, res) => {
       return res.status(400).json({ error: 'Enter a valid email address.' })
     }
 
-    const allowed = (process.env.ALLOWED_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-    const isAdmin = allowed.length > 0 && allowed.includes(email)
-
-    const { rows: inviteRows } = await pool.query(
-      `SELECT * FROM invited_users WHERE LOWER(email)=$1 AND status='accepted'`,
-      [email]
-    )
-    const isInvited = inviteRows.length > 0
-
-    if (!isAdmin && !isInvited) {
-      return res.status(403).json({ error: 'Access denied. This email is not authorized.' })
+    const access = await resolveLoginAccess(email)
+    if (!access.canLogin) {
+      return res.status(403).json({
+        error: 'Access denied. Ask an admin to invite you or enable your account.',
+      })
     }
 
     const { rows } = await pool.query(
-      'INSERT INTO users (email, name, photo) VALUES ($1,$2,$3) ON CONFLICT (email) DO UPDATE SET name=$2, photo=$3 RETURNING *',
+      'INSERT INTO users (email, name, photo) VALUES ($1,$2,$3) ON CONFLICT (email) DO UPDATE SET name=COALESCE(EXCLUDED.name, users.name), photo=COALESCE(EXCLUDED.photo, users.photo) RETURNING *',
       [email, email, null]
     )
     const user = rows[0]
 
-    if (isInvited) {
-      for (const invite of inviteRows) {
+    if (access.isInvited) {
+      for (const invite of access.inviteRows) {
         if (invite.site_id) {
           await pool.query(
             'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
             [invite.site_id, user.id]
           )
         }
+        if (invite.status === 'pending') {
+          await pool.query(
+            `UPDATE invited_users SET status='accepted', accepted_at=NOW() WHERE id=$1`,
+            [invite.id]
+          )
+        }
       }
     }
 
-    if (isAdmin) {
+    if (access.isAllowlisted) {
       await pool.query(
         `INSERT INTO site_access (site_id, user_id)
          SELECT id, $1 FROM sites WHERE user_id=$1
@@ -80,19 +123,13 @@ router.post('/google', async (req, res) => {
   try {
     const { token } = req.body
     const { data: profile } = await axios.get(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`)
-    const email = profile.email
+    const email = String(profile.email || '').trim().toLowerCase()
 
-    const allowed = (process.env.ALLOWED_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean)
-    const isAdmin = allowed.length > 0 && allowed.includes(email)
-
-    const { rows: inviteRows } = await pool.query(
-      `SELECT * FROM invited_users WHERE LOWER(email)=$1 AND status='accepted'`,
-      [email]
-    )
-    const isInvited = inviteRows.length > 0
-
-    if (!isAdmin && !isInvited) {
-      return res.status(403).json({ error: 'Access denied. You are not authorized.' })
+    const access = await resolveLoginAccess(email)
+    if (!access.canLogin) {
+      return res.status(403).json({
+        error: 'Access denied. Ask an admin to invite you or enable your account.',
+      })
     }
 
     const { rows } = await pool.query(
@@ -101,18 +138,24 @@ router.post('/google', async (req, res) => {
     )
     const user = rows[0]
 
-    if (isInvited) {
-      for (const invite of inviteRows) {
+    if (access.isInvited) {
+      for (const invite of access.inviteRows) {
         if (invite.site_id) {
           await pool.query(
             'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
             [invite.site_id, user.id]
           )
         }
+        if (invite.status === 'pending') {
+          await pool.query(
+            `UPDATE invited_users SET status='accepted', accepted_at=NOW() WHERE id=$1`,
+            [invite.id]
+          )
+        }
       }
     }
 
-    if (isAdmin) {
+    if (access.isAllowlisted) {
       await pool.query(
         `INSERT INTO site_access (site_id, user_id)
          SELECT id, $1 FROM sites WHERE user_id=$1
