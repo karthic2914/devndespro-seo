@@ -337,9 +337,16 @@
           (data.matching || data.suggestions || []).length +
           (data.related || []).length +
           (data.questions || []).length
-        if (!total) toast.error('No keyword ideas found for this seed')
+        const hasOverview = Boolean(data.overview || (data.organic || []).length)
+        if (!total && hasOverview) {
+          toast.success('Keyword overview loaded. No matching or related terms for this exact query — try a broader seed.')
+        } else if (!total) {
+          toast.error('No keyword ideas for this query. Try a shorter or more common phrase.')
+        } else {
+          toast.success(`Found ${total} keyword ideas`)
+        }
       } catch (e) {
-        toast.error(e.response?.data?.error || 'DataForSEO search failed')
+        toast.error(e.response?.data?.error || 'Keyword research failed. Please try again.')
       }
       setDfsLoading(false)
     }
@@ -1056,14 +1063,23 @@
               </div>
             )}
 
-            {!dfsMatching.length && !dfsRelated.length && !dfsQuestions.length && !dfsLoading && (
+            {!dfsMatching.length && !dfsRelated.length && !dfsQuestions.length && !dfsLoading && !dfsOverview && !dfsOrganic.length && (
               <div style={{
                 marginTop: 12, padding: '12px 14px', borderRadius: 10,
                 background: '#F8FAFC', border: `1px dashed ${T.border}`,
                 fontSize: 12, color: T.muted, lineHeight: 1.45,
               }}>
-                No research results yet. Type a seed keyword above and click Search.
-                This box stays empty until you search (it is separate from Tracked Keywords and Keyword gap).
+                Enter a seed keyword and click Search to load overview metrics, organic SERP, and matching / related ideas.
+              </div>
+            )}
+            {!dfsMatching.length && !dfsRelated.length && !dfsQuestions.length && !dfsLoading && (dfsOverview || dfsOrganic.length > 0) && (
+              <div style={{
+                marginTop: 12, padding: '12px 14px', borderRadius: 10,
+                background: '#FFF7ED', border: '1px solid #FED7AA',
+                fontSize: 12, color: '#9A3412', lineHeight: 1.45,
+              }}>
+                Overview and organic SERP are available, but no Matching / Related / Questions were returned for this exact query.
+                This is common for long-tail phrases. Try a broader seed (e.g. “app development” or “mobile app norway”).
               </div>
             )}
 

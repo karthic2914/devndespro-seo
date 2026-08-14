@@ -365,10 +365,39 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
     const matching = dedupeSuggestions(
       (matchingResult?.items || []).map(mapDfsKeywordItem)
     )
-    const related = dedupeSuggestions(
+    let related = dedupeSuggestions(
       (relatedResult?.items || []).map(mapDfsKeywordItem)
     )
-    const fromQuestionsEndpoint = (questionResult?.items || []).map(mapDfsKeywordItem)
+    let fromQuestionsEndpoint = (questionResult?.items || []).map(mapDfsKeywordItem)
+
+    // Long-tail seeds often have SERP data but empty Labs idea lists — broaden once.
+    if (!matching.length && !related.length) {
+      const simplified = String(keyword)
+        .toLowerCase()
+        .replace(/\b(norway|norge|norwegian|uk|usa|united states|sweden|denmark|scandinavia|oslo|bergen)\b/gi, ' ')
+        .replace(/\b(company|companies|agency|agencies|services|service|near me)\b/gi, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+      if (simplified && simplified !== keyword.toLowerCase() && simplified.split(' ').length >= 2) {
+        const broadened = await dfsPost(authHeader, 'dataforseo_labs/google/keyword_suggestions/live', {
+          keyword: simplified,
+          language_name: languageName,
+          location_code: location.code,
+          include_serp_info: true,
+          include_seed_keyword: true,
+          limit,
+          order_by: ['keyword_info.search_volume,desc'],
+        }).catch((err) => {
+          console.warn('DataForSEO broadened suggestions failed:', err.response?.data || err.message)
+          return null
+        })
+        const extra = dedupeSuggestions((broadened?.items || []).map(mapDfsKeywordItem))
+        if (extra.length) {
+          matching.push(...extra)
+        }
+      }
+    }
+
     const questions = dedupeSuggestions([
       ...fromQuestionsEndpoint,
       ...matching.filter((s) => s.isQuestion),
@@ -415,7 +444,7 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
     res.json(payload)
   } catch (e) {
     console.error('DataForSEO suggest error:', e.response?.data || e.message)
-    res.status(500).json({ error: 'DataForSEO request failed' })
+    res.status(500).json({ error: 'Keyword research failed. Please try again.' })
   }
 })
 
