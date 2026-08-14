@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -363,11 +363,11 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Broken links, referring domains, backlink gap, and live tracking — aligned with Moz, Majestic, Ahrefs, Semrush and industry standards (live data via DataForSEO)."
+        subtitle="Broken links, referring domains, backlink gap, and live tracking - aligned with Moz, Majestic, Ahrefs, Semrush and industry standards (live data via DataForSEO)."
       />
 
       <PageProcessGuide
-        title="Backlinks process — follow these steps"
+        title="Backlinks process - follow these steps"
         tip="Click a step to open that tab or section. Same flow pattern as Keywords and Overview."
         steps={BACKLINKS_PAGE_FLOW.map((s) => ({
           ...s,
@@ -473,7 +473,7 @@ export default function Backlinks() {
                   {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add prospect</>}
                 </OrangeBtn>
                 <p className="bl-form-help bl-form-help--inline">
-                  Outreach target only — won’t count toward live backlinks until a real URL is verified.
+                  Outreach target only - won’t count toward live backlinks until a real URL is verified.
                 </p>
               </div>
             ) : (
@@ -597,7 +597,7 @@ export default function Backlinks() {
         />
       )}
 
-      {/* All backlinks table — 10 per page */}
+      {/* All backlinks table - 10 per page */}
       <div id="all-backlinks">
         <Card style={{ marginBottom: 12 }}>
           <BacklinksTable

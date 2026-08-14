@@ -217,7 +217,7 @@ export default function Dashboard() {
       } else if (nextUp?.text) {
         toast.success(`Marked fixed. Next: ${String(nextUp.text).slice(0, 70)}`)
       } else {
-        toast.success('Marked fixed — Action Plan clear for now')
+        toast.success('Marked fixed - Action Plan clear for now')
       }
     } catch {
       toast.error('Could not update action')
@@ -723,7 +723,7 @@ export default function Dashboard() {
       <div style={{ width: '100%', padding: '1.25rem 1rem 1.5rem' }}>
 
         <PageProcessGuide
-          title="SEO journey — follow across the app"
+          title="SEO journey - follow across the app"
           tip="Same process style on every page. Click a step to open that area."
           steps={APP_SEO_JOURNEY.map((s, i) => ({
             ...s,
@@ -1593,7 +1593,7 @@ export default function Dashboard() {
 
             </Card>
 
-            {/* Backlink Profile removed from Overview — use Backlinks page (admin only) */}
+            {/* Backlink Profile removed from Overview - use Backlinks page (admin only) */}
 
 
           </div>

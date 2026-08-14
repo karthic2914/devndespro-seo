@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -1628,7 +1628,7 @@ export default function SiteAudit() {
     return (
       <div style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
         <PageProcessGuide
-          title="Site Audit process — follow these steps"
+          title="Site Audit process - follow these steps"
           tip="Start with Run audit. Same clickable flow as Overview and Keywords."
           steps={AUDIT_PAGE_FLOW.map((s) => ({
             ...s,
@@ -1670,7 +1670,7 @@ export default function SiteAudit() {
     <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
 
       <PageProcessGuide
-        title="Site Audit process — follow these steps"
+        title="Site Audit process - follow these steps"
         tip="Run → review issues → send to Action Plan. Same clickable flow as other pages."
         steps={AUDIT_PAGE_FLOW.map((s) => ({
           ...s,

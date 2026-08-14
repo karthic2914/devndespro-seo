@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -189,7 +189,7 @@ function ReferringDomainsPanel({ siteId, onFilterDomain }) {
     <Card>
       <CollapsibleSection
         title="Referring domains"
-        subtitle="Unique websites linking to you — quality over raw link count."
+        subtitle="Unique websites linking to you - quality over raw link count."
         icon={<FontAwesomeIcon icon={faGlobe} style={{ color: '#2563EB' }} />}
         defaultOpen
         right={
@@ -417,7 +417,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
     <Card>
       <CollapsibleSection
         title="Backlink gap"
-        subtitle="Find websites that link to your competitors but not to you — the best outreach prospects. Use same-niche agencies only."
+        subtitle="Find websites that link to your competitors but not to you - the best outreach prospects. Use same-niche agencies only."
         icon={<FontAwesomeIcon icon={faCodeCompare} style={{ color: '#EA580C' }} />}
         defaultOpen
       >

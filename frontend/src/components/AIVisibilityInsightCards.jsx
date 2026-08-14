@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -687,7 +687,7 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
             cursor: 'pointer',
           }}
         >
-          Close the gap — test more questions
+          Close the gap - test more questions
         </button>
       )}
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faWandMagicSparkles, faSpinner } from '@fortawesome/free-solid-svg-icons'
@@ -106,7 +106,7 @@ export default function Competitors() {
       )}
       <PageHeader title="Competitors" subtitle="Type competitors manually, or auto-discover from backlinks, rankings, and your site crawl" />
       <PageProcessGuide
-        title="Competitors process — follow these steps"
+        title="Competitors process - follow these steps"
         tip="Save rivals here, then use Keyword gap and Backlink gap. Same flow pattern app-wide."
         steps={COMPETITORS_PAGE_FLOW.map((s) => ({
           ...s,

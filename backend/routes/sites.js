@@ -335,15 +335,30 @@ router.get('/:siteId/gsc', auth, verifySite, async (req, res) => {
 
 // Actions
 router.get('/:siteId/actions', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query('SELECT * FROM actions WHERE site_id=$1 ORDER BY done ASC, created_at ASC', [req.siteId])
-  res.json(rows)
+  const { sortActions, ensureActionColumns } = require('../utils/actionSync')
+  await ensureActionColumns()
+  const { rows } = await pool.query('SELECT * FROM actions WHERE site_id=$1', [req.siteId])
+  res.json(sortActions(rows))
 })
 
 router.post('/:siteId/actions', auth, verifySite, async (req, res) => {
-  const { text, impact } = req.body
+  const { ensureActionColumns } = require('../utils/actionSync')
+  await ensureActionColumns()
+  const { text, impact, category, why } = req.body
   const { rows } = await pool.query(
-    'INSERT INTO actions (site_id, text, impact) VALUES ($1,$2,$3) RETURNING *',
-    [req.siteId, text, impact || 'Medium']
+    `INSERT INTO actions (site_id, text, impact, source, category, why, priority_score)
+     VALUES ($1,$2,$3,'manual',$4,$5,$6) RETURNING *`,
+    [
+      req.siteId,
+      text,
+      impact || 'Medium',
+      category || 'Custom',
+      why || null,
+      String(impact).toLowerCase() === 'critical' ? 90
+        : String(impact).toLowerCase() === 'high' ? 75
+          : String(impact).toLowerCase() === 'low' ? 30
+            : 50,
+    ]
   )
   res.json(rows[0])
 })

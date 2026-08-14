@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -279,7 +279,7 @@ export default function Landing() {
                   }}
                 >
                   Understand how visible your business is across search engines
-                  and AI platforms — and get a clear plan to improve it.
+                  and AI platforms - and get a clear plan to improve it.
                 </p>
 
                 <div

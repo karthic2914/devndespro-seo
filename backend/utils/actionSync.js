@@ -18,6 +18,129 @@ function normalizeActionKey(text) {
     .slice(0, 280)
 }
 
+/**
+ * Rank issues by how much they usually help search visibility / rankings.
+ * Critical = crawl/index blockers; High = strong ranking signals; Medium/Low = polish.
+ */
+function classifyForRanking(message, status) {
+  const t = String(message || '').toLowerCase()
+  const st = String(status || '').toLowerCase()
+
+  const rules = [
+    {
+      test: /noindex|robots\.txt|blocked from indexing|not indexable|x-robots|disallow:\s*\//i,
+      impact: 'Critical',
+      category: 'Indexing',
+      why: 'Google may not index these pages at all.',
+      score: 100,
+    },
+    {
+      test: /5\d\d|server error|ssl|https|certificate|redirect loop|canonical.*(missing|conflict)/i,
+      impact: 'Critical',
+      category: 'Technical',
+      why: 'Crawl and trust problems block rankings.',
+      score: 95,
+    },
+    {
+      test: /4\d\d|broken|404|soft 404|dead link/i,
+      impact: 'High',
+      category: 'Technical',
+      why: 'Broken pages waste crawl budget and lose rankings.',
+      score: 88,
+    },
+    {
+      test: /missing (page )?title|title tag missing|no title/i,
+      impact: 'High',
+      category: 'On-page',
+      why: 'Titles are a top ranking and CTR signal.',
+      score: 86,
+    },
+    {
+      test: /share a title|duplicate title|same title/i,
+      impact: 'High',
+      category: 'On-page',
+      why: 'Duplicate titles confuse which page should rank.',
+      score: 84,
+    },
+    {
+      test: /word count|thin content|low word/i,
+      impact: 'High',
+      category: 'Content',
+      why: 'Thin pages rarely win competitive keywords.',
+      score: 82,
+    },
+    {
+      test: /missing h1|no h1|multiple h1/i,
+      impact: 'High',
+      category: 'On-page',
+      why: 'Clear H1 helps topical relevance.',
+      score: 78,
+    },
+    {
+      test: /share a meta description|duplicate meta description/i,
+      impact: 'Medium',
+      category: 'On-page',
+      why: 'Hurts CTR more than raw rankings, still worth fixing.',
+      score: 62,
+    },
+    {
+      test: /title length|meta description length|description (too|should)/i,
+      impact: 'Medium',
+      category: 'On-page',
+      why: 'Improves snippet clarity and click-through.',
+      score: 58,
+    },
+    {
+      test: /alt text|image alt|missing alt/i,
+      impact: 'Medium',
+      category: 'On-page',
+      why: 'Helps image search and accessibility.',
+      score: 52,
+    },
+    {
+      test: /slow|core web vital|lcp|cls|performance|mobile/i,
+      impact: 'Medium',
+      category: 'Technical',
+      why: 'Speed is a ranking and UX factor.',
+      score: 55,
+    },
+    {
+      test: /og:|open graph|twitter card|favicon|structured data|schema/i,
+      impact: 'Low',
+      category: 'Polish',
+      why: 'Nice for sharing and richness; lower ranking impact.',
+      score: 35,
+    },
+  ]
+
+  for (const rule of rules) {
+    if (rule.test.test(t)) {
+      return {
+        impact: rule.impact,
+        category: rule.category,
+        why: rule.why,
+        score: rule.score,
+      }
+    }
+  }
+
+  if (st === 'error' || st === 'fail') {
+    return {
+      impact: 'High',
+      category: 'Technical',
+      why: 'Failing checks usually hurt crawl or on-page quality.',
+      score: 75,
+    }
+  }
+
+  return {
+    impact: 'Medium',
+    category: 'On-page',
+    why: 'Improves site quality; do after critical ranking blockers.',
+    score: 50,
+  }
+}
+
 function extractFailingChecks(results) {
   if (!results) return []
   const checks = []
@@ -74,17 +197,23 @@ function extractFailingChecks(results) {
     const key = normalizeActionKey(text)
     if (seen.has(key)) continue
     seen.add(key)
+    const meta = classifyForRanking(text, st)
     failing.push({
       text: text.slice(0, 280),
-      impact: st === 'error' || st === 'fail' ? 'High' : 'Medium',
+      impact: meta.impact,
+      category: meta.category,
+      why: meta.why,
+      score: meta.score,
       key,
+      source: 'audit',
     })
   }
-  return failing.slice(0, 15)
+
+  failing.sort((a, b) => (b.score || 0) - (a.score || 0))
+  return failing.slice(0, 20)
 }
 
 async function loadLatestAuditBundle(siteId) {
-  // Prefer multipage / richest audit (issueSummary or pages) over thin homepage row
   const { rows } = await pool.query(
     `SELECT results, score, site_health_pct, created_at
      FROM audit_results
@@ -118,19 +247,134 @@ async function loadLatestAuditBundle(siteId) {
   }
 }
 
-async function ensureActionSourceColumn() {
+async function ensureActionColumns() {
   await pool.query(`ALTER TABLE actions ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual'`)
+  await pool.query(`ALTER TABLE actions ADD COLUMN IF NOT EXISTS category TEXT`)
+  await pool.query(`ALTER TABLE actions ADD COLUMN IF NOT EXISTS why TEXT`)
+  await pool.query(`ALTER TABLE actions ADD COLUMN IF NOT EXISTS priority_score INTEGER DEFAULT 50`)
+}
+
+async function buildGrowthActions(siteId) {
+  const growth = []
+
+  const [{ rows: siteRows }, { rows: kwRows }, { rows: blRows }, { rows: metricRows }, { rows: userRows }] =
+    await Promise.all([
+      pool.query('SELECT id, url, user_id FROM sites WHERE id=$1', [siteId]),
+      pool.query('SELECT COUNT(*)::int AS n FROM keywords WHERE site_id=$1', [siteId]),
+      pool.query(
+        `SELECT COUNT(*)::int AS n FROM backlinks WHERE site_id=$1 AND COALESCE(status,'') <> 'prospect'`,
+        [siteId]
+      ),
+      pool.query('SELECT health FROM seo_metrics WHERE site_id=$1', [siteId]),
+      pool.query(
+        `SELECT u.gsc_refresh_token
+         FROM sites s JOIN users u ON u.id = s.user_id
+         WHERE s.id=$1`,
+        [siteId]
+      ),
+    ])
+
+  const site = siteRows[0]
+  if (!site) return growth
+
+  const keywordCount = Number(kwRows[0]?.n) || 0
+  const backlinkCount = Number(blRows[0]?.n) || 0
+  const health = Number(metricRows[0]?.health) || 0
+  const gscConnected = Boolean(userRows[0]?.gsc_refresh_token)
+
+  if (!gscConnected) {
+    growth.push({
+      text: 'Connect Google Search Console to track clicks, impressions and keyword positions',
+      impact: 'Critical',
+      category: 'Rankings',
+      why: 'Without GSC you cannot measure what already drives traffic.',
+      score: 98,
+      source: 'growth',
+      key: normalizeActionKey('connect google search console'),
+    })
+  }
+
+  if (keywordCount === 0) {
+    growth.push({
+      text: 'Add and track target keywords (gap + research) so you know what to rank for',
+      impact: 'Critical',
+      category: 'Rankings',
+      why: 'Rankings need a keyword target list before content or links pay off.',
+      score: 96,
+      source: 'growth',
+      key: normalizeActionKey('add and track target keywords'),
+    })
+  }
+
+  if (health > 0 && health < 75) {
+    growth.push({
+      text: 'Raise site health above 75 by fixing Critical/High audit issues first',
+      impact: 'High',
+      category: 'Technical',
+      why: 'Weak technical health caps ranking potential even with good content.',
+      score: 90,
+      source: 'growth',
+      key: normalizeActionKey('raise site health above 75'),
+    })
+  }
+
+  if (backlinkCount === 0) {
+    growth.push({
+      text: 'Start backlink outreach: find gap prospects and earn 1–2 quality links',
+      impact: 'High',
+      category: 'Links',
+      why: 'Authority from real links is a major ranking factor vs competitors.',
+      score: 85,
+      source: 'growth',
+      key: normalizeActionKey('start backlink outreach'),
+    })
+  }
+
+  if (keywordCount > 0 && keywordCount < 10) {
+    growth.push({
+      text: 'Expand tracked keywords to cover your main money / service terms',
+      impact: 'Medium',
+      category: 'Rankings',
+      why: 'A fuller keyword set shows where you can win page-1 next.',
+      score: 60,
+      source: 'growth',
+      key: normalizeActionKey('expand tracked keywords'),
+    })
+  }
+
+  return growth
+}
+
+function impactRank(impact) {
+  const i = String(impact || '').toLowerCase()
+  if (i === 'critical') return 0
+  if (i === 'high') return 1
+  if (i === 'medium') return 2
+  if (i === 'low') return 3
+  return 4
+}
+
+function sortActions(rows) {
+  return [...(rows || [])].sort((a, b) => {
+    if (Boolean(a.done) !== Boolean(b.done)) return a.done ? 1 : -1
+    const scoreDiff = (Number(b.priority_score) || 0) - (Number(a.priority_score) || 0)
+    if (scoreDiff) return scoreDiff
+    const impactDiff = impactRank(a.impact) - impactRank(b.impact)
+    if (impactDiff) return impactDiff
+    return new Date(a.created_at || 0) - new Date(b.created_at || 0)
+  })
 }
 
 /**
  * After audit completes or on refresh:
  * 1) Set health from real audit score
- * 2) Add new failing issues as pending actions (source=audit)
- * 3) Auto-complete audit actions that are no longer failing (fixed)
- * 4) Re-open completed audit actions if the issue returns
+ * 2) Add failing issues as pending actions (source=audit) with ranking-based priority
+ * 3) Seed growth actions (keywords / GSC / backlinks gaps)
+ * 4) Auto-complete audit actions that are no longer failing
+ * 5) Re-open completed audit actions if the issue returns
  */
 async function reconcileActionsFromAudit(siteId, options = {}) {
-  await ensureActionSourceColumn()
+  await ensureActionColumns()
 
   const audit = options.auditBundle || (await loadLatestAuditBundle(siteId))
   const results = options.results || audit?.results || null
@@ -158,16 +402,10 @@ async function reconcileActionsFromAudit(siteId, options = {}) {
     )
   }
 
-  if (!results) {
-    const { rows: all } = await pool.query(
-      'SELECT * FROM actions WHERE site_id=$1 ORDER BY done ASC, created_at ASC',
-      [siteId]
-    )
-    return { seeded: 0, completed: 0, health: healthScore || null, actions: all }
-  }
-
-  const failing = extractFailingChecks(results)
-  const failingKeys = new Set(failing.map(f => f.key))
+  const failing = results ? extractFailingChecks(results) : []
+  const growth = await buildGrowthActions(siteId)
+  const desired = [...growth, ...failing]
+  const failingKeys = new Set(failing.map((f) => f.key))
 
   const { rows: pending } = await pool.query(
     `SELECT id, text, COALESCE(source, 'manual') AS source
@@ -188,22 +426,46 @@ async function reconcileActionsFromAudit(siteId, options = {}) {
     }
   }
 
+  // Auto-complete growth tasks when the gap is closed
+  const stillNeeded = new Set(growth.map((g) => g.key))
+  const { rows: openGrowth } = await pool.query(
+    `SELECT id, text FROM actions
+     WHERE site_id=$1 AND done=FALSE AND COALESCE(source,'manual')='growth'`,
+    [siteId]
+  )
+  for (const row of openGrowth) {
+    const key = normalizeActionKey(row.text)
+    if (!stillNeeded.has(key)) {
+      await pool.query('UPDATE actions SET done=TRUE WHERE id=$1 AND site_id=$2', [
+        row.id,
+        siteId,
+      ])
+      completed += 1
+    }
+  }
+
   let seeded = 0
-  for (const f of failing) {
+  for (const f of desired) {
     const ins = await pool.query(
-      `INSERT INTO actions (site_id, text, impact, source)
-       SELECT $1, $2, $3, 'audit'
+      `INSERT INTO actions (site_id, text, impact, source, category, why, priority_score)
+       SELECT $1, $2, $3, $4, $5, $6, $7
        WHERE NOT EXISTS (
          SELECT 1 FROM actions
          WHERE site_id=$1 AND lower(btrim(text))=lower(btrim($2)) AND done=FALSE
        )
        RETURNING id`,
-      [siteId, f.text, f.impact]
+      [siteId, f.text, f.impact, f.source || 'audit', f.category || null, f.why || null, f.score || 50]
     )
     if (ins.rowCount > 0) seeded += 1
 
     await pool.query(
-      `UPDATE actions SET done=FALSE, impact=$3, source='audit'
+      `UPDATE actions
+       SET done=FALSE,
+           impact=$3,
+           source=COALESCE($4, source),
+           category=COALESCE($5, category),
+           why=COALESCE($6, why),
+           priority_score=COALESCE($7, priority_score)
        WHERE id = (
          SELECT id FROM actions
          WHERE site_id=$1 AND lower(btrim(text))=lower(btrim($2)) AND done=TRUE
@@ -214,22 +476,33 @@ async function reconcileActionsFromAudit(siteId, options = {}) {
          SELECT 1 FROM actions
          WHERE site_id=$1 AND lower(btrim(text))=lower(btrim($2)) AND done=FALSE
        )`,
-      [siteId, f.text, f.impact]
+      [siteId, f.text, f.impact, f.source || 'audit', f.category || null, f.why || null, f.score || 50]
+    )
+
+    // Refresh priority metadata on existing open matches
+    await pool.query(
+      `UPDATE actions
+       SET impact=$3,
+           source=COALESCE($4, source),
+           category=COALESCE($5, category),
+           why=COALESCE($6, why),
+           priority_score=COALESCE($7, priority_score)
+       WHERE site_id=$1 AND done=FALSE AND lower(btrim(text))=lower(btrim($2))`,
+      [siteId, f.text, f.impact, f.source || 'audit', f.category || null, f.why || null, f.score || 50]
     )
   }
 
-  // Tag older open tasks that match current audit issues as audit-sourced
   for (const f of failing) {
     await pool.query(
       `UPDATE actions SET source='audit'
        WHERE site_id=$1 AND done=FALSE AND lower(btrim(text))=lower(btrim($2))
-         AND COALESCE(source, 'manual') <> 'audit'`,
+         AND COALESCE(source, 'manual') NOT IN ('audit', 'growth')`,
       [siteId, f.text]
     )
   }
 
   const { rows: all } = await pool.query(
-    'SELECT * FROM actions WHERE site_id=$1 ORDER BY done ASC, created_at ASC',
+    'SELECT * FROM actions WHERE site_id=$1',
     [siteId]
   )
 
@@ -238,7 +511,8 @@ async function reconcileActionsFromAudit(siteId, options = {}) {
     completed,
     health: healthScore,
     failingCount: failing.length,
-    actions: all,
+    growthCount: growth.length,
+    actions: sortActions(all),
   }
 }
 
@@ -246,4 +520,7 @@ module.exports = {
   reconcileActionsFromAudit,
   extractFailingChecks,
   normalizeActionKey,
+  classifyForRanking,
+  sortActions,
+  ensureActionColumns,
 }

@@ -1,5 +1,5 @@
-/**
- * Numbered process / flow — clickable steps for guided full-page workflows.
+﻿/**
+ * Numbered process / flow - clickable steps for guided full-page workflows.
  * compact: denser chips for sticky page headers
  *
  * Colors:
@@ -119,7 +119,7 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
                 ) : null}
                 {!compact && clickable ? (
                   <div style={{ fontSize: 10, fontWeight: 700, color: active ? '#EA580C' : '#94A3B8', marginTop: 4 }}>
-                    Go →
+                    Go >
                   </div>
                 ) : null}
               </div>

@@ -1,4 +1,4 @@
-  import { useState, useEffect, useMemo } from 'react'
+﻿  import { useState, useEffect, useMemo } from 'react'
   import { useParams } from 'react-router-dom'
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
   import {
@@ -376,7 +376,7 @@
           (data.questions || []).length
         const hasOverview = Boolean(data.overview || (data.organic || []).length)
         if (!total && hasOverview) {
-          toast.success('Keyword overview loaded. No matching or related terms for this exact query — try a broader seed.')
+          toast.success('Keyword overview loaded. No matching or related terms for this exact query - try a broader seed.')
         } else if (!total) {
           toast.error('No keyword ideas for this query. Try a shorter or more common phrase.')
         } else {
@@ -891,7 +891,7 @@
                     <strong style={{ fontSize: 14, color: T.text }}>Project keyword discovery</strong>
                   </div>
                   <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
-                    Step 2 — pull ranking / opportunity keywords from your project.
+                    Step 2 - pull ranking / opportunity keywords from your project.
                   </div>
                 </div>
                 <OrangeBtn onClick={runAutoDiscover} disabled={discoverRunning}>
@@ -1019,7 +1019,7 @@
           <Card padding="1.25rem">
             <CollapsibleSection
               title="Keyword Research"
-              subtitle="Industry-standard discovery: volume, KD, CPC, intent, trend, results, SERP — aligned with Moz / Ahrefs / SE Ranking / Semrush / Serpstat patterns via DataForSEO."
+              subtitle="Industry-standard discovery: volume, KD, CPC, intent, trend, results, SERP - aligned with Moz / Ahrefs / SE Ranking / Semrush / Serpstat patterns via DataForSEO."
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />}
               defaultOpen
               right={

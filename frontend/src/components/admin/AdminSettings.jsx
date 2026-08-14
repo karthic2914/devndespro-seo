@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGear, faUsers, faToggleOn, faToggleOff } from '@fortawesome/free-solid-svg-icons'
@@ -100,7 +100,7 @@ export default function AdminSettings() {
     <div style={{ maxWidth: 720 }}>
       <PageHeader
         title="Settings"
-        subtitle="Platform controls — pages, notifications, and access rules."
+        subtitle="Platform controls - pages, notifications, and access rules."
       />
 
       <Card style={{ marginBottom: 14 }}>

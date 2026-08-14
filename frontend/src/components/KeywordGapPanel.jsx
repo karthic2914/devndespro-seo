@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -158,7 +158,7 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
     <Card style={{ marginBottom: 16 }}>
       <CollapsibleSection
         title="Keyword gap"
-        subtitle="Find keywords competitors rank for that you don’t — content and SEO opportunities."
+        subtitle="Find keywords competitors rank for that you don’t - content and SEO opportunities."
         icon={<FontAwesomeIcon icon={faChartLine} style={{ color: '#EA580C' }} />}
         defaultOpen
       >
@@ -174,7 +174,7 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
           </div>
           <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12, lineHeight: 1.4 }}>
             {filledCompetitors
-              ? `${filledCompetitors} competitor(s) ready — pick market, then Compare.`
+              ? `${filledCompetitors} competitor(s) ready - pick market, then Compare.`
               : 'Add competitors (or Auto-fill), pick market, then Compare to see gap keywords.'}
           </div>
 

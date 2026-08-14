@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faWandMagicSparkles, faRotate, faXmark, faChartColumn } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
@@ -97,7 +97,7 @@ export default function BacklinksCompetitorPanel({ siteId, onSaveOpportunity }) 
       setCompetitors(Array.isArray(data?.competitors) ? data.competitors : [])
       const src = data?.source ? ` via ${data.source}` : ''
       if (inserted > 0) toast.success(`Found ${inserted} competitor${inserted === 1 ? '' : 's'}${src}`)
-      else toast('No new competitors this time — try typing one manually')
+      else toast('No new competitors this time - try typing one manually')
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
     }

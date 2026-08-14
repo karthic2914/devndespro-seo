@@ -20,7 +20,7 @@ const NAV = [
   { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks' },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
-  // Hidden for now — re-enable by removing `hidden: true` (Admin Modules also controls visibility)
+  // Hidden for now - re-enable by removing `hidden: true` (Admin Modules also controls visibility)
   { to: 'ai',            label: 'AI Assistant',  icon: faRobot, feature: 'ai_assistant', module: 'ai_assistant', hidden: true },
   { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles, module: 'ai_visibility' },
   { to: 'integrations',  label: 'Integrations',  icon: faPlug },
@@ -150,7 +150,7 @@ export default function Layout() {
                 <div
                   key={to}
                   className="nav-item nav-item--locked"
-                  title={to === 'cold-emails' ? 'Agency plan required' : 'Locked — unlock after payment or ask admin'}
+                  title={to === 'cold-emails' ? 'Agency plan required' : 'Locked - unlock after payment or ask admin'}
                   aria-disabled="true"
                 >
                   <span className="nav-item__icon">

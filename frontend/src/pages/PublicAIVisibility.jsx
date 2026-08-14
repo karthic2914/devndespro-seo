@@ -114,7 +114,7 @@ export default function PublicAIVisibility() {
           {/* Results */}
           {results.length > 0 && (
             <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Query results — {cited}/{total} cited</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 12 }}>Query results - {cited}/{total} cited</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {results.map((r, i) => (
                   <div key={i} style={{ border: `1px solid ${r.cited ? '#BBF7D0' : '#FECACA'}`, borderRadius: 10, padding: 14, borderLeft: `4px solid ${r.cited ? '#16A34A' : '#DC2626'}` }}>
@@ -142,7 +142,7 @@ export default function PublicAIVisibility() {
             <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 8 }}>What this means for {domain}</div>
             <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.7 }}>
               {score === 0
-                ? `ChatGPT currently does not cite ${domain} when answering questions in your industry. This is fixable — the most impactful steps are submitting your sitemap to Bing Webmaster Tools and getting listed on Trustpilot.`
+                ? `ChatGPT currently does not cite ${domain} when answering questions in your industry. This is fixable - the most impactful steps are submitting your sitemap to Bing Webmaster Tools and getting listed on Trustpilot.`
                 : score < 50
                 ? `ChatGPT occasionally cites ${domain} but inconsistently. Improving your Bing indexing, author schema and review platform presence will increase citation frequency.`
                 : `ChatGPT regularly cites ${domain}. Focus on maintaining content quality and expanding to Reddit and industry publications to sustain this.`
