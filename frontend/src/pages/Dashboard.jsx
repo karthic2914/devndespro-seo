@@ -913,7 +913,7 @@ export default function Dashboard() {
                                   ? T.orange
                                   : T.text,
                             }}>
-                              {Number.isFinite(currentPos) && currentPos > 0 ? `#${currentPos}` : '-'}
+                              {Number.isFinite(currentPos) && currentPos > 0 ? `#${currentPos}` : ''}
                             </div>
 
                             <div>
@@ -930,9 +930,8 @@ export default function Dashboard() {
                                   />
                                   {Math.abs(change)}
                                 </span>
-                              ) : (
-                                <span style={{ fontSize: 9, color: T.muted }}>-</span>
-                              )}
+                              ) : null
+                              }
                             </div>
 
                             <div style={{ fontSize: 10, color: T.text2 }}>

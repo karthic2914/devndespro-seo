@@ -5,6 +5,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../UI'
+import SiteFavicon from '../SiteFavicon'
 
 const NAV_ITEMS = [
   { path: '',            label: 'Overview',     icon: '▦',  end: true },
@@ -75,18 +76,14 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = null 
           <div style={{ fontSize: 10, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>Active Project</div>
           <div style={{ background: T.surface2, borderRadius: 8, padding: '8px 10px', border: `1px solid ${T.border}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <div style={{
-                width: 26, height: 26, background: T.orangeDim, borderRadius: 6,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontWeight: 700, fontSize: 12, color: T.orange, flexShrink: 0,
-              }}>{site.name?.[0]?.toUpperCase()}</div>
+              <SiteFavicon name={site.name} url={site.url} size={26} radius={6} />
               <div style={{ overflow: 'hidden' }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: T.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.name}</div>
                 <div style={{ fontSize: 10, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.url}</div>
               </div>
             </div>
             <div style={{ fontSize: 10, color: T.muted }}>
-              Authority {daScore != null ? daScore : (site?.authority_score ?? '—')}
+              Authority {daScore != null ? daScore : (site?.authority_score ?? 'N/A')}
               {(daScore != null || site?.authority_score != null) && '/100'}
             </div>
           </div>

@@ -614,7 +614,7 @@ export function VisibilityResultsCard({
                   fontWeight: 800,
                 }}
               >
-                —
+                Out
               </span>
 
               <span
@@ -683,7 +683,7 @@ export function VisibilityResultsCard({
           </span>
 
           <span>
-            <b>–</b> Not mentioned /
+            <b>Out</b> Not mentioned /
             unavailable
           </span>
         </div>

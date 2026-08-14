@@ -12,6 +12,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
 import UsageBar from '../components/UsageBar'
+import SiteFavicon from '../components/SiteFavicon'
 import api from '../utils/api'
 
 const BENCHMARKS = [
@@ -31,73 +32,7 @@ function cleanDiscoveryText(value) {
 }
 
 function SiteAvatar({ name, url }) {
-  const [faviconError, setFaviconError] = useState(false)
-
-  const firstLetter = name?.charAt(0)?.toUpperCase() || '?'
-  const bg = `hsl(${((name?.charCodeAt(0) || 65) * 37) % 360}, 55%, 50%)`
-
-const getFaviconUrl = (siteUrl) => {
-  try {
-    if (!siteUrl) return null
-
-    const fixedUrl = siteUrl.startsWith('http')
-      ? siteUrl
-      : `https://${siteUrl}`
-
-    const parsedUrl = new URL(fixedUrl)
-
-    return `${parsedUrl.origin}/favicon.ico`
-  } catch {
-    return null
-  }
-}
-
-  const faviconUrl = getFaviconUrl(url)
-
-  if (faviconUrl && !faviconError) {
-    return (
-      <img
-        src={faviconUrl}
-        alt={name || 'site'}
-        width={36}
-        height={36}
-        onError={() => setFaviconError(true)}
-        style={{
-          width: 48,
-              height: 48,
-          borderRadius: 8,
-          objectFit: 'contain',
-          background: '#fff',
-          border: '1px solid #e5e7eb',
-          flexShrink: 0,
-          padding: 4,
-          boxSizing: 'border-box'
-        }}
-      />
-    )
-  }
-
-  return (
-    <div style={{
-      width: 48,
-              height: 48,
-      borderRadius: 8,
-      flexShrink: 0,
-      background: bg,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <span style={{
-        color: '#fff',
-        fontWeight: 700,
-        fontSize: 15,
-        textTransform: 'uppercase'
-      }}>
-        {firstLetter}
-      </span>
-    </div>
-  )
+  return <SiteFavicon name={name} url={url} size={48} radius={8} />
 }
 
 export default function Sites() {

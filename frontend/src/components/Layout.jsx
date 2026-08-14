@@ -11,6 +11,7 @@ import {
 import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
+import SiteFavicon from './SiteFavicon'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
@@ -73,7 +74,7 @@ export default function Layout() {
             <div className="label-xs mb-8">Active Project</div>
             <div className="site-card">
               <div className="site-card__row">
-                <div className="site-card__avatar">{site.name?.[0]?.toUpperCase()}</div>
+                <SiteFavicon name={site.name} url={site.url} size={28} radius={7} />
                 <div className="site-card__info">
                   <div className="site-card__name">{site.name}</div>
                   <div className="site-card__url">{site.url}</div>
@@ -81,7 +82,7 @@ export default function Layout() {
               </div>
               <div
                 className="site-card__da"
-                title="Authority score from your verified backlinks (0–100). Refresh on Site Audit."
+                title="Authority score from your verified backlinks (0-100). Refresh on Site Audit."
               >
                 <span className="site-card__da-label">Authority</span>
                 {(() => {
@@ -93,8 +94,7 @@ export default function Layout() {
                     : 'low'
                   return (
                     <span className={`site-card__da-score site-card__da-score--${tier}`}>
-                      {score != null ? score : '—'}
-                      {score != null && <span>/100</span>}
+                      {score != null ? <>{score}<span>/100</span></> : 'N/A'}
                     </span>
                   )
                 })()}

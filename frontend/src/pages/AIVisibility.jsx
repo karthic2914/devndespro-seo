@@ -10,6 +10,7 @@ import {
   VisibilityKPICards,
   VisibilityEngineTable,
 } from '../components/AIVisibilitySections3to7'
+import { BrandFavicon } from '../components/SiteFavicon'
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -1701,10 +1702,18 @@ export default function AIVisibility() {
 
         .ai-response-mentions {
           margin: 0;
-          padding-left: 18px;
+          padding-left: 0;
+          list-style: none;
           font-size: 10px;
           color: #374151;
           line-height: 1.75;
+        }
+
+        .ai-response-mentions li {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 4px;
         }
 
         .ai-response-you {
@@ -1876,10 +1885,18 @@ export default function AIVisibility() {
 
         .ai-response-mentions {
           margin: 0;
-          padding-left: 18px;
+          padding-left: 0;
+          list-style: none;
           font-size: 10px;
           color: #374151;
           line-height: 1.75;
+        }
+
+        .ai-response-mentions li {
+          display: flex;
+          align-items: center;
+          gap: 7px;
+          margin-bottom: 4px;
         }
 
         .ai-response-you {
@@ -2765,7 +2782,7 @@ export default function AIVisibility() {
             </h1>
           </div>
           <p className="ai-vis-subtitle">
-            Track whether ChatGPT and Claude recommend your brand — and compare scores before vs after changes.
+            Track whether ChatGPT and Claude recommend your brand, and compare scores before vs after changes.
           </p>
         </div>
 
@@ -3202,17 +3219,25 @@ export default function AIVisibility() {
                         const status = questionStatuses.find(s => s.question === q)
                         const isTested = !!status
 
-                        const chatgptRank =
+                        const chatgptRankRaw =
                           status?.engines?.chatgpt ??
                           status?.chatgptRank ??
                           status?.chatgpt_rank ??
                           null
 
-                        const claudeRank =
+                        const claudeRankRaw =
                           status?.engines?.claude ??
                           status?.claudeRank ??
                           status?.claude_rank ??
                           null
+
+                        const chatgptRank = Number.isFinite(Number(chatgptRankRaw)) && Number(chatgptRankRaw) > 0
+                          ? Number(chatgptRankRaw)
+                          : null
+
+                        const claudeRank = Number.isFinite(Number(claudeRankRaw)) && Number(claudeRankRaw) > 0
+                          ? Number(claudeRankRaw)
+                          : null
 
                         return (
                           <tr
@@ -3609,11 +3634,15 @@ export default function AIVisibility() {
                                       }
                                     >
                                       {isYou ? (
-                                        <span className="ai-response-you">
+                                        <span className="ai-response-you" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                          <BrandFavicon name={name} size={14} />
                                           {name} - You
                                         </span>
                                       ) : (
-                                        name
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                          <BrandFavicon name={name} size={14} />
+                                          {name}
+                                        </span>
                                       )}
                                     </li>
                                   )
@@ -3627,8 +3656,8 @@ export default function AIVisibility() {
                                 No brands listed
                               </div>
                               <div className="ai-vis-rank-empty-hint">
-                                This answer was advice-only — AI didn’t name agencies.
-                                Try a “best / hire / top agencies” style question to get ranked brands.
+                                This answer was advice-only. AI didn't name agencies.
+                                Try a "best / hire / top agencies" style question to get ranked brands.
                               </div>
                             </div>
                           )}
