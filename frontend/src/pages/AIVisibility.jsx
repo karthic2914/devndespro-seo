@@ -6,11 +6,13 @@ import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDown
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
-  VisibilityReasoningCard,
   VisibilityKPICards,
-  VisibilityEngineTable,
-  VisibilityCompetitorsPanel,
 } from '../components/AIVisibilitySections3to7'
+import {
+  VisibilityEngineTable,
+  VisibilityReasoningCard,
+  VisibilityCompetitorsPanel,
+} from '../components/AIVisibilityInsightCards'
 import { BrandFavicon } from '../components/SiteFavicon'
 
 // Picks a colored icon for a detected product card based on what it actually
