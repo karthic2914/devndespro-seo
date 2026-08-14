@@ -458,13 +458,110 @@ router.post('/:siteId/actions/sync-from-audit', auth, verifySite, async (req, re
 })
 
 // Competitors
+function normalizeCompetitorDomain(raw) {
+  const value = String(raw || '').trim()
+  if (!value) return ''
+  try {
+    const url = new URL(/^https?:\/\//i.test(value) ? value : `https://${value}`)
+    return url.hostname.replace(/^www\./i, '').toLowerCase()
+  } catch {
+    return value
+      .replace(/^https?:\/\//i, '')
+      .replace(/^www\./i, '')
+      .split('/')[0]
+      .toLowerCase()
+  }
+}
+
+const CRAWL_SKIP_HOSTS = new Set([
+  'facebook.com', 'fb.com', 'instagram.com', 'twitter.com', 'x.com', 'linkedin.com',
+  'youtube.com', 'youtu.be', 'tiktok.com', 'pinterest.com', 'reddit.com',
+  'google.com', 'googleapis.com', 'gstatic.com', 'goo.gl', 'bit.ly',
+  'apple.com', 'microsoft.com', 'cloudflare.com', 'cdnjs.com', 'jsdelivr.net',
+  'w3.org', 'schema.org', 'wikipedia.org', 'wikimedia.org', 'github.com', 'gitlab.com',
+  'npmjs.com', 'unpkg.com', 'fontawesome.com', 'fonts.googleapis.com', 'fonts.gstatic.com',
+])
+
+async function discoverCompetitorsFromSiteCrawl(siteUrl, targetDomain) {
+  const axios = require('axios')
+  const cheerio = require('cheerio')
+  const found = new Map()
+  try {
+    const start = /^https?:\/\//i.test(siteUrl) ? siteUrl : `https://${siteUrl}`
+    const { data: html } = await axios.get(start, {
+      timeout: 12000,
+      maxRedirects: 5,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; DevnDesproSEO/1.0)' },
+      responseType: 'text',
+      validateStatus: (s) => s >= 200 && s < 400,
+    })
+    const $ = cheerio.load(String(html || ''))
+    $('a[href]').each((_, el) => {
+      const href = String($(el).attr('href') || '').trim()
+      if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return
+      let host = ''
+      try {
+        host = new URL(href, start).hostname.replace(/^www\./i, '').toLowerCase()
+      } catch {
+        return
+      }
+      if (!host || host === targetDomain || host.endsWith(`.${targetDomain}`)) return
+      const root = host.split('.').slice(-2).join('.')
+      if (CRAWL_SKIP_HOSTS.has(host) || CRAWL_SKIP_HOSTS.has(root)) return
+      if (/\.(png|jpg|jpeg|gif|svg|css|js|pdf|zip)$/i.test(host)) return
+      const prev = found.get(host) || { name: host, hits: 0 }
+      prev.hits += 1
+      found.set(host, prev)
+    })
+  } catch (e) {
+    console.warn('Site crawl competitor discovery skipped:', e.message)
+  }
+
+  return [...found.values()]
+    .sort((a, b) => b.hits - a.hits)
+    .slice(0, 8)
+    .map((c) => ({
+      name: c.name,
+      dr: 0,
+      notes: `Suggested from site crawl (${c.hits} outbound link${c.hits === 1 ? '' : 's'})`,
+      source: 'crawl',
+    }))
+}
+
 router.get('/:siteId/competitors', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC', [req.siteId])
   res.json(rows)
 })
 router.post('/:siteId/competitors', auth, verifySite, async (req, res) => {
-  const { name, dr, notes } = req.body
-  const { rows } = await pool.query('INSERT INTO competitors (site_id, name, dr, notes) VALUES ($1,$2,$3,$4) RETURNING *', [req.siteId, name, dr || 0, notes || ''])
+  const domain = normalizeCompetitorDomain(req.body?.name || req.body?.domain || req.body?.url)
+  if (!domain) return res.status(400).json({ error: 'Competitor domain is required' })
+  const dr = Number(req.body?.dr) || 0
+  const notes = String(req.body?.notes || '').trim()
+  const url = String(req.body?.url || `https://${domain}`).trim()
+
+  const existing = await pool.query(
+    `SELECT id FROM competitors
+     WHERE site_id=$1 AND lower(btrim(name))=lower(btrim($2))
+     LIMIT 1`,
+    [req.siteId, domain]
+  )
+  if (existing.rows[0]) {
+    const { rows } = await pool.query(
+      `UPDATE competitors
+       SET dr=CASE WHEN $3::int > 0 THEN $3 ELSE dr END,
+           notes=CASE WHEN $4 <> '' THEN $4 ELSE notes END,
+           url=$5
+       WHERE id=$1 AND site_id=$2
+       RETURNING *`,
+      [existing.rows[0].id, req.siteId, dr, notes, url]
+    )
+    return res.json(rows[0])
+  }
+
+  const { rows } = await pool.query(
+    'INSERT INTO competitors (site_id, name, dr, notes, url) VALUES ($1,$2,$3,$4,$5) RETURNING *',
+    [req.siteId, domain, dr, notes, url]
+  )
   res.json(rows[0])
 })
 router.delete('/:siteId/competitors/:id', auth, verifySite, async (req, res) => {
@@ -479,7 +576,7 @@ function getDataForSEOAuthSites() {
   return Buffer.from(`${login}:${password}`).toString('base64')
 }
 
-// Auto-discover competitors: real ranking-overlap data from DataForSEO first, AI suggestions as fallback
+// Auto-discover competitors: backlink overlap + ranking overlap + site crawl, AI as fallback
 router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, res) => {
   const axios = require('axios')
   try {
@@ -492,8 +589,26 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
     const existingDomains = new Set(existingRows.map(r => String(r.name || '').toLowerCase().trim()))
 
     let discovered = []
-    let source = 'dataforseo'
+    let source = 'mixed'
 
+    // 1) Backlink-profile competitors (best for Backlinks page)
+    try {
+      const { fetchBacklinkCompetitors } = require('../utils/dataForSeoBacklinks')
+      const bl = await fetchBacklinkCompetitors({ target: targetDomain, limit: 10 })
+      for (const item of bl.items || []) {
+        discovered.push({
+          name: item.domain,
+          dr: Math.max(1, Math.min(100, Number(item.rank) || 0)),
+          notes: `Backlink competitor: ${item.intersections} shared referring domains`,
+          source: 'backlinks',
+        })
+      }
+      if (bl.items?.length) source = 'backlinks'
+    } catch (e) {
+      console.warn('Backlink competitors discover skipped:', e.message)
+    }
+
+    // 2) Ranking-overlap competitors (Labs)
     const authHeader = getDataForSEOAuthSites()
     if (authHeader) {
       try {
@@ -509,7 +624,7 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
           { headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' }, timeout: 20000 }
         )
         const items = data?.tasks?.[0]?.result?.[0]?.items || []
-        discovered = items
+        const labs = items
           .filter(item => item?.domain && item.domain.toLowerCase() !== targetDomain.toLowerCase())
           .map(item => {
             const etv = Number(item?.full_domain_metrics?.organic?.etv || item?.metrics?.organic?.etv || 0)
@@ -518,13 +633,37 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
             return {
               name: item.domain,
               dr: estAuthority,
-              notes: `Auto-discovered (DataForSEO): ${keywordCount} shared ranking keywords, est. traffic value ${Math.round(etv)}`,
+              notes: `Ranking overlap: ${keywordCount} shared keywords, est. traffic value ${Math.round(etv)}`,
+              source: 'labs',
             }
           })
+        if (labs.length) {
+          discovered = discovered.concat(labs)
+          if (source === 'mixed') source = 'dataforseo'
+        }
       } catch (e) {
         console.error('DataForSEO competitors_domain failed:', e.response?.data || e.message)
       }
     }
+
+    // 3) Crawl the project website for outbound domains
+    const crawlHits = await discoverCompetitorsFromSiteCrawl(site.url, targetDomain)
+    if (crawlHits.length) {
+      discovered = discovered.concat(crawlHits)
+      if (source === 'mixed') source = 'crawl'
+    }
+
+    // Dedupe by domain (prefer higher DR / richer notes)
+    const byDomain = new Map()
+    for (const c of discovered) {
+      const key = normalizeCompetitorDomain(c.name)
+      if (!key || key === targetDomain) continue
+      const prev = byDomain.get(key)
+      if (!prev || Number(c.dr || 0) > Number(prev.dr || 0)) {
+        byDomain.set(key, { ...c, name: key })
+      }
+    }
+    discovered = [...byDomain.values()].slice(0, 12)
 
     if (discovered.length) {
       try {
@@ -535,10 +674,10 @@ Business: ${site.name}
 Website: ${site.url}
 ${site.description ? `What this business does: ${site.description}` : ''}
 
-Candidate domains found via keyword-ranking overlap (some may be coincidental matches unrelated to the actual industry, e.g. sharing a similar-sounding brand suffix but operating in a totally different space):
+Candidate domains (from backlink overlap, ranking overlap, and/or site crawl — some may be coincidental):
 ${candidateList}
 
-Return ONLY the domains that are plausible genuine competitors or adjacent players in the same or a closely related industry as the business above. Exclude any domain that appears to be an unrelated company that only coincidentally overlaps on generic or brand-like keywords. Be strict - if in doubt, exclude it.
+Return ONLY the domains that are plausible genuine competitors or adjacent players in the same or a closely related industry as the business above. Exclude CDNs, social networks, directories, news mega-sites, and unrelated companies. Be strict - if in doubt, exclude it.
 
 Return ONLY valid JSON:
 { "relevant": ["domain1.com", "domain2.com"] }`
@@ -561,12 +700,12 @@ Return ONLY valid JSON:
           const relevantSet = new Set(parsed.relevant.map(d => String(d || '').toLowerCase().trim()))
           discovered = discovered.filter(d => relevantSet.has(d.name.toLowerCase()))
         } else {
-          console.error('Relevance filter returned no usable list, dropping all DataForSEO candidates to be safe. Raw response was:', text)
-          discovered = []
+          console.error('Relevance filter returned no usable list, keeping top scored candidates. Raw:', text)
+          discovered = discovered.slice(0, 5)
         }
       } catch (e) {
-        console.error('Competitor relevance filter failed, dropping DataForSEO candidates to be safe:', e.message)
-        discovered = []
+        console.error('Competitor relevance filter failed, keeping top candidates:', e.message)
+        discovered = discovered.slice(0, 5)
       }
     }
 
@@ -599,9 +738,10 @@ Return ONLY valid JSON:
 
         discovered = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
           .map(c => ({
-            name: String(c?.domain || '').trim(),
+            name: normalizeCompetitorDomain(c?.domain),
             dr: 0,
             notes: `AI-suggested (no live ranking data available): ${String(c?.reason || '').trim()}`,
+            source: 'ai',
           }))
           .filter(c => c.name)
       } catch (e) {
@@ -613,8 +753,8 @@ Return ONLY valid JSON:
     let inserted = 0
     for (const c of toInsert) {
       await pool.query(
-        'INSERT INTO competitors (site_id, name, dr, notes) VALUES ($1,$2,$3,$4)',
-        [req.siteId, c.name, c.dr, c.notes]
+        'INSERT INTO competitors (site_id, name, dr, notes, url) VALUES ($1,$2,$3,$4,$5)',
+        [req.siteId, c.name, c.dr, c.notes, `https://${c.name}`]
       )
       existingDomains.add(c.name.toLowerCase())
       inserted++

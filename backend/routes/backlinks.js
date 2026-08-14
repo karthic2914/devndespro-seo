@@ -7,6 +7,8 @@ const { verifyBacklink } = require('../utils/backlinkVerifier')
 const {
   fetchDataForSeoBacklinks,
   fetchDataForSeoTimeseries,
+  fetchBacklinkOverview,
+  fetchDomainIntersection,
   normalizeTarget,
 } = require('../utils/dataForSeoBacklinks')
 const { calculateBacklinkQuality, calculateAuthority } = require('../utils/backlinkScoreEngine')
@@ -1877,6 +1879,142 @@ router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {
     avgDr: Math.round(Number(row.avg_dr || 0) * 10) / 10,
     opportunities: Number(opps.rows[0]?.opportunities || 0),
   })
+})
+
+/**
+ * Dynamic backlink competitor comparison:
+ * - overview metrics for your site + selected competitors
+ * - link-gap domains (link to competitor, not you)
+ */
+router.post('/:siteId/backlinks/competitor-compare', auth, verifySite, async (req, res) => {
+  try {
+    const { rows: siteRows } = await pool.query('SELECT url, name FROM sites WHERE id=$1', [req.siteId])
+    const site = siteRows[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+
+    const yourDomain = normalizeTarget(site.url)
+    const { rows: competitorRows } = await pool.query(
+      'SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC',
+      [req.siteId]
+    )
+
+    const requested = Array.isArray(req.body?.domains)
+      ? req.body.domains.map(normalizeTarget).filter(Boolean)
+      : []
+
+    let selected = competitorRows
+    if (requested.length) {
+      const want = new Set(requested)
+      selected = competitorRows.filter((c) => want.has(normalizeTarget(c.name || c.url)))
+      // allow ad-hoc domains not yet saved
+      for (const d of requested) {
+        if (!selected.some((c) => normalizeTarget(c.name) === d) && d !== yourDomain) {
+          selected.push({ id: null, name: d, dr: 0, notes: 'Ad-hoc compare', url: `https://${d}` })
+        }
+      }
+    }
+
+    selected = selected.slice(0, 4)
+    if (!selected.length) {
+      return res.json({
+        yourDomain,
+        you: null,
+        competitors: [],
+        linkGap: [],
+        warning: 'Add competitors first (type a domain or Auto-Discover).',
+      })
+    }
+
+    let you = null
+    let cost = 0
+    const warnings = []
+
+    try {
+      you = await fetchBacklinkOverview({ target: yourDomain })
+      cost += Number(you.cost || 0)
+    } catch (e) {
+      warnings.push(`Your overview unavailable: ${e.message}`)
+      you = {
+        target: yourDomain,
+        rank: 0,
+        backlinks: 0,
+        referringDomains: 0,
+        source: 'unavailable',
+      }
+    }
+
+    const competitors = []
+    for (const c of selected) {
+      const domain = normalizeTarget(c.name || c.url)
+      try {
+        const overview = await fetchBacklinkOverview({ target: domain })
+        cost += Number(overview.cost || 0)
+        competitors.push({
+          id: c.id,
+          domain,
+          notes: c.notes || '',
+          savedDr: Number(c.dr || 0),
+          rank: overview.rank,
+          backlinks: overview.backlinks,
+          referringDomains: overview.referringDomains,
+          deltaRefDomains: overview.referringDomains - Number(you.referringDomains || 0),
+          deltaBacklinks: overview.backlinks - Number(you.backlinks || 0),
+        })
+
+        // Keep stored DR in sync with live rank when available
+        if (c.id && overview.rank > 0) {
+          await pool.query(
+            'UPDATE competitors SET dr=$1, url=$2 WHERE id=$3 AND site_id=$4',
+            [overview.rank, `https://${domain}`, c.id, req.siteId]
+          )
+        }
+      } catch (e) {
+        warnings.push(`${domain}: ${e.message}`)
+        competitors.push({
+          id: c.id,
+          domain,
+          notes: c.notes || '',
+          savedDr: Number(c.dr || 0),
+          rank: Number(c.dr || 0),
+          backlinks: null,
+          referringDomains: null,
+          error: e.message,
+        })
+      }
+    }
+
+    let linkGap = []
+    const primary = competitors.find((c) => c.referringDomains != null) || competitors[0]
+    if (primary?.domain) {
+      try {
+        const gap = await fetchDomainIntersection({
+          targets: { 1: primary.domain },
+          excludeTargets: [yourDomain],
+          limit: 15,
+        })
+        cost += Number(gap.cost || 0)
+        linkGap = (gap.items || []).map((item) => ({
+          ...item,
+          vsCompetitor: primary.domain,
+        }))
+      } catch (e) {
+        warnings.push(`Link gap unavailable: ${e.message}`)
+      }
+    }
+
+    res.json({
+      yourDomain,
+      you,
+      competitors,
+      linkGap,
+      cost,
+      warnings,
+      fetchedAt: new Date().toISOString(),
+    })
+  } catch (e) {
+    console.error('competitor-compare error:', e)
+    res.status(500).json({ error: e.message || 'Competitor compare failed' })
+  }
 })
 
 const monthKeyFromDate = (value) => {

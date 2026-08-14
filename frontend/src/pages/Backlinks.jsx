@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
+import BacklinksCompetitorPanel from '../components/BacklinksCompetitorPanel'
 import api from '../utils/api'
 
 export default function Backlinks() {
@@ -557,6 +558,29 @@ export default function Backlinks() {
           </div>
         </Card>
       )}
+
+      <BacklinksCompetitorPanel
+        siteId={siteId}
+        onSaveOpportunity={async (opp) => {
+          try {
+            await api.post(`/sites/${siteId}/backlink-opportunities`, {
+              sourceDomain: String(opp.site || '').trim(),
+              sourceUrl: String(opp.siteUrl || '').trim(),
+              strategy: String(opp.strategy || '').trim(),
+              opportunityType: String(opp.type || 'competitor-link-gap'),
+              relevance: String(opp.relevance || ''),
+              estimatedDR: Number(opp.estimatedDR || 0),
+              evidence: String(opp.evidence || ''),
+              status: 'Prospect',
+              source: 'competitor-gap',
+            })
+            toast.success('Saved as opportunity')
+            load()
+          } catch (e) {
+            toast.error(e?.response?.data?.error || 'Failed to save opportunity')
+          }
+        }}
+      />
 
       {!loading && backlinks.length > 0 && (
         <BacklinksInsightPanels

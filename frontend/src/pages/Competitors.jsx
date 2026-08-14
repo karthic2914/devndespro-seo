@@ -35,7 +35,12 @@ export default function Competitors() {
     if (!form.name.trim()) return
     setAdding(true)
     try {
-      await api.post(`/sites/${siteId}/competitors`, { name: form.name.trim(), dr: parseInt(form.dr) || 0, notes: form.notes })
+      await api.post(`/sites/${siteId}/competitors`, {
+        name: form.name.trim(),
+        dr: parseInt(form.dr) || 0,
+        notes: form.notes,
+        url: `https://${String(form.name).trim().replace(/^https?:\/\//i, '').replace(/^www\./i, '').split('/')[0]}`,
+      })
       setForm({ name: '', dr: '', notes: '' })
       load()
       toast.success('Competitor added')
@@ -92,7 +97,7 @@ export default function Competitors() {
           <div style={{ fontSize: 13, color: 'var(--muted)' }}>Checking real ranking data and filtering for relevance</div>
         </div>
       )}
-      <PageHeader title="Competitors" subtitle="Track competitor Domain Ratings and benchmark" />
+      <PageHeader title="Competitors" subtitle="Type competitors manually, or auto-discover from backlinks, rankings, and your site crawl" />
       <Card style={{ marginBottom: 14 }}>
         <SectionLabel>Business description</SectionLabel>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
@@ -127,7 +132,9 @@ export default function Competitors() {
               ? <><FontAwesomeIcon icon={faSpinner} spin style={{ marginRight: 6 }} />Discovering...</>
               : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Auto-Discover Competitors</>}
           </OrangeBtn>
-          <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>Uses real ranking data (DataForSEO), with AI as a fallback if none is found.</span>
+          <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>
+            Pulls backlink competitors, ranking overlap, and outbound domains from your site crawl. AI is the fallback.
+          </span>
         </div>
       </Card>
       <Card>

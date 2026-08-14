@@ -384,5 +384,164 @@ const fetchDataForSeoTimeseries = async ({
 module.exports = {
   fetchDataForSeoBacklinks,
   fetchDataForSeoTimeseries,
+  fetchBacklinkCompetitors,
+  fetchBacklinkOverview,
+  fetchDomainIntersection,
   normalizeTarget,
+}
+
+async function dfsPost(path, body) {
+  const credentials = getCredentials()
+  if (!credentials.login || !credentials.password) {
+    throw new Error(
+      'DataForSEO credentials are missing. Set DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD in the backend environment.'
+    )
+  }
+  const auth = Buffer.from(
+    `${credentials.login}:${credentials.password}`
+  ).toString('base64')
+
+  const response = await fetch(`https://api.dataforseo.com/v3/${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+
+  const text = await response.text()
+  let payload
+  try {
+    payload = JSON.parse(text)
+  } catch {
+    throw new Error(`DataForSEO returned invalid JSON (HTTP ${response.status})`)
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `DataForSEO HTTP ${response.status}: ` +
+        String(payload?.status_message || text || 'Request failed').slice(0, 300)
+    )
+  }
+
+  const task = payload?.tasks?.[0]
+  if (!task) throw new Error('DataForSEO response contained no task')
+  if (Number(task.status_code || 0) >= 40000) {
+    throw new Error(`DataForSEO task failed: ${task.status_message || task.status_code}`)
+  }
+
+  return { task, result: task?.result?.[0] || {}, cost: Number(task?.cost || 0) }
+}
+
+/**
+ * Domains that share backlink profile with target (backlink competitors).
+ */
+async function fetchBacklinkCompetitors({ target, limit = 10 } = {}) {
+  const normalizedTarget = normalizeTarget(target)
+  if (!normalizedTarget) throw new Error('Invalid backlink target')
+
+  const { result, cost } = await dfsPost('backlinks/competitors/live', [
+    {
+      target: normalizedTarget,
+      limit: Math.max(1, Math.min(50, Number(limit) || 10)),
+      order_by: ['intersections,desc', 'rank,desc'],
+      filters: ['intersections', '>', 2],
+      rank_scale: 'one_hundred',
+      tag: 'devndespro-bl-competitors',
+    },
+  ])
+
+  const items = Array.isArray(result?.items) ? result.items : []
+  return {
+    provider: 'dataforseo',
+    target: normalizedTarget,
+    cost,
+    items: items
+      .map((item) => ({
+        domain: normalizeTarget(item?.target || item?.domain || ''),
+        rank: Number(item?.rank || 0),
+        intersections: Number(item?.intersections || 0),
+      }))
+      .filter((x) => x.domain && x.domain !== normalizedTarget),
+  }
+}
+
+/**
+ * Backlink overview / summary for a domain.
+ */
+async function fetchBacklinkOverview({ target } = {}) {
+  const normalizedTarget = normalizeTarget(target)
+  if (!normalizedTarget) throw new Error('Invalid backlink target')
+
+  const { result, cost } = await dfsPost('backlinks/summary/live', [
+    {
+      target: normalizedTarget,
+      include_subdomains: true,
+      rank_scale: 'one_hundred',
+      tag: 'devndespro-bl-overview',
+    },
+  ])
+
+  return {
+    provider: 'dataforseo',
+    target: normalizedTarget,
+    cost,
+    rank: Number(result?.rank || 0),
+    backlinks: Number(result?.backlinks || 0),
+    referringDomains: Number(
+      result?.referring_main_domains || result?.referring_domains || 0
+    ),
+    referringPages: Number(result?.referring_pages || 0),
+    brokenBacklinks: Number(result?.broken_backlinks || 0),
+    dofollow: Number(result?.referring_links_dofollow || result?.dofollow || 0),
+  }
+}
+
+/**
+ * Domains linking to competitor targets but not to excludeTargets (link gap).
+ */
+async function fetchDomainIntersection({
+  targets = {},
+  excludeTargets = [],
+  limit = 20,
+} = {}) {
+  const cleanTargets = {}
+  for (const [k, v] of Object.entries(targets || {})) {
+    const d = normalizeTarget(v)
+    if (d) cleanTargets[String(k)] = d
+  }
+  if (!Object.keys(cleanTargets).length) {
+    throw new Error('At least one intersection target is required')
+  }
+
+  const exclude = (Array.isArray(excludeTargets) ? excludeTargets : [])
+    .map(normalizeTarget)
+    .filter(Boolean)
+
+  const payload = {
+    targets: cleanTargets,
+    limit: Math.max(1, Math.min(100, Number(limit) || 20)),
+    order_by: ['1.rank,desc'],
+    rank_scale: 'one_hundred',
+    tag: 'devndespro-bl-intersection',
+  }
+  if (exclude.length) payload.exclude_targets = exclude
+
+  const { result, cost } = await dfsPost('backlinks/domain_intersection/live', [payload])
+  const items = Array.isArray(result?.items) ? result.items : []
+
+  return {
+    provider: 'dataforseo',
+    cost,
+    items: items.map((item) => {
+      const first = item?.domain_intersection?.['1'] || item?.domain_intersection?.[1] || {}
+      return {
+        domain: normalizeTarget(item?.domain || first?.target || first?.domain || ''),
+        rank: Number(first?.rank || item?.rank || 0),
+        backlinks: Number(first?.backlinks || item?.backlinks || 0),
+      }
+    }).filter((x) => x.domain),
+  }
 }
