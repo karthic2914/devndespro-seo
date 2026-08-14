@@ -88,6 +88,9 @@ router.post('/checkout', auth, async (req, res) => {
       subscription_data: {
         metadata: meta,
       },
+      // Account has Managed Payments on by default; disable for simple SaaS checkout
+      // unless you configure tax codes / tax collection in Stripe Dashboard.
+      managed_payments: { enabled: false },
       line_items: [
         {
           quantity: 1,
@@ -98,6 +101,8 @@ router.post('/checkout', auth, async (req, res) => {
             product_data: {
               name: `DevnDespro SEO — ${label}`,
               description: PLAN_META[plan]?.blurb || `${label} plan`,
+              // SaaS / electronically supplied services (required if Managed Payments stays on)
+              tax_code: 'txcd_10103001',
             },
           },
         },
