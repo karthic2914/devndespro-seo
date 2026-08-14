@@ -11,6 +11,7 @@ import {
 } from 'recharts'
 import { BrandFavicon } from './SiteFavicon'
 import api from '../utils/api'
+import { useAuth } from '../hooks/useAuth'
 
 function domainOf(b) {
   const raw = b.source_domain || b.name || b.url || ''
@@ -156,6 +157,8 @@ export default function BacklinksInsightPanels({
   onFilterDomain,
   onFilterAnchor,
 }) {
+  const { user } = useAuth()
+  const isAdmin = Number(user?.id) === 1
   const [rangeMonths, setRangeMonths] = useState(12)
   const [domainLimit, setDomainLimit] = useState(5)
   const [anchorLimit, setAnchorLimit] = useState(5)
@@ -223,12 +226,10 @@ export default function BacklinksInsightPanels({
   }
 
   const sourceLabel =
-    growthMeta.source === 'dataforseo'
-      ? (growthMeta.cached ? 'Live · DataForSEO (cached)' : 'Live · DataForSEO')
-      : 'From tracked links'
+    growthMeta.source === 'dataforseo' ? 'Live' : 'From your links'
 
   const refreshGrowth = () => {
-    if (!siteId || growthLoading) return
+    if (!siteId || !isAdmin || growthLoading) return
     setGrowthLoading(true)
     api
       .get(`/sites/${siteId}/backlinks/growth`, {
@@ -265,20 +266,22 @@ export default function BacklinksInsightPanels({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Backlink growth</div>
-            <span
-              title={growthMeta.warning || undefined}
-              style={{
-                fontSize: 10,
-                fontWeight: 700,
-                color: growthMeta.source === 'dataforseo' ? '#15803d' : '#64748B',
-                background: growthMeta.source === 'dataforseo' ? '#dcfce7' : '#F1F5F9',
-                borderRadius: 999,
-                padding: '2px 8px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {growthLoading ? 'Loading…' : sourceLabel}
-            </span>
+            {isAdmin && (
+              <span
+                title={growthMeta.warning || undefined}
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: growthMeta.source === 'dataforseo' ? '#15803d' : '#64748B',
+                  background: growthMeta.source === 'dataforseo' ? '#dcfce7' : '#F1F5F9',
+                  borderRadius: 999,
+                  padding: '2px 8px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {growthLoading ? 'Loading…' : sourceLabel}
+              </span>
+            )}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <select
@@ -299,12 +302,12 @@ export default function BacklinksInsightPanels({
               <option value={12}>12 months</option>
               <option value={24}>24 months</option>
             </select>
-            {siteId && (
+            {isAdmin && siteId && (
               <button
                 type="button"
                 onClick={refreshGrowth}
                 disabled={growthLoading}
-                title="Refresh live DataForSEO history"
+                title="Refresh live growth data"
                 style={{
                   height: 30,
                   border: '1px solid #E5E7EB',
@@ -325,7 +328,7 @@ export default function BacklinksInsightPanels({
         <div style={{ width: '100%', height: 220 }}>
           {growthLoading && !growth?.length ? (
             <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: '#94A3B8', fontSize: 12 }}>
-              Loading live growth…
+              Loading growth…
             </div>
           ) : growth.every(p => p.backlinks === 0) ? (
             <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: '#94A3B8', fontSize: 12 }}>

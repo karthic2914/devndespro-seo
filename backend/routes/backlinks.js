@@ -1938,11 +1938,29 @@ const decorateSeries = (series) =>
 
 // Live growth chart: DataForSEO timeseries first, tracked DB fallback.
 // Cached 24h to avoid re-billing on every page load (?refresh=1 to bypass).
+// Provider live fetch + refresh are admin-only (user id 1); common users get
+// series only (cached live if available, else tracked) with no source metadata.
 router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
   await ensureBacklinkIntelligenceSchema()
 
   const months = Math.max(1, Math.min(36, Number(req.query.months || 12)))
-  const forceRefresh = String(req.query.refresh || '') === '1'
+  const isAdmin = Number(req.user?.id) === 1
+  const forceRefresh = isAdmin && String(req.query.refresh || '') === '1'
+
+  const publicPayload = ({ series, months: m }) => ({
+    months: m,
+    series: decorateSeries(series),
+  })
+
+  const adminPayload = (extra) => ({
+    ...publicPayload(extra),
+    source: extra.source,
+    target: extra.target || null,
+    cached: !!extra.cached,
+    fetchedAt: extra.fetchedAt || null,
+    cost: Number(extra.cost || 0),
+    warning: extra.warning || undefined,
+  })
 
   try {
     if (!forceRefresh) {
@@ -1955,15 +1973,19 @@ router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
         [req.siteId, months]
       )
       if (cached.rows[0]) {
-        return res.json({
-          source: cached.rows[0].source,
-          target: cached.rows[0].target || null,
+        const row = cached.rows[0]
+        if (!isAdmin) {
+          return res.json(publicPayload({ series: row.series, months }))
+        }
+        return res.json(adminPayload({
+          series: row.series,
           months,
+          source: row.source,
+          target: row.target,
           cached: true,
-          fetchedAt: cached.rows[0].fetched_at,
-          cost: Number(cached.rows[0].cost || 0),
-          series: decorateSeries(cached.rows[0].series),
-        })
+          fetchedAt: row.fetched_at,
+          cost: row.cost,
+        }))
       }
     }
 
@@ -1978,7 +2000,8 @@ router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
     let cost = 0
     let error = null
 
-    if (siteUrl) {
+    // Only admin triggers paid DataForSEO history calls.
+    if (isAdmin && siteUrl) {
       try {
         const live = await fetchDataForSeoTimeseries({
           target: siteUrl,
@@ -1988,7 +2011,6 @@ router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
           source = 'dataforseo'
           target = live.target
           cost = Number(live.cost || 0)
-          // Align to requested month window (fill missing months with last known / 0)
           const keys = buildMonthKeys(months)
           const byKey = new Map(live.series.map((p) => [p.key, p]))
           let lastBacklinks = 0
@@ -2019,6 +2041,7 @@ router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
       series = await buildTrackedGrowthSeries(req.siteId, months)
     }
 
+    // Cache only when admin fetched (so live series can be shared), or always cache tracked.
     await pool.query(
       `INSERT INTO backlink_growth_cache (site_id, months, source, target, series, cost, fetched_at)
        VALUES ($1, $2, $3, $4, $5::jsonb, $6, NOW())
@@ -2031,28 +2054,33 @@ router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
       [req.siteId, months, source, target || '', JSON.stringify(series), cost]
     )
 
-    res.json({
-      source,
-      target: target || null,
+    if (!isAdmin) {
+      return res.json(publicPayload({ series, months }))
+    }
+
+    res.json(adminPayload({
+      series,
       months,
+      source,
+      target,
       cached: false,
       fetchedAt: new Date().toISOString(),
       cost,
       warning: error || undefined,
-      series: decorateSeries(series),
-    })
+    }))
   } catch (err) {
     console.error('backlinks/growth error:', err)
     try {
       const series = await buildTrackedGrowthSeries(req.siteId, months)
-      return res.json({
-        source: 'tracked',
-        target: null,
+      if (!isAdmin) {
+        return res.json(publicPayload({ series, months }))
+      }
+      return res.json(adminPayload({
+        series,
         months,
-        cached: false,
-        series: decorateSeries(series),
+        source: 'tracked',
         warning: err.message || 'Failed to load live growth',
-      })
+      }))
     } catch (fallbackErr) {
       res.status(500).json({ error: 'Failed to load backlink growth' })
     }
