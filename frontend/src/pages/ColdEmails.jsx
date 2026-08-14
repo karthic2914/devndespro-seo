@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import useAdminSettings from '../hooks/useAdminSettings'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane, faTrash } from '@fortawesome/free-solid-svg-icons'
@@ -89,6 +90,7 @@ function followupMessage(name, website) {
 }
 
 export default function ColdEmails() {
+  const location = useLocation()
   const { settings, loading: settingsLoading } = useAdminSettings()
   const [rows, setRows] = useState([])
   const [projects, setProjects] = useState([])
@@ -99,6 +101,18 @@ export default function ColdEmails() {
   const [composeMode, setComposeMode] = useState('first')
   const [savingId, setSavingId] = useState(null)
   const [form, setForm] = useState(defaultForm)
+
+  useEffect(() => {
+    const draft = location.state
+    if (!draft?.draftSubject && !draft?.draftBody) return
+    setForm((prev) => ({
+      ...prev,
+      company: draft.draftToHint || prev.company,
+      subject: draft.draftSubject || prev.subject,
+      message: draft.draftBody || prev.message,
+      notes: draft.draftToHint ? `AI media outreach: ${draft.draftToHint}` : prev.notes,
+    }))
+  }, [location.state])
 
   const pendingRows = rows.filter((r) => String(r.status || '').toLowerCase() === 'draft')
   const sentRows = rows.filter((r) => String(r.status || '').toLowerCase() !== 'draft')

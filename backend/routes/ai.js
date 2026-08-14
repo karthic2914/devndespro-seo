@@ -371,6 +371,280 @@ Return ONLY a JSON array, no markdown:
   }
 })
 
+/**
+ * Digital PR / AI-trust media opportunities
+ * GET  list saved pipeline
+ * POST discover (AI) + upsert + seed Action Plan tasks
+ * PATCH update status / notes
+ */
+router.get('/:siteId/ai-visibility/media-opportunities', async (req, res) => {
+  try {
+    const {
+      listMediaOpportunities,
+      STATUSES,
+      MARKETS,
+    } = require('../utils/mediaOpportunities')
+    const outlets = await listMediaOpportunities(req.siteId)
+    res.json({
+      outlets,
+      statuses: STATUSES,
+      markets: MARKETS,
+      meta: {
+        total: outlets.length,
+        high: outlets.filter((o) => o.aiAuthority === 'High').length,
+        shortlisted: outlets.filter((o) => o.status === 'shortlisted').length,
+        contacted: outlets.filter((o) => o.status === 'contacted').length,
+        published: outlets.filter((o) => ['published', 'ai_cited'].includes(o.status)).length,
+        mentioned: outlets.filter((o) => o.mentionFound).length,
+      },
+    })
+  } catch (e) {
+    console.error('media-opportunities list error:', e)
+    res.status(500).json({ error: 'Failed to load media opportunities' })
+  }
+})
+
+router.post('/:siteId/ai-visibility/media-opportunities/check-mentions', async (req, res) => {
+  try {
+    const { checkMediaMentions } = require('../utils/mediaOpportunities')
+    const result = await checkMediaMentions(req.siteId, {
+      limit: Number(req.body?.limit) || 12,
+      locationCode: Number(req.body?.locationCode) || 2578,
+    })
+    res.json(result)
+  } catch (e) {
+    console.error('media mention check error:', e)
+    res.status(500).json({ error: 'Mention check failed' })
+  }
+})
+router.patch('/:siteId/ai-visibility/media-opportunities/:id', async (req, res) => {
+  try {
+    const { updateMediaOpportunity } = require('../utils/mediaOpportunities')
+    const row = await updateMediaOpportunity(req.siteId, Number(req.params.id), {
+      status: req.body?.status,
+      notes: req.body?.notes,
+      aiAuthority: req.body?.aiAuthority,
+    })
+    if (!row) return res.status(404).json({ error: 'Not found' })
+    res.json(row)
+  } catch (e) {
+    console.error('media-opportunities patch error:', e)
+    res.status(500).json({ error: 'Failed to update media opportunity' })
+  }
+})
+
+router.post('/:siteId/ai-visibility/media-opportunities', async (req, res) => {
+  try {
+    const { runWithAiUsageContext } = require('../utils/aiUsage')
+    const {
+      upsertMediaOutlets,
+      listMediaOpportunities,
+      seedMediaActions,
+      STATUSES,
+      MARKETS,
+    } = require('../utils/mediaOpportunities')
+
+    const force = Boolean(req.body?.force)
+    const marketId = String(req.body?.market || 'nordic').toLowerCase()
+    const nicheFocus = String(req.body?.niche || '').trim().slice(0, 120)
+    const marketMeta = MARKETS.find((m) => m.id === marketId) || MARKETS[0]
+
+    const existing = await listMediaOpportunities(req.siteId)
+    if (existing.length && !force) {
+      return res.json({
+        cached: true,
+        outlets: existing,
+        statuses: STATUSES,
+        markets: MARKETS,
+        meta: {
+          total: existing.length,
+          high: existing.filter((o) => o.aiAuthority === 'High').length,
+          shortlisted: existing.filter((o) => o.status === 'shortlisted').length,
+          contacted: existing.filter((o) => o.status === 'contacted').length,
+          published: existing.filter((o) => ['published', 'ai_cited'].includes(o.status)).length,
+          mentioned: existing.filter((o) => o.mentionFound).length,
+          market: marketMeta.label,
+          niche: nicheFocus || '',
+        },
+        site: null,
+      })
+    }
+
+    const [sR, kR, cR] = await Promise.all([
+      pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId]),
+      pool.query('SELECT keyword FROM keywords WHERE site_id=$1 LIMIT 15', [req.siteId]),
+      pool.query(
+        `SELECT name, url FROM competitors WHERE site_id=$1 ORDER BY created_at DESC LIMIT 8`,
+        [req.siteId]
+      ).catch(() => ({ rows: [] })),
+    ])
+    const site = sR.rows[0]
+    if (!site) return res.status(404).json({ error: 'Site not found' })
+    const keywords = (kR.rows || []).map((k) => k.keyword).filter(Boolean)
+    const competitors = (cR.rows || [])
+      .map((c) => c.name || c.url)
+      .filter(Boolean)
+      .slice(0, 8)
+    const keywordLine = keywords.length ? keywords.join(', ') : 'web development, SEO, digital marketing'
+    const competitorLine = competitors.length ? competitors.join(', ') : 'none listed'
+
+    const marketInstruction =
+      marketId === 'global'
+        ? 'Prioritize strong international tech/business/marketing publishers.'
+        : marketId === 'europe'
+          ? 'Prioritize Nordic + broader European industry press.'
+          : 'Prioritize Norway and Nordic outlets first, then nearby EU if needed.'
+
+    const nicheLine = nicheFocus || 'infer niche from site + keywords'
+
+    const prompt = `You are a digital PR strategist for AI visibility (GEO/AEO).
+Companies want coverage on media brands that large language models frequently trust and cite.
+
+Site: ${site.name} (${site.url})
+Topics / keywords: ${keywordLine}
+Competitors (same niche): ${competitorLine}
+Target market: ${marketMeta.label}. ${marketInstruction}
+Niche focus: ${nicheLine}
+
+Return 8 real media outlets matching this targeting.
+Score aiAuthority as how often LLMs would treat that PUBLISHER as a trusted source (High/Medium/Low).
+Include a concrete pitch angle a founder could send this week.
+
+Return ONLY JSON (no markdown):
+{
+  "meta": { "market": "${marketMeta.label}", "niche": "short niche" },
+  "outlets": [
+    {
+      "name": "Outlet",
+      "url": "https://...",
+      "country": "Norway",
+      "topic": "coverage fit",
+      "aiAuthority": "High|Medium|Low",
+      "why": "why LLMs trust this publisher",
+      "pitch": "one outreach angle",
+      "contactHint": "tips page or newsroom email if commonly known, else empty"
+    }
+  ]
+}`
+
+    const fallback = {
+      meta: { market: 'Norway/Nordic', niche: 'digital / tech services' },
+      outlets: [
+        {
+          name: 'Kampanje',
+          url: 'https://kampanje.com',
+          country: 'Norway',
+          topic: 'Marketing, media and digital business',
+          aiAuthority: 'High',
+          why: 'Leading Norwegian marketing trade press frequently used as a citable source.',
+          pitch: `Expert take from ${site.name} on Nordic SME search + AI visibility.`,
+          contactHint: '',
+        },
+        {
+          name: 'digi.no',
+          url: 'https://www.digi.no',
+          country: 'Norway',
+          topic: 'Tech and digitalization',
+          aiAuthority: 'High',
+          why: 'Established Norwegian tech newsroom with strong topical authority.',
+          pitch: `How ${site.name} helps companies show up in Google and AI answers.`,
+          contactHint: '',
+        },
+        {
+          name: 'Shifter',
+          url: 'https://www.shifter.no',
+          country: 'Norway',
+          topic: 'Startups and scaleups',
+          aiAuthority: 'Medium',
+          why: 'Respected Nordic startup media with solid niche trust.',
+          pitch: `Founder story: building SEO/AI visibility tooling for the Nordic market.`,
+          contactHint: '',
+        },
+        {
+          name: 'E24',
+          url: 'https://e24.no',
+          country: 'Norway',
+          topic: 'Business and economy',
+          aiAuthority: 'High',
+          why: 'Major Norwegian business publisher often cited by AI systems.',
+          pitch: `Business angle: why AI search changes customer acquisition for SMEs.`,
+          contactHint: '',
+        },
+      ],
+    }
+
+    let parsed = null
+    try {
+      const r = await runWithAiUsageContext(
+        {
+          userId: req.user?.id || null,
+          siteId: req.siteId,
+          feature: 'ai-media-opportunities',
+        },
+        async () =>
+          anthropic.messages.create({
+            model: 'claude-sonnet-5',
+            max_tokens: 1800,
+            messages: [{ role: 'user', content: prompt }],
+          })
+      )
+      const textBlock = Array.isArray(r.content) ? r.content.find((b) => b?.type === 'text') : null
+      const text = String(textBlock?.text || '').trim()
+      const startObj = text.indexOf('{')
+      const endObj = text.lastIndexOf('}')
+      if (startObj >= 0 && endObj > startObj) {
+        parsed = JSON.parse(text.slice(startObj, endObj + 1))
+      }
+    } catch (err) {
+      console.warn('media-opportunities AI failed, using fallback:', err.message)
+    }
+
+    const outlets = Array.isArray(parsed?.outlets) ? parsed.outlets : fallback.outlets
+    const cleaned = outlets
+      .filter((o) => o && o.name)
+      .slice(0, 12)
+      .map((o) => ({
+        name: String(o.name).slice(0, 120),
+        url: String(o.url || '').slice(0, 240),
+        country: String(o.country || '').slice(0, 60),
+        topic: String(o.topic || '').slice(0, 200),
+        aiAuthority: ['High', 'Medium', 'Low'].includes(o.aiAuthority) ? o.aiAuthority : 'Medium',
+        why: String(o.why || '').slice(0, 280),
+        pitch: String(o.pitch || '').slice(0, 320),
+        contactHint: String(o.contactHint || '').slice(0, 120),
+      }))
+
+    await upsertMediaOutlets(req.siteId, cleaned)
+    const actionsSeeded = await seedMediaActions(req.siteId)
+    const saved = await listMediaOpportunities(req.siteId)
+    const metaBase = parsed?.meta || fallback.meta
+
+    res.json({
+      cached: false,
+      outlets: saved,
+      statuses: STATUSES,
+      markets: MARKETS,
+      actionsSeeded,
+      targeting: { market: marketId, niche: nicheFocus || metaBase.niche || '' },
+      meta: {
+        ...metaBase,
+        market: metaBase.market || marketMeta.label,
+        niche: nicheFocus || metaBase.niche || '',
+        total: saved.length,
+        high: saved.filter((o) => o.aiAuthority === 'High').length,
+        shortlisted: saved.filter((o) => o.status === 'shortlisted').length,
+        contacted: saved.filter((o) => o.status === 'contacted').length,
+        published: saved.filter((o) => ['published', 'ai_cited'].includes(o.status)).length,
+        mentioned: saved.filter((o) => o.mentionFound).length,
+      },
+      site: { name: site.name, url: site.url },
+    })
+  } catch (e) {
+    console.error('media-opportunities error:', e)
+    res.status(500).json({ error: 'Failed to find media opportunities' })
+  }
+})
+
 router.post('/:siteId/ai-visibility/suggest-queries', auth, verifySite, async (req, res) => {
   try {
     const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])

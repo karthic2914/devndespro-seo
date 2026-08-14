@@ -15,6 +15,7 @@ import {
   VisibilityReasoningCard,
   VisibilityCompetitorsPanel,
 } from '../components/AIVisibilityInsightCards'
+import AiMediaTrustPanel from '../components/AiMediaTrustPanel'
 import { BrandFavicon } from '../components/SiteFavicon'
 
 // Picks a colored icon for a detected product card based on what it actually
@@ -3110,10 +3111,16 @@ export default function AIVisibility() {
         testedQuestions={currentQuestionsTested}
       />
 
+      <AiMediaTrustPanel
+        siteId={siteId}
+        siteName={site?.name}
+        siteUrl={site?.url || domain}
+      />
+
       <div style={{ marginBottom: 14 }}>
 
           {/* Single row: chips + search + add */}
-          <div className="ai-questions-toolbar">
+          <div id="ai-questions-toolbar" className="ai-questions-toolbar">
             <div className="ai-questions-chips">
             {visibleTabs.map(tab => (
               <button
