@@ -13,7 +13,6 @@ const NAV_ITEMS = [
   { path: 'backlinks',  label: 'Backlinks',    icon: '🔗' },
   { path: 'audit',      label: 'Site Audit',   icon: '🔍' },
   { path: 'actions',    label: 'Action Plan',  icon: '✅' },
-  { path: 'ai',         label: 'AI Assistant', icon: '🤖' },
   { path: 'ai-visibility', label: 'AI Visibility', faIcon: 'wand' },
   { path: 'competitors',label: 'Competitors',  icon: '⚔️' },
   { path: 'rank',       label: 'Rank #1',      icon: '🏆' },

@@ -12,7 +12,6 @@ import Keywords from './pages/Keywords'
 import Backlinks from './pages/Backlinks'
 import Competitors from './pages/Competitors'
 import Actions from './pages/Actions'
-import AiAssistant from './pages/AiAssistant'
 import AIVisibility from './pages/AIVisibility'
 import PublicAIVisibility from './pages/PublicAIVisibility'
 import SiteAudit from './pages/SiteAudit'
@@ -211,8 +210,8 @@ export default function App() {
             <Route path="backlinks" element={<FeatureRoute feature="backlinks"><Backlinks /></FeatureRoute>} />
             <Route path="competitors" element={<Competitors />} />
             <Route path="actions" element={<Actions />} />
-            <Route path="ai" element={<FeatureRoute feature="ai_assistant"><AiAssistant /></FeatureRoute>} />
-              <Route path="ai-visibility" element={<AIVisibility />} />
+            <Route path="ai" element={<Navigate to=".." replace />} />
+            <Route path="ai-visibility" element={<AIVisibility />} />
             <Route path="audit" element={<SiteAudit />} />
             <Route path="alerts" element={<Alerts />} />
             <Route path="integrations" element={<Integrations />} />

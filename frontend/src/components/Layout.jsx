@@ -20,7 +20,8 @@ const NAV = [
   { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks' },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
-  { to: 'ai',            label: 'AI Assistant',  icon: faRobot, feature: 'ai_assistant', module: 'ai_assistant' },
+  // Hidden for now — re-enable by removing `hidden: true` (Admin Modules also controls visibility)
+  { to: 'ai',            label: 'AI Assistant',  icon: faRobot, feature: 'ai_assistant', module: 'ai_assistant', hidden: true },
   { to: 'ai-visibility', label: 'AI Visibility', icon: faWandMagicSparkles, module: 'ai_visibility' },
   { to: 'integrations',  label: 'Integrations',  icon: faPlug },
   { to: 'email-reports', label: 'Email Reports', icon: faEnvelope, module: 'email_reports' },
@@ -39,7 +40,7 @@ export default function Layout() {
   const [unreadAlerts, setUnreadAlerts] = useState(0)
   const [modules, setModules] = useState({
     backlinks: true,
-    ai_assistant: true,
+    ai_assistant: false,
     ai_visibility: true,
     cold_emails: true,
     competitors: true,
@@ -60,6 +61,7 @@ export default function Layout() {
   const handleLogout = () => { logout(); navigate('/login') }
 
   const visibleNav = NAV.filter(item => {
+    if (item.hidden) return false
     if (item.module && modules[item.module] === false) return false
     return true
   })

@@ -7,7 +7,7 @@ import { Card, PageHeader, T, Button } from '../UI'
 
 const MODULES = [
   { key: 'module_backlinks', label: 'Backlinks', help: 'Show Backlinks in project navigation (still needs paid unlock per user).' },
-  { key: 'module_ai_assistant', label: 'AI Assistant', help: 'Show AI Assistant page (still needs paid unlock per user).' },
+  { key: 'module_ai_assistant', label: 'AI Assistant', help: 'Currently hidden in the app nav. Turn on here later, then remove the nav `hidden` flag in Layout.jsx to show it again.' },
   { key: 'module_ai_visibility', label: 'AI Visibility', help: 'Show AI Visibility for all project users.' },
   { key: 'module_competitors', label: 'Competitors', help: 'Show Competitors page.' },
   { key: 'module_email_reports', label: 'Email Reports', help: 'Show Email Reports page.' },

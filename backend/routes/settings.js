@@ -24,8 +24,9 @@ const MODULE_KEYS = [
 async function readModules() {
   const out = {}
   for (const key of MODULE_KEYS) {
-    // Default ON so existing installs keep current behaviour
-    out[key] = await getSetting(key, true)
+    // AI Assistant hidden by default for now (Admin can turn on later)
+    const fallback = key === 'module_ai_assistant' ? false : true
+    out[key] = await getSetting(key, fallback)
   }
   return out
 }
