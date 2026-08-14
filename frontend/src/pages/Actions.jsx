@@ -10,11 +10,46 @@ export default function Actions() {
   const { siteId } = useParams()
   const [actions, setActions] = useState([])
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
   const [form, setForm] = useState({ text: '', impact: 'Medium' })
   const [adding, setAdding] = useState(false)
 
-  const load = () => api.get(`/sites/${siteId}/actions`).then(r => setActions(r.data)).finally(() => setLoading(false))
+  const load = () =>
+    api.get(`/sites/${siteId}/actions`)
+      .then(async () => {
+        try {
+          const synced = await api.post(`/sites/${siteId}/actions/sync-from-audit`)
+          if (Array.isArray(synced.data?.actions)) {
+            setActions(synced.data.actions)
+            if (synced.data.completed > 0) {
+              toast.success(`${synced.data.completed} issue(s) marked fixed from latest audit`)
+            }
+            return
+          }
+        } catch { /* fall through */ }
+        const r = await api.get(`/sites/${siteId}/actions`)
+        setActions(Array.isArray(r.data) ? r.data : [])
+      })
+      .finally(() => setLoading(false))
   useEffect(() => { load() }, [siteId])
+
+  const refreshFromAudit = async () => {
+    setSyncing(true)
+    try {
+      const synced = await api.post(`/sites/${siteId}/actions/sync-from-audit`)
+      if (Array.isArray(synced.data?.actions)) setActions(synced.data.actions)
+      const seeded = Number(synced.data?.seeded) || 0
+      const completed = Number(synced.data?.completed) || 0
+      if (seeded || completed) {
+        toast.success(`Synced: ${seeded} new, ${completed} fixed`)
+      } else {
+        toast.success('Action Plan already matches latest audit')
+      }
+    } catch {
+      toast.error('Could not refresh from audit')
+    }
+    setSyncing(false)
+  }
 
   const add = async () => {
     if (!form.text.trim()) {
@@ -35,8 +70,12 @@ export default function Actions() {
 
   const toggle = async (id, done) => {
     try {
-      await api.put(`/sites/${siteId}/actions/${id}`, { done: !done })
-      toast.success(done ? 'Action moved to pending' : 'Action marked complete')
+      const { data } = await api.put(`/sites/${siteId}/actions/${id}`, { done: !done })
+      if (!done && data?.healthDelta) {
+        toast.success(`Completed. Site Health +${data.healthDelta}`)
+      } else {
+        toast.success(done ? 'Action moved to pending' : 'Action marked complete')
+      }
       load()
     } catch {
       toast.error('Failed to update action')
@@ -59,7 +98,15 @@ export default function Actions() {
 
   return (
     <div className="fade-in page-content">
-      <PageHeader title="Action Plan" subtitle="Track SEO tasks by priority" />
+      <PageHeader
+        title="Action Plan"
+        subtitle="Track SEO tasks by priority — auto-synced from your latest audit"
+        action={
+          <OrangeBtn onClick={refreshFromAudit} disabled={syncing || loading} style={{ height: 36 }}>
+            {syncing ? 'Refreshing…' : 'Refresh from audit'}
+          </OrangeBtn>
+        }
+      />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
         <MetricCard label="Total tasks" value={actions.length} />
         <MetricCard label="Completed" value={done} accent="var(--green)" />
@@ -108,7 +155,7 @@ export default function Actions() {
               ))}
             </Card>
           )}
-          {actions.length === 0 && <EmptyState message="No actions yet. Add your first task above." />}
+          {actions.length === 0 && <EmptyState message="No open tasks. Run or refresh from audit to pull failing checks." />}
         </>
       )}
     </div>

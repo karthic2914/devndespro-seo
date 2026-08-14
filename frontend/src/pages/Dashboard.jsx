@@ -22,6 +22,7 @@ import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../componen
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
+import toast from '../utils/toast'
 
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
@@ -74,8 +75,27 @@ export default function Dashboard() {
     api.get(`/sites/${siteId}/actions`).then(r => { if (Array.isArray(r.data)) setActions(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/metrics`).then(r => { if (r.data) setMetrics(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/keywords`).then(r => { if (Array.isArray(r.data)) setKeywords(r.data) }).catch(() => {})
-    api.get(`/sites/${siteId}/audit/latest`).then(r => setLatestAudit(r.data || null)).catch(() => {})
-    api.get(`/sites/${siteId}/audit/multipage-latest`).then(r => setMultipageLatest(r.data || null)).catch(() => {})
+    Promise.all([
+      api.get(`/sites/${siteId}/audit/latest`).then(r => { setLatestAudit(r.data || null); return r.data }).catch(() => null),
+      api.get(`/sites/${siteId}/audit/multipage-latest`).then(r => { setMultipageLatest(r.data || null); return r.data }).catch(() => null),
+    ]).then(() =>
+      api.post(`/sites/${siteId}/actions/sync-from-audit`)
+        .then(r => {
+          if (Array.isArray(r.data?.actions)) setActions(r.data.actions)
+          if (r.data?.health != null) {
+            setMetrics(m => ({ ...m, health: r.data.health }))
+            setMultipageLatest(prev => {
+              if (!prev?.results) return prev
+              return {
+                ...prev,
+                site_health_pct: r.data.health,
+                results: { ...prev.results, siteHealthPct: r.data.health },
+              }
+            })
+          }
+        })
+        .catch(() => {})
+    )
     api.get(`/sites/${siteId}/gsc`).then(r => { if (r.data) setGscData(r.data) }).catch(() => {})
   }
 
@@ -139,11 +159,48 @@ export default function Dashboard() {
     setGscConnecting(false)
   }
 
+  const applyHealthFromAction = (data) => {
+    const delta = Number(data?.healthDelta) || 0
+    if (delta > 0) {
+      setMetrics(m => ({
+        ...m,
+        health: data.health != null
+          ? data.health
+          : Math.min(100, Number(m.health || 0) + delta),
+      }))
+      setMultipageLatest(prev => {
+        if (!prev?.results) return prev
+        const prevPct = Number(prev.results.siteHealthPct ?? prev.site_health_pct ?? 0)
+        const nextPct = Math.min(100, prevPct + delta)
+        return {
+          ...prev,
+          site_health_pct: nextPct,
+          results: { ...prev.results, siteHealthPct: nextPct },
+        }
+      })
+      setLatestAudit(prev => {
+        if (!prev || prev.score == null) return prev
+        return { ...prev, score: Math.min(100, Number(prev.score) + delta) }
+      })
+    }
+  }
+
   const handleActionDone = async (action) => {
     try {
-      await api.put(`/sites/${siteId}/actions/${action.id}`, { done: true })
+      const { data } = await api.put(`/sites/${siteId}/actions/${action.id}`, { done: true })
       setActions(p => p.map(a => a.id === action.id ? { ...a, done: true } : a))
-    } catch {}
+      applyHealthFromAction(data)
+      if (data?.healthDelta) {
+        toast.success(
+          `Marked fixed. Site Health +${data.healthDelta}` +
+            (data.health != null ? ` → ${data.health}` : '')
+        )
+      } else {
+        toast.success('Marked fixed')
+      }
+    } catch {
+      toast.error('Could not update action')
+    }
   }
 
   const handleActionSkip = async (action) => {
@@ -154,7 +211,12 @@ export default function Dashboard() {
   }
 
   const categoryScores = AUDIT_CATEGORIES.map(c => {
-    const checks = (latestAudit?.checks || []).filter(x => x.category === c.label)
+    const homeChecks = Array.isArray(latestAudit?.checks)
+      ? latestAudit.checks
+      : Array.isArray(latestAudit?.results?.checks)
+      ? latestAudit.results.checks
+      : []
+    const checks = homeChecks.filter(x => x.category === c.label)
     if (!checks.length) return { ...c, value: 0 }
     const total = checks.reduce((sum, chk) => sum + (chk.status === 'pass' ? 100 : chk.status === 'warning' ? 60 : 20), 0)
     return { ...c, value: Math.round(total / checks.length) }
@@ -163,15 +225,106 @@ export default function Dashboard() {
   const overallScore = Number.isFinite(Number(latestAudit?.score))
     ? Number(latestAudit.score)
     : Math.round(categoryScores.reduce((s, a) => s + a.value, 0) / Math.max(categoryScores.length, 1))
-  const auditChecks = Array.isArray(latestAudit?.checks) ? latestAudit.checks : []
+  const auditChecks = Array.isArray(latestAudit?.checks)
+    ? latestAudit.checks
+    : Array.isArray(latestAudit?.results?.checks)
+    ? latestAudit.results.checks
+    : []
   const auditErrorCount = auditChecks.filter(c => c.status === 'error').length
   const auditWarningCount = auditChecks.filter(c => c.status === 'warning').length
   const auditPassCount = auditChecks.filter(c => c.status === 'pass').length
 
   const pendingActions = actions.filter(a => !a.done)
-  const nextAction = pendingActions.find(a => String(a.impact || '').toLowerCase() === 'high') || pendingActions[0]
+  const nextStoredAction = pendingActions.find(a => String(a.impact || '').toLowerCase() === 'high') || pendingActions[0]
+
+  const inferCategory = (text = '') => {
+    const t = String(text).toLowerCase()
+    if (/backlink|authority|referr/.test(t)) return 'Backlinks'
+    if (/speed|lcp|cls|performance|core web/.test(t)) return 'Page Speed'
+    if (/schema|snippet|ai |chatgpt|aeo|llm/.test(t)) return 'AI Visibility'
+    if (/https?|canonical|robots|sitemap|redirect|404|status|index|crawl|ssl|technical/.test(t)) return 'Technical SEO'
+    if (/content|word count|thin|heading|h1|readab/.test(t)) return 'Content Quality'
+    return 'On-Page SEO'
+  }
+
+  /** Prefer Action Plan task; else top live audit issue so banner is never generic fluff */
+  const auditIssueCandidates = (() => {
+    const out = []
+    const seen = new Set()
+    const pushIssue = (raw, status = 'warning') => {
+      const text = String(
+        raw?.sampleMessage || raw?.message || raw?.title || raw?.check || raw?.text || ''
+      ).trim()
+      if (!text) return
+      const key = text.toLowerCase().slice(0, 160)
+      if (seen.has(key)) return
+      seen.add(key)
+      const impactFromRaw = String(raw?.impact || '').toLowerCase()
+      const impact =
+        impactFromRaw === 'high' || impactFromRaw === 'critical' || status === 'error' || status === 'fail'
+          ? 'High'
+          : impactFromRaw === 'low'
+          ? 'Low'
+          : 'Medium'
+      const count = Number(raw?.count) || 0
+      const category =
+        raw?.category ||
+        inferCategory(text)
+      out.push({
+        id: null,
+        text: text.slice(0, 180),
+        impact,
+        category,
+        count,
+        source: 'audit-live',
+        done: false,
+      })
+    }
+
+    const mp = multipageLatest?.results
+    if (Array.isArray(mp?.issueSummary)) {
+      const sorted = [...mp.issueSummary]
+        .filter(i => {
+          const st = String(i.status || '').toLowerCase()
+          return st === 'error' || st === 'warning' || st === 'fail' || Number(i.count) > 0
+        })
+        .sort((a, b) => {
+          const rank = (s) => (String(s).toLowerCase() === 'error' ? 0 : 1)
+          return rank(a.status) - rank(b.status) || (b.count || 0) - (a.count || 0)
+        })
+      for (const issue of sorted.slice(0, 8)) {
+        pushIssue(issue, issue.status)
+      }
+    }
+    if (Array.isArray(mp?.topIssues)) {
+      for (const i of mp.topIssues.slice(0, 5)) pushIssue(i, i.status || 'warning')
+    }
+    if (Array.isArray(mp?.checks)) {
+      for (const c of mp.checks.filter(x => x.status === 'error' || x.status === 'warning').slice(0, 5)) {
+        pushIssue(c, c.status)
+      }
+    }
+    const homeChecks = Array.isArray(latestAudit?.checks) ? latestAudit.checks
+      : Array.isArray(latestAudit?.results?.checks) ? latestAudit.results.checks
+      : []
+    for (const c of homeChecks.filter(x => x.status === 'error' || x.status === 'warning').slice(0, 5)) {
+      pushIssue(c, c.status)
+    }
+    return out
+  })()
+
+  const nextAction = nextStoredAction
+    ? {
+        ...nextStoredAction,
+        category: nextStoredAction.category || inferCategory(nextStoredAction.text),
+      }
+    : auditIssueCandidates[0] || null
+  const nextActionCategory = nextAction?.category || inferCategory(nextAction?.text)
+  const pendingCount = pendingActions.length || auditIssueCandidates.length
   const previewKeywords = keywords.slice(0, 5)
-  const previewActions = pendingActions.slice(0, 3)
+  const previewActions = pendingActions.length
+    ? pendingActions.slice(0, 3)
+    : auditIssueCandidates.slice(0, 3)
 
   const toNum = (v, fallback = 0) => {
     const n = Number(v)
@@ -349,27 +502,73 @@ export default function Dashboard() {
 
   const overviewRecommendation = (() => {
     if (nextAction?.text) {
+      const pages = Number(nextAction.count) || 0
+      if (pages > 1) return `${nextAction.text} (${pages} pages)`
       return nextAction.text
     }
-
-    if (criticalIssueCount > 0) {
-      return 'Critical issues found. Fix the highest-impact problems first.'
+    if (!hasLatestAudit && !hasMultipageAudit) {
+      return 'Run a site audit to generate your next best SEO moves.'
     }
-
-    if (healthValue < 60) {
-      return 'Site needs attention. Start with the most important technical and content issues.'
+    if (healthValue >= 90) {
+      return 'Excellent health. Keep publishing content and earning quality backlinks.'
     }
-
-    if (healthValue < 80) {
-      return 'Good progress. Review the remaining high-impact improvements.'
+    if (healthValue < 75) {
+      return 'Health is below target. Open Site Audit and fix the highest-impact failing checks first.'
     }
-
-    if (healthValue < 90) {
-      return 'Strong foundation. A few improvements can raise overall performance.'
-    }
-
-    return 'Excellent health. Focus on smaller optimization opportunities.'
+    return 'Your latest audit looks clear. Add a task or re-run audit to find new opportunities.'
   })()
+
+  const nextMoveMeta = (() => {
+    if (nextAction) {
+      const fromPlan = Boolean(nextAction.id)
+      return {
+        impact: nextAction.impact || 'High',
+        category: nextActionCategory,
+        statusLabel: fromPlan
+          ? (pendingCount > 1 ? `${pendingCount} in Action Plan` : 'In Action Plan')
+          : (pendingCount > 1 ? `${pendingCount} from latest audit` : 'Latest audit'),
+      }
+    }
+    if (!hasLatestAudit && !hasMultipageAudit) {
+      return { impact: 'High', category: 'Site Audit', statusLabel: 'No audit yet' }
+    }
+    return { impact: 'Low', category: 'Maintenance', statusLabel: 'All caught up' }
+  })()
+
+  const nextMoveImpactColor = (() => {
+    const i = String(nextMoveMeta.impact || '').toLowerCase()
+    if (i === 'high' || i === 'critical') return '#F97316'
+    if (i === 'low') return '#34D399'
+    return '#FBBF24'
+  })()
+
+  const handleNextMoveClick = async () => {
+    if (nextAction?.id) {
+      await handleActionDone(nextAction)
+      return
+    }
+    if (nextAction && !nextAction.id) {
+      // Live audit issue not yet in Action Plan → seed then open plan
+      try {
+        await api.post(`/sites/${siteId}/actions/sync-from-audit`)
+      } catch { /* ignore */ }
+      navigate(`/site/${siteId}/actions`)
+      return
+    }
+    if (!hasLatestAudit && !hasMultipageAudit) {
+      navigate(`/site/${siteId}/audit`)
+      return
+    }
+    navigate(`/site/${siteId}/audit`)
+  }
+
+  const nextMoveButtonLabel = nextAction?.id
+    ? 'Mark as fixed'
+    : nextAction
+    ? 'Fix in Action Plan'
+    : (!hasLatestAudit && !hasMultipageAudit)
+    ? 'Run Audit'
+    : 'Review Audit'
   const rawDaily = Array.isArray(gscData?.daily) ? gscData.daily : []
   const weeklyTraffic = rawDaily
     .slice(-7)
@@ -593,11 +792,11 @@ export default function Dashboard() {
                   fontSize: 12,
                   color: '#CBD5E1',
                 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F97316' }} />
-                  <span style={{ fontWeight: 700 }}>{nextAction?.impact || 'High'} impact</span>
-<span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399' }} />
-                  <span style={{ fontWeight: 700 }}>{nextAction?.category || 'On-Page SEO'}</span>
-<span style={{
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: nextMoveImpactColor }} />
+                  <span style={{ fontWeight: 700 }}>{nextMoveMeta.impact} impact</span>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34D399' }} />
+                  <span style={{ fontWeight: 700 }}>{nextMoveMeta.category}</span>
+                  <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: 5,
@@ -612,7 +811,7 @@ export default function Dashboard() {
                     }}>
                       &#10003;
                     </span>
-                    Latest audit
+                    {nextMoveMeta.statusLabel}
                   </span>
                 </div>
               </div>
@@ -621,11 +820,7 @@ export default function Dashboard() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() =>
-                nextAction
-                  ? navigate(`/site/${siteId}/actions`)
-                  : navigate(`/site/${siteId}/audit`)
-              }
+              onClick={handleNextMoveClick}
               style={{
                 minWidth: 118,
                 height: 36,
@@ -635,7 +830,7 @@ export default function Dashboard() {
                 fontWeight: 750,
               }}
             >
-              {nextAction ? 'Fix now' : 'Review Audit'}
+              {nextMoveButtonLabel}
               <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 7 }} />
             </Button>
           </div>

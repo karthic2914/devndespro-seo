@@ -456,6 +456,17 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     for (const c of checks.filter(x => x.status === 'error')) {
       await pool.query('INSERT INTO alerts (site_id, type, message, severity) VALUES ($1,$2,$3,$4)', [req.siteId, 'audit', c.message, 'error'])
     }
+    try {
+      const { reconcileActionsFromAudit } = require('../utils/actionSync')
+      await reconcileActionsFromAudit(req.siteId, {
+        afterAudit: true,
+        healthScore: score,
+        results: result,
+        setHealthEvenIfZero: true,
+      })
+    } catch (syncErr) {
+      console.error('action sync after audit:', syncErr.message)
+    }
     res.json(result)
   } catch (e) {
     console.error('Audit error:', e.message)
@@ -1067,6 +1078,23 @@ async function runMultiPageCrawl(siteId, auditRunId, baseUrl) {
       'UPDATE audit_results SET results=$1, status=$2, site_health_pct=$3 WHERE id=$4',
       [JSON.stringify(results), 'complete', siteHealthPct, auditRunId]
     )
+    try {
+      await pool.query(
+        `INSERT INTO seo_metrics (site_id, health)
+         VALUES ($1, $2)
+         ON CONFLICT (site_id) DO UPDATE SET health=$2, updated_at=NOW()`,
+        [siteId, siteHealthPct]
+      )
+      const { reconcileActionsFromAudit } = require('../utils/actionSync')
+      await reconcileActionsFromAudit(siteId, {
+        afterAudit: true,
+        healthScore: siteHealthPct,
+        results,
+        setHealthEvenIfZero: true,
+      })
+    } catch (syncErr) {
+      console.error('action sync after multipage audit:', syncErr.message)
+    }
   } catch (e) {
     console.error('Multi-page crawl error:', e.message)
     await queryWithRetry('UPDATE audit_results SET status=$1 WHERE id=$2', ['failed', auditRunId]).catch(() => {})

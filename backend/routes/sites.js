@@ -338,18 +338,123 @@ router.get('/:siteId/actions', auth, verifySite, async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM actions WHERE site_id=$1 ORDER BY done ASC, created_at ASC', [req.siteId])
   res.json(rows)
 })
+
 router.post('/:siteId/actions', auth, verifySite, async (req, res) => {
   const { text, impact } = req.body
-  const { rows } = await pool.query('INSERT INTO actions (site_id, text, impact) VALUES ($1,$2,$3) RETURNING *', [req.siteId, text, impact || 'Medium'])
+  const { rows } = await pool.query(
+    'INSERT INTO actions (site_id, text, impact) VALUES ($1,$2,$3) RETURNING *',
+    [req.siteId, text, impact || 'Medium']
+  )
   res.json(rows[0])
 })
+
+function healthDeltaForImpact(impact) {
+  const i = String(impact || '').toLowerCase()
+  if (i === 'critical') return 6
+  if (i === 'high') return 5
+  if (i === 'low') return 2
+  return 3 // medium / default
+}
+
+async function bumpSiteHealth(siteId, delta) {
+  if (!delta || delta <= 0) return null
+
+  await pool.query(
+    `INSERT INTO seo_metrics (site_id, health)
+     VALUES ($1, LEAST(100, GREATEST(0, $2)))
+     ON CONFLICT (site_id) DO UPDATE
+     SET health = LEAST(100, GREATEST(0, COALESCE(seo_metrics.health, 0) + $2)),
+         updated_at = NOW()`,
+    [siteId, delta]
+  )
+
+  // Keep multipage overview gauge in sync when a completed audit exists
+  const { rows: auditRows } = await pool.query(
+    `SELECT id, results, site_health_pct
+     FROM audit_results
+     WHERE site_id=$1 AND status='complete'
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [siteId]
+  )
+  if (auditRows[0]) {
+    const prev = Number(auditRows[0].site_health_pct) || 0
+    const next = Math.min(100, Math.max(0, prev + delta))
+    let results = auditRows[0].results
+    if (results && typeof results === 'object') {
+      results = { ...results, siteHealthPct: next }
+    } else if (typeof results === 'string') {
+      try {
+        const parsed = JSON.parse(results)
+        results = { ...parsed, siteHealthPct: next }
+      } catch {
+        results = { siteHealthPct: next }
+      }
+    } else {
+      results = { siteHealthPct: next }
+    }
+    await pool.query(
+      `UPDATE audit_results
+       SET site_health_pct=$1, results=$2, score=GREATEST(COALESCE(score, 0), $1)
+       WHERE id=$3`,
+      [next, JSON.stringify(results), auditRows[0].id]
+    )
+  }
+
+  const { rows: m } = await pool.query(
+    'SELECT health FROM seo_metrics WHERE site_id=$1 LIMIT 1',
+    [siteId]
+  )
+  return Number(m[0]?.health) || null
+}
+
+/** Mark done → remove from pending/banner focus and increase site health. */
 router.put('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query('UPDATE actions SET done=$1 WHERE id=$2 AND site_id=$3 RETURNING *', [req.body.done, req.params.id, req.siteId])
-  res.json(rows[0])
+  try {
+    const { rows } = await pool.query(
+      'UPDATE actions SET done=$1 WHERE id=$2 AND site_id=$3 RETURNING *',
+      [req.body.done, req.params.id, req.siteId]
+    )
+    const action = rows[0]
+    if (!action) return res.status(404).json({ error: 'Action not found' })
+
+    let health = null
+    let healthDelta = 0
+    if (req.body.done === true || req.body.done === 'true') {
+      healthDelta = healthDeltaForImpact(action.impact)
+      health = await bumpSiteHealth(req.siteId, healthDelta)
+    }
+
+    res.json({ ...action, health, healthDelta })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to update action' })
+  }
 })
+
 router.delete('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
   await pool.query('DELETE FROM actions WHERE id=$1 AND site_id=$2', [req.params.id, req.siteId])
   res.json({ ok: true })
+})
+
+/**
+ * Reconcile Action Plan with latest audit:
+ * - health = audit score
+ * - new issues → pending tasks
+ * - fixed issues → auto-complete / remove from banner focus
+ */
+router.post('/:siteId/actions/sync-from-audit', auth, verifySite, async (req, res) => {
+  try {
+    const { reconcileActionsFromAudit } = require('../utils/actionSync')
+    const result = await reconcileActionsFromAudit(req.siteId, {
+      afterAudit: true,
+      setHealthEvenIfZero: true,
+    })
+    res.json(result)
+  } catch (e) {
+    console.error('sync-from-audit error:', e)
+    res.status(500).json({ error: 'Failed to sync actions from audit' })
+  }
 })
 
 // Competitors
