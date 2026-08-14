@@ -35,6 +35,7 @@ export default function UsageBar({ compact = false }) {
     <div
       className={'app-usage-bar' + (compact ? ' app-usage-bar--compact' : '')}
       title={providerHint || 'Estimated AI API usage'}
+      style={{ maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}
     >
       <FontAwesomeIcon icon={faChartPie} className="app-usage-bar__icon" />
       <span className="app-usage-bar__label">AI usage · last {days}d</span>

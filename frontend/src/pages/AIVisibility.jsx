@@ -198,6 +198,9 @@ export default function AIVisibility() {
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
+  // In-memory cache: first view hits API/DB, later views of the same
+  // question reuse this until a Test/Re-test refreshes it.
+  const questionResultsCacheRef = useRef({})
 
   // Load cached product questions first (free). Only generate once if none exist.
   useEffect(() => {
@@ -567,9 +570,15 @@ export default function AIVisibility() {
     setOpenQuestionMenu(question)
   }
   // Load the real stored AI results for the selected question.
-  async function loadSelectedQuestionResults(question) {
+  // First time: fetch from API (DB). Second time: serve from memory cache.
+  async function loadSelectedQuestionResults(question, { force = false } = {}) {
     if (!question) {
       setSelectedQuestionResults([])
+      return
+    }
+
+    if (!force && questionResultsCacheRef.current[question]) {
+      setSelectedQuestionResults(questionResultsCacheRef.current[question])
       return
     }
 
@@ -583,9 +592,9 @@ export default function AIVisibility() {
         }
       )
 
-      setSelectedQuestionResults(
-        res.data?.results || []
-      )
+      const results = res.data?.results || []
+      questionResultsCacheRef.current[question] = results
+      setSelectedQuestionResults(results)
     } catch (error) {
       console.error(
         'Failed to load selected question AI responses:',
@@ -600,9 +609,13 @@ export default function AIVisibility() {
 
 
   // Whenever the user selects another question, load its actual
-  // ChatGPT / Claude results from the database.
+  // ChatGPT / Claude results (cache first, then DB API).
   useEffect(() => {
-    loadSelectedQuestionResults(selectedQuestion)
+    questionResultsCacheRef.current = {}
+  }, [siteId])
+
+  useEffect(() => {
+    loadSelectedQuestionResults(selectedQuestion, { force: false })
   }, [selectedQuestion, siteId])
 
 
@@ -622,7 +635,7 @@ export default function AIVisibility() {
         }
       )
 
-      await loadSelectedQuestionResults(selectedQuestion)
+      await loadSelectedQuestionResults(selectedQuestion, { force: true })
 
       const statusRes = await api.get(
         '/sites/' + siteId + '/ai-visibility/question-status'
@@ -693,6 +706,7 @@ export default function AIVisibility() {
           testedAt: new Date().toISOString()
         }))
 
+        questionResultsCacheRef.current[question] = freshResults
         setSelectedQuestionResults(freshResults)
       }
 
@@ -710,11 +724,6 @@ export default function AIVisibility() {
       setQuestionStatuses(
         statusRes.data?.statuses || []
       )
-
-
-      // Re-read the stored result as final source of truth.
-      await loadSelectedQuestionResults(question)
-
 
       showSnackbar(
         'Question re-tested with ChatGPT and Claude',
@@ -834,7 +843,7 @@ export default function AIVisibility() {
       <style>{`
         .ai-vis-page {
           width: 100%;
-          max-width: 1440px;
+          max-width: min(1440px, 100%);
           margin: 0 auto;
           padding: 18px 22px 28px;
           box-sizing: border-box;
@@ -846,6 +855,9 @@ export default function AIVisibility() {
           justify-content: space-between;
           gap: 16px;
           margin-bottom: 16px;
+          max-width: 100%;
+          min-width: 0;
+          flex-wrap: wrap;
         }
         .ai-vis-layout {
           display: grid;
@@ -928,13 +940,31 @@ export default function AIVisibility() {
           display: flex;
           margin-top: 16px;
           align-items: center;
-          gap: 8px;
+          justify-content: space-between;
+          gap: 10px;
           margin-bottom: 10px;
           flex-wrap: wrap;
           width: 100%;
           max-width: 100%;
           min-width: 0;
           box-sizing: border-box;
+        }
+
+        .ai-questions-chips {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 8px;
+          min-width: 0;
+          flex: 1 1 280px;
+        }
+
+        .ai-questions-actions {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-left: auto;
+          flex: 0 0 auto;
         }
 
         .ai-question-chip {
@@ -956,9 +986,9 @@ export default function AIVisibility() {
         }
 
         .ai-question-search {
-          margin-left: auto;
-          width: 220px;
-          min-width: 180px;
+          margin-left: 0;
+          width: 200px;
+          min-width: 160px;
           height: 32px;
           border: 1px solid #E5E7EB;
           background: #fff;
@@ -1427,9 +1457,15 @@ export default function AIVisibility() {
         }
 
         @media (max-width: 760px) {
+          .ai-questions-actions {
+            width: 100%;
+            margin-left: 0;
+          }
           .ai-question-search {
-            margin-left: auto;
-            width: 220px;
+            margin-left: 0;
+            flex: 1 1 auto;
+            width: auto;
+            min-width: 0;
           }
         }
 
@@ -1596,7 +1632,22 @@ export default function AIVisibility() {
         .ai-vis-page {
           height: auto !important;
           max-height: none !important;
-          overflow: visible !important;
+          max-width: 100% !important;
+          overflow-x: hidden !important;
+          overflow-y: visible !important;
+        }
+
+        .ai-question-main-grid,
+        .ai-questions-toolbar,
+        .ai-question-panel,
+        .ai-question-table-wrap,
+        .ai-question-lower-grid {
+          max-width: 100%;
+          min-width: 0;
+        }
+
+        .ai-question-table-wrap {
+          overflow-x: hidden !important;
         }
 
         .ai-question-actions-header {
@@ -2039,13 +2090,13 @@ export default function AIVisibility() {
           display: grid !important;
 
           grid-template-columns:
-            minmax(0, 3.5fr)
-            minmax(90px, 1fr)
-            minmax(85px, .9fr)
-            minmax(65px, .7fr)
-            minmax(65px, .7fr)
-            minmax(105px, 1.05fr)
-            38px;
+            minmax(0, 3.2fr)
+            minmax(0, 0.95fr)
+            minmax(0, 0.85fr)
+            minmax(0, 0.7fr)
+            minmax(0, 0.7fr)
+            minmax(0, 0.95fr)
+            36px;
 
           width: 100% !important;
           box-sizing: border-box !important;
@@ -2434,6 +2485,7 @@ export default function AIVisibility() {
 
           {/* Product / question filters */}
           <div className="ai-questions-toolbar">
+            <div className="ai-questions-chips">
             {visibleTabs.map(tab => (
               <button
                 key={tab}
@@ -2468,8 +2520,8 @@ export default function AIVisibility() {
                       background: '#fff',
                       border: '1px solid #E5E7EB',
                       borderRadius: 8,
-                      boxShadow: '--'
-                              }}
+                      boxShadow: '0 8px 20px rgba(15,23,42,0.12)',
+                    }}
                   >
                     {overflowTabs.map(tab => (
                       <button
@@ -2487,8 +2539,8 @@ export default function AIVisibility() {
                           color: selectedProduct === tab ? '#EA580C' : '#374151',
                           textAlign: 'left',
                           fontSize: 10.5,
-                          cursor: '--'
-                              }}
+                          cursor: 'pointer',
+                        }}
                       >
                         {tab}
                       </button>
@@ -2497,7 +2549,9 @@ export default function AIVisibility() {
                 )}
               </div>
             )}
+            </div>
 
+            <div className="ai-questions-actions">
             <input
               className="ai-question-search"
               value={questionSearch}
@@ -2517,6 +2571,7 @@ export default function AIVisibility() {
             >
               + Add Question
             </button>
+            </div>
           </div>
 
           {addingQuestion && (

@@ -775,7 +775,7 @@ export function VisibilityKPICards({
     : 0
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(135px, 1fr))', gap: 10, marginBottom: 0 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 10, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
       {(loading || !summary) ? (
         <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
           <div style={emptyStyle}>{loading ? 'Loading overview...' : 'No visibility scan yet. Run a scan below to populate this.'}</div>

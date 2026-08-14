@@ -138,11 +138,16 @@ h4 { font-size: var(--text-md);  font-weight: 600; }
   flex: 1;
   min-width: 0;
   min-height: 0;
-  overflow-x: hidden;
+  overflow-x: hidden !important;
   overflow-y: auto;
   background: var(--dark);
   display: flex;
   flex-direction: column;
+}
+
+.app-main > * {
+  max-width: 100%;
+  min-width: 0;
 }
 
 /* App pages scroll inside .app-main only — avoid a second document scrollbar. */
@@ -151,6 +156,8 @@ body:has(.app-shell),
 #root:has(.app-shell) {
   height: 100%;
   overflow: hidden;
+  overflow-x: hidden;
+  max-width: 100%;
 }
 
 /* -- Sidebar -- */
