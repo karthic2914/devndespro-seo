@@ -12,6 +12,8 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Button, Modal, Input } from '../components/UI'
+import PageProcessGuide from '../components/PageProcessGuide'
+import { AUDIT_PAGE_FLOW } from '../constants/pageFlows'
 import { useSnackbar } from '../App'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -1623,7 +1625,22 @@ export default function SiteAudit() {
   }
 
   if (!auditData) {
-    return <EmptyAudit onRun={runAudit} running={running} error={runError} />
+    return (
+      <div style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
+        <PageProcessGuide
+          title="Site Audit process — follow these steps"
+          tip="Start with Run audit. Same clickable flow as Overview and Keywords."
+          steps={AUDIT_PAGE_FLOW.map((s) => ({
+            ...s,
+            done: false,
+            active: s.id === 'run',
+          }))}
+        />
+        <div id="audit-section-run">
+          <EmptyAudit onRun={runAudit} running={running} error={runError} />
+        </div>
+      </div>
+    )
   }
 
   const latestScannedAt =
@@ -1652,8 +1669,18 @@ export default function SiteAudit() {
   return (
     <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
 
+      <PageProcessGuide
+        title="Site Audit process — follow these steps"
+        tip="Run → review issues → send to Action Plan. Same clickable flow as other pages."
+        steps={AUDIT_PAGE_FLOW.map((s) => ({
+          ...s,
+          done: s.id === 'run' ? Boolean(auditData) : s.id === 'review' ? Boolean(auditData?.checks?.length) : false,
+          active: s.id === 'run' ? !auditData : s.id === 'review' ? Boolean(auditData) : false,
+        }))}
+      />
+
       {/* Page header */}
-      <div className='audit-page-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
+      <div id="audit-section-run" className='audit-page-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: 0 }}>Site Audit</h1>
           <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -2649,7 +2676,7 @@ export default function SiteAudit() {
 
       <TabBar tabs={tabOptions} active={activeTab} onChange={(id) => { setActiveTab(id); setExpandedIdx(null) }} />
 
-      <div ref={issuesRef} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div id="audit-section-issues" ref={issuesRef} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
         {visibleIssues.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
             No issues in this category.

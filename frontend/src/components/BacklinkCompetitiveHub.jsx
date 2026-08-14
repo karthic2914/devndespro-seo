@@ -13,7 +13,6 @@ import {
 import { BrandFavicon } from './SiteFavicon'
 import { Card, MetricCard, OrangeBtn, GhostBtn } from './UI'
 import CollapsibleSection from './CollapsibleSection'
-import ProcessSteps from './ProcessSteps'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -422,32 +421,6 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         icon={<FontAwesomeIcon icon={faCodeCompare} style={{ color: '#EA580C' }} />}
         defaultOpen
       >
-        <ProcessSteps
-          steps={[
-            {
-              id: 'comps',
-              label: 'Add competitors',
-              hint: 'Same-niche domains or Auto-fill',
-              done: inputs.some((v) => String(v || '').trim()),
-              active: !inputs.some((v) => String(v || '').trim()),
-            },
-            {
-              id: 'find',
-              label: 'Find prospects',
-              hint: 'Sites that link to them, not you',
-              done: Boolean(result),
-              active: inputs.some((v) => String(v || '').trim()) && !result,
-            },
-            {
-              id: 'save',
-              label: 'Save prospects',
-              hint: 'Add outreach targets',
-              done: Array.isArray(result?.linkGap) && result.linkGap.length > 0,
-              active: Boolean(result),
-            },
-          ]}
-        />
-
         <div style={{
           border: '1px solid #E2E8F0',
           borderRadius: 12,
@@ -459,7 +432,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
             Competitors setup
           </div>
           <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12, lineHeight: 1.4 }}>
-            Your domain + up to 4 same-niche competitors.
+            Your domain + up to 4 same-niche competitors. Then Find prospects.
           </div>
 
           <div style={{ display: 'grid', gap: 10 }}>

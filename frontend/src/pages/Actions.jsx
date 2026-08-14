@@ -4,6 +4,8 @@ import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, MetricCard, Badge, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
+import PageProcessGuide from '../components/PageProcessGuide'
+import { ACTIONS_PAGE_FLOW } from '../constants/pageFlows'
 import api from '../utils/api'
 
 export default function Actions() {
@@ -117,7 +119,16 @@ export default function Actions() {
           </OrangeBtn>
         }
       />
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
+      <PageProcessGuide
+        title="Action Plan process — follow these steps"
+        tip="Work top impact first. Same clickable flow pattern as Audit and Overview."
+        steps={ACTIONS_PAGE_FLOW.map((s) => ({
+          ...s,
+          done: s.id === 'pending' ? pending.length === 0 && actions.length > 0 : false,
+          active: s.id === 'priority' || (s.id === 'pending' && pending.length > 0),
+        }))}
+      />
+      <div id="actions-section-banner" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 16 }}>
         <MetricCard label="Total tasks" value={actions.length} />
         <MetricCard label="Completed" value={done} accent="var(--green)" />
         <MetricCard label="Remaining" value={actions.length - done} accent="var(--orange)" />
@@ -135,7 +146,7 @@ export default function Actions() {
         </div>
       </Card>
       {loading ? <EmptyState message="Loading..." /> : (
-        <>
+        <div id="actions-section-list">
           {pending.length > 0 && (
             <Card style={{ marginBottom: 14 }}>
               <SectionLabel>Pending ({pending.length})</SectionLabel>
@@ -166,7 +177,7 @@ export default function Actions() {
             </Card>
           )}
           {actions.length === 0 && <EmptyState message="No open tasks. Run or refresh from audit to pull failing checks." />}
-        </>
+        </div>
       )}
     </div>
   )

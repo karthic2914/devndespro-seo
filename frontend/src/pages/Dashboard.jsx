@@ -18,6 +18,8 @@ import {
   faBullseye,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
+import PageProcessGuide from '../components/PageProcessGuide'
+import { APP_SEO_JOURNEY } from '../constants/pageFlows'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -719,6 +721,16 @@ export default function Dashboard() {
       </div>
 
       <div style={{ width: '100%', padding: '1.25rem 1rem 1.5rem' }}>
+
+        <PageProcessGuide
+          title="SEO journey — follow across the app"
+          tip="Same process style on every page. Click a step to open that area."
+          steps={APP_SEO_JOURNEY.map((s, i) => ({
+            ...s,
+            done: false,
+            active: i === 0,
+          }))}
+        />
 
         <style>{`
           @media (max-width: 1050px) {

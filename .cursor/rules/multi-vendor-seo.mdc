@@ -14,16 +14,17 @@ Treat these as first-class product references:
 1. **Moz** — Domain Authority (DA), Page Authority (PA), Link Explorer, Spam Score concepts
 2. **Majestic** — Trust Flow / Citation Flow, topical trust, referring domains quality
 3. **Ahrefs** — DR/UR, referring domains, broken backlinks, content/link gap patterns
-4. **Semrush** — Backlink Gap, Keyword Gap, competitive analysis flows
-5. **SE Ranking / Serpstat** — practical SaaS competitor & backlink tooling UX
+4. **Semrush** — Keyword Overview, Keyword Gap, competitive analysis, AI Overview
+5. **SE Ranking / Serpstat** — practical SaaS keyword research, competitor & backlink UX
 6. **DataForSEO** — current live data engine (API source of truth in this codebase)
 
 ## Product rules
 
-- Prefer **vendor-neutral** UI labels: Referring domains, Broken backlinks, Backlink gap, Keyword gap, Domain rank — not “Ahrefs-only” or “Semrush-only” wording in customer UI.
-- When explaining standards to users, mention **several** vendors (e.g. Moz + Majestic + Ahrefs + Semrush), not just one or two.
+- Prefer **vendor-neutral** UI labels: Referring domains, Broken backlinks, Backlink gap, Keyword gap, Matching terms, Related, Domain rank — not “Ahrefs-only” or “Semrush-only” wording in customer UI.
+- When explaining standards to users, mention **several** vendors (e.g. Moz + Ahrefs + Semrush + SE Ranking), not just one or two.
 - Live metrics today come from **DataForSEO** (+ GSC + optional Ahrefs import). Do not claim Moz/Majestic live APIs are connected unless those integrations exist.
 - Future multi-source work: design for pluggable providers (Moz / Majestic / Ahrefs API) behind the same UI contracts; avoid hardcoding a single-vendor schema in new features.
+- Keyword research should cover **shared industry metrics** (volume, KD, CPC, competition, intent, trend, SERP overview, related/questions, gap, rank tracking) — not copy one vendor’s IA verbatim.
 
 ## Feature parity checklist
 
@@ -33,5 +34,8 @@ Treat these as first-class product references:
 | Referring domains | All major vendors |
 | Broken backlinks | Ahrefs, Semrush, Moz Link Explorer |
 | Backlink / link gap | Semrush Backlink Gap, Ahrefs Link Intersect, Moz |
+| Keyword research overview | Moz Keyword Explorer, Ahrefs Keywords Explorer, Semrush Overview, SE Ranking, Serpstat |
+| Matching / related / questions | Ahrefs Matching/Related, Semrush Phrase/Related, SE Ranking |
 | Keyword gap | Semrush, Ahrefs Content Gap, SE Ranking |
+| Rank tracking | SE Ranking, Ahrefs, Semrush, Moz |
 | Competitor discovery | Semrush, Ahrefs, Moz, SE Ranking |

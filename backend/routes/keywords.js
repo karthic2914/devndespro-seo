@@ -62,7 +62,10 @@ function mapDfsKeywordItem(raw) {
   const info = data.keyword_info || {}
   const props = data.keyword_properties || {}
   const intentInfo = data.search_intent_info || {}
-  const kd = props.keyword_difficulty != null ? Number(props.keyword_difficulty) : null
+  const serp = data.serp_info || raw?.serp_info || {}
+  const kd = props.keyword_difficulty != null
+    ? Number(props.keyword_difficulty)
+    : (raw?.keyword_difficulty != null ? Number(raw.keyword_difficulty) : null)
   const monthly = Array.isArray(info.monthly_searches) ? info.monthly_searches : []
   const trend = monthly
     .slice()
@@ -71,6 +74,11 @@ function mapDfsKeywordItem(raw) {
     .map((m) => m.search_volume ?? 0)
 
   const keyword = data.keyword || raw?.keyword || ''
+  const resultsRaw = serp.se_results_count
+  const resultsCount = resultsRaw != null && resultsRaw !== '' ? Number(resultsRaw) : null
+  const relatednessRaw = raw?.relatedness_score ?? data?.relatedness_score
+  const relatedness = relatednessRaw != null ? Number(relatednessRaw) : null
+
   return {
     keyword,
     volume: info.search_volume ?? 0,
@@ -84,6 +92,38 @@ function mapDfsKeywordItem(raw) {
     parentTopic: props.core_keyword || null,
     categories: Array.isArray(info.categories) ? info.categories.slice(0, 3) : [],
     isQuestion: QUESTION_RE.test(String(keyword).trim()),
+    resultsCount: Number.isFinite(resultsCount) ? resultsCount : null,
+    relatedness: Number.isFinite(relatedness) ? relatedness : null,
+    serpTypes: Array.isArray(serp.serp_item_types) ? serp.serp_item_types.slice(0, 8) : [],
+  }
+}
+
+function mapOrganicSerpItems(serpResult) {
+  const items = Array.isArray(serpResult?.items) ? serpResult.items : []
+  return items
+    .filter((i) => i && i.type === 'organic')
+    .slice(0, 10)
+    .map((i) => ({
+      rank: i.rank_group || i.rank_absolute || null,
+      title: i.title || '',
+      url: i.url || '',
+      domain: (i.domain || '').replace(/^www\./i, ''),
+      description: i.description || '',
+    }))
+}
+
+function mapSeedOverview(overviewResult, seedKeyword) {
+  const item = (overviewResult?.items || []).find(
+    (x) => String(x?.keyword || '').toLowerCase() === String(seedKeyword || '').toLowerCase()
+  ) || overviewResult?.items?.[0]
+  if (!item) return null
+  const mapped = mapDfsKeywordItem(item)
+  const avgBl = item.avg_backlinks_info || {}
+  return {
+    ...mapped,
+    avgBacklinks: avgBl.backlinks ?? null,
+    avgReferringDomains: avgBl.referring_domains ?? null,
+    avgRank: avgBl.main_domain_rank ?? null,
   }
 }
 
@@ -99,13 +139,13 @@ function dedupeSuggestions(list) {
   return out
 }
 
-async function dfsPost(authHeader, path, payload) {
+async function dfsPost(authHeader, path, payload, timeout = 25000) {
   const { data } = await axios.post(
     `https://api.dataforseo.com/v3/${path}`,
     [payload],
     {
       headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
-      timeout: 25000,
+      timeout,
     }
   )
   return data?.tasks?.[0]?.result?.[0] || null
@@ -213,7 +253,7 @@ router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) =
     if (!rows.length) return res.json({ query: '', suggestions: [], matching: [], related: [], questions: [] })
 
     const results = rows[0].results
-    // New shape: { suggestions, matching, related, questions, meta }
+    // New shape: { suggestions, matching, related, questions, meta, overview, organic }
     if (results && typeof results === 'object' && !Array.isArray(results)) {
       return res.json({
         query: rows[0].query,
@@ -221,6 +261,8 @@ router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) =
         matching: results.matching || results.suggestions || [],
         related: results.related || [],
         questions: results.questions || [],
+        overview: results.overview || null,
+        organic: results.organic || [],
         meta: results.meta || null,
         searchedAt: rows[0].searched_at,
       })
@@ -234,6 +276,8 @@ router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) =
       matching: list,
       related: [],
       questions: list.filter((s) => QUESTION_RE.test(String(s.keyword || '').trim())),
+      overview: null,
+      organic: [],
       searchedAt: rows[0].searched_at,
     })
   } catch (e) {
@@ -262,11 +306,13 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
       keyword,
       language_name: languageName,
       location_code: location.code,
-      include_serp_info: false,
+      include_serp_info: true,
       include_seed_keyword: true,
     }
 
-    const [matchingResult, relatedResult, questionResult] = await Promise.all([
+    const includeLiveSerp = req.body?.includeSerp !== false
+
+    const [matchingResult, relatedResult, questionResult, overviewResult, serpResult] = await Promise.all([
       dfsPost(authHeader, 'dataforseo_labs/google/keyword_suggestions/live', {
         ...basePayload,
         limit,
@@ -292,6 +338,28 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
         console.warn('DataForSEO question keywords failed:', err.response?.data || err.message)
         return null
       }),
+      dfsPost(authHeader, 'dataforseo_labs/google/keyword_overview/live', {
+        keywords: [keyword],
+        language_name: languageName,
+        location_code: location.code,
+        include_serp_info: true,
+      }).catch((err) => {
+        console.warn('DataForSEO keyword overview failed:', err.response?.data || err.message)
+        return null
+      }),
+      includeLiveSerp
+        ? dfsPost(authHeader, 'serp/google/organic/live/advanced', {
+            keyword,
+            language_name: languageName,
+            location_code: location.code,
+            device: 'desktop',
+            os: 'windows',
+            depth: 10,
+          }, 60000).catch((err) => {
+            console.warn('DataForSEO SERP overview failed:', err.response?.data || err.message)
+            return null
+          })
+        : Promise.resolve(null),
     ])
 
     const matching = dedupeSuggestions(
@@ -309,12 +377,18 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
 
     // Backward-compatible flat list (matching first)
     const suggestions = matching.length ? matching : related
+    const overview = mapSeedOverview(overviewResult, keyword)
+      || matching.find((s) => s.keyword.toLowerCase() === keyword.toLowerCase())
+      || null
+    const organic = mapOrganicSerpItems(serpResult)
 
     const payload = {
       suggestions,
       matching,
       related,
       questions,
+      overview,
+      organic,
       meta: {
         query: keyword,
         locationCode: location.code,
@@ -325,6 +399,7 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
           matching: matching.length,
           related: related.length,
           questions: questions.length,
+          organic: organic.length,
         },
       },
       source: 'dataforseo',

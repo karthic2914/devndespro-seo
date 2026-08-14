@@ -9,7 +9,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, OrangeBtn, GhostBtn } from './UI'
 import CollapsibleSection from './CollapsibleSection'
-import ProcessSteps from './ProcessSteps'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -155,41 +154,6 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
     [inputs]
   )
 
-  const processSteps = useMemo(() => {
-    const hasComps = filledCompetitors > 0
-    const compared = Boolean(result)
-    return [
-      {
-        id: 'competitors',
-        label: 'Add competitors',
-        hint: 'Type domains or tap Auto-fill',
-        done: hasComps,
-        active: !hasComps,
-      },
-      {
-        id: 'market',
-        label: 'Pick market',
-        hint: 'Country for search data',
-        done: hasComps,
-        active: hasComps && !compared,
-      },
-      {
-        id: 'compare',
-        label: 'Compare',
-        hint: 'Find keyword gaps',
-        done: compared,
-        active: hasComps && !compared,
-      },
-      {
-        id: 'track',
-        label: 'Track keywords',
-        hint: 'Add Missing terms to track',
-        done: false,
-        active: compared,
-      },
-    ]
-  }, [filledCompetitors, result, view])
-
   return (
     <Card style={{ marginBottom: 16 }}>
       <CollapsibleSection
@@ -198,8 +162,6 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
         icon={<FontAwesomeIcon icon={faChartLine} style={{ color: '#EA580C' }} />}
         defaultOpen
       >
-        <ProcessSteps steps={processSteps} />
-
         <div style={{
           border: '1px solid #E2E8F0',
           borderRadius: 12,
@@ -211,7 +173,9 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
             Competitors setup
           </div>
           <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12, lineHeight: 1.4 }}>
-            Your domain + up to 4 competitors, then Compare.
+            {filledCompetitors
+              ? `${filledCompetitors} competitor(s) ready — pick market, then Compare.`
+              : 'Add competitors (or Auto-fill), pick market, then Compare to see gap keywords.'}
           </div>
 
           <div style={{ display: 'grid', gap: 10 }}>

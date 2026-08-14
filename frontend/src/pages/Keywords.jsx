@@ -4,10 +4,13 @@
   import {
     faPlus, faXmark, faArrowsRotate, faWandMagicSparkles,
     faMagnifyingGlass, faChartLine, faBolt, faCircleCheck, faTrash,
-    faChevronUp, faChevronDown,
+    faChevronUp, faChevronDown, faDownload,
   } from '@fortawesome/free-solid-svg-icons'
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
   import KeywordGapPanel from '../components/KeywordGapPanel'
+  import PageProcessGuide from '../components/PageProcessGuide'
+  import CollapsibleSection from '../components/CollapsibleSection'
+  import { KEYWORDS_PAGE_FLOW } from '../constants/pageFlows'
   import api from '../utils/api'
   import toast from '../utils/toast'
   import {
@@ -37,6 +40,15 @@
     { id: 'related', label: 'Related' },
     { id: 'questions', label: 'Questions' },
   ]
+
+  function formatCompactNumber(n) {
+    const v = Number(n)
+    if (!Number.isFinite(v) || v <= 0) return '—'
+    if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`
+    if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`
+    if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`
+    return String(Math.round(v))
+  }
 
   function DifficultyBar({ score }) {
     const color = score < 33 ? T.green : score < 66 ? T.amber : T.red
@@ -161,6 +173,8 @@
     const [dfsMatching, setDfsMatching] = useState([])
     const [dfsRelated, setDfsRelated] = useState([])
     const [dfsQuestions, setDfsQuestions] = useState([])
+    const [dfsOverview, setDfsOverview] = useState(null)
+    const [dfsOrganic, setDfsOrganic] = useState([])
     const [dfsMeta, setDfsMeta] = useState(null)
     const [researchTab, setResearchTab] = useState('matching')
     const [researchLocation, setResearchLocation] = useState(2578)
@@ -190,10 +204,14 @@
       setDfsMatching(matching)
       setDfsRelated(related)
       setDfsQuestions(questions)
+      setDfsOverview(data.overview || null)
+      setDfsOrganic(Array.isArray(data.organic) ? data.organic : [])
       setDfsMeta(data.meta || null)
       if (data.meta?.locationCode) setResearchLocation(data.meta.locationCode)
       if (data.meta?.languageName) setResearchLanguage(data.meta.languageName)
-      if (queryFallback || data.meta?.query) setDfsQuery(queryFallback || data.meta.query || '')
+      if (queryFallback || data.meta?.query || data.query) {
+        setDfsQuery(queryFallback || data.meta?.query || data.query || '')
+      }
       if (!matching.length && related.length) setResearchTab('related')
       else if (!matching.length && !related.length && questions.length) setResearchTab('questions')
       else setResearchTab('matching')
@@ -213,11 +231,19 @@
     useEffect(() => {
       load()
       api.get(`/sites/${siteId}/keywords/last-search`).then(r => {
-        const hasResults =
-          (r.data.matching || r.data.suggestions || []).length ||
-          (r.data.related || []).length ||
-          (r.data.questions || []).length
-        if (hasResults) applyResearchPayload(r.data, r.data.query || '')
+        const data = r.data || {}
+        const matching = data.matching || data.suggestions || []
+        const related = data.related || []
+        const questions = data.questions || []
+        const hasResults = matching.length || related.length || questions.length
+        const savedQuery = data.query || data.meta?.query || ''
+        if (hasResults) {
+          applyResearchPayload(data, savedQuery)
+        } else if (savedQuery) {
+          setDfsQuery(savedQuery)
+          if (data.meta?.locationCode) setResearchLocation(data.meta.locationCode)
+          if (data.meta?.languageName) setResearchLanguage(data.meta.languageName)
+        }
       }).catch(() => {})
       api.get(`/sites/${siteId}/keywords/auto-discover`).then(r => {
         const data = r.data
@@ -293,6 +319,8 @@
       setDfsMatching([])
       setDfsRelated([])
       setDfsQuestions([])
+      setDfsOverview(null)
+      setDfsOrganic([])
       setDfsMeta(null)
       setAiOverviewMap({})
       setAiOverviewMeta(null)
@@ -402,6 +430,45 @@
         toast.error(e.response?.data?.error || 'AI Overview check failed')
       }
       setAiOverviewLoading(false)
+    }
+
+    const exportResearchCsv = () => {
+      const rows = visibleResearch
+      if (!rows.length) {
+        toast.error('No research rows to export')
+        return
+      }
+      const headers = [
+        'Keyword', 'Intent', 'Volume', 'KD', 'CPC', 'Competition', 'Results', 'Relatedness', 'Opportunity',
+      ]
+      const escape = (v) => {
+        const s = String(v ?? '')
+        if (/[",\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`
+        return s
+      }
+      const lines = [headers.join(',')]
+      for (const s of rows) {
+        const opp = getOpportunityTag(s.volume, s.difficultyScore ?? s.difficulty).label
+        lines.push([
+          s.keyword,
+          s.intent || '',
+          s.volume || 0,
+          s.difficultyScore ?? '',
+          Number(s.cpc || 0).toFixed(2),
+          s.competition != null ? Number(s.competition).toFixed(2) : '',
+          s.resultsCount ?? '',
+          s.relatedness != null ? Number(s.relatedness).toFixed(2) : '',
+          opp,
+        ].map(escape).join(','))
+      }
+      const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `keyword-research-${(dfsQuery || 'export').replace(/\s+/g, '-')}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`Exported ${rows.length} keywords`)
     }
 
     const addDfsSuggestion = async (s, { silent = false } = {}) => {
@@ -711,8 +778,64 @@
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          <KeywordGapPanel siteId={siteId} onAdded={load} />
+          {(() => {
+            const hasResearch = Boolean(dfsMatching.length || dfsRelated.length || dfsQuestions.length)
+            const hasDiscovery = Boolean(discovery)
+            const hasTracked = keywords.length > 0
+            const hasRanks = trackedCoverage.checked > 0
+            const hasFound = hasDiscovery || hasResearch || hasTracked
+            const next =
+              !hasFound ? 'gap'
+                : !hasDiscovery ? 'discover'
+                  : !hasResearch ? 'research'
+                    : !hasTracked ? 'track'
+                      : !hasRanks ? 'rank'
+                        : null
+            const doneMap = {
+              gap: hasFound,
+              discover: hasDiscovery,
+              research: hasResearch,
+              track: hasTracked,
+              rank: hasRanks,
+            }
+            return (
+              <PageProcessGuide
+                title="Keywords process — follow these steps"
+                tip="Same pattern as Overview / Backlinks / Audit: click a step to jump. Do them in order the first time."
+                steps={KEYWORDS_PAGE_FLOW.map((s) => ({
+                  ...s,
+                  done: Boolean(doneMap[s.id]),
+                  active: next === s.id,
+                }))}
+                style={{ marginBottom: 0 }}
+              />
+            )
+          })()}
 
+          <div id="kw-section-gap">
+            <KeywordGapPanel siteId={siteId} onAdded={load} />
+          </div>
+
+          <div id="kw-section-discovery">
+          {!discovery && (
+            <Card padding="1rem 1.25rem">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <FontAwesomeIcon icon={faBolt} style={{ color: T.orange }} />
+                    <strong style={{ fontSize: 14, color: T.text }}>Project keyword discovery</strong>
+                  </div>
+                  <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                    Step 2 — pull ranking / opportunity keywords from your project.
+                  </div>
+                </div>
+                <OrangeBtn onClick={runAutoDiscover} disabled={discoverRunning}>
+                  <FontAwesomeIcon icon={discoverRunning ? faArrowsRotate : faMagnifyingGlass} spin={discoverRunning} style={{ marginRight: 6 }} />
+                  {discoverRunning ? 'Discovering…' : 'Rediscover keywords'}
+                </OrangeBtn>
+              </div>
+            </Card>
+          )}
           {discovery && (
             <Card padding="1.25rem">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: discoveryOpen ? 12 : 0 }}>
@@ -824,21 +947,27 @@
               )}
             </Card>
           )}
+          </div>
 
           {/* DataForSEO Keyword Research Panel */}
+          <div id="kw-section-research">
           <Card padding="1.25rem">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12, flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />
-                <strong style={{ fontSize: 14, color: T.text }}>Keyword Research</strong>
-                <span style={{ fontSize: 11, background: T.orangeDim, color: T.orange, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>DataForSEO</span>
-              </div>
-              {dfsMeta?.locationName && (
-                <span style={{ fontSize: 11, color: T.muted }}>
-                  {dfsMeta.locationName} · {dfsMeta.languageName || researchLanguage}
+            <CollapsibleSection
+              title="Keyword Research"
+              subtitle="Industry-standard discovery: volume, KD, CPC, intent, trend, results, SERP — aligned with Moz / Ahrefs / SE Ranking / Semrush / Serpstat patterns via DataForSEO."
+              icon={<FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />}
+              defaultOpen
+              right={
+                <span style={{ fontSize: 11, background: T.orangeDim, color: T.orange, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>
+                  Multi-vendor · DataForSEO
                 </span>
-              )}
-            </div>
+              }
+            >
+            {dfsMeta?.locationName && (
+              <div style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}>
+                {dfsMeta.locationName} · {dfsMeta.languageName || researchLanguage}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <input
@@ -894,7 +1023,6 @@
                     const on = e.target.checked
                     setShowAiOverview(on)
                     if (on && (dfsMatching.length || dfsRelated.length || dfsQuestions.length)) {
-                      // Load shortly after toggle so visible rows are ready
                       setTimeout(() => loadAiOverviewForVisible(false), 0)
                     }
                   }}
@@ -925,6 +1053,117 @@
               <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
                 Checked {aiOverviewMeta.checked} · with AI Overview {aiOverviewMeta.withAiOverview}
                 {aiOverviewMeta.locationName ? ` · ${aiOverviewMeta.locationName}` : ''}
+              </div>
+            )}
+
+            {!dfsMatching.length && !dfsRelated.length && !dfsQuestions.length && !dfsLoading && (
+              <div style={{
+                marginTop: 12, padding: '12px 14px', borderRadius: 10,
+                background: '#F8FAFC', border: `1px dashed ${T.border}`,
+                fontSize: 12, color: T.muted, lineHeight: 1.45,
+              }}>
+                No research results yet. Type a seed keyword above and click Search.
+                This box stays empty until you search (it is separate from Tracked Keywords and Keyword gap).
+              </div>
+            )}
+
+            {(dfsOverview || dfsOrganic.length > 0) && (
+              <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>
+                  Keyword Overview{dfsQuery ? `: ${dfsQuery}` : ''}
+                </div>
+                {dfsOverview && (
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                    gap: 8,
+                  }}>
+                    {[
+                      { label: 'Volume', value: formatCompactNumber(dfsOverview.volume) },
+                      { label: 'CPC', value: `$${Number(dfsOverview.cpc || 0).toFixed(2)}` },
+                      { label: 'Competition', value: dfsOverview.competition != null ? Number(dfsOverview.competition).toFixed(2) : '—' },
+                      { label: 'KD', value: dfsOverview.difficultyScore ?? '—' },
+                      { label: 'Intent', value: dfsOverview.intent || '—' },
+                      { label: 'Results', value: formatCompactNumber(dfsOverview.resultsCount) },
+                    ].map((m) => (
+                      <div key={m.label} style={{
+                        border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px', background: '#fff',
+                      }}>
+                        <div style={{ fontSize: 10, fontWeight: 800, color: T.muted, textTransform: 'uppercase' }}>{m.label}</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: T.text, marginTop: 4 }}>{m.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {dfsOverview?.trend?.length > 1 && (
+                  <div style={{
+                    border: `1px solid ${T.border}`, borderRadius: 10, padding: 12, background: '#fff',
+                  }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: T.muted, marginBottom: 8, textTransform: 'uppercase' }}>
+                      12-month trend
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: 72 }}>
+                      {(() => {
+                        const pts = dfsOverview.trend.map((v) => Number(v) || 0)
+                        const max = Math.max(...pts, 1)
+                        return pts.map((v, i) => (
+                          <div
+                            key={i}
+                            title={String(v)}
+                            style={{
+                              flex: 1,
+                              height: `${Math.max(6, Math.round((v / max) * 100))}%`,
+                              background: T.orange,
+                              opacity: 0.55 + (i / pts.length) * 0.45,
+                              borderRadius: '4px 4px 0 0',
+                            }}
+                          />
+                        ))
+                      })()}
+                    </div>
+                  </div>
+                )}
+                {dfsOrganic.length > 0 && (
+                  <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden', background: '#fff' }}>
+                    <div style={{
+                      padding: '8px 12px', background: T.surface2, borderBottom: `1px solid ${T.border}`,
+                      fontSize: 11, fontWeight: 800, color: T.muted, textTransform: 'uppercase',
+                    }}>
+                      Organic SERP (top {dfsOrganic.length})
+                    </div>
+                    {dfsOrganic.map((row, i) => (
+                      <div
+                        key={`${row.url}-${i}`}
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '36px minmax(0,1fr)',
+                          gap: 8,
+                          padding: '8px 12px',
+                          borderBottom: i < dfsOrganic.length - 1 ? `1px solid ${T.border}` : 'none',
+                        }}
+                      >
+                        <div style={{ fontSize: 12, fontWeight: 800, color: T.muted }}>{row.rank || i + 1}</div>
+                        <div style={{ minWidth: 0 }}>
+                          <a
+                            href={row.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8', textDecoration: 'none' }}
+                          >
+                            {row.title || row.domain || row.url}
+                          </a>
+                          <div style={{ fontSize: 11, color: '#15803D', marginTop: 2 }}>{row.domain}</div>
+                          {row.description ? (
+                            <div style={{ fontSize: 11, color: T.muted, marginTop: 2, lineHeight: 1.35 }}>
+                              {String(row.description).slice(0, 160)}
+                              {String(row.description).length > 160 ? '…' : ''}
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -992,6 +1231,20 @@
                         : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add top 25</>
                       }
                     </OrangeBtn>
+                    <button
+                      type="button"
+                      onClick={exportResearchCsv}
+                      disabled={!visibleResearch.length}
+                      style={{
+                        background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
+                        padding: '7px 12px', fontSize: 12, fontWeight: 600, color: T.text2, cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        opacity: visibleResearch.length ? 1 : 0.5,
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faDownload} />
+                      Export CSV
+                    </button>
                   </div>
                 </div>
 
@@ -1008,17 +1261,25 @@
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: showAiOverview
-                      ? 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 88px minmax(120px,1fr) 90px'
-                      : 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                      ? (researchTab === 'related'
+                        ? 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 70px 88px minmax(110px,1fr) 84px'
+                        : 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 88px minmax(110px,1fr) 84px')
+                      : (researchTab === 'related'
+                        ? 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 70px 84px'
+                        : 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 84px'),
                     gap: 8,
                     padding: '8px 12px',
                     background: T.surface2,
                     borderBottom: `1px solid ${T.border}`,
-                    minWidth: showAiOverview ? 1180 : 900,
+                    minWidth: showAiOverview ? 1280 : 980,
                   }}>
                     {(showAiOverview
-                      ? ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', 'AI Overview', 'Citations', '']
-                      : ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', '']
+                      ? (researchTab === 'related'
+                        ? ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Results', 'KD', 'CPC', 'Related %', 'AI Overview', 'Citations', '']
+                        : ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Results', 'KD', 'CPC', 'AI Overview', 'Citations', ''])
+                      : (researchTab === 'related'
+                        ? ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Results', 'KD', 'CPC', 'Related %', '']
+                        : ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Results', 'KD', 'CPC', ''])
                     ).map((h) => (
                       <div key={h || 'action'} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
@@ -1033,18 +1294,23 @@
                     const isAdded = addedKeywords.has(key)
                     const isAdding = addingKeywords.has(key)
                     const aio = aiOverviewMap[key]
+                    const gridCols = showAiOverview
+                      ? (researchTab === 'related'
+                        ? 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 70px 88px minmax(110px,1fr) 84px'
+                        : 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 88px minmax(110px,1fr) 84px')
+                      : (researchTab === 'related'
+                        ? 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 70px 84px'
+                        : 'minmax(150px,1.3fr) 70px 80px 64px 56px 70px 64px 56px 84px')
                     return (
                       <div key={`${researchTab}-${s.keyword}-${i}`} style={{
                         display: 'grid',
-                        gridTemplateColumns: showAiOverview
-                          ? 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 88px minmax(120px,1fr) 90px'
-                          : 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                        gridTemplateColumns: gridCols,
                         gap: 8,
                         padding: '10px 12px',
                         alignItems: 'center',
                         borderBottom: i < visibleResearch.length - 1 ? '1px solid #F3F4F6' : 'none',
                         background: isAdded ? '#F0FDF4' : '#fff',
-                        minWidth: showAiOverview ? 1180 : 900,
+                        minWidth: showAiOverview ? 1280 : 980,
                       }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.keyword}</div>
@@ -1060,11 +1326,18 @@
                           {s.volume?.toLocaleString() || '-'}
                         </div>
                         <TrendSparkline values={s.trend} />
-                        <DifficultyBar score={s.difficultyScore || 0} />
-                        <div style={{ fontSize: 12, color: T.text2 }}>${Number(s.cpc || 0).toFixed(2)}</div>
-                        <div style={{ fontSize: 12, color: T.text2 }}>
-                          {s.competition ? `${(s.competition * 100).toFixed(0)}%` : '-'}
+                        <div style={{ fontSize: 12, color: T.text2, fontWeight: 700 }}>
+                          {formatCompactNumber(s.resultsCount)}
                         </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: T.text2 }}>
+                          {s.difficultyScore ?? '—'}
+                        </div>
+                        <div style={{ fontSize: 12, color: T.text2 }}>${Number(s.cpc || 0).toFixed(2)}</div>
+                        {researchTab === 'related' && (
+                          <div style={{ fontSize: 12, fontWeight: 700, color: T.text2 }}>
+                            {s.relatedness != null ? `${Math.round(Number(s.relatedness) * (Number(s.relatedness) <= 1 ? 100 : 1))}%` : '—'}
+                          </div>
+                        )}
                         {showAiOverview && (
                           <>
                             <div>
@@ -1144,8 +1417,11 @@
                 </div>
               </div>
             )}
+            </CollapsibleSection>
           </Card>
+          </div>
 
+          <div id="kw-section-tracked">
           {/* Manual add + AI suggestions */}
           <Card padding="1.25rem">
             <SectionLabel>Add keyword manually</SectionLabel>
@@ -1409,6 +1685,7 @@
               </>
             )}
           </Card>
+          </div>
         </div>
 
         {/* Delete confirmation modal */}
