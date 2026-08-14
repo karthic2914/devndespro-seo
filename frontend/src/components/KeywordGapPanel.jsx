@@ -80,10 +80,10 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
   const autoDiscover = async () => {
     setDiscovering(true)
     try {
-      const { data } = await api.post(`/sites/${siteId}/competitors/auto-discover`)
+      const { data } = await api.post(`/sites/${siteId}/competitors/auto-discover`, { prune: true })
       const list = Array.isArray(data?.competitors) ? data.competitors : []
       setInputs(list.slice(0, 4).map((c) => c.name).concat(['']).slice(0, Math.max(2, Math.min(4, list.length || 1))))
-      toast.success(data?.inserted ? `Found ${data.inserted} competitors` : 'Competitors ready')
+      toast.success(data?.inserted || data?.pruned ? 'Same-niche competitors refreshed' : 'Competitors ready')
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
     }

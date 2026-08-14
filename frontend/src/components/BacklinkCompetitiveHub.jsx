@@ -271,6 +271,11 @@ function BacklinkGapPanel({ siteId, onSaved }) {
   const [running, setRunning] = useState(false)
   const [discovering, setDiscovering] = useState(false)
   const [result, setResult] = useState(null)
+  const [profilePage, setProfilePage] = useState(1)
+  const [prospectPage, setProspectPage] = useState(1)
+
+  const PROFILE_PAGE_SIZE = 2
+  const PROSPECT_PAGE_SIZE = 10
 
   useEffect(() => {
     if (!siteId) return
@@ -311,11 +316,16 @@ function BacklinkGapPanel({ siteId, onSaved }) {
   const autoDiscover = async () => {
     setDiscovering(true)
     try {
-      const { data } = await api.post(`/sites/${siteId}/competitors/auto-discover`)
+      const { data } = await api.post(`/sites/${siteId}/competitors/auto-discover`, { prune: true })
       const list = Array.isArray(data?.competitors) ? data.competitors : []
       setSavedCompetitors(list)
       setInputs(list.slice(0, 4).map((c) => c.name).concat(['']).slice(0, Math.max(2, Math.min(4, list.length || 1))))
-      toast.success(data?.inserted ? `Found ${data.inserted} competitors` : 'Competitors refreshed')
+      const parts = []
+      if (data?.pruned) parts.push(`removed ${data.pruned} off-niche`)
+      if (data?.inserted) parts.push(`added ${data.inserted}`)
+      if (data?.updated) parts.push(`updated ${data.updated}`)
+      toast.success(parts.length ? `Competitors refreshed (${parts.join(', ')})` : 'Competitors refreshed')
+      if (data?.tip) toast(data.tip)
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
     }
@@ -347,6 +357,8 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         limit: 25,
       })
       setResult(data)
+      setProfilePage(1)
+      setProspectPage(1)
       if (!data?.linkGap?.length) toast('No link-gap prospects found for these competitors yet')
       else toast.success(`Found ${data.linkGap.length} link-gap prospects`)
     } catch (e) {
@@ -384,6 +396,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         </div>
         <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, lineHeight: 1.45 }}>
           Find websites that link to your competitors but not to you — the best outreach prospects.
+          Use same-niche agencies only (web design / development / SEO), not random backlink overlaps.
         </div>
       </div>
 
@@ -411,34 +424,73 @@ function BacklinkGapPanel({ siteId, onSaved }) {
             <span style={{ fontSize: 11, color: '#94A3B8' }}>Root domain</span>
           </div>
 
-          {inputs.map((val, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: 11, fontWeight: 800, color: '#334155', background: '#F1F5F9',
-                borderRadius: 6, padding: '4px 8px', minWidth: 44, textAlign: 'center',
+          {inputs.map((val, i) => {
+            const meta = savedCompetitors.find(
+              (c) => String(c.name || '').toLowerCase() === String(val || '').toLowerCase()
+            )
+            return (
+              <div key={i} style={{
+                border: '1px solid #E2E8F0',
+                borderRadius: 10,
+                padding: 10,
+                background: '#fff',
               }}>
-                C{i + 1}
-              </span>
-              <input
-                value={val}
-                onChange={(e) => setInputAt(i, e.target.value)}
-                placeholder="Add competitor domain"
-                style={{
-                  flex: 1, minWidth: 180, height: 38, borderRadius: 8,
-                  border: '1px solid #E2E8F0', padding: '0 12px',
-                }}
-              />
-              {inputs.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setInputs((p) => p.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer' }}
-                >
-                  <FontAwesomeIcon icon={faXmark} />
-                </button>
-              )}
-            </div>
-          ))}
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{
+                    fontSize: 11, fontWeight: 800, color: '#334155', background: '#F1F5F9',
+                    borderRadius: 6, padding: '4px 8px', minWidth: 44, textAlign: 'center',
+                  }}>
+                    C{i + 1}
+                  </span>
+                  <input
+                    value={val}
+                    onChange={(e) => setInputAt(i, e.target.value)}
+                    placeholder="Add competitor domain (same niche)"
+                    style={{
+                      flex: 1, minWidth: 180, height: 38, borderRadius: 8,
+                      border: '1px solid #E2E8F0', padding: '0 12px',
+                    }}
+                  />
+                  {meta?.dr != null && Number(meta.dr) > 0 && (
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, color: '#0F172A',
+                      background: '#F8FAFC', border: '1px solid #E2E8F0',
+                      borderRadius: 6, padding: '4px 8px',
+                    }}>
+                      DR {meta.dr}
+                    </span>
+                  )}
+                  {inputs.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setInputs((p) => p.filter((_, idx) => idx !== i))}
+                      style={{ background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer' }}
+                    >
+                      <FontAwesomeIcon icon={faXmark} />
+                    </button>
+                  )}
+                </div>
+                {(meta?.industry || meta?.summary || meta?.location || meta?.notes) && (
+                  <div style={{ marginTop: 8, paddingLeft: 54 }}>
+                    {meta.industry && (
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#0369A1', marginBottom: 2 }}>
+                        {meta.industry}
+                        {meta.location ? ` · ${meta.location}` : ''}
+                      </div>
+                    )}
+                    {(meta.summary || meta.notes) && (
+                      <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.4 }}>
+                        {meta.summary || meta.notes}
+                      </div>
+                    )}
+                    {meta.title && (
+                      <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>{meta.title}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
@@ -458,62 +510,162 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         </div>
       </div>
 
-      {result?.you && (
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>
-            Profile comparison
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
-            <div style={{ padding: 12, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#C2410C' }}>You · {result.yourDomain}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{result.you.referringDomains ?? '—'}</div>
-              <div style={{ fontSize: 11, color: '#64748B' }}>ref. domains · {result.you.backlinks ?? '—'} links</div>
-            </div>
-            {(result.competitors || []).map((c) => (
-              <div key={c.domain} style={{ padding: 12, borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-                <div style={{ fontSize: 11, fontWeight: 800, color: '#0F172A' }}>{c.domain}</div>
-                <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{c.referringDomains ?? '—'}</div>
-                <div style={{ fontSize: 11, color: '#64748B' }}>
-                  ref. domains · {c.backlinks ?? '—'} links
-                  {c.deltaRefDomains != null ? ` · gap ${c.deltaRefDomains > 0 ? '+' : ''}${c.deltaRefDomains}` : ''}
+      {result?.you && (() => {
+        const comps = result.competitors || []
+        const profilePages = Math.max(1, Math.ceil(comps.length / PROFILE_PAGE_SIZE))
+        const page = Math.min(profilePage, profilePages)
+        const slice = comps.slice((page - 1) * PROFILE_PAGE_SIZE, page * PROFILE_PAGE_SIZE)
+        return (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+                Profile comparison
+              </div>
+              {comps.length > PROFILE_PAGE_SIZE && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    type="button"
+                    disabled={page <= 1}
+                    onClick={() => setProfilePage((p) => Math.max(1, p - 1))}
+                    style={{
+                      border: '1px solid #E2E8F0', background: '#fff', borderRadius: 6,
+                      padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                      opacity: page <= 1 ? 0.5 : 1,
+                    }}
+                  >
+                    Prev
+                  </button>
+                  <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>
+                    {page} / {profilePages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={page >= profilePages}
+                    onClick={() => setProfilePage((p) => Math.min(profilePages, p + 1))}
+                    style={{
+                      border: '1px solid #E2E8F0', background: '#fff', borderRadius: 6,
+                      padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: page >= profilePages ? 'not-allowed' : 'pointer',
+                      opacity: page >= profilePages ? 0.5 : 1,
+                    }}
+                  >
+                    Next
+                  </button>
                 </div>
+              )}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
+              <div style={{ padding: 12, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#C2410C' }}>You · {result.yourDomain}</div>
+                <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{result.you.referringDomains ?? '—'}</div>
+                <div style={{ fontSize: 11, color: '#64748B' }}>
+                  ref. domains · {result.you.backlinks ?? '—'} links · rank {result.you.rank ?? '—'}
+                </div>
+              </div>
+              {slice.map((c) => {
+                const saved = savedCompetitors.find(
+                  (s) => String(s.name || '').toLowerCase() === String(c.domain || '').toLowerCase()
+                )
+                const industry = c.industry || saved?.industry || ''
+                const summary = c.summary || saved?.summary || c.notes || saved?.notes || ''
+                const location = c.location || saved?.location || ''
+                const title = c.title || saved?.title || ''
+                return (
+                  <div key={c.domain} style={{ padding: 12, borderRadius: 10, background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>{c.domain}</div>
+                    {(industry || location) && (
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#0369A1', marginTop: 3 }}>
+                        {[industry, location].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
+                    {summary && (
+                      <div style={{ fontSize: 11, color: '#64748B', marginTop: 4, lineHeight: 1.35 }}>
+                        {String(summary).slice(0, 120)}{String(summary).length > 120 ? '…' : ''}
+                      </div>
+                    )}
+                    {title && title !== summary && (
+                      <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{String(title).slice(0, 80)}</div>
+                    )}
+                    <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8 }}>{c.referringDomains ?? '—'}</div>
+                    <div style={{ fontSize: 11, color: '#64748B' }}>
+                      ref. domains · {c.backlinks ?? '—'} links · rank {c.rank ?? c.savedDr ?? '—'}
+                      {c.deltaRefDomains != null ? ` · gap ${c.deltaRefDomains > 0 ? '+' : ''}${c.deltaRefDomains}` : ''}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })()}
+
+      {Array.isArray(result?.linkGap) && result.linkGap.length > 0 && (() => {
+        const gaps = result.linkGap
+        const prospectPages = Math.max(1, Math.ceil(gaps.length / PROSPECT_PAGE_SIZE))
+        const page = Math.min(prospectPage, prospectPages)
+        const slice = gaps.slice((page - 1) * PROSPECT_PAGE_SIZE, page * PROSPECT_PAGE_SIZE)
+        return (
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
+                Prospects ({gaps.length}) — link to competitor, not you
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <button
+                  type="button"
+                  disabled={page <= 1}
+                  onClick={() => setProspectPage((p) => Math.max(1, p - 1))}
+                  style={{
+                    border: '1px solid #E2E8F0', background: '#fff', borderRadius: 6,
+                    padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                    opacity: page <= 1 ? 0.5 : 1,
+                  }}
+                >
+                  Prev
+                </button>
+                <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700 }}>
+                  {page} / {prospectPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= prospectPages}
+                  onClick={() => setProspectPage((p) => Math.min(prospectPages, p + 1))}
+                  style={{
+                    border: '1px solid #E2E8F0', background: '#fff', borderRadius: 6,
+                    padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: page >= prospectPages ? 'not-allowed' : 'pointer',
+                    opacity: page >= prospectPages ? 0.5 : 1,
+                  }}
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+            {slice.map((g) => (
+              <div
+                key={`${g.domain}-${g.vsCompetitor}`}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 0',
+                  borderBottom: '1px solid #F1F5F9',
+                }}
+              >
+                <BrandFavicon name={g.domain} size={16} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{g.domain}</div>
+                  <div style={{ fontSize: 11, color: '#64748B' }}>
+                    Links to {g.vsCompetitor} · Rank {g.rank || 0}
+                  </div>
+                </div>
+                <OrangeBtn onClick={() => saveProspect(g)} style={{ height: 32, fontSize: 11 }}>
+                  <FontAwesomeIcon icon={faPlus} style={{ marginRight: 5 }} />
+                  Save prospect
+                </OrangeBtn>
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {Array.isArray(result?.linkGap) && result.linkGap.length > 0 && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase', marginBottom: 8 }}>
-            Prospects ({result.linkGap.length}) — link to competitor, not you
-          </div>
-          {result.linkGap.map((g) => (
-            <div
-              key={`${g.domain}-${g.vsCompetitor}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '10px 0',
-                borderBottom: '1px solid #F1F5F9',
-              }}
-            >
-              <BrandFavicon name={g.domain} size={16} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{g.domain}</div>
-                <div style={{ fontSize: 11, color: '#64748B' }}>
-                  Links to {g.vsCompetitor} · Rank {g.rank || 0}
-                </div>
-              </div>
-              <OrangeBtn onClick={() => saveProspect(g)} style={{ height: 32, fontSize: 11 }}>
-                <FontAwesomeIcon icon={faPlus} style={{ marginRight: 5 }} />
-                Save prospect
-              </OrangeBtn>
-            </div>
-          ))}
-        </div>
-      )}
+        )
+      })()}
 
       {!result && !running && (
         <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.5 }}>

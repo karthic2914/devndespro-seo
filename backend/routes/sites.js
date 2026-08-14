@@ -533,11 +533,18 @@ router.get('/:siteId/competitors', auth, verifySite, async (req, res) => {
   res.json(rows)
 })
 router.post('/:siteId/competitors', auth, verifySite, async (req, res) => {
+  const { ensureCompetitorDetailColumns } = require('../utils/competitorEnrich')
+  await ensureCompetitorDetailColumns()
+
   const domain = normalizeCompetitorDomain(req.body?.name || req.body?.domain || req.body?.url)
   if (!domain) return res.status(400).json({ error: 'Competitor domain is required' })
   const dr = Number(req.body?.dr) || 0
   const notes = String(req.body?.notes || '').trim()
   const url = String(req.body?.url || `https://${domain}`).trim()
+  const title = String(req.body?.title || '').trim()
+  const summary = String(req.body?.summary || '').trim()
+  const industry = String(req.body?.industry || '').trim()
+  const location = String(req.body?.location || '').trim()
 
   const existing = await pool.query(
     `SELECT id FROM competitors
@@ -550,17 +557,22 @@ router.post('/:siteId/competitors', auth, verifySite, async (req, res) => {
       `UPDATE competitors
        SET dr=CASE WHEN $3::int > 0 THEN $3 ELSE dr END,
            notes=CASE WHEN $4 <> '' THEN $4 ELSE notes END,
-           url=$5
+           url=$5,
+           title=CASE WHEN $6 <> '' THEN $6 ELSE title END,
+           summary=CASE WHEN $7 <> '' THEN $7 ELSE summary END,
+           industry=CASE WHEN $8 <> '' THEN $8 ELSE industry END,
+           location=CASE WHEN $9 <> '' THEN $9 ELSE location END
        WHERE id=$1 AND site_id=$2
        RETURNING *`,
-      [existing.rows[0].id, req.siteId, dr, notes, url]
+      [existing.rows[0].id, req.siteId, dr, notes, url, title, summary, industry, location]
     )
     return res.json(rows[0])
   }
 
   const { rows } = await pool.query(
-    'INSERT INTO competitors (site_id, name, dr, notes, url) VALUES ($1,$2,$3,$4,$5) RETURNING *',
-    [req.siteId, domain, dr, notes, url]
+    `INSERT INTO competitors (site_id, name, dr, notes, url, title, summary, industry, location)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,
+    [req.siteId, domain, dr, notes, url, title, summary, industry, location]
   )
   res.json(rows[0])
 })
@@ -576,39 +588,48 @@ function getDataForSEOAuthSites() {
   return Buffer.from(`${login}:${password}`).toString('base64')
 }
 
-// Auto-discover competitors: backlink overlap + ranking overlap + site crawl, AI as fallback
+// Auto-discover SAME-NICHE competitors + basic details (industry, summary, location, DR)
 router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, res) => {
   const axios = require('axios')
+  const {
+    ensureCompetitorDetailColumns,
+    enrichCompetitorBasics,
+    isAutoSourcedCompetitor,
+  } = require('../utils/competitorEnrich')
+
   try {
+    await ensureCompetitorDetailColumns()
+
     const { rows: siteRows } = await pool.query('SELECT name, url, description FROM sites WHERE id=$1', [req.siteId])
     const site = siteRows[0]
     if (!site) return res.status(404).json({ error: 'Site not found' })
 
     const targetDomain = extractDomain(site.url)
-    const { rows: existingRows } = await pool.query('SELECT name FROM competitors WHERE site_id=$1', [req.siteId])
-    const existingDomains = new Set(existingRows.map(r => String(r.name || '').toLowerCase().trim()))
+    const prune = req.body?.prune !== false // default: remove weak auto-sourced mismatches
+    const { rows: existingRows } = await pool.query('SELECT * FROM competitors WHERE site_id=$1', [req.siteId])
+
+    // Stronger business context from our own homepage if description is thin
+    let businessContext = String(site.description || '').trim()
+    try {
+      const ours = await enrichCompetitorBasics([targetDomain])
+      const self = ours[0]
+      if (self?.summary || self?.title) {
+        businessContext = [
+          businessContext,
+          self.title ? `Site title: ${self.title}` : '',
+          self.summary ? `Site about: ${self.summary}` : '',
+        ].filter(Boolean).join('\n')
+      }
+    } catch { /* optional */ }
+
+    if (!businessContext) {
+      businessContext = `Digital agency / web design, web development, and SEO services company (${site.name} / ${targetDomain}). Prefer local or regional agency competitors in the same services niche.`
+    }
 
     let discovered = []
     let source = 'mixed'
 
-    // 1) Backlink-profile competitors (best for Backlinks page)
-    try {
-      const { fetchBacklinkCompetitors } = require('../utils/dataForSeoBacklinks')
-      const bl = await fetchBacklinkCompetitors({ target: targetDomain, limit: 10 })
-      for (const item of bl.items || []) {
-        discovered.push({
-          name: item.domain,
-          dr: Math.max(1, Math.min(100, Number(item.rank) || 0)),
-          notes: `Backlink competitor: ${item.intersections} shared referring domains`,
-          source: 'backlinks',
-        })
-      }
-      if (bl.items?.length) source = 'backlinks'
-    } catch (e) {
-      console.warn('Backlink competitors discover skipped:', e.message)
-    }
-
-    // 2) Ranking-overlap competitors (Labs)
+    // 1) Ranking-overlap first (closer to real market competitors than raw backlink overlap)
     const authHeader = getDataForSEOAuthSites()
     if (authHeader) {
       try {
@@ -617,8 +638,8 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
           [{
             target: targetDomain,
             language_name: 'English',
-            location_code: 2840,
-            limit: 8,
+            location_code: 2578,
+            limit: 12,
             exclude_top_domains: true,
           }],
           { headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' }, timeout: 20000 }
@@ -633,138 +654,312 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
             return {
               name: item.domain,
               dr: estAuthority,
-              notes: `Ranking overlap: ${keywordCount} shared keywords, est. traffic value ${Math.round(etv)}`,
+              notes: `Ranking overlap: ${keywordCount} shared keywords`,
               source: 'labs',
             }
           })
         if (labs.length) {
           discovered = discovered.concat(labs)
-          if (source === 'mixed') source = 'dataforseo'
+          source = 'dataforseo'
         }
       } catch (e) {
         console.error('DataForSEO competitors_domain failed:', e.response?.data || e.message)
       }
     }
 
-    // 3) Crawl the project website for outbound domains
-    const crawlHits = await discoverCompetitorsFromSiteCrawl(site.url, targetDomain)
-    if (crawlHits.length) {
-      discovered = discovered.concat(crawlHits)
-      if (source === 'mixed') source = 'crawl'
+    // 2) Backlink-profile competitors as WEAK candidates only (often wrong niche)
+    try {
+      const { fetchBacklinkCompetitors } = require('../utils/dataForSeoBacklinks')
+      const bl = await fetchBacklinkCompetitors({ target: targetDomain, limit: 8 })
+      for (const item of bl.items || []) {
+        discovered.push({
+          name: item.domain,
+          dr: Math.max(1, Math.min(100, Number(item.rank) || 0)),
+          notes: `Backlink overlap: ${item.intersections} shared referring domains`,
+          source: 'backlinks',
+          weak: true,
+        })
+      }
+    } catch (e) {
+      console.warn('Backlink competitors discover skipped:', e.message)
     }
 
-    // Dedupe by domain (prefer higher DR / richer notes)
+    // NOTE: outbound crawl links are NOT treated as competitors (partners/blogs/tools ≠ rivals)
+
+    // Dedupe
     const byDomain = new Map()
     for (const c of discovered) {
       const key = normalizeCompetitorDomain(c.name)
       if (!key || key === targetDomain) continue
       const prev = byDomain.get(key)
-      if (!prev || Number(c.dr || 0) > Number(prev.dr || 0)) {
+      if (!prev || (!c.weak && prev.weak) || Number(c.dr || 0) > Number(prev.dr || 0)) {
         byDomain.set(key, { ...c, name: key })
       }
     }
-    discovered = [...byDomain.values()].slice(0, 12)
+    discovered = [...byDomain.values()].slice(0, 14)
 
-    if (discovered.length) {
-      try {
-        const candidateList = discovered.map(d => `${d.name} (${d.notes})`).join('\n')
-        const relevancePrompt = `You are an SEO/market analyst checking a list of candidate competitors for genuine industry relevance.
+    // Enrich candidates with homepage basics before AI judges relevance
+    const basicsList = await enrichCompetitorBasics(discovered.map((d) => d.name))
+    const basicsMap = new Map(basicsList.map((b) => [b.domain, b]))
+    for (const d of discovered) {
+      const b = basicsMap.get(d.name)
+      if (!b) continue
+      d.title = b.title || ''
+      d.summary = b.summary || ''
+      d.url = b.url || `https://${d.name}`
+    }
 
-Business: ${site.name}
+    // Strict same-niche filter + structured details
+    let profiles = []
+    try {
+      const candidateList = discovered.map((d) => {
+        return `- ${d.name}
+  source: ${d.source}${d.weak ? ' (weak signal)' : ''}
+  title: ${d.title || 'n/a'}
+  about: ${d.summary || d.notes || 'n/a'}`
+      }).join('\n')
+
+      const relevancePrompt = `You are a market analyst for a LOCAL / REGIONAL digital services company.
+
+OUR BUSINESS
+Name: ${site.name}
 Website: ${site.url}
-${site.description ? `What this business does: ${site.description}` : ''}
+What we do (must match competitors to this niche):
+${businessContext}
 
-Candidate domains (from backlink overlap, ranking overlap, and/or site crawl — some may be coincidental):
-${candidateList}
+Task: From the candidates below, keep ONLY genuine direct or close competitors — companies that sell the SAME core services to similar customers (e.g. web design, web development, SEO / digital marketing agencies).
 
-Return ONLY the domains that are plausible genuine competitors or adjacent players in the same or a closely related industry as the business above. Exclude CDNs, social networks, directories, news mega-sites, and unrelated companies. Be strict - if in doubt, exclude it.
+EXCLUDE:
+- Blogs, personal sites, SaaS tools, directories, job boards, news sites
+- Unrelated industries that only share a few keywords or backlinks
+- Global mega-brands / platforms
+- Weak-signal backlink-only overlaps that are not agencies in our niche
+If unsure, EXCLUDE.
+
+For each KEEP, return basic details.
 
 Return ONLY valid JSON:
-{ "relevant": ["domain1.com", "domain2.com"] }`
+{
+  "competitors": [
+    {
+      "domain": "example.com",
+      "industry": "Web design & SEO agency",
+      "summary": "One sentence: what they sell / who they serve",
+      "location": "City/Country if known, else empty string",
+      "reason": "Why they compete with us",
+      "dr": 0
+    }
+  ]
+}
 
+Candidates:
+${candidateList || '(none — invent up to 6 real niche competitors instead)'}`
+
+      const r = await anthropic.messages.create({
+        model: 'claude-sonnet-5',
+        max_tokens: 1800,
+        messages: [{ role: 'user', content: relevancePrompt }],
+      })
+      const text = r.content?.[0]?.text?.trim() || '{}'
+      const jsonStart = text.indexOf('{')
+      const jsonEnd = text.lastIndexOf('}')
+      let parsed = { competitors: [] }
+      try {
+        parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
+      } catch (parseErr) {
+        console.error('Competitor profile JSON parse failed:', parseErr.message, '| raw:', text)
+      }
+      profiles = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
+        .map((c) => {
+          const name = normalizeCompetitorDomain(c?.domain)
+          if (!name || name === targetDomain) return null
+          const prior = byDomain.get(name) || {}
+          return {
+            name,
+            dr: Number(c.dr) > 0 ? Number(c.dr) : Number(prior.dr || 0),
+            title: prior.title || '',
+            summary: String(c.summary || prior.summary || '').trim().slice(0, 280),
+            industry: String(c.industry || '').trim().slice(0, 120),
+            location: String(c.location || '').trim().slice(0, 120),
+            notes: `Same niche: ${String(c.reason || '').trim()}`.slice(0, 280),
+            url: prior.url || `https://${name}`,
+            source: prior.source || 'ai',
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 8)
+      if (profiles.length) source = discovered.length ? 'filtered' : 'ai'
+    } catch (e) {
+      console.error('Competitor niche filter failed:', e.message)
+    }
+
+    // AI-only fallback with full details if nothing passed the filter
+    if (!profiles.length) {
+      source = 'ai'
+      try {
+        const prompt = `You are a market research analyst.
+Business: ${site.name} (${site.url})
+What they do:
+${businessContext}
+
+List up to 6 REAL direct competitors in the SAME niche (web design / web development / SEO / digital agencies serving similar markets). Prefer real company domains.
+
+Return ONLY valid JSON:
+{
+  "competitors": [
+    {
+      "domain": "example.com",
+      "industry": "Web design & development agency",
+      "summary": "One sentence about services",
+      "location": "City, Country",
+      "reason": "Why they compete",
+      "dr": 0
+    }
+  ]
+}`
         const r = await anthropic.messages.create({
           model: 'claude-sonnet-5',
           max_tokens: 1200,
-          messages: [{ role: 'user', content: relevancePrompt }],
-        })
-        const text = r.content?.[0]?.text?.trim() || '{}'
-        const jsonStart = text.indexOf('{')
-        const jsonEnd = text.lastIndexOf('}')
-        let parsed = { relevant: null }
-        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch (parseErr) {
-          console.error('Relevance filter JSON parse failed:', parseErr.message, '| raw response:', text)
-          parsed = { relevant: null }
-        }
-
-        if (Array.isArray(parsed.relevant)) {
-          const relevantSet = new Set(parsed.relevant.map(d => String(d || '').toLowerCase().trim()))
-          discovered = discovered.filter(d => relevantSet.has(d.name.toLowerCase()))
-        } else {
-          console.error('Relevance filter returned no usable list, keeping top scored candidates. Raw:', text)
-          discovered = discovered.slice(0, 5)
-        }
-      } catch (e) {
-        console.error('Competitor relevance filter failed, keeping top candidates:', e.message)
-        discovered = discovered.slice(0, 5)
-      }
-    }
-
-    if (!discovered.length) {
-      source = 'ai'
-      try {
-        const prompt = `You are an SEO/market research analyst.
-Business name: ${site.name}
-Website: ${site.url}
-${site.description ? `What this business does: ${site.description}` : ''}
-
-List up to 6 real, plausible direct competitors for this business (same industry/niche). For each, give just the competitor's domain name (e.g. "example.com") and one short reason it competes.
-
-Return ONLY valid JSON:
-{ "competitors": [ { "domain": "...", "reason": "..." } ] }`
-
-        const r = await anthropic.messages.create({
-          model: 'claude-sonnet-5',
-          max_tokens: 700,
           messages: [{ role: 'user', content: prompt }],
         })
         const text = r.content?.[0]?.text?.trim() || '{}'
         const jsonStart = text.indexOf('{')
         const jsonEnd = text.lastIndexOf('}')
         let parsed = { competitors: [] }
-        try { parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text) } catch (parseErr) {
-          console.error('AI fallback JSON parse failed:', parseErr.message, '| raw response:', text)
-          parsed = { competitors: [] }
-        }
+        try {
+          parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
+        } catch { parsed = { competitors: [] } }
 
-        discovered = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
-          .map(c => ({
+        profiles = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
+          .map((c) => ({
             name: normalizeCompetitorDomain(c?.domain),
-            dr: 0,
-            notes: `AI-suggested (no live ranking data available): ${String(c?.reason || '').trim()}`,
+            dr: Number(c.dr) || 0,
+            title: '',
+            summary: String(c.summary || '').trim().slice(0, 280),
+            industry: String(c.industry || '').trim().slice(0, 120),
+            location: String(c.location || '').trim().slice(0, 120),
+            notes: `AI-suggested: ${String(c.reason || '').trim()}`.slice(0, 280),
+            url: `https://${normalizeCompetitorDomain(c?.domain)}`,
             source: 'ai',
           }))
-          .filter(c => c.name)
+          .filter((c) => c.name && c.name !== targetDomain)
+          .slice(0, 6)
+
+        // Fill missing summaries from live pages
+        const extraBasics = await enrichCompetitorBasics(profiles.map((p) => p.name))
+        const em = new Map(extraBasics.map((b) => [b.domain, b]))
+        for (const p of profiles) {
+          const b = em.get(p.name)
+          if (!b) continue
+          if (!p.summary && b.summary) p.summary = b.summary
+          if (!p.title && b.title) p.title = b.title
+        }
       } catch (e) {
         console.error('AI competitor fallback failed:', e.message)
       }
     }
 
-    const toInsert = discovered.filter(c => c.name && !existingDomains.has(c.name.toLowerCase()))
-    let inserted = 0
-    for (const c of toInsert) {
-      await pool.query(
-        'INSERT INTO competitors (site_id, name, dr, notes, url) VALUES ($1,$2,$3,$4,$5)',
-        [req.siteId, c.name, c.dr, c.notes, `https://${c.name}`]
-      )
-      existingDomains.add(c.name.toLowerCase())
-      inserted++
+    let pruned = 0
+    if (prune) {
+      for (const row of existingRows) {
+        if (!isAutoSourcedCompetitor(row)) continue
+        const keep = profiles.some((p) => p.name === normalizeCompetitorDomain(row.name))
+        if (!keep) {
+          await pool.query('DELETE FROM competitors WHERE id=$1 AND site_id=$2', [row.id, req.siteId])
+          pruned += 1
+        }
+      }
     }
 
-    const { rows: allRows } = await pool.query('SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC', [req.siteId])
-    res.json({ inserted, skipped: discovered.length - inserted, source, competitors: allRows })
+    const { rows: afterPrune } = await pool.query('SELECT name FROM competitors WHERE site_id=$1', [req.siteId])
+    const existingDomains = new Set(afterPrune.map((r) => String(r.name || '').toLowerCase().trim()))
+
+    let inserted = 0
+    let updated = 0
+    for (const c of profiles) {
+      if (existingDomains.has(c.name.toLowerCase())) {
+        await pool.query(
+          `UPDATE competitors
+           SET dr=CASE WHEN $3::int > 0 THEN $3 ELSE dr END,
+               notes=$4,
+               url=$5,
+               title=COALESCE(NULLIF($6,''), title),
+               summary=COALESCE(NULLIF($7,''), summary),
+               industry=COALESCE(NULLIF($8,''), industry),
+               location=COALESCE(NULLIF($9,''), location)
+           WHERE site_id=$1 AND lower(btrim(name))=lower(btrim($2))`,
+          [req.siteId, c.name, c.dr || 0, c.notes, c.url, c.title || '', c.summary || '', c.industry || '', c.location || '']
+        )
+        updated += 1
+      } else {
+        await pool.query(
+          `INSERT INTO competitors (site_id, name, dr, notes, url, title, summary, industry, location)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [req.siteId, c.name, c.dr || 0, c.notes, c.url, c.title || '', c.summary || '', c.industry || '', c.location || '']
+        )
+        existingDomains.add(c.name.toLowerCase())
+        inserted += 1
+      }
+    }
+
+    const { rows: allRows } = await pool.query(
+      'SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC, name ASC',
+      [req.siteId]
+    )
+    res.json({
+      inserted,
+      updated,
+      pruned,
+      skipped: Math.max(0, profiles.length - inserted - updated),
+      source,
+      competitors: allRows,
+      tip: !String(site.description || '').trim()
+        ? 'Add a Business description on Competitors for even better niche matching.'
+        : undefined,
+    })
   } catch (e) {
     console.error('Auto-discover competitors failed:', e.response?.data || e.message)
     res.status(500).json({ error: 'Could not auto-discover competitors' })
+  }
+})
+
+// Enrich saved competitors with title / summary / industry basics
+router.post('/:siteId/competitors/enrich', auth, verifySite, async (req, res) => {
+  const {
+    ensureCompetitorDetailColumns,
+    enrichCompetitorBasics,
+  } = require('../utils/competitorEnrich')
+  try {
+    await ensureCompetitorDetailColumns()
+    const { rows } = await pool.query(
+      'SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC LIMIT 12',
+      [req.siteId]
+    )
+    if (!rows.length) return res.json({ updated: 0, competitors: [] })
+
+    const basics = await enrichCompetitorBasics(rows.map((r) => r.name))
+    const map = new Map(basics.map((b) => [b.domain, b]))
+    let updated = 0
+    for (const row of rows) {
+      const b = map.get(normalizeCompetitorDomain(row.name))
+      if (!b) continue
+      const title = b.title || row.title || ''
+      const summary = row.summary || b.summary || ''
+      await pool.query(
+        `UPDATE competitors SET title=$1, summary=CASE WHEN COALESCE(summary,'')='' THEN $2 ELSE summary END, url=$3
+         WHERE id=$4 AND site_id=$5`,
+        [title, summary, b.url || row.url || `https://${row.name}`, row.id, req.siteId]
+      )
+      updated += 1
+    }
+    const { rows: all } = await pool.query(
+      'SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC',
+      [req.siteId]
+    )
+    res.json({ updated, competitors: all })
+  } catch (e) {
+    console.error('Competitor enrich failed:', e.message)
+    res.status(500).json({ error: 'Could not enrich competitors' })
   }
 })
 

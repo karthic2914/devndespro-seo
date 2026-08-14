@@ -1942,6 +1942,9 @@ router.get('/:siteId/backlinks/referring-domains', auth, verifySite, async (req,
  */
 router.post('/:siteId/backlinks/competitor-compare', auth, verifySite, async (req, res) => {
   try {
+    const { ensureCompetitorDetailColumns } = require('../utils/competitorEnrich')
+    await ensureCompetitorDetailColumns()
+
     const { rows: siteRows } = await pool.query('SELECT url, name FROM sites WHERE id=$1', [req.siteId])
     const site = siteRows[0]
     if (!site) return res.status(404).json({ error: 'Site not found' })
@@ -2007,6 +2010,10 @@ router.post('/:siteId/backlinks/competitor-compare', auth, verifySite, async (re
           id: c.id,
           domain,
           notes: c.notes || '',
+          title: c.title || '',
+          summary: c.summary || '',
+          industry: c.industry || '',
+          location: c.location || '',
           savedDr: Number(c.dr || 0),
           rank: overview.rank,
           backlinks: overview.backlinks,
@@ -2028,12 +2035,34 @@ router.post('/:siteId/backlinks/competitor-compare', auth, verifySite, async (re
           id: c.id,
           domain,
           notes: c.notes || '',
+          title: c.title || '',
+          summary: c.summary || '',
+          industry: c.industry || '',
+          location: c.location || '',
           savedDr: Number(c.dr || 0),
           rank: Number(c.dr || 0),
           backlinks: null,
           referringDomains: null,
           error: e.message,
         })
+      }
+    }
+
+    // Fill missing company basics for ad-hoc / thin competitor rows
+    const needsBasics = competitors.filter((c) => !c.summary && !c.industry && !c.title)
+    if (needsBasics.length) {
+      try {
+        const { enrichCompetitorBasics } = require('../utils/competitorEnrich')
+        const basics = await enrichCompetitorBasics(needsBasics.map((c) => c.domain))
+        const bmap = new Map(basics.map((b) => [b.domain, b]))
+        for (const c of competitors) {
+          const b = bmap.get(c.domain)
+          if (!b) continue
+          if (!c.title) c.title = b.title || ''
+          if (!c.summary) c.summary = b.summary || ''
+        }
+      } catch (e) {
+        warnings.push(`Company basics enrich skipped: ${e.message}`)
       }
     }
 

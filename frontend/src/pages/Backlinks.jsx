@@ -361,7 +361,7 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Broken links, referring domains, backlink gap, and live link tracking — industry-grade competitive analysis."
+        subtitle="Broken links, referring domains, backlink gap, and live tracking — aligned with Moz, Majestic, Ahrefs, Semrush and industry standards (live data via DataForSEO)."
       />
 
       <BacklinkCompetitiveHub

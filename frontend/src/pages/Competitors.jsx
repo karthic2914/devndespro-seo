@@ -53,15 +53,18 @@ export default function Competitors() {
   const autoDiscover = async () => {
     setDiscovering(true)
     try {
-      const res = await api.post(`/sites/${siteId}/competitors/auto-discover`)
+      const res = await api.post(`/sites/${siteId}/competitors/auto-discover`, { prune: true })
       load()
       const inserted = res?.data?.inserted ?? 0
-      const src = res?.data?.source === 'ai' ? ' (AI suggestions, no ranking-overlap match found)' : ''
-      if (inserted > 0) {
-        toast.success(`Found ${inserted} new competitor${inserted === 1 ? '' : 's'}${src}`)
-      } else {
-        toast('No new relevant competitors found this time')
-      }
+      const pruned = res?.data?.pruned ?? 0
+      const updated = res?.data?.updated ?? 0
+      const parts = []
+      if (pruned) parts.push(`removed ${pruned} off-niche`)
+      if (inserted) parts.push(`added ${inserted}`)
+      if (updated) parts.push(`updated ${updated} with details`)
+      if (parts.length) toast.success(`Competitors refreshed (${parts.join(', ')})`)
+      else toast('No new relevant competitors found this time')
+      if (res?.data?.tip) toast(res.data.tip)
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
     }
@@ -101,7 +104,8 @@ export default function Competitors() {
       <Card style={{ marginBottom: 14 }}>
         <SectionLabel>Business description</SectionLabel>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
-          Briefly describe what this specific business actually does. This is used to keep Auto-Discover and AI suggestions relevant to this project (not generic).
+          Critical for correct competitors. Example: “Web design, web development and SEO agency for businesses in Norway / Scandinavia.”
+          Auto-Discover uses this to keep rivals in your niche (not random sites that only share backlinks).
         </div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <textarea
@@ -133,7 +137,7 @@ export default function Competitors() {
               : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Auto-Discover Competitors</>}
           </OrangeBtn>
           <span style={{ fontSize: 12, color: 'var(--muted)', marginLeft: 10 }}>
-            Pulls backlink competitors, ranking overlap, and outbound domains from your site crawl. AI is the fallback.
+            Finds same-niche agencies (web design / SEO / development), adds industry + summary details, and removes off-niche auto matches.
           </span>
         </div>
       </Card>
@@ -153,11 +157,23 @@ export default function Competitors() {
           competitors.map(c => {
             const diff = c.dr - metrics.dr
             return (
-              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: '1px solid var(--dark4)' }}>
+              <div key={c.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 0', borderBottom: '1px solid var(--dark4)' }}>
                 <div style={{ width: 36, height: 60, background: 'var(--dark4)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, color: 'var(--text2)', flexShrink: 0 }}>{c.name[0].toUpperCase()}</div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{c.name}</div>
-                  {c.notes && <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>{c.notes}</div>}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{c.name}</div>
+                  {(c.industry || c.location) && (
+                    <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', marginTop: 2 }}>
+                      {[c.industry, c.location].filter(Boolean).join(' · ')}
+                    </div>
+                  )}
+                  {(c.summary || c.notes) && (
+                    <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2, lineHeight: 1.4 }}>
+                      {c.summary || c.notes}
+                    </div>
+                  )}
+                  {c.title && c.title !== c.summary && (
+                    <div style={{ fontSize: 11, color: 'var(--text2)', marginTop: 2 }}>{c.title}</div>
+                  )}
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 22, fontWeight: 700, color: diff > 0 ? 'var(--red)' : 'var(--green)' }}>DR {c.dr}</div>
