@@ -2536,10 +2536,34 @@ export default function AIVisibility() {
         }
 
         .ai-rank-muted {
-          color: #CBD5E1;
+          color: #94A3B8;
           font-weight: 600;
           font-size: 10px;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.01em;
+        }
+
+        .ai-rank-pill {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 28px;
+          padding: 2px 7px;
+          border-radius: 999px;
+          font-size: 10px;
+          font-weight: 800;
+          line-height: 1.3;
+        }
+
+        .ai-rank-pill--good {
+          background: #DCFCE7;
+          color: #15803D;
+        }
+
+        .ai-rank-pill--miss {
+          background: #F1F5F9;
+          color: #64748B;
+          font-weight: 700;
+          font-size: 9px;
         }
 
 
@@ -3229,29 +3253,33 @@ export default function AIVisibility() {
 
                             <td>
                               {chatgptRank
-                                ? <span className="ai-rank-good">#{chatgptRank}</span>
-                                : (
-                                  <span
-                                    className="ai-rank-muted"
-                                    title={isTested ? 'Tested — brand not ranked in Top 10' : 'Not tested yet'}
-                                  >
-                                    {isTested ? 'NR' : '—'}
-                                  </span>
-                                )
+                                ? <span className="ai-rank-pill ai-rank-pill--good">#{chatgptRank}</span>
+                                : isTested
+                                  ? (
+                                    <span
+                                      className="ai-rank-pill ai-rank-pill--miss"
+                                      title="Not ranked in Top 10"
+                                    >
+                                      Out
+                                    </span>
+                                  )
+                                  : null
                               }
                             </td>
 
                             <td>
                               {claudeRank
-                                ? <span className="ai-rank-good">#{claudeRank}</span>
-                                : (
-                                  <span
-                                    className="ai-rank-muted"
-                                    title={isTested ? 'Tested — brand not ranked in Top 10' : 'Not tested yet'}
-                                  >
-                                    {isTested ? 'NR' : '—'}
-                                  </span>
-                                )
+                                ? <span className="ai-rank-pill ai-rank-pill--good">#{claudeRank}</span>
+                                : isTested
+                                  ? (
+                                    <span
+                                      className="ai-rank-pill ai-rank-pill--miss"
+                                      title="Not ranked in Top 10"
+                                    >
+                                      Out
+                                    </span>
+                                  )
+                                  : null
                               }
                             </td>
 
@@ -3261,7 +3289,7 @@ export default function AIVisibility() {
                                     'en-GB',
                                     { day: 'numeric', month: 'short', year: 'numeric' }
                                   )
-                                : '—'
+                                : null
                               }
                             </td>
 

@@ -79,9 +79,25 @@ export default function Layout() {
                   <div className="site-card__url">{site.url}</div>
                 </div>
               </div>
-              <div className="site-card__da">
-                Authority {site.authority_score != null ? site.authority_score : '—'}
-                {site.authority_score != null && <span style={{ color: 'var(--muted)' }}>/100</span>}
+              <div
+                className="site-card__da"
+                title="Authority score from your verified backlinks (0–100). Refresh on Site Audit."
+              >
+                <span className="site-card__da-label">Authority</span>
+                {(() => {
+                  const score = site.authority_score
+                  const tier =
+                    score == null ? 'empty'
+                    : score >= 70 ? 'high'
+                    : score >= 40 ? 'mid'
+                    : 'low'
+                  return (
+                    <span className={`site-card__da-score site-card__da-score--${tier}`}>
+                      {score != null ? score : '—'}
+                      {score != null && <span>/100</span>}
+                    </span>
+                  )
+                })()}
               </div>
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
