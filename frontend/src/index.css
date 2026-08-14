@@ -1267,8 +1267,8 @@ body:has(.app-shell),
   font-weight: 700;
   letter-spacing: 0.4px;
 }
-.bl-type-badge--do { background: var(--green-dim); color: var(--green); }
-.bl-type-badge--no { background: var(--red-dim); color: var(--red); }
+.bl-type-badge--do { background: #dcfce7; color: #15803d; }
+.bl-type-badge--no { background: #F1F5F9; color: #64748B; }
 
 .bl-dr-badge {
   display: inline-flex;
@@ -1306,6 +1306,65 @@ body:has(.app-shell),
 .bl-source-badge--domain { background: var(--amber-dim); color: var(--amber); }
 .bl-source-badge--crawled { background: var(--orange-dim); color: var(--orange); }
 .bl-source-badge--csv { background: rgba(124,58,237,0.10); color: #7C3AED; }
+.bl-source-badge--dataforseo { background: rgba(22,163,74,0.10); color: #15803d; }
+.bl-source-badge--detected { background: rgba(37,99,235,0.10); color: #1D4ED8; }
+
+.bl-table--industry { min-width: 1080px; }
+.bl-td-traffic,
+.bl-td-date {
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text2);
+  white-space: nowrap;
+}
+
+.bl-row-menu {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+}
+.bl-menu-btn {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.bl-menu-btn:hover {
+  background: var(--dark3);
+  color: var(--text);
+}
+.bl-row-menu-pop {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  min-width: 120px;
+  background: #fff;
+  border: 1px solid var(--dark4);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  padding: 4px;
+  z-index: 20;
+}
+.bl-row-menu-item {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--text);
+  cursor: pointer;
+}
+.bl-row-menu-item:hover { background: var(--dark3); }
+.bl-row-menu-item--danger { color: #DC2626; }
 
 /* Status select */
 .bl-status-sel {
