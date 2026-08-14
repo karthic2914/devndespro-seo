@@ -1,7 +1,7 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const { pool, anthropic } = require('../clients')
-const { auth, verifySite } = require('../middleware')
+const { auth, verifySite, requireFeature } = require('../middleware')
 const {
   normalizeEngine,
   extractDomain,
@@ -17,6 +17,9 @@ const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
 const { runKeywordAutoDiscover, getCachedDiscovery } = require('../utils/keywordDiscover')
 
 const router = express.Router()
+
+// Keywords: admin always; others need is_paid or keywords_enabled.
+router.use('/:siteId/keywords', auth, verifySite, requireFeature('keywords'))
 
 function buildRankSummaryAlertMessage(report) {
   if (!report) return 'Weekly rank scan completed.'
@@ -626,7 +629,7 @@ router.post('/:siteId/keywords/first-page-status', auth, verifySite, async (req,
     let position = organicHit ? organicHit.position : null
     const localPosition = localHit ? localHit.position : null
 
-    // Not found in the shallow (page-1) live scan � fall back to the
+    // Not found in the shallow (page-1) live scan  fall back to the
     // cached DataForSEO ranked_keywords position instead of reporting
     // "not ranked" when the site actually ranks deeper than page 1.
     if (position == null) {

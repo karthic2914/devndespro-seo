@@ -1,5 +1,11 @@
 const jwt = require('jsonwebtoken')
 const { pool } = require('./clients')
+const {
+  ensureUserFeatureSchema,
+  canUseBacklinks,
+  canUseKeywords,
+  isAdminUser,
+} = require('./utils/features')
 
 const auth = async (req, res, next) => {
   const token = req.headers.authorization?.split(' ')[1]
@@ -34,4 +40,44 @@ const verifySite = async (req, res, next) => {
   next()
 }
 
-module.exports = { auth, verifySite }
+const requireAdmin = (req, res, next) => {
+  if (!isAdminUser(req.user)) {
+    return res.status(403).json({ error: 'Admin only' })
+  }
+  next()
+}
+
+/** Gate a feature: admin always allowed; others need is_paid or explicit enable. */
+const requireFeature = (feature) => async (req, res, next) => {
+  try {
+    await ensureUserFeatureSchema()
+    if (isAdminUser(req.user)) return next()
+
+    const { rows } = await pool.query(
+      `SELECT id, is_paid, backlinks_enabled, keywords_enabled
+       FROM users WHERE id = $1 LIMIT 1`,
+      [req.user.id]
+    )
+    const user = rows[0]
+    if (!user) return res.status(401).json({ error: 'User not found' })
+
+    const allowed =
+      feature === 'backlinks' ? canUseBacklinks(user)
+      : feature === 'keywords' ? canUseKeywords(user)
+      : false
+
+    if (!allowed) {
+      return res.status(403).json({
+        error: `${feature} is locked. Upgrade or ask admin to enable it.`,
+        feature,
+        locked: true,
+      })
+    }
+    next()
+  } catch (err) {
+    console.error('requireFeature error:', err)
+    res.status(500).json({ error: 'Feature check failed' })
+  }
+}
+
+module.exports = { auth, verifySite, requireAdmin, requireFeature }

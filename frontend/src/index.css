@@ -270,6 +270,15 @@ body:has(.app-shell),
   color: var(--orange); background: var(--orange-dim);
   font-weight: 600; border-left-color: var(--orange);
 }
+.nav-item--locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.nav-item--locked:hover {
+  background: transparent;
+  color: var(--text2);
+}
 .sidebar--collapsed .nav-item { gap: 0; justify-content: center; padding: 9px 0; }
 .nav-item__icon { font-size: 14px; width: 22px; text-align: center; flex-shrink: 0; position: relative; }
 .nav-badge {

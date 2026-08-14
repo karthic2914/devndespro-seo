@@ -2,7 +2,13 @@ const express = require('express')
 const crypto = require('crypto')
 const axios = require('axios')
 const { pool } = require('../clients')
-const { auth } = require('../middleware')
+const { auth, requireAdmin } = require('../middleware')
+const {
+  ensureUserFeatureSchema,
+  setUserFeatures,
+  setUserPaid,
+  featureFlagsFor,
+} = require('../utils/features')
 
 const router = express.Router()
 
@@ -285,6 +291,102 @@ router.get('/accept', async (req, res) => {
   } catch (e) {
     console.error('Accept error:', e)
     res.status(500).json({ error: 'Failed to accept invite' })
+  }
+})
+
+// ── Feature access (admin) ──────────────────────────────────────────────────
+
+router.get('/accounts', auth, requireAdmin, async (req, res) => {
+  try {
+    await ensureUserFeatureSchema()
+    const { rows } = await pool.query(
+      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled,
+              features_updated_at, created_at
+       FROM users
+       ORDER BY id ASC`
+    )
+    res.json(rows.map(u => ({ ...u, features: featureFlagsFor(u) })))
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to list accounts' })
+  }
+})
+
+router.patch('/:id/features', auth, requireAdmin, async (req, res) => {
+  try {
+    const userId = Number(req.params.id)
+    if (!userId) return res.status(400).json({ error: 'Invalid user id' })
+    if (userId === 1) {
+      return res.status(400).json({ error: 'Admin account always has full access' })
+    }
+
+    const updated = await setUserFeatures(userId, {
+      is_paid: typeof req.body?.is_paid === 'boolean' ? req.body.is_paid : undefined,
+      backlinks_enabled: typeof req.body?.backlinks_enabled === 'boolean' ? req.body.backlinks_enabled : undefined,
+      keywords_enabled: typeof req.body?.keywords_enabled === 'boolean' ? req.body.keywords_enabled : undefined,
+    })
+
+    if (!updated) return res.status(404).json({ error: 'User not found or nothing to update' })
+    res.json({ ...updated, features: featureFlagsFor(updated) })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to update features' })
+  }
+})
+
+/** Manual or automated payment confirmation → unlock Backlinks + Keywords. */
+router.post('/:id/mark-paid', auth, requireAdmin, async (req, res) => {
+  try {
+    const userId = Number(req.params.id)
+    if (!userId) return res.status(400).json({ error: 'Invalid user id' })
+    const paid = req.body?.paid !== false
+    await setUserPaid(userId, paid)
+    const { rows } = await pool.query(
+      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, features_updated_at
+       FROM users WHERE id=$1`,
+      [userId]
+    )
+    if (!rows[0]) return res.status(404).json({ error: 'User not found' })
+    res.json({ ...rows[0], features: featureFlagsFor(rows[0]) })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to update payment status' })
+  }
+})
+
+/**
+ * Automated payment webhook.
+ * Header: x-billing-secret = BILLING_WEBHOOK_SECRET
+ * Body: { email } or { userId }, optional { paid: true|false }
+ */
+router.post('/billing/confirm', async (req, res) => {
+  try {
+    const secret = process.env.BILLING_WEBHOOK_SECRET || ''
+    if (!secret || req.headers['x-billing-secret'] !== secret) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
+    await ensureUserFeatureSchema()
+    const paid = req.body?.paid !== false
+    let userId = Number(req.body?.userId || 0)
+
+    if (!userId && req.body?.email) {
+      const email = String(req.body.email).trim().toLowerCase()
+      const { rows } = await pool.query('SELECT id FROM users WHERE lower(email)=$1 LIMIT 1', [email])
+      userId = rows[0]?.id || 0
+    }
+
+    if (!userId) return res.status(404).json({ error: 'User not found' })
+
+    await setUserPaid(userId, paid)
+    const { rows } = await pool.query(
+      `SELECT id, email, is_paid, backlinks_enabled, keywords_enabled FROM users WHERE id=$1`,
+      [userId]
+    )
+    res.json({ ok: true, user: rows[0], features: featureFlagsFor(rows[0]) })
+  } catch (e) {
+    console.error('billing/confirm error:', e)
+    res.status(500).json({ error: 'Billing confirm failed' })
   }
 })
 

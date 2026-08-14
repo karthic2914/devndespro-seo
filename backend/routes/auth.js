@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const { pool } = require('../clients')
 const { auth } = require('../middleware')
 const { getGscAccessToken } = require('../utils/gsc')
+const { ensureUserFeatureSchema, featureFlagsFor } = require('../utils/features')
 
 const router = express.Router()
 const PORT = process.env.PORT || 4000
@@ -129,9 +130,18 @@ router.post('/google', async (req, res) => {
 })
 
 router.get('/me', auth, async (req, res) => {
-  const { rows } = await pool.query('SELECT id, email, name, photo, is_paid FROM users WHERE id=$1', [req.user.id])
+  await ensureUserFeatureSchema()
+  const { rows } = await pool.query(
+    `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, features_updated_at
+     FROM users WHERE id=$1`,
+    [req.user.id]
+  )
   if (!rows[0]) return res.status(404).json({ error: 'Not found' })
-  res.json(rows[0])
+  const user = rows[0]
+  res.json({
+    ...user,
+    features: featureFlagsFor(user),
+  })
 })
 
 // GSC OAuth

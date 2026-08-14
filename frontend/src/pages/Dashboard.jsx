@@ -39,9 +39,7 @@ export default function Dashboard() {
   const [actions, setActions] = useState([])
   const [metrics, setMetrics] = useState({ dr: 0, clicks: 0, impressions: 0, health: 0 })
   const [keywords, setKeywords] = useState([])
-  const [backlinks, setBacklinks] = useState([])
 
-  const [backlinkSummary, setBacklinkSummary] = useState(null)
   const [latestAudit, setLatestAudit] = useState(null)
   const [multipageLatest, setMultipageLatest] = useState(null)
   const [gscData, setGscData] = useState(null)
@@ -76,7 +74,6 @@ export default function Dashboard() {
     api.get(`/sites/${siteId}/actions`).then(r => { if (Array.isArray(r.data)) setActions(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/metrics`).then(r => { if (r.data) setMetrics(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/keywords`).then(r => { if (Array.isArray(r.data)) setKeywords(r.data) }).catch(() => {})
-    api.get(`/sites/${siteId}/backlinks`).then(r => { if (Array.isArray(r.data)) setBacklinks(r.data) }).catch(() => {})
     api.get(`/sites/${siteId}/audit/latest`).then(r => setLatestAudit(r.data || null)).catch(() => {})
     api.get(`/sites/${siteId}/audit/multipage-latest`).then(r => setMultipageLatest(r.data || null)).catch(() => {})
     api.get(`/sites/${siteId}/gsc`).then(r => { if (r.data) setGscData(r.data) }).catch(() => {})
@@ -373,10 +370,6 @@ export default function Dashboard() {
 
     return 'Excellent health. Focus on smaller optimization opportunities.'
   })()
-  const drValue = Number(backlinkSummary?.avgDr || 0)
-  const backlinkCount = Number(backlinkSummary?.totalBacklinks || 0)
-  const referringDomainCount = Number(backlinkSummary?.referringDomains || 0)
-  const dofollowPct = Number(backlinkSummary?.dofollowRatio || 0)
   const rawDaily = Array.isArray(gscData?.daily) ? gscData.daily : []
   const weeklyTraffic = rawDaily
     .slice(-7)
@@ -438,21 +431,6 @@ export default function Dashboard() {
       </div>
     </div>
   )
-  useEffect(() => {
-    let cancelled = false
-
-    api.get(`/sites/${siteId}/backlinks/summary`)
-      .then(({ data }) => {
-        if (!cancelled) setBacklinkSummary(data || null)
-      })
-      .catch(() => {
-        if (!cancelled) setBacklinkSummary(null)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [siteId])
   return (
     <div style={{ flex: 1 }}>
 
@@ -1375,38 +1353,8 @@ export default function Dashboard() {
 
             </Card>
 
-            {/* Domain Authority */}
-            <Card padding="1.25rem">
-              <SectionLabel>Backlink Profile</SectionLabel>
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', padding: '0.55rem 0 0.7rem' }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 36, fontWeight: 750, color: T.text, fontFamily: 'Manrope, sans-serif', lineHeight: 1 }}>{drValue}</div>
-                  <div style={{ fontSize: 10, color: T.muted, marginTop: 3 }}>Average Domain Rank</div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 12, color: T.text2, marginBottom: 8, lineHeight: 1.5 }}>
-                    {backlinkCount > 0
-                      ? <>{backlinkCount > 0 ? <>Build toward <strong style={{ color: T.orange }}>20+</strong> authority with more relevant, high-quality referring domains.</> : <>No verified backlinks yet. Open Backlinks to discover opportunities and verify real links.</>}</>
-                      : <>No verified backlinks yet. Discover or verify real referring pages to start building authority.</>
-                    }
-                  </div>
-                  <ProgressBar value={drValue} max={100} color={T.orange} height={6} showLabel />
-                </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 4 }}>
-                {[
-                  { label: 'Backlinks',         value: backlinkCount,        goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Referring Domains',  value: referringDomainCount, goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Dofollow',           value: `${dofollowPct}%`,   goTo: `/site/${siteId}/backlinks` },
-                  { label: 'Target Rank',        value: '20+', goTo: `/site/${siteId}/backlinks` },
-                ].map(m => (
-                  <button key={m.label} type="button" onClick={() => m.goTo && navigate(m.goTo)} style={{ background: T.surface2, borderRadius: 8, padding: '9px 10px', border: `1px solid ${T.border}`, textAlign: 'left', cursor: m.goTo ? 'pointer' : 'default' }}>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: T.text, fontFamily: 'Manrope, sans-serif' }}>{m.value}</div>
-                    <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{m.label}</div>
-                  </button>
-                ))}
-              </div>
-            </Card>
+            {/* Backlink Profile removed from Overview — use Backlinks page (admin only) */}
+
 
           </div>
         </div>

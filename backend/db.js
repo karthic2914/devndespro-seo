@@ -123,6 +123,10 @@ async function initDB() {
       imported_at TIMESTAMPTZ DEFAULT NOW()
     );
     ALTER TABLE users ADD COLUMN IF NOT EXISTS gsc_refresh_token TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS is_paid BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS backlinks_enabled BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS keywords_enabled BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS features_updated_at TIMESTAMPTZ;
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
     ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_connected BOOLEAN DEFAULT FALSE;
     ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_site_url TEXT;

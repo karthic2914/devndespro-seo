@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faUserPlus, faEnvelope, faTrash, faRotateRight,
-  faCircleCheck, faClock, faUserGroup,
+  faCircleCheck, faClock, faUserGroup, faLock, faUnlock,
 } from '@fortawesome/free-solid-svg-icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
@@ -17,11 +17,14 @@ export default function Users() {
   const { user: authUser } = useAuth()
   const navigate = useNavigate()
   const [users, setUsers] = useState([])
+  const [accounts, setAccounts] = useState([])
   const [sites, setSites] = useState([])
   const [loading, setLoading] = useState(true)
+  const [accountsLoading, setAccountsLoading] = useState(true)
   const [email, setEmail] = useState('')
   const [siteId, setSiteId] = useState('')
   const [sending, setSending] = useState(false)
+  const [savingId, setSavingId] = useState(null)
 
   useEffect(() => {
     if (authUser && authUser.id !== 1) navigate('/', { replace: true })
@@ -43,7 +46,42 @@ export default function Users() {
     setLoading(false)
   }
 
-  useEffect(() => { load() }, [])
+  const loadAccounts = async () => {
+    setAccountsLoading(true)
+    try {
+      const { data } = await api.get('/users/accounts')
+      setAccounts(Array.isArray(data) ? data : [])
+    } catch {
+      setAccounts([])
+    }
+    setAccountsLoading(false)
+  }
+
+  useEffect(() => { load(); loadAccounts() }, [])
+
+  const patchFeatures = async (id, patch) => {
+    setSavingId(id)
+    try {
+      const { data } = await api.patch(`/users/${id}/features`, patch)
+      setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...data } : a)))
+      toast.success('Access updated')
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to update access')
+    }
+    setSavingId(null)
+  }
+
+  const markPaid = async (id, paid) => {
+    setSavingId(id)
+    try {
+      const { data } = await api.post(`/users/${id}/mark-paid`, { paid })
+      setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...data } : a)))
+      toast.success(paid ? 'Marked paid — Backlinks & Keywords unlocked' : 'Marked unpaid')
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to update payment')
+    }
+    setSavingId(null)
+  }
 
   const invite = async () => {
     if (!email.trim() || !email.includes('@')) {
@@ -97,8 +135,125 @@ export default function Users() {
       <div className="page-content fade-in">
       <PageHeader
         title="Team & Users"
-        subtitle="Invite people to access a specific project. They'll receive an email with a login link."
+        subtitle="Invite people to projects, and unlock Keywords / Backlinks when they pay — or grant access manually."
       />
+
+      {/* Feature access */}
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <FontAwesomeIcon icon={faUnlock} style={{ color: T.orange }} />
+          <strong style={{ fontSize: 14 }}>Feature access</strong>
+        </div>
+        <div style={{ fontSize: 12, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
+          Admin always has full access. For other users: mark <strong>Paid</strong> (auto-unlocks Keywords + Backlinks),
+          or toggle each feature manually. Payment webhooks can call the same unlock automatically.
+        </div>
+
+        {accountsLoading ? (
+          <div style={{ color: T.muted, fontSize: 13 }}>Loading accounts…</div>
+        ) : accounts.length === 0 ? (
+          <div style={{ color: T.muted, fontSize: 13 }}>No accounts yet.</div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(180px,1.4fr) 70px 90px 90px 110px',
+              gap: 8,
+              padding: '8px 4px',
+              borderBottom: `1px solid ${T.border}`,
+              fontSize: 11,
+              fontWeight: 700,
+              color: T.muted,
+              textTransform: 'uppercase',
+            }}>
+              <div>User</div>
+              <div>Paid</div>
+              <div>Keywords</div>
+              <div>Backlinks</div>
+              <div>Quick</div>
+            </div>
+            {accounts.map(a => {
+              const isAdmin = Number(a.id) === 1
+              const busy = savingId === a.id
+              return (
+                <div
+                  key={a.id}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(180px,1.4fr) 70px 90px 90px 110px',
+                    gap: 8,
+                    padding: '10px 4px',
+                    borderBottom: '1px solid #F3F4F6',
+                    alignItems: 'center',
+                    opacity: busy ? 0.6 : 1,
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 650, color: T.text }}>
+                      {a.name || a.email}
+                      {isAdmin && <Badge variant="success" style={{ marginLeft: 8 }}>Admin</Badge>}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.muted }}>{a.email}</div>
+                  </div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={isAdmin || !!a.is_paid}
+                      disabled={isAdmin || busy}
+                      onChange={e => patchFeatures(a.id, { is_paid: e.target.checked })}
+                      title="Paid unlocks Keywords + Backlinks"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={isAdmin || !!a.keywords_enabled || !!a.is_paid}
+                      disabled={isAdmin || busy || !!a.is_paid}
+                      onChange={e => patchFeatures(a.id, { keywords_enabled: e.target.checked })}
+                      title={a.is_paid ? 'Included with Paid' : 'Enable Keywords'}
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="checkbox"
+                      checked={isAdmin || !!a.backlinks_enabled || !!a.is_paid}
+                      disabled={isAdmin || busy || !!a.is_paid}
+                      onChange={e => patchFeatures(a.id, { backlinks_enabled: e.target.checked })}
+                      title={a.is_paid ? 'Included with Paid' : 'Enable Backlinks'}
+                    />
+                  </div>
+                  <div>
+                    {!isAdmin && (
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => markPaid(a.id, !a.is_paid)}
+                        style={{
+                          border: `1px solid ${T.border}`,
+                          background: a.is_paid ? '#FEF2F2' : '#ECFDF5',
+                          color: a.is_paid ? '#B91C1C' : '#047857',
+                          borderRadius: 7,
+                          padding: '5px 8px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {a.is_paid ? 'Unpay' : 'Mark paid'}
+                      </button>
+                    )}
+                    {isAdmin && (
+                      <span style={{ fontSize: 11, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <FontAwesomeIcon icon={faLock} /> Full access
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Card>
 
       {/* Invite form */}
       <Card style={{ marginBottom: 16 }}>

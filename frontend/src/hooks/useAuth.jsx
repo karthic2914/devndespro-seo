@@ -29,20 +29,28 @@ export function AuthProvider({ children }) {
 
   const login = async (googleToken) => {
     const res = await api.post('/auth/google', { token: googleToken })
-    const { token, user } = res.data
+    const { token } = res.data
     localStorage.setItem('seo_token', token)
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    setUser(user)
-    return user
+    const me = await api.get('/auth/me')
+    setUser(me.data)
+    return me.data
   }
 
   const loginWithEmail = async (email) => {
     const res = await api.post('/auth/email', { email })
-    const { token, user } = res.data
+    const { token } = res.data
     localStorage.setItem('seo_token', token)
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-    setUser(user)
-    return user
+    const me = await api.get('/auth/me')
+    setUser(me.data)
+    return me.data
+  }
+
+  const refreshUser = async () => {
+    const me = await api.get('/auth/me')
+    setUser(me.data)
+    return me.data
   }
 
   const logout = () => {
@@ -52,7 +60,11 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout }}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={{ user, loading, login, loginWithEmail, logout, refreshUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

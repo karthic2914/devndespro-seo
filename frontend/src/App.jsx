@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
+import { canUseBacklinks, canUseKeywords } from './utils/features'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import Sites from './pages/Sites'
@@ -137,6 +138,35 @@ function ProtectedRoute({ children }) {
   return children
 }
 
+function AdminOnlyRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#666', fontFamily: 'Syne,sans-serif' }}>
+      Loading...
+    </div>
+  )
+  if (!user) return <Navigate to="/login" replace />
+  if (Number(user.id) !== 1) return <Navigate to=".." replace />
+  return children
+}
+
+function FeatureRoute({ feature, children }) {
+  const { user, loading } = useAuth()
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#666', fontFamily: 'Syne,sans-serif' }}>
+      Loading...
+    </div>
+  )
+  if (!user) return <Navigate to="/login" replace />
+  const allowed = feature === 'backlinks'
+    ? canUseBacklinks(user)
+    : feature === 'keywords'
+    ? canUseKeywords(user)
+    : false
+  if (!allowed) return <Navigate to=".." replace />
+  return children
+}
+
 function HomeRoute() {
   const { user, loading } = useAuth()
   if (loading) return (
@@ -172,8 +202,8 @@ export default function App() {
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
-            <Route path="keywords" element={<Keywords />} />
-            <Route path="backlinks" element={<Backlinks />} />
+            <Route path="keywords" element={<FeatureRoute feature="keywords"><Keywords /></FeatureRoute>} />
+            <Route path="backlinks" element={<FeatureRoute feature="backlinks"><Backlinks /></FeatureRoute>} />
             <Route path="competitors" element={<Competitors />} />
             <Route path="actions" element={<Actions />} />
             <Route path="ai" element={<AiAssistant />} />

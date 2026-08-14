@@ -6,17 +6,18 @@ import {
   faChartSimple, faKey, faLink, faMagnifyingGlass, faListCheck,
   faRobot, faWandMagicSparkles, faUsers, faChevronLeft, faChevronRight,
   faArrowLeft, faRightFromBracket, faBell, faPlug, faEnvelope,
-  faPaperPlane, faUserGroup,
+  faPaperPlane, faUserGroup, faLock,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
+import { canUseBacklinks, canUseKeywords } from '../utils/features'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
-  { to: 'keywords',      label: 'Keywords',      icon: faKey },
-  { to: 'backlinks',     label: 'Backlinks',     icon: faLink },
+  { to: 'keywords',      label: 'Keywords',      icon: faKey, feature: 'keywords' },
+  { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks' },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
   { to: 'ai',            label: 'AI Assistant',  icon: faRobot },
@@ -113,31 +114,61 @@ export default function Layout() {
         )}
 
         <nav className="sidebar__nav">
-          {NAV.map(({ to, label, icon, end }) => (
-            to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)
-              ? null
-              : (
-                <NavLink
+          {NAV.map(({ to, label, icon, end, feature }) => {
+            if (to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)) {
+              return null
+            }
+
+            const locked = feature === 'backlinks'
+              ? !canUseBacklinks(user)
+              : feature === 'keywords'
+              ? !canUseKeywords(user)
+              : false
+
+            if (locked) {
+              return (
+                <div
                   key={to}
-                  to={`/site/${siteId}${to ? '/' + to : ''}`}
-                  end={end}
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                  onClick={() => setMobileOpen(false)}
+                  className="nav-item nav-item--locked"
+                  title="Locked — unlock after payment or ask admin"
+                  aria-disabled="true"
                 >
                   <span className="nav-item__icon">
                     <FontAwesomeIcon icon={icon} />
-                    {to === 'alerts' && unreadAlerts > 0 && (
-                      <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
-                    )}
                   </span>
-                  {!collapsed && label}
-                  {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
-                    <span className="nav-count">{unreadAlerts}</span>
+                  {!collapsed && (
+                    <>
+                      <span style={{ flex: 1 }}>{label}</span>
+                      <FontAwesomeIcon icon={faLock} style={{ fontSize: 11, opacity: 0.7 }} />
+                    </>
                   )}
-                  {collapsed && <span className="nav-tooltip">{label}</span>}
-                </NavLink>
+                  {collapsed && <span className="nav-tooltip">{label} (Locked)</span>}
+                </div>
               )
-          ))}
+            }
+
+            return (
+              <NavLink
+                key={to}
+                to={`/site/${siteId}${to ? '/' + to : ''}`}
+                end={end}
+                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span className="nav-item__icon">
+                  <FontAwesomeIcon icon={icon} />
+                  {to === 'alerts' && unreadAlerts > 0 && (
+                    <span className="nav-badge">{unreadAlerts > 9 ? '9+' : unreadAlerts}</span>
+                  )}
+                </span>
+                {!collapsed && label}
+                {!collapsed && to === 'alerts' && unreadAlerts > 0 && (
+                  <span className="nav-count">{unreadAlerts}</span>
+                )}
+                {collapsed && <span className="nav-tooltip">{label}</span>}
+              </NavLink>
+            )
+          })}
 
           {user?.email === 'karthic2914@gmail.com' && (
             <NavLink

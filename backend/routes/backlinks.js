@@ -1,6 +1,6 @@
 ﻿const express = require('express')
 const { pool } = require('../clients')
-const { auth, verifySite } = require('../middleware')
+const { auth, verifySite, requireFeature } = require('../middleware')
 const { firstValueByKey, parseCsvRows, toInt } = require('../utils/helpers')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
 const { verifyBacklink } = require('../utils/backlinkVerifier')
@@ -14,6 +14,11 @@ const { discoverCandidates, verifyCandidateBatch } = require('../utils/backlinkD
 const { crawlLinkGraph, normalizeHost: normalizeIndexHost } = require('../utils/webLinkCrawler')
 
 const router = express.Router()
+
+// Backlinks: admin always; others need is_paid or backlinks_enabled.
+router.use('/:siteId/backlinks', auth, verifySite, requireFeature('backlinks'))
+router.use('/:siteId/backlink-opportunities', auth, verifySite, requireFeature('backlinks'))
+
 const normalizeBacklinkDomain = (raw) => {
   const value = String(raw || '').trim()
   if (!value) return ''

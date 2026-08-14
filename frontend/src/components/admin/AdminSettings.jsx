@@ -64,6 +64,26 @@ export default function AdminSettings() {
           When disabled, no email will be sent to admin when a user adds a new website.
         </div>
       </div>
+
+      <div style={{
+        marginTop: 8,
+        padding: 14,
+        borderRadius: 10,
+        border: '1px solid #E5E7EB',
+        background: '#F8FAFC',
+      }}>
+        <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>Keywords & Backlinks access</div>
+        <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.55 }}>
+          Manage per-user unlocks on the <strong>Users</strong> page (Feature access).
+          <br />
+          • <strong>Mark paid</strong> → auto-enables Keywords + Backlinks
+          <br />
+          • Or toggle Keywords / Backlinks manually without payment
+          <br />
+          • Automated payments: POST <code>/api/users/billing/confirm</code> with header <code>x-billing-secret</code>
+        </div>
+      </div>
+
       {error && <div style={{ color: 'red', fontSize: 13 }}>{error}</div>}
     </div>
   )
