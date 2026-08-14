@@ -459,24 +459,33 @@ async function generateReasoning(siteId, siteName, { force = false } = {}) {
   );
   if (!rows.length) return [];
 
-  const notInTop10 = rows.filter(r => r.brand_rank === null || r.brand_rank > 10);
+  const parsedRows = rows.map(r => ({
+    ...r,
+    rankings: parseRankings(r.rankings),
+  }))
+
+  const notInTop10 = parsedRows.filter(r => r.brand_rank === null || r.brand_rank > 10);
   const competitorNames = new Set();
-  rows.forEach(r => (r.rankings || []).forEach(x => x.name && competitorNames.add(x.name)));
+  parsedRows.forEach(r => (r.rankings || []).forEach(x => x.name && competitorNames.add(x.name)));
 
   const prompt = `Brand: "${siteName}"
-It appeared in the Top 10 for ${rows.length - notInTop10.length}/${rows.length} tested AI questions.
+It appeared in the Top 10 for ${parsedRows.length - notInTop10.length}/${parsedRows.length} tested AI questions.
 Competitors that DO appear consistently: ${[...competitorNames].slice(0, 15).join(', ')}
 
 Based on this, give 3-5 concrete reasons the brand is likely missing from AI engine answers
 (e.g. brand authority, citation count, review volume, structured data, topical depth).
 Respond ONLY as JSON: {"reasons": [{"issue": "...", "severity": "High|Medium|Low", "detail": "one sentence"}]}`;
 
-  const raw = await callAIEngine('claude', prompt);
   let reasons = [];
   try {
+    const raw = await callAIEngine('claude', prompt);
     reasons = JSON.parse(raw.replace(/```json|```/g, '').trim()).reasons || [];
   } catch (e) {
     reasons = [];
+  }
+
+  if (!reasons.length) {
+    reasons = buildHeuristicReasons(parsedRows, siteName, competitorNames)
   }
 
   await pool.query(
@@ -487,6 +496,146 @@ Respond ONLY as JSON: {"reasons": [{"issue": "...", "severity": "High|Medium|Low
   );
 
   return reasons;
+}
+
+function parseRankings(raw) {
+  if (Array.isArray(raw)) return raw
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw)
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+function normalizeBrandKey(name = '') {
+  return String(name)
+    .toLowerCase()
+    .replace(/^www\./, '')
+    .replace(/\.(com|io|co|net|org|ai|app)$/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+}
+
+function buildHeuristicReasons(rows, siteName, competitorNames) {
+  const total = rows.length || 1
+  const missing = rows.filter(r => r.brand_rank === null || r.brand_rank > 10).length
+  const missRate = Math.round((missing / total) * 100)
+  const topCompetitors = [...competitorNames].slice(0, 4).join(', ') || 'larger agencies'
+  const reasons = []
+
+  if (missRate >= 40) {
+    reasons.push({
+      issue: 'Low brand authority in AI datasets',
+      severity: 'High',
+      detail: `${siteName || 'Your brand'} is missing from ${missRate}% of recent AI answers, so models rarely treat it as a default recommendation.`,
+    })
+  }
+
+  if (competitorNames.size >= 2) {
+    reasons.push({
+      issue: 'Limited third-party citations',
+      severity: 'High',
+      detail: `AI answers repeatedly surface ${topCompetitors} instead. More independent reviews and directory citations help close that gap.`,
+    })
+  }
+
+  reasons.push({
+    issue: 'Insufficient topical depth',
+    severity: 'Medium',
+    detail: 'Publish deeper comparison and buyer-guide content that answers the exact questions AI users ask.',
+  })
+
+  reasons.push({
+    issue: 'Missing structured data signals',
+    severity: 'Medium',
+    detail: 'Add Organization, FAQ, and Service schema so crawlers and AI systems can map your offerings clearly.',
+  })
+
+  if (missRate < 100) {
+    reasons.push({
+      issue: 'Weak content freshness',
+      severity: 'Low',
+      detail: 'Refresh high-intent pages with recent proof, pricing context, and case studies so answers stay current.',
+    })
+  }
+
+  return reasons.slice(0, 5)
+}
+
+/**
+ * Aggregate competitor brands from AI ranking lists and score them
+ * against the site's own visibility score.
+ */
+async function getTopCompetitors(siteId, siteName = '') {
+  const { rows } = await pool.query(
+    `SELECT rankings, brand_rank FROM ai_visibility_results
+     WHERE site_id = $1 AND tested_at > NOW() - INTERVAL '30 days'
+     ORDER BY tested_at DESC
+     LIMIT 120`,
+    [siteId]
+  )
+
+  const totalScans = rows.length
+  if (!totalScans) {
+    return { yourScore: 0, competitors: [] }
+  }
+
+  const yourMentions = rows.filter(r => r.brand_rank !== null).length
+  const yourScore = Math.round((yourMentions / totalScans) * 100)
+
+  const brandNeedle = normalizeBrandKey(siteName)
+  const byBrand = new Map()
+
+  for (const row of rows) {
+    const rankings = parseRankings(row.rankings)
+    const seenInRow = new Set()
+    for (const item of rankings) {
+      const name = String(item?.name || '').trim()
+      if (!name) continue
+      const key = normalizeBrandKey(name)
+      if (!key || (brandNeedle && key.includes(brandNeedle))) continue
+      if (seenInRow.has(key)) continue
+      seenInRow.add(key)
+
+      const rank = Number(item.rank)
+      const entry = byBrand.get(key) || {
+        name,
+        mentions: 0,
+        rankSum: 0,
+        rankCount: 0,
+      }
+      entry.mentions += 1
+      if (Number.isFinite(rank) && rank > 0) {
+        entry.rankSum += rank
+        entry.rankCount += 1
+      }
+      // Prefer cleanest display name
+      if (name.length < entry.name.length) entry.name = name
+      byBrand.set(key, entry)
+    }
+  }
+
+  const competitors = [...byBrand.values()]
+    .map(c => {
+      const visibilityScore = Math.round((c.mentions / totalScans) * 100)
+      const avgRank = c.rankCount
+        ? Number((c.rankSum / c.rankCount).toFixed(1))
+        : null
+      return {
+        name: c.name,
+        mentions: c.mentions,
+        visibilityScore,
+        averageRank: avgRank,
+        vsYou: visibilityScore - yourScore,
+      }
+    })
+    .sort((a, b) => b.visibilityScore - a.visibilityScore || b.mentions - a.mentions)
+    .slice(0, 8)
+
+  return { yourScore, competitors, totalScans }
 }
 
 // ---------- Section 6: recommendations ----------
@@ -587,5 +736,6 @@ module.exports = {
   getHistory,
   createSession,
   listSessions,
+  getTopCompetitors,
 };
 

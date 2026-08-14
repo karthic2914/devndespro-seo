@@ -9,6 +9,7 @@ import {
   VisibilityReasoningCard,
   VisibilityKPICards,
   VisibilityEngineTable,
+  VisibilityCompetitorsPanel,
 } from '../components/AIVisibilitySections3to7'
 import { BrandFavicon } from '../components/SiteFavicon'
 
@@ -3728,67 +3729,10 @@ export default function AIVisibility() {
               siteName={visibilitySiteName}
             />
 
-            <div className="ai-session-history-card" style={{
-              background: '#fff',
-              border: '1px solid #E5E7EB',
-              borderRadius: 12,
-              padding: '14px 14px 12px',
-              minWidth: 0,
-            }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
-                Recent Sessions
-              </div>
-              <div style={{ fontSize: 10.5, color: '#6B7280', marginBottom: 10, lineHeight: 1.4 }}>
-                Compare visibility scores across named test runs.
-              </div>
-
-              {!sessions.length ? (
-                <div style={{ fontSize: 11, color: '#9CA3AF', padding: '10px 0' }}>
-                  No sessions yet. Open <strong>Sessions</strong> above and create one, then Test questions to fill it.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {sessions.slice(0, 5).map(s => (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => selectSession(s)}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'minmax(0,1fr) auto',
-                        gap: 8,
-                        alignItems: 'center',
-                        width: '100%',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        border: currentSession?.id === s.id ? '1px solid #FDBA74' : '1px solid #F3F4F6',
-                        background: currentSession?.id === s.id ? '#FFF7ED' : '#FAFAFA',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                      }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {s.name}
-                        </div>
-                        <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
-                          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                          {' · '}{s.questionsTested || 0} tested
-                          {s.averageRank != null ? ` · avg #${s.averageRank}` : ''}
-                        </div>
-                      </div>
-                      <div style={{
-                        fontSize: 13,
-                        fontWeight: 800,
-                        color: (s.score || 0) >= 60 ? '#16A34A' : (s.score || 0) >= 30 ? '#D97706' : '#DC2626',
-                      }}>
-                        {s.score || 0}%
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <VisibilityCompetitorsPanel
+              siteId={siteId}
+              siteName={visibilitySiteName}
+            />
           </div>
 
         </div>

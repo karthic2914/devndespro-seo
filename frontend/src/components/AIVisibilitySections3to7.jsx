@@ -9,6 +9,7 @@ import {
   faSquare,
   faListCheck,
 } from '@fortawesome/free-solid-svg-icons'
+import { BrandFavicon } from './SiteFavicon'
 import api from '../utils/api'
 
 const ENGINE_STYLE = {
@@ -866,7 +867,14 @@ export function VisibilityKPICards({
   )
 }
 
-// ---------- Overview: per-engine breakdown table ----------
+// ---------- Overview: per-engine breakdown (mock-style bars) ----------
+const ENGINE_ROWS = [
+  { key: 'chatgpt', label: 'ChatGPT', live: true, color: '#10A37F' },
+  { key: 'claude', label: 'Claude', live: true, color: '#D85A30' },
+  { key: 'gemini', label: 'Gemini', live: false, color: '#4285F4' },
+  { key: 'perplexity', label: 'Perplexity', live: false, color: '#20808D' },
+]
+
 export function VisibilityEngineTable({ siteId }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
@@ -882,50 +890,96 @@ export function VisibilityEngineTable({ siteId }) {
   useEffect(() => load(), [load])
   useScanRefresh(load)
 
+  const byEngine = Object.fromEntries(
+    (rows || []).map(r => [normaliseEngine(r.engine), r])
+  )
+
   return (
-    <div style={cardStyle}>
-      <div style={titleStyle}>AI Visibility by Engine</div>
-      <div style={subStyle}>{loading ? 'Loading...' : 'Per-engine mention rate and position from your last 30 days of scans.'}</div>
-
-      {!loading && rows.every(r => !r.hasData) && (
-        <div style={emptyStyle}>No scans yet for any engine. Run a visibility scan to populate this table.</div>
-      )}
-
-      {rows.some(r => r.hasData) && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(90px,1.2fr) minmax(70px,1fr) minmax(80px,1fr) minmax(70px,1fr) minmax(60px,1fr)', gap: 8, fontSize: 10, fontWeight: 700, color: '#374151', paddingBottom: 8, borderBottom: '1px solid #E5E7EB' }}>
-          <span>AI Engine</span>
-          <span>Mention Rate</span>
-          <span>Top 10 Presence</span>
-          <span>Avg Position</span>
-          <span>Trend</span>
-        </div>
-      )}
-
-      {rows.filter(r => r.hasData).map(r => {
-        const meta = ENGINE_STYLE[r.engine] || { label: r.engine, color: '#9CA3AF' }
-        const max = Math.max(1, ...r.trend)
-        const points = r.trend.map((v, i) => `${(i / Math.max(1, r.trend.length - 1)) * 60},${18 - (v / max) * 16}`).join(' ')
-        return (
-          <div key={r.engine} style={{ display: 'grid', gridTemplateColumns: 'minmax(90px,1.2fr) minmax(70px,1fr) minmax(80px,1fr) minmax(70px,1fr) minmax(60px,1fr)', gap: 8, alignItems: 'center', padding: '9px 0', borderBottom: '1px solid #F3F4F6', fontSize: 11 }}>
-            <span style={{ fontWeight: 700, color: meta.color }}>{meta.label}</span>
-            <span style={{ color: '#111827' }}>{r.mentionRate}%</span>
-            <span style={{ color: r.inTop10 ? '#16A34A' : '#DC2626', fontWeight: 700 }}>{r.inTop10 ? 'Top 10 #' + r.bestRank : 'Not in Top 10'}</span>
-            <span style={{ color: '#111827' }}>{r.averagePosition ?? '-'}</span>
-            <svg viewBox="0 0 60 20" style={{ width: 60, height: 20 }}>
-              {r.trend.length > 1 && <polyline points={points} fill="none" stroke={meta.color} strokeWidth="1.8" />}
-            </svg>
-          </div>
-        )
-      })}
-
-      {rows.some(r => r.hasData) && (
+    <div style={{ ...cardStyle, minHeight: 260 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+        <div style={titleStyle}>AI Visibility by Engine</div>
         <button
+          type="button"
           onClick={() => scrollToId('step-analyze')}
-          style={{ width: '100%', marginTop: 10, padding: '8px 0', border: '1px solid #E5E7EB', background: '#fff', color: '#374151', borderRadius: 7, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+          style={{
+            border: 0,
+            background: 'transparent',
+            color: '#EA580C',
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: 0,
+            whiteSpace: 'nowrap',
+          }}
         >
-          View Engine Comparison
+          View details →
         </button>
-      )}
+      </div>
+      <div style={{ ...subStyle, marginBottom: 14 }}>
+        {loading ? 'Loading...' : 'Mention rate and best rank from your last 30 days of scans.'}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {ENGINE_ROWS.map(meta => {
+          const data = byEngine[meta.key]
+          const hasData = !!data?.hasData
+          const rate = hasData ? Number(data.mentionRate || 0) : 0
+          const bestRank = data?.bestRank
+
+          return (
+            <div
+              key={meta.key}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '26px minmax(72px, 88px) minmax(0, 1fr) 42px 40px',
+                gap: 8,
+                alignItems: 'center',
+              }}
+            >
+              <BrandFavicon name={meta.label} size={20} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A' }}>{meta.label}</span>
+
+              {meta.live ? (
+                <>
+                  <div style={{ height: 7, borderRadius: 99, background: '#F1F5F9', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${Math.min(100, rate)}%`,
+                        height: '100%',
+                        borderRadius: 99,
+                        background: rate > 0
+                          ? `linear-gradient(90deg, ${meta.color}aa, ${meta.color})`
+                          : 'transparent',
+                        transition: 'width .35s ease',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#334155', textAlign: 'right' }}>
+                    {hasData ? `${rate}%` : '0%'}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 800,
+                      textAlign: 'right',
+                      color: bestRank ? '#16A34A' : '#94A3B8',
+                    }}
+                  >
+                    {bestRank ? `#${bestRank}` : (hasData ? 'Out' : '')}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <div style={{ height: 2, borderRadius: 99, background: '#E5E7EB' }} />
+                  <span style={{ gridColumn: '4 / 6', fontSize: 10.5, fontWeight: 700, color: '#94A3B8', textAlign: 'right' }}>
+                    Coming Soon
+                  </span>
+                </>
+              )}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -950,12 +1004,134 @@ function ComingSoonButton({ label }) {
   )
 }
 
-export function VisibilityCompetitorsPanel() {
+export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
+  const [data, setData] = useState({ yourScore: 0, competitors: [] })
+  const [loading, setLoading] = useState(true)
+
+  const load = useCallback(() => {
+    if (!siteId) return
+    setLoading(true)
+    api.get('/sites/' + siteId + '/ai-visibility/competitors', {
+      params: { siteName },
+    })
+      .then(res => setData(res.data || { yourScore: 0, competitors: [] }))
+      .catch(() => setData({ yourScore: 0, competitors: [] }))
+      .finally(() => setLoading(false))
+  }, [siteId, siteName])
+
+  useEffect(() => load(), [load])
+  useScanRefresh(load)
+
+  const competitors = (data.competitors || []).slice(0, 5)
+  const maxScore = Math.max(1, ...competitors.map(c => c.visibilityScore || 0), data.yourScore || 0)
+
   return (
-    <div style={cardStyle}>
-      <div style={titleStyle}>Top Competitors</div>
-      <div style={emptyStyle}>Competitor tracking isn't built yet. This will let you track named competitors and compare visibility share directly against them.</div>
-      <ComingSoonButton label="View Competitor Benchmarking" />
+    <div style={{ ...cardStyle, minHeight: 260 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
+        <div style={titleStyle}>Top Competitors</div>
+        <button
+          type="button"
+          onClick={() => {
+            try {
+              const path = window.location.pathname.replace(/\/ai-visibility.*/, '/competitors')
+              window.location.assign(path)
+            } catch {
+              /* ignore */
+            }
+          }}
+          style={{
+            border: 0,
+            background: 'transparent',
+            color: '#EA580C',
+            fontSize: 11,
+            fontWeight: 700,
+            cursor: 'pointer',
+            padding: 0,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          View all →
+        </button>
+      </div>
+      <div style={{ ...subStyle, marginBottom: 12 }}>
+        {loading ? 'Loading...' : 'Brands AI engines mention most often vs your score.'}
+      </div>
+
+      {!loading && !competitors.length ? (
+        <div style={emptyStyle}>
+          Test questions to discover which brands AI recommends instead of you.
+        </div>
+      ) : (
+        <>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0,1.2fr) minmax(90px,1.1fr) 54px',
+              gap: 8,
+              fontSize: 10,
+              fontWeight: 700,
+              color: '#94A3B8',
+              marginBottom: 8,
+              textTransform: 'uppercase',
+              letterSpacing: '0.03em',
+            }}
+          >
+            <span>Brand</span>
+            <span>Visibility Score</span>
+            <span style={{ textAlign: 'right' }}>vs you</span>
+          </div>
+
+          {competitors.map(c => {
+            const ahead = (c.vsYou || 0) > 0
+            const barPct = Math.round(((c.visibilityScore || 0) / maxScore) * 100)
+            return (
+              <div
+                key={c.name}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'minmax(0,1.2fr) minmax(90px,1.1fr) 54px',
+                  gap: 8,
+                  alignItems: 'center',
+                  padding: '8px 0',
+                  borderBottom: '1px solid #F3F4F6',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                  <BrandFavicon name={c.name} size={16} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {c.name}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, height: 6, borderRadius: 99, background: '#F1F5F9', overflow: 'hidden' }}>
+                    <div
+                      style={{
+                        width: `${barPct}%`,
+                        height: '100%',
+                        borderRadius: 99,
+                        background: 'linear-gradient(90deg,#FB923C,#F97316)',
+                      }}
+                    />
+                  </div>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#334155', minWidth: 28 }}>
+                    {c.visibilityScore}%
+                  </span>
+                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 800,
+                    textAlign: 'right',
+                    color: ahead ? '#16A34A' : (c.vsYou < 0 ? '#DC2626' : '#94A3B8'),
+                  }}
+                >
+                  {c.vsYou > 0 ? `↑ ${c.vsYou}%` : c.vsYou < 0 ? `↓ ${Math.abs(c.vsYou)}%` : '0%'}
+                </span>
+              </div>
+            )
+          })}
+        </>
+      )}
     </div>
   )
 }
@@ -1047,31 +1223,62 @@ export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   // Do not auto-regenerate after scans — that costs money. Cached analysis stays until forced.
   useScanRefresh(() => loadReasons({ force: false }))
 
-  const displayName = [siteName, productName].filter(Boolean).join(' - ') || 'this project'
+  const priorityDot = (priority) => {
+    if (priority === 'High') return '#EF4444'
+    if (priority === 'Medium') return '#F97316'
+    return '#22C55E'
+  }
 
   return (
-    <div style={cardStyle}>
-      <div style={titleStyle}>
-        Why is {displayName} not in the Top 10?
+    <div style={{ ...cardStyle, minHeight: 260 }}>
+      <div style={titleStyle}>Why You're Not Ranking Higher</div>
+      <div style={{ ...subStyle, marginBottom: 10 }}>
+        {loading ? 'Analysing latest scan...' : 'Based on your latest visibility scan results.'}
       </div>
-      <div style={subStyle}>{loading ? 'Analysing latest scan...' : 'Based on your latest visibility scan.'}</div>
 
       {!loading && !reasons.length && (
-        <div style={emptyStyle}>Run a visibility scan first. The reasons will be generated from the actual AI results.</div>
+        <div style={emptyStyle}>Run a visibility scan first. Reasons are generated from real AI ranking gaps.</div>
       )}
 
       {reasons.slice(0, 5).map((r, i) => {
         const p = priorityColors(r.severity)
         return (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '22px minmax(0,1fr) auto', gap: 8, padding: '8px 0', borderBottom: i < Math.min(reasons.length, 5) - 1 ? '1px solid #F3F4F6' : 'none', alignItems: 'start' }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#FFF7ED', display: 'grid', placeItems: 'center' }}>
-              <FontAwesomeIcon icon={faArrowRight} style={{ color: '#F97316', fontSize: 9 }} />
+          <div
+            key={i}
+            style={{
+              display: 'grid',
+              gridTemplateColumns: '10px minmax(0,1fr) auto',
+              gap: 10,
+              padding: '9px 0',
+              borderBottom: i < Math.min(reasons.length, 5) - 1 ? '1px solid #F3F4F6' : 'none',
+              alignItems: 'center',
+            }}
+          >
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: priorityDot(r.severity),
+                display: 'inline-block',
+              }}
+            />
+            <div style={{ fontSize: 12, fontWeight: 650, color: '#0F172A', lineHeight: 1.35 }}>
+              {r.issue}
             </div>
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: '#111827' }}>{r.issue}</div>
-              {r.detail && <div style={{ fontSize: 10, color: '#6B7280', lineHeight: 1.45, marginTop: 2 }}>{r.detail}</div>}
-            </div>
-            <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 4, background: p.bg, color: p.color, fontWeight: 700 }}>{r.severity || 'Low'}</span>
+            <span
+              style={{
+                fontSize: 9,
+                padding: '3px 8px',
+                borderRadius: 999,
+                background: p.bg,
+                color: p.color,
+                fontWeight: 800,
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {r.severity || 'Low'}
+            </span>
           </div>
         )
       })}

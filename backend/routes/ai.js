@@ -19,6 +19,7 @@ const {
   getHistory,
   createSession,
   listSessions,
+  getTopCompetitors,
 } = require('../utils/aiVisibilityEngine')
 
 const router = express.Router()
@@ -627,6 +628,18 @@ router.get('/:siteId/ai-visibility/engine-breakdown', auth, verifySite, async (r
   } catch (err) {
     console.error('ai-visibility/engine-breakdown error:', err)
     res.status(500).json({ error: 'Failed to load engine breakdown' })
+  }
+})
+
+// Top competitor brands aggregated from AI ranking lists
+router.get('/:siteId/ai-visibility/competitors', auth, verifySite, async (req, res) => {
+  try {
+    const siteName = String(req.query?.siteName || '').trim()
+    const data = await getTopCompetitors(req.siteId, siteName)
+    res.json(data)
+  } catch (err) {
+    console.error('ai-visibility/competitors error:', err)
+    res.status(500).json({ error: 'Failed to load competitors' })
   }
 })
 
