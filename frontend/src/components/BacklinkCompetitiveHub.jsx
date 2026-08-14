@@ -12,6 +12,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
 import { Card, MetricCard, OrangeBtn, GhostBtn } from './UI'
+import CollapsibleSection from './CollapsibleSection'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -107,10 +108,13 @@ function BrokenPanel({ backlinks, onFilter }) {
 
   return (
     <Card>
-      <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 4 }}>Broken backlinks</div>
-      <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12 }}>
-        Links to your site that hit a broken target URL. Fix the page or 301-redirect to reclaim equity.
-      </div>
+      <CollapsibleSection
+        title="Broken backlinks"
+        subtitle="Links to your site that hit a broken target URL. Fix the page or 301-redirect to reclaim equity."
+        icon={<FontAwesomeIcon icon={faLinkSlash} style={{ color: '#DC2626' }} />}
+        defaultOpen
+        right={<span style={{ fontSize: 11, fontWeight: 800, color: '#94A3B8' }}>{broken.length}</span>}
+      >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {broken.slice(0, 50).map((b) => {
           const domain = b.source_domain || b.name || '—'
@@ -156,6 +160,7 @@ function BrokenPanel({ backlinks, onFilter }) {
           )
         })}
       </div>
+      </CollapsibleSection>
     </Card>
   )
 }
@@ -182,24 +187,21 @@ function ReferringDomainsPanel({ siteId, onFilterDomain }) {
 
   return (
     <Card>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
-        <div>
-          <div style={{ fontSize: 13, fontWeight: 800 }}>
-            <FontAwesomeIcon icon={faGlobe} style={{ marginRight: 8, color: '#2563EB' }} />
-            Referring domains
-          </div>
-          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-            Unique websites linking to you — quality over raw link count.
-          </div>
-        </div>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search domain…"
-          style={{ height: 34, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 12px', minWidth: 180 }}
-        />
-      </div>
-
+      <CollapsibleSection
+        title="Referring domains"
+        subtitle="Unique websites linking to you — quality over raw link count."
+        icon={<FontAwesomeIcon icon={faGlobe} style={{ color: '#2563EB' }} />}
+        defaultOpen
+        right={
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search domain…"
+            onClick={(e) => e.stopPropagation()}
+            style={{ height: 34, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 12px', minWidth: 160 }}
+          />
+        }
+      >
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'minmax(0,1.6fr) 56px 64px 64px 56px',
@@ -259,6 +261,7 @@ function ReferringDomainsPanel({ siteId, onFilterDomain }) {
           </button>
         ))
       )}
+      </CollapsibleSection>
     </Card>
   )
 }
@@ -412,24 +415,24 @@ function BacklinkGapPanel({ siteId, onSaved }) {
 
   return (
     <Card>
-      <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>
-          <FontAwesomeIcon icon={faCodeCompare} style={{ marginRight: 8, color: '#EA580C' }} />
-          Backlink gap
-        </div>
-        <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, lineHeight: 1.45 }}>
-          Find websites that link to your competitors but not to you — the best outreach prospects.
-          Use same-niche agencies only (web design / development / SEO), not random backlink overlaps.
-        </div>
-      </div>
-
-      <div style={{
-        border: '1px solid #E2E8F0',
-        borderRadius: 12,
-        padding: 14,
-        background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
-        marginBottom: 14,
-      }}>
+      <CollapsibleSection
+        title="Backlink gap"
+        subtitle="Find websites that link to your competitors but not to you — the best outreach prospects. Use same-niche agencies only."
+        icon={<FontAwesomeIcon icon={faCodeCompare} style={{ color: '#EA580C' }} />}
+        defaultOpen
+      >
+      <CollapsibleSection
+        title="Competitors setup"
+        subtitle="Your domain + up to 4 same-niche competitors."
+        defaultOpen
+        style={{
+          border: '1px solid #E2E8F0',
+          borderRadius: 12,
+          padding: 14,
+          background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
+          marginBottom: 14,
+        }}
+      >
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{
@@ -531,7 +534,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
             {running ? 'Finding prospects…' : 'Find prospects'}
           </OrangeBtn>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {result?.you && (() => {
         const comps = result.competitors || []
@@ -539,12 +542,13 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         const page = Math.min(profilePage, profilePages)
         const slice = comps.slice((page - 1) * PROFILE_PAGE_SIZE, page * PROFILE_PAGE_SIZE)
         return (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                Profile comparison
-              </div>
-              {comps.length > PROFILE_PAGE_SIZE && (
+          <CollapsibleSection
+            title="Profile comparison"
+            subtitle="Referring domains, links, and rank vs competitors."
+            defaultOpen
+            style={{ marginBottom: 14 }}
+            right={
+              comps.length > PROFILE_PAGE_SIZE ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <button
                     type="button"
@@ -574,8 +578,9 @@ function BacklinkGapPanel({ siteId, onSaved }) {
                     Next
                   </button>
                 </div>
-              )}
-            </div>
+              ) : null
+            }
+          >
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
               <div style={{ padding: 12, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
                 <div style={{ fontSize: 11, fontWeight: 800, color: '#C2410C' }}>You · {result.yourDomain}</div>
@@ -617,7 +622,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
                 )
               })}
             </div>
-          </div>
+          </CollapsibleSection>
         )
       })()}
 
@@ -627,11 +632,11 @@ function BacklinkGapPanel({ siteId, onSaved }) {
         const page = Math.min(prospectPage, prospectPages)
         const slice = gaps.slice((page - 1) * PROSPECT_PAGE_SIZE, page * PROSPECT_PAGE_SIZE)
         return (
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: '#64748B', textTransform: 'uppercase' }}>
-                Prospects ({gaps.length}) — link to competitor, not you
-              </div>
+          <CollapsibleSection
+            title={`Prospects (${gaps.length})`}
+            subtitle="Sites that link to a competitor, not you."
+            defaultOpen
+            right={
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <button
                   type="button"
@@ -661,7 +666,8 @@ function BacklinkGapPanel({ siteId, onSaved }) {
                   Next
                 </button>
               </div>
-            </div>
+            }
+          >
             {slice.map((g) => (
               <div
                 key={`${g.domain}-${g.vsCompetitor}`}
@@ -686,7 +692,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
                 </OrangeBtn>
               </div>
             ))}
-          </div>
+          </CollapsibleSection>
         )
       })()}
 
@@ -696,6 +702,7 @@ function BacklinkGapPanel({ siteId, onSaved }) {
           {savedCompetitors.length ? ` ${savedCompetitors.length} saved competitor(s) ready to use.` : ''}
         </div>
       )}
+      </CollapsibleSection>
     </Card>
   )
 }

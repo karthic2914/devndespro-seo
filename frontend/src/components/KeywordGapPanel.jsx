@@ -7,7 +7,8 @@ import {
   faXmark,
   faChartLine,
 } from '@fortawesome/free-solid-svg-icons'
-import { Card, OrangeBtn, GhostBtn, T } from './UI'
+import { Card, OrangeBtn, GhostBtn } from './UI'
+import CollapsibleSection from './CollapsibleSection'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -150,23 +151,24 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
 
   return (
     <Card style={{ marginBottom: 16 }}>
-      <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: T.text || '#0F172A' }}>
-          <FontAwesomeIcon icon={faChartLine} style={{ marginRight: 8, color: '#EA580C' }} />
-          Keyword gap
-        </div>
-        <div style={{ fontSize: 13, color: '#64748B', marginTop: 4, lineHeight: 1.45 }}>
-          Find keywords competitors rank for that you don’t — content and SEO opportunities.
-        </div>
-      </div>
-
-      <div style={{
-        border: '1px solid #E2E8F0',
-        borderRadius: 12,
-        padding: 14,
-        background: '#F8FAFC',
-        marginBottom: 12,
-      }}>
+      <CollapsibleSection
+        title="Keyword gap"
+        subtitle="Find keywords competitors rank for that you don’t — content and SEO opportunities."
+        icon={<FontAwesomeIcon icon={faChartLine} style={{ color: '#EA580C' }} />}
+        defaultOpen
+      >
+      <CollapsibleSection
+        title="Competitors setup"
+        subtitle="Your domain + competitors and market."
+        defaultOpen
+        style={{
+          border: '1px solid #E2E8F0',
+          borderRadius: 12,
+          padding: 14,
+          background: '#F8FAFC',
+          marginBottom: 12,
+        }}
+      >
         <div style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{
@@ -234,10 +236,14 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
             {running ? 'Comparing…' : 'Compare'}
           </OrangeBtn>
         </div>
-      </div>
+      </CollapsibleSection>
 
       {result && (
-        <>
+        <CollapsibleSection
+          title="Gap results"
+          subtitle="Missing, shared, and unique keywords."
+          defaultOpen
+        >
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
             {[
               { id: 'missing', label: 'Missing', count: result.counts?.missing },
@@ -339,8 +345,9 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
               </div>
             ))
           )}
-        </>
+        </CollapsibleSection>
       )}
+      </CollapsibleSection>
     </Card>
   )
 }
