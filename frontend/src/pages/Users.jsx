@@ -145,8 +145,9 @@ export default function Users() {
           <strong style={{ fontSize: 14 }}>Feature access</strong>
         </div>
         <div style={{ fontSize: 12, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
-          Admin always has full access. For other users: mark <strong>Paid</strong> (auto-unlocks Keywords + Backlinks),
-          or toggle each feature manually. Payment webhooks can call the same unlock automatically.
+          Admin always has full access. <strong>Keywords basic</strong> (view/track) is available to all project users.
+          <strong> Paid</strong> (or manual toggles) unlocks <strong>Backlinks</strong> and premium keyword tools
+          (discover, enrich, AI suggest, rank scans). Payment webhooks can unlock the same automatically.
         </div>
 
         {accountsLoading ? (
@@ -168,7 +169,7 @@ export default function Users() {
             }}>
               <div>User</div>
               <div>Paid</div>
-              <div>Keywords</div>
+              <div>KW Pro</div>
               <div>Backlinks</div>
               <div>Quick</div>
             </div>

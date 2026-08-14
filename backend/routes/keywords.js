@@ -18,9 +18,6 @@ const { runKeywordAutoDiscover, getCachedDiscovery } = require('../utils/keyword
 
 const router = express.Router()
 
-// Keywords: admin always; others need is_paid or keywords_enabled.
-router.use('/:siteId/keywords', auth, verifySite, requireFeature('keywords'))
-
 function buildRankSummaryAlertMessage(report) {
   if (!report) return 'Weekly rank scan completed.'
   const parts = (report.engines || []).map((e) => `${e.label}: ${e.inFirstPageCount}/${e.checked} on page 1`)
@@ -232,7 +229,7 @@ router.get('/:siteId/keywords/last-search', auth, verifySite, async (req, res) =
 })
 
 // DataForSEO keyword research: matching terms + related + questions (vendor-style)
-router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   const keyword = typeof req.body?.keyword === 'string' ? req.body.keyword.trim() : ''
   if (!keyword) return res.status(400).json({ error: 'keyword required' })
 
@@ -335,7 +332,7 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, async (req
 })
 
 // Enrich existing keywords with real volume from DataForSEO
-router.post('/:siteId/keywords/enrich', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/enrich', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   const authHeader = getDataForSEOAuth()
   if (!authHeader) return res.status(500).json({ error: 'DataForSEO not configured' })
 
@@ -378,7 +375,7 @@ router.post('/:siteId/keywords/enrich', auth, verifySite, async (req, res) => {
 })
 
 // Cached keyword discovery (Already ranking / Good to have / How to get them)
-router.get('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res) => {
+router.get('/:siteId/keywords/auto-discover', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   try {
     const cached = await getCachedDiscovery(req.siteId)
     if (!cached) {
@@ -398,7 +395,7 @@ router.get('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res)
 })
 
 // Run automatic ranking-keyword discovery (auto-tracks Already ranking)
-router.post('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/auto-discover', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   try {
     const payload = await runKeywordAutoDiscover({
       siteId: req.siteId,
@@ -413,7 +410,7 @@ router.post('/:siteId/keywords/auto-discover', auth, verifySite, async (req, res
 })
 
 // Import keyword ideas from this project's GSC query data
-router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 25), 5), 100)
     const [userR, siteR, existingR] = await Promise.all([
@@ -477,7 +474,7 @@ router.post('/:siteId/keywords/import-from-gsc', auth, verifySite, async (req, r
 })
 
 // AI keyword suggestions
-router.post('/:siteId/keywords/ai-suggest', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/ai-suggest', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.body?.limit || 12), 3), 25)
     const refresh = req.body?.refresh === true
@@ -591,7 +588,7 @@ Return ONLY valid JSON:
   }
 })
 
-router.post('/:siteId/keywords/first-page-status', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/first-page-status', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   const engine = normalizeEngine(req.body?.engine)
   const limit = Math.min(Math.max(parseInt(req.body?.limit || 20), 1), 50)
 
@@ -668,7 +665,7 @@ router.post('/:siteId/keywords/first-page-status', auth, verifySite, async (req,
   })
 })
 
-router.post('/:siteId/keywords/scan-weekly-now', auth, verifySite, async (req, res) => {
+router.post('/:siteId/keywords/scan-weekly-now', auth, verifySite, requireFeature('keywords'), async (req, res) => {
   try {
     const engines = Array.isArray(req.body?.engines) && req.body.engines.length
       ? req.body.engines.map(normalizeEngine)

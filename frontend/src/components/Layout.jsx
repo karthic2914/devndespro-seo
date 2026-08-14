@@ -12,11 +12,11 @@ import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
-import { canUseBacklinks, canUseKeywords } from '../utils/features'
+import { canUseBacklinks } from '../utils/features'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
-  { to: 'keywords',      label: 'Keywords',      icon: faKey, feature: 'keywords' },
+  { to: 'keywords',      label: 'Keywords',      icon: faKey },
   { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks' },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
@@ -119,11 +119,7 @@ export default function Layout() {
               return null
             }
 
-            const locked = feature === 'backlinks'
-              ? !canUseBacklinks(user)
-              : feature === 'keywords'
-              ? !canUseKeywords(user)
-              : false
+            const locked = feature === 'backlinks' ? !canUseBacklinks(user) : false
 
             if (locked) {
               return (

@@ -76,9 +76,11 @@ export default function AdminSettings() {
         <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.55 }}>
           Manage per-user unlocks on the <strong>Users</strong> page (Feature access).
           <br />
-          • <strong>Mark paid</strong> → auto-enables Keywords + Backlinks
+          • Keywords <strong>basic</strong> (list/track) is always available
           <br />
-          • Or toggle Keywords / Backlinks manually without payment
+          • <strong>Mark paid</strong> → unlocks Backlinks + keyword premium tools
+          <br />
+          • Or toggle KW Pro / Backlinks manually
           <br />
           • Automated payments: POST <code>/api/users/billing/confirm</code> with header <code>x-billing-secret</code>
         </div>

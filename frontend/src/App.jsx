@@ -202,7 +202,7 @@ export default function App() {
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
-            <Route path="keywords" element={<FeatureRoute feature="keywords"><Keywords /></FeatureRoute>} />
+            <Route path="keywords" element={<Keywords />} />
             <Route path="backlinks" element={<FeatureRoute feature="backlinks"><Backlinks /></FeatureRoute>} />
             <Route path="competitors" element={<Competitors />} />
             <Route path="actions" element={<Actions />} />
