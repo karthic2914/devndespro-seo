@@ -65,7 +65,27 @@ const ensureBacklinkIntelligenceSchema = async () => {
       ADD COLUMN IF NOT EXISTS provider_first_seen TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS provider_last_seen TIMESTAMPTZ,
       ADD COLUMN IF NOT EXISTS quality_breakdown JSONB DEFAULT '{}'::jsonb,
-      ADD COLUMN IF NOT EXISTS quality_updated_at TIMESTAMPTZ
+      ADD COLUMN IF NOT EXISTS quality_updated_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS dofollow BOOLEAN
+  `)
+
+  // Keep dofollow boolean in sync with type + rel_nofollow so queries
+  // that use "dofollow" never hit "column does not exist".
+  await pool.query(`
+    UPDATE backlinks
+    SET dofollow = CASE
+      WHEN COALESCE(rel_nofollow, FALSE) = TRUE THEN FALSE
+      WHEN LOWER(COALESCE(type, '')) = 'nofollow' THEN FALSE
+      ELSE TRUE
+    END
+    WHERE dofollow IS NULL
+       OR dofollow IS DISTINCT FROM (
+         CASE
+           WHEN COALESCE(rel_nofollow, FALSE) = TRUE THEN FALSE
+           WHEN LOWER(COALESCE(type, '')) = 'nofollow' THEN FALSE
+           ELSE TRUE
+         END
+       )
   `)
 
   await pool.query(`
@@ -1766,7 +1786,13 @@ router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {
        COUNT(*) FILTER (
          WHERE is_live = TRUE
            AND verification_status IN ('Live','Redirected')
-           AND type = 'dofollow'
+           AND COALESCE(
+             dofollow,
+             (
+               LOWER(COALESCE(type, 'dofollow')) <> 'nofollow'
+               AND COALESCE(rel_nofollow, FALSE) = FALSE
+             )
+           ) = TRUE
        ) AS dofollow_count,
        COUNT(*) FILTER (WHERE is_lost = TRUE) AS lost_count,
        COUNT(*) FILTER (WHERE is_broken = TRUE) AS broken_count,

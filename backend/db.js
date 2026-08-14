@@ -46,6 +46,7 @@ async function initDB() {
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS type TEXT DEFAULT 'dofollow';
     ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+    ALTER TABLE backlinks ADD COLUMN IF NOT EXISTS dofollow BOOLEAN DEFAULT TRUE;
     CREATE TABLE IF NOT EXISTS competitors (
       id SERIAL PRIMARY KEY,
       site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,
