@@ -5,6 +5,7 @@ import { faUser, faBell, faPlug, faEnvelope } from '@fortawesome/free-solid-svg-
 import api from '../utils/api'
 import { useAuth } from '../hooks/useAuth'
 import { Card, PageHeader, T, Button } from '../components/UI'
+import { PLAN_META } from '../utils/features'
 
 function ToggleRow({ label, help, checked, disabled, onToggle }) {
   return (
@@ -39,6 +40,7 @@ export default function UserSettings() {
   const [weeklyRankEmail, setWeeklyRankEmail] = useState(true)
   const [auditAlertEmail, setAuditAlertEmail] = useState(true)
   const [access, setAccess] = useState(null)
+  const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
@@ -52,6 +54,7 @@ export default function UserSettings() {
         setWeeklyRankEmail(!!data?.preferences?.weekly_rank_email)
         setAuditAlertEmail(!!data?.preferences?.audit_alert_email)
         setAccess(data?.access || null)
+        setPlans(Array.isArray(data?.plans) ? data.plans : [])
       })
       .catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false))
@@ -77,7 +80,7 @@ export default function UserSettings() {
   }
 
   return (
-    <div style={{ maxWidth: 640 }}>
+    <div style={{ maxWidth: 900 }}>
       <PageHeader
         title="Settings"
         subtitle="Your profile and notification preferences."
@@ -136,36 +139,92 @@ export default function UserSettings() {
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <FontAwesomeIcon icon={faPlug} style={{ color: T.orange }} />
-          <strong style={{ fontSize: 14 }}>Your plan access</strong>
+          <strong style={{ fontSize: 14 }}>Current plan</strong>
         </div>
-        <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.6, marginBottom: 8 }}>
-          {access?.is_paid
-            ? 'Paid plan active — Backlinks, AI Assistant, and keyword premium tools are unlocked.'
-            : 'Free access includes Keywords basic, Site Audit, Overview, and more. Upgrade unlocks Backlinks and AI Assistant.'}
-        </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-          {[
-            { label: 'Backlinks', on: access?.backlinks },
-            { label: 'AI Assistant', on: access?.ai_assistant },
-            { label: 'KW Pro', on: access?.keywords_pro },
-          ].map(item => (
-            <span
-              key={item.label}
-              style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: item.on ? '#DCFCE7' : '#F1F5F9',
-                color: item.on ? '#15803D' : '#64748B',
-              }}
-            >
-              {item.label}: {item.on ? 'On' : 'Locked'}
-            </span>
-          ))}
-        </div>
+        {loading ? (
+          <div style={{ fontSize: 13, color: T.muted }}>Loading…</div>
+        ) : (
+          <>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: 10,
+              marginBottom: 12,
+            }}>
+              {(plans.length ? plans : Object.values(PLAN_META)).map(p => {
+                const active = (access?.plan || 'free') === p.id
+                return (
+                  <div
+                    key={p.id}
+                    style={{
+                      border: `2px solid ${active ? T.orange : T.border}`,
+                      borderRadius: 10,
+                      padding: '12px 12px 14px',
+                      background: active ? '#FFF7F3' : '#fff',
+                      boxShadow: active ? '0 0 0 1px rgba(230,106,57,0.12)' : 'none',
+                    }}
+                  >
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 6,
+                      marginBottom: 6,
+                    }}>
+                      <strong style={{ fontSize: 13, color: T.text }}>{p.label}</strong>
+                      {active && (
+                        <span style={{
+                          fontSize: 10,
+                          fontWeight: 800,
+                          color: '#C2410C',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em',
+                        }}>
+                          Active
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.45, marginBottom: 8 }}>
+                      {p.blurb}
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: T.text2, lineHeight: 1.55 }}>
+                      {(p.bullets || []).map(b => (
+                        <li key={b}>{b}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )
+              })}
+            </div>
+            <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.55, marginBottom: 10 }}>
+              Plans are assigned by an admin (or after payment). Self-checkout coming later.
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {[
+                { label: 'Backlinks', on: access?.backlinks },
+                { label: 'AI Assistant', on: access?.ai_assistant },
+                { label: 'KW Pro', on: access?.keywords_pro },
+                { label: 'Cold Email', on: access?.cold_emails },
+              ].map(item => (
+                <span
+                  key={item.label}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: 999,
+                    background: item.on ? '#DCFCE7' : '#F1F5F9',
+                    color: item.on ? '#15803D' : '#64748B',
+                  }}
+                >
+                  {item.label}: {item.on ? 'On' : 'Locked'}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
       </Card>
 
       <Card style={{ marginBottom: 14 }}>

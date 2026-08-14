@@ -127,7 +127,12 @@ async function initDB() {
     ALTER TABLE users ADD COLUMN IF NOT EXISTS backlinks_enabled BOOLEAN DEFAULT FALSE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS keywords_enabled BOOLEAN DEFAULT FALSE;
     ALTER TABLE users ADD COLUMN IF NOT EXISTS ai_assistant_enabled BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS cold_emails_enabled BOOLEAN DEFAULT FALSE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free';
     ALTER TABLE users ADD COLUMN IF NOT EXISTS features_updated_at TIMESTAMPTZ;
+    UPDATE users
+    SET plan = CASE WHEN COALESCE(is_paid, FALSE) THEN 'pro' ELSE 'free' END
+    WHERE plan IS NULL OR plan = '';
     ALTER TABLE competitors ADD COLUMN IF NOT EXISTS url TEXT DEFAULT '';
     ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_connected BOOLEAN DEFAULT FALSE;
     ALTER TABLE integration_settings ADD COLUMN IF NOT EXISTS wordpress_site_url TEXT;

@@ -175,7 +175,8 @@ router.post('/google', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   await ensureUserFeatureSchema()
   const { rows } = await pool.query(
-    `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled, features_updated_at
+    `SELECT id, email, name, photo, plan, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled,
+            cold_emails_enabled, features_updated_at
      FROM users WHERE id=$1`,
     [req.user.id]
   )

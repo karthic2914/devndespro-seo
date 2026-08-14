@@ -12,7 +12,7 @@ import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
-import { canUseBacklinks, canUseAiAssistant } from '../utils/features'
+import { canUseBacklinks, canUseAiAssistant, canUseColdEmails } from '../utils/features'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
@@ -139,6 +139,8 @@ export default function Layout() {
               ? !canUseBacklinks(user)
               : feature === 'ai_assistant'
               ? !canUseAiAssistant(user)
+              : to === 'cold-emails'
+              ? !canUseColdEmails(user)
               : false
 
             if (locked) {
@@ -146,7 +148,7 @@ export default function Layout() {
                 <div
                   key={to}
                   className="nav-item nav-item--locked"
-                  title="Locked — unlock after payment or ask admin"
+                  title={to === 'cold-emails' ? 'Agency plan required' : 'Locked — unlock after payment or ask admin'}
                   aria-disabled="true"
                 >
                   <span className="nav-item__icon">

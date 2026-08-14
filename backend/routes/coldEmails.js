@@ -1,8 +1,10 @@
 const express = require('express')
 const { pool } = require('../clients')
-const { auth, verifySite } = require('../middleware')
+const { auth, verifySite, requireFeature } = require('../middleware')
 
 const router = express.Router()
+
+router.use(auth, requireFeature('cold_emails'))
 
 function toCapitalizedName(value) {
   return String(value || '')

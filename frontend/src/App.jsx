@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from './hooks/useAuth'
-import { canUseBacklinks, canUseKeywords, canUseAiAssistant } from './utils/features'
+import { canUseBacklinks, canUseKeywords, canUseAiAssistant, canUseColdEmails } from './utils/features'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import Sites from './pages/Sites'
@@ -164,6 +164,8 @@ function FeatureRoute({ feature, children }) {
     ? canUseKeywords(user)
     : feature === 'ai_assistant'
     ? canUseAiAssistant(user)
+    : feature === 'cold_emails'
+    ? canUseColdEmails(user)
     : false
   if (!allowed) return <Navigate to=".." replace />
   return children
@@ -215,7 +217,7 @@ export default function App() {
             <Route path="alerts" element={<Alerts />} />
             <Route path="integrations" element={<Integrations />} />
             <Route path="email-reports" element={<EmailReports />} />
-            <Route path="cold-emails" element={<ColdEmails />} />
+            <Route path="cold-emails" element={<FeatureRoute feature="cold_emails"><ColdEmails /></FeatureRoute>} />
             <Route path="rank" element={<RankNo1 />} />
             <Route path="users" element={<Users />} />
             <Route path="admin-settings" element={<Navigate to="/settings" replace />} />

@@ -5,6 +5,7 @@ const {
   canUseBacklinks,
   canUseKeywords,
   canUseAiAssistant,
+  canUseColdEmails,
   isAdminUser,
 } = require('./utils/features')
 
@@ -55,7 +56,7 @@ const requireFeature = (feature) => async (req, res, next) => {
     if (isAdminUser(req.user)) return next()
 
     const { rows } = await pool.query(
-      `SELECT id, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled
+      `SELECT id, is_paid, plan, backlinks_enabled, keywords_enabled, ai_assistant_enabled, cold_emails_enabled
        FROM users WHERE id = $1 LIMIT 1`,
       [req.user.id]
     )
@@ -66,6 +67,7 @@ const requireFeature = (feature) => async (req, res, next) => {
       feature === 'backlinks' ? canUseBacklinks(user)
       : feature === 'keywords' ? canUseKeywords(user)
       : feature === 'ai_assistant' ? canUseAiAssistant(user)
+      : feature === 'cold_emails' ? canUseColdEmails(user)
       : false
 
     if (!allowed) {

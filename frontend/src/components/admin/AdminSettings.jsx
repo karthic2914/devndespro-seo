@@ -53,6 +53,8 @@ export default function AdminSettings() {
   const navigate = useNavigate()
   const [coldEmailsEnabled, setColdEmailsEnabled] = useState(true)
   const [notifyOnNewSite, setNotifyOnNewSite] = useState(true)
+  const [notifyOnPurchase, setNotifyOnPurchase] = useState(true)
+  const [sendWelcomeOnPurchase, setSendWelcomeOnPurchase] = useState(true)
   const [modules, setModules] = useState({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -65,6 +67,8 @@ export default function AdminSettings() {
       .then(r => {
         setColdEmailsEnabled(!!r.data?.cold_emails_enabled)
         setNotifyOnNewSite(!!r.data?.notify_on_new_site)
+        setNotifyOnPurchase(r.data?.notify_on_purchase !== false)
+        setSendWelcomeOnPurchase(r.data?.send_welcome_on_purchase !== false)
         setModules(r.data?.modules || {})
       })
       .catch(() => setError('Failed to load settings'))
@@ -81,6 +85,8 @@ export default function AdminSettings() {
       await api.post('/settings', { key, value: !current })
       if (key === 'cold_emails_enabled') setColdEmailsEnabled(!current)
       else if (key === 'notify_on_new_site') setNotifyOnNewSite(!current)
+      else if (key === 'notify_on_purchase') setNotifyOnPurchase(!current)
+      else if (key === 'send_welcome_on_purchase') setSendWelcomeOnPurchase(!current)
       else setModules(prev => ({ ...prev, [key]: !current }))
       setSavedMsg('Saved')
       setTimeout(() => setSavedMsg(''), 1500)
@@ -135,6 +141,20 @@ export default function AdminSettings() {
           disabled={loading || saving}
           onToggle={() => handleToggle('notify_on_new_site', notifyOnNewSite)}
         />
+        <ToggleRow
+          label="Notify admin on purchase"
+          help="Email admin when billing webhook upgrades a user to Pro or Agency."
+          checked={notifyOnPurchase}
+          disabled={loading || saving}
+          onToggle={() => handleToggle('notify_on_purchase', notifyOnPurchase)}
+        />
+        <ToggleRow
+          label="Send welcome email on upgrade"
+          help="Email the buyer an onboarding welcome when they move to Pro or Agency."
+          checked={sendWelcomeOnPurchase}
+          disabled={loading || saving}
+          onToggle={() => handleToggle('send_welcome_on_purchase', sendWelcomeOnPurchase)}
+        />
       </Card>
 
       <Card style={{ marginBottom: 14 }}>
@@ -145,7 +165,7 @@ export default function AdminSettings() {
               <strong style={{ fontSize: 14 }}>Per-user access</strong>
             </div>
             <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.5 }}>
-              Mark users paid or unlock Backlinks / AI / KW Pro individually.
+              Assign Free / Pro / Agency plans on the Users page.
             </div>
           </div>
           <Button variant="secondary" size="sm" onClick={() => navigate('/users')}>

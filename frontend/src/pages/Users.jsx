@@ -59,26 +59,14 @@ export default function Users() {
 
   useEffect(() => { load(); loadAccounts() }, [])
 
-  const patchFeatures = async (id, patch) => {
+  const setPlan = async (id, plan) => {
     setSavingId(id)
     try {
-      const { data } = await api.patch(`/users/${id}/features`, patch)
+      const { data } = await api.post(`/users/${id}/set-plan`, { plan })
       setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...data } : a)))
-      toast.success('Access updated')
+      toast.success(`Plan set to ${plan}`)
     } catch (e) {
-      toast.error(e.response?.data?.error || 'Failed to update access')
-    }
-    setSavingId(null)
-  }
-
-  const markPaid = async (id, paid) => {
-    setSavingId(id)
-    try {
-      const { data } = await api.post(`/users/${id}/mark-paid`, { paid })
-      setAccounts(prev => prev.map(a => (a.id === id ? { ...a, ...data } : a)))
-      toast.success(paid ? 'Marked paid — Backlinks, AI & KW Pro unlocked' : 'Marked unpaid')
-    } catch (e) {
-      toast.error(e.response?.data?.error || 'Failed to update payment')
+      toast.error(e.response?.data?.error || 'Failed to set plan')
     }
     setSavingId(null)
   }
@@ -135,19 +123,19 @@ export default function Users() {
       <div className="page-content fade-in">
       <PageHeader
         title="Team & Users"
-        subtitle="Invite people to projects, and unlock Keywords / Backlinks when they pay — or grant access manually."
+        subtitle="Invite people to projects, and assign Free / Pro / Agency plans."
       />
 
       {/* Feature access */}
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
           <FontAwesomeIcon icon={faUnlock} style={{ color: T.orange }} />
-          <strong style={{ fontSize: 14 }}>Feature access</strong>
+          <strong style={{ fontSize: 14 }}>Plans & feature access</strong>
         </div>
         <div style={{ fontSize: 12, color: T.muted, marginBottom: 12, lineHeight: 1.5 }}>
-          Admin always has full access. <strong>Keywords basic</strong> (view/track) is available to all project users.
-          <strong> Paid</strong> (or manual toggles) unlocks <strong>Backlinks</strong>, <strong>AI Assistant</strong>,
-          and keyword premium tools. Payment webhooks unlock the same automatically.
+          Admin always has full access. <strong>Free</strong> = core SEO.
+          <strong> Pro</strong> unlocks Backlinks, AI Assistant, and KW Pro.
+          <strong> Agency</strong> adds Cold Email. Billing webhooks set plan the same way.
         </div>
 
         {accountsLoading ? (
@@ -158,7 +146,7 @@ export default function Users() {
           <div style={{ overflowX: 'auto' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'minmax(160px,1.3fr) 58px 70px 80px 70px 100px',
+              gridTemplateColumns: 'minmax(180px,1.4fr) 140px 70px 80px 50px 90px',
               gap: 8,
               padding: '8px 4px',
               borderBottom: `1px solid ${T.border}`,
@@ -168,21 +156,22 @@ export default function Users() {
               textTransform: 'uppercase',
             }}>
               <div>User</div>
-              <div>Paid</div>
+              <div>Plan</div>
               <div>KW Pro</div>
               <div>Backlinks</div>
               <div>AI</div>
-              <div>Quick</div>
+              <div>Cold Email</div>
             </div>
             {accounts.map(a => {
               const isAdmin = Number(a.id) === 1
               const busy = savingId === a.id
+              const plan = isAdmin ? 'agency' : (a.plan || (a.is_paid ? 'pro' : 'free'))
               return (
                 <div
                   key={a.id}
                   style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(160px,1.3fr) 58px 70px 80px 70px 100px',
+                    gridTemplateColumns: 'minmax(180px,1.4fr) 140px 70px 80px 50px 90px',
                     gap: 8,
                     padding: '10px 4px',
                     borderBottom: '1px solid #F3F4F6',
@@ -198,66 +187,44 @@ export default function Users() {
                     <div style={{ fontSize: 11, color: T.muted }}>{a.email}</div>
                   </div>
                   <div>
-                    <input
-                      type="checkbox"
-                      checked={isAdmin || !!a.is_paid}
-                      disabled={isAdmin || busy}
-                      onChange={e => patchFeatures(a.id, { is_paid: e.target.checked })}
-                      title="Paid unlocks Backlinks + AI Assistant + KW Pro"
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={isAdmin || !!a.keywords_enabled || !!a.is_paid}
-                      disabled={isAdmin || busy || !!a.is_paid}
-                      onChange={e => patchFeatures(a.id, { keywords_enabled: e.target.checked })}
-                      title={a.is_paid ? 'Included with Paid' : 'Enable Keywords Pro'}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={isAdmin || !!a.backlinks_enabled || !!a.is_paid}
-                      disabled={isAdmin || busy || !!a.is_paid}
-                      onChange={e => patchFeatures(a.id, { backlinks_enabled: e.target.checked })}
-                      title={a.is_paid ? 'Included with Paid' : 'Enable Backlinks'}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="checkbox"
-                      checked={isAdmin || !!a.ai_assistant_enabled || !!a.is_paid}
-                      disabled={isAdmin || busy || !!a.is_paid}
-                      onChange={e => patchFeatures(a.id, { ai_assistant_enabled: e.target.checked })}
-                      title={a.is_paid ? 'Included with Paid' : 'Enable AI Assistant'}
-                    />
-                  </div>
-                  <div>
-                    {!isAdmin && (
-                      <button
-                        type="button"
+                    {isAdmin ? (
+                      <span style={{ fontSize: 11, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <FontAwesomeIcon icon={faLock} /> Agency (full)
+                      </span>
+                    ) : (
+                      <select
+                        value={plan}
                         disabled={busy}
-                        onClick={() => markPaid(a.id, !a.is_paid)}
+                        onChange={e => setPlan(a.id, e.target.value)}
                         style={{
+                          width: '100%',
                           border: `1px solid ${T.border}`,
-                          background: a.is_paid ? '#FEF2F2' : '#ECFDF5',
-                          color: a.is_paid ? '#B91C1C' : '#047857',
                           borderRadius: 7,
-                          padding: '5px 8px',
-                          fontSize: 11,
-                          fontWeight: 700,
+                          padding: '6px 8px',
+                          fontSize: 12,
+                          fontWeight: 650,
+                          background: '#fff',
+                          color: T.text,
                           cursor: 'pointer',
                         }}
                       >
-                        {a.is_paid ? 'Unpay' : 'Mark paid'}
-                      </button>
+                        <option value="free">Free</option>
+                        <option value="pro">Pro</option>
+                        <option value="agency">Agency</option>
+                      </select>
                     )}
-                    {isAdmin && (
-                      <span style={{ fontSize: 11, color: T.muted, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        <FontAwesomeIcon icon={faLock} /> Full access
-                      </span>
-                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                  </div>
+                  <div style={{ fontSize: 12, color: plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
+                    {plan === 'agency' || isAdmin ? 'On' : '—'}
                   </div>
                 </div>
               )

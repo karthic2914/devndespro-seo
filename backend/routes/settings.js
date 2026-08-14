@@ -2,6 +2,13 @@ const express = require('express')
 const { getSetting, setSetting } = require('../utils/settings')
 const { auth, requireAdmin } = require('../middleware')
 const { pool } = require('../clients')
+const {
+  ensureUserFeatureSchema,
+  featureFlagsFor,
+  PLAN_META,
+  PLANS,
+  resolvePlan,
+} = require('../utils/features')
 
 const router = express.Router()
 
@@ -44,8 +51,10 @@ router.get('/modules', auth, async (req, res) => {
 // Current user's personal preferences
 router.get('/me', auth, async (req, res) => {
   try {
+    await ensureUserFeatureSchema()
     const { rows } = await pool.query(
-      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled
+      `SELECT id, email, name, photo, plan, is_paid, backlinks_enabled, keywords_enabled,
+              ai_assistant_enabled, cold_emails_enabled
        FROM users WHERE id=$1`,
       [req.user.id]
     )
@@ -54,6 +63,8 @@ router.get('/me', auth, async (req, res) => {
 
     const weeklyRankEmail = await getSetting(`user:${req.user.id}:weekly_rank_email`, true)
     const auditAlertEmail = await getSetting(`user:${req.user.id}:audit_alert_email`, true)
+    const flags = featureFlagsFor(user)
+    const plan = resolvePlan(user)
 
     res.json({
       profile: {
@@ -67,11 +78,14 @@ router.get('/me', auth, async (req, res) => {
         audit_alert_email: !!auditAlertEmail,
       },
       access: {
-        is_paid: !!user.is_paid,
-        backlinks: !!(user.backlinks_enabled || user.is_paid || user.id === 1),
-        ai_assistant: !!(user.ai_assistant_enabled || user.is_paid || user.id === 1),
-        keywords_pro: !!(user.keywords_enabled || user.is_paid || user.id === 1),
+        plan,
+        is_paid: !!user.is_paid || plan === 'pro' || plan === 'agency',
+        backlinks: flags.backlinks,
+        ai_assistant: flags.ai_assistant,
+        keywords_pro: flags.keywords,
+        cold_emails: flags.cold_emails,
       },
+      plans: PLANS.map(id => PLAN_META[id]),
     })
   } catch (e) {
     console.error(e)
@@ -105,10 +119,14 @@ router.get('/', auth, requireAdmin, async (req, res) => {
   try {
     const coldEmailsEnabled = await getSetting('cold_emails_enabled', true)
     const notifyOnNewSite = await getSetting('notify_on_new_site', true)
+    const notifyOnPurchase = await getSetting('notify_on_purchase', true)
+    const sendWelcomeOnPurchase = await getSetting('send_welcome_on_purchase', true)
     const modules = await readModules()
     res.json({
       cold_emails_enabled: !!coldEmailsEnabled,
       notify_on_new_site: !!notifyOnNewSite,
+      notify_on_purchase: !!notifyOnPurchase,
+      send_welcome_on_purchase: !!sendWelcomeOnPurchase,
       modules,
     })
   } catch (e) {
@@ -125,6 +143,8 @@ router.post('/', auth, requireAdmin, async (req, res) => {
     const allowed = new Set([
       'cold_emails_enabled',
       'notify_on_new_site',
+      'notify_on_purchase',
+      'send_welcome_on_purchase',
       ...MODULE_KEYS,
     ])
     if (!allowed.has(key)) {

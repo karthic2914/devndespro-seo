@@ -7,7 +7,10 @@ const {
   ensureUserFeatureSchema,
   setUserFeatures,
   setUserPaid,
+  setUserPlan,
   featureFlagsFor,
+  PLANS,
+  normalizePlan,
 } = require('../utils/features')
 
 const router = express.Router()
@@ -300,8 +303,8 @@ router.get('/accounts', auth, requireAdmin, async (req, res) => {
   try {
     await ensureUserFeatureSchema()
     const { rows } = await pool.query(
-      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled,
-              features_updated_at, created_at
+      `SELECT id, email, name, photo, plan, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled,
+              cold_emails_enabled, features_updated_at, created_at
        FROM users
        ORDER BY id ASC`
     )
@@ -321,10 +324,12 @@ router.patch('/:id/features', auth, requireAdmin, async (req, res) => {
     }
 
     const updated = await setUserFeatures(userId, {
+      plan: req.body?.plan != null ? normalizePlan(req.body.plan) : undefined,
       is_paid: typeof req.body?.is_paid === 'boolean' ? req.body.is_paid : undefined,
       backlinks_enabled: typeof req.body?.backlinks_enabled === 'boolean' ? req.body.backlinks_enabled : undefined,
       keywords_enabled: typeof req.body?.keywords_enabled === 'boolean' ? req.body.keywords_enabled : undefined,
       ai_assistant_enabled: typeof req.body?.ai_assistant_enabled === 'boolean' ? req.body.ai_assistant_enabled : undefined,
+      cold_emails_enabled: typeof req.body?.cold_emails_enabled === 'boolean' ? req.body.cold_emails_enabled : undefined,
     })
 
     if (!updated) return res.status(404).json({ error: 'User not found or nothing to update' })
@@ -335,20 +340,44 @@ router.patch('/:id/features', auth, requireAdmin, async (req, res) => {
   }
 })
 
-/** Manual or automated payment confirmation → unlock Backlinks + Keywords. */
+/** Admin: set plan free | pro | agency */
+router.post('/:id/set-plan', auth, requireAdmin, async (req, res) => {
+  try {
+    const userId = Number(req.params.id)
+    if (!userId) return res.status(400).json({ error: 'Invalid user id' })
+    if (userId === 1) {
+      return res.status(400).json({ error: 'Admin account always has full access' })
+    }
+    const plan = normalizePlan(req.body?.plan)
+    if (!PLANS.includes(plan)) {
+      return res.status(400).json({ error: 'Invalid plan' })
+    }
+    const updated = await setUserPlan(userId, plan, {
+      source: 'admin',
+      notifyAdmin: false,
+      sendWelcome: true,
+    })
+    if (!updated) return res.status(404).json({ error: 'User not found' })
+    res.json({ ...updated, features: featureFlagsFor(updated) })
+  } catch (e) {
+    console.error(e)
+    res.status(500).json({ error: 'Failed to set plan' })
+  }
+})
+
+/** Legacy: mark paid → Pro, unpaid → Free */
 router.post('/:id/mark-paid', auth, requireAdmin, async (req, res) => {
   try {
     const userId = Number(req.params.id)
     if (!userId) return res.status(400).json({ error: 'Invalid user id' })
     const paid = req.body?.paid !== false
-    await setUserPaid(userId, paid)
-    const { rows } = await pool.query(
-      `SELECT id, email, name, photo, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled, features_updated_at
-       FROM users WHERE id=$1`,
-      [userId]
-    )
-    if (!rows[0]) return res.status(404).json({ error: 'User not found' })
-    res.json({ ...rows[0], features: featureFlagsFor(rows[0]) })
+    const updated = await setUserPaid(userId, paid, {
+      source: 'admin',
+      notifyAdmin: false,
+      sendWelcome: paid,
+    })
+    if (!updated) return res.status(404).json({ error: 'User not found' })
+    res.json({ ...updated, features: featureFlagsFor(updated) })
   } catch (e) {
     console.error(e)
     res.status(500).json({ error: 'Failed to update payment status' })
@@ -358,7 +387,7 @@ router.post('/:id/mark-paid', auth, requireAdmin, async (req, res) => {
 /**
  * Automated payment webhook.
  * Header: x-billing-secret = BILLING_WEBHOOK_SECRET
- * Body: { email } or { userId }, optional { paid: true|false }
+ * Body: { email } or { userId }, optional { plan: 'pro'|'agency'|'free' } or { paid: true|false }
  */
 router.post('/billing/confirm', async (req, res) => {
   try {
@@ -368,7 +397,6 @@ router.post('/billing/confirm', async (req, res) => {
     }
 
     await ensureUserFeatureSchema()
-    const paid = req.body?.paid !== false
     let userId = Number(req.body?.userId || 0)
 
     if (!userId && req.body?.email) {
@@ -379,12 +407,20 @@ router.post('/billing/confirm', async (req, res) => {
 
     if (!userId) return res.status(404).json({ error: 'User not found' })
 
-    await setUserPaid(userId, paid)
-    const { rows } = await pool.query(
-      `SELECT id, email, is_paid, backlinks_enabled, keywords_enabled, ai_assistant_enabled FROM users WHERE id=$1`,
-      [userId]
-    )
-    res.json({ ok: true, user: rows[0], features: featureFlagsFor(rows[0]) })
+    let plan
+    if (req.body?.plan != null) {
+      plan = normalizePlan(req.body.plan)
+    } else {
+      const paid = req.body?.paid !== false
+      plan = paid ? 'pro' : 'free'
+    }
+
+    const updated = await setUserPlan(userId, plan, {
+      source: 'billing',
+      notifyAdmin: true,
+      sendWelcome: true,
+    })
+    res.json({ ok: true, user: updated, features: featureFlagsFor(updated) })
   } catch (e) {
     console.error('billing/confirm error:', e)
     res.status(500).json({ error: 'Billing confirm failed' })
