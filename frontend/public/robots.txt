@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /site/
+Disallow: /settings
+Disallow: /users
+Disallow: /reports
+Disallow: /accept-invite
+
+Sitemap: https://seo.devndespro.com/sitemap.xml
