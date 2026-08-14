@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faComments } from '@fortawesome/free-solid-svg-icons'
@@ -192,6 +193,7 @@ export default function AIVisibility() {
   const QUESTIONS_PER_PAGE = 5
   const [selectedQuestion, setSelectedQuestion] = useState('')
   const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
+  const [questionMenuPos, setQuestionMenuPos] = useState(null)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
@@ -487,21 +489,56 @@ export default function AIVisibility() {
       const target = event.target
 
       if (
-        target.closest('.ai-question-menu-wrap')
+        target.closest('.ai-question-menu-wrap') ||
+        target.closest('.ai-question-menu-dropdown')
       ) {
         return
       }
 
       setOpenQuestionMenu(null)
+      setQuestionMenuPos(null)
+    }
+
+    const handleRepositionClose = () => {
+      setOpenQuestionMenu(null)
+      setQuestionMenuPos(null)
     }
 
     document.addEventListener('mousedown', handleOutsideClick)
+    window.addEventListener('resize', handleRepositionClose)
+    window.addEventListener('scroll', handleRepositionClose, true)
 
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick)
+      window.removeEventListener('resize', handleRepositionClose)
+      window.removeEventListener('scroll', handleRepositionClose, true)
     }
   }, [openQuestionMenu])
 
+  function openQuestionActionsMenu(event, question) {
+    event.stopPropagation()
+    if (openQuestionMenu === question) {
+      setOpenQuestionMenu(null)
+      setQuestionMenuPos(null)
+      return
+    }
+
+    const rect = event.currentTarget.getBoundingClientRect()
+    const menuWidth = 205
+    const menuHeight = 190
+    const gap = 6
+    const left = Math.min(
+      Math.max(8, rect.right - menuWidth),
+      window.innerWidth - menuWidth - 8
+    )
+    const openUp = rect.bottom + gap + menuHeight > window.innerHeight - 8
+    const top = openUp
+      ? Math.max(8, rect.top - menuHeight - gap)
+      : rect.bottom + gap
+
+    setQuestionMenuPos({ top, left })
+    setOpenQuestionMenu(question)
+  }
   // Load the real stored AI results for the selected question.
   async function loadSelectedQuestionResults(question) {
     if (!question) {
@@ -1546,10 +1583,8 @@ export default function AIVisibility() {
         }
 
         .ai-question-menu-dropdown {
-          position: absolute;
-          right: 8px;
-          top: 34px;
-          z-index: 999;
+          position: fixed;
+          z-index: 4000;
           width: 205px;
           padding: 6px;
           background: #FFFFFF;
@@ -2662,12 +2697,8 @@ export default function AIVisibility() {
     <button
       type="button"
       className="ai-question-menu-button"
-      onClick={(e) => {
-        e.stopPropagation()
-        setOpenQuestionMenu(
-          openQuestionMenu === q ? null : q
-        )
-      }}
+      aria-expanded={openQuestionMenu === q}
+      onClick={(e) => openQuestionActionsMenu(e, q)}
       title="Question actions"
     >
                                   <span className="ai-question-menu-dots">
@@ -2676,75 +2707,6 @@ export default function AIVisibility() {
                                     <span></span>
                                   </span>
                                 </button>
-
-    {openQuestionMenu === q && (
-      <div
-        className="ai-question-menu-dropdown"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          className="ai-question-menu-item"
-          onClick={() => {
-            setSelectedQuestion(q)
-            setOpenQuestionMenu(null)
-          }}
-        >
-          <FontAwesomeIcon
-            icon={faComments}
-            className="ai-question-menu-icon"
-          />
-          <span>View AI Responses</span>
-        </button>
-
-        <button
-          type="button"
-          className="ai-question-menu-item"
-          onClick={async (e) => {
-            e.stopPropagation()
-            await reTestVisibilityQuestion(q)
-          }}
-        >
-          <FontAwesomeIcon
-            icon={faRotateRight}
-            className="ai-question-menu-icon"
-          />
-          <span>
-            {isTested ? 'Re-test Question' : 'Test Question'}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          className="ai-question-menu-item"
-          onClick={() => {
-            setOpenQuestionMenu(null)
-          }}
-        >
-          <FontAwesomeIcon
-            icon={faCode}
-            className="ai-question-menu-icon"
-          />
-          <span>Edit Question</span>
-        </button>
-
-        <div className="ai-question-menu-separator"></div>
-
-        <button
-          type="button"
-          className="ai-question-menu-item ai-question-menu-delete"
-          onClick={() => {
-            setOpenQuestionMenu(null)
-          }}
-        >
-          <FontAwesomeIcon
-            icon={faXmark}
-            className="ai-question-menu-icon"
-          />
-          <span>Delete Question</span>
-        </button>
-      </div>
-    )}
   </div>
 </td>
                           </tr>
@@ -3145,6 +3107,85 @@ export default function AIVisibility() {
           </div>
 
         </div>
+
+      {openQuestionMenu && questionMenuPos && createPortal(
+        <div
+          className="ai-question-menu-dropdown"
+          style={{ top: questionMenuPos.top, left: questionMenuPos.left }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            className="ai-question-menu-item"
+            onClick={() => {
+              setSelectedQuestion(openQuestionMenu)
+              setOpenQuestionMenu(null)
+              setQuestionMenuPos(null)
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faComments}
+              className="ai-question-menu-icon"
+            />
+            <span>View AI Responses</span>
+          </button>
+
+          <button
+            type="button"
+            className="ai-question-menu-item"
+            onClick={async (e) => {
+              e.stopPropagation()
+              const q = openQuestionMenu
+              setOpenQuestionMenu(null)
+              setQuestionMenuPos(null)
+              await reTestVisibilityQuestion(q)
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faRotateRight}
+              className="ai-question-menu-icon"
+            />
+            <span>
+              {questionStatuses.some(s => s.question === openQuestionMenu)
+                ? 'Re-test Question'
+                : 'Test Question'}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className="ai-question-menu-item"
+            onClick={() => {
+              setOpenQuestionMenu(null)
+              setQuestionMenuPos(null)
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faCode}
+              className="ai-question-menu-icon"
+            />
+            <span>Edit Question</span>
+          </button>
+
+          <div className="ai-question-menu-separator"></div>
+
+          <button
+            type="button"
+            className="ai-question-menu-item ai-question-menu-delete"
+            onClick={() => {
+              setOpenQuestionMenu(null)
+              setQuestionMenuPos(null)
+            }}
+          >
+            <FontAwesomeIcon
+              icon={faXmark}
+              className="ai-question-menu-icon"
+            />
+            <span>Delete Question</span>
+          </button>
+        </div>,
+        document.body
+      )}
 
     </div>
   )

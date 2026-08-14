@@ -71,21 +71,43 @@ function findBrandRank(top10, siteName) {
   return hit ? hit.rank : null; // null = not mentioned at all
 }
 
+function extractEngineError(err) {
+  const apiMsg =
+    err?.error?.error?.message ||
+    err?.error?.message ||
+    err?.response?.data?.error?.message ||
+    err?.message ||
+    String(err)
+  return String(apiMsg).slice(0, 300)
+}
+
 async function testQuestionOnEngine(question, engine, siteName) {
-  const raw = await callAIEngine(engine, buildRankingPrompt(question));
-  let top10 = [];
   try {
-    const cleaned = raw.replace(/```json|```/g, '').trim();
-    top10 = JSON.parse(cleaned).top10 || [];
-  } catch (e) {
-    top10 = [];
+    const raw = await callAIEngine(engine, buildRankingPrompt(question));
+    let top10 = [];
+    try {
+      const cleaned = raw.replace(/```json|```/g, '').trim();
+      top10 = JSON.parse(cleaned).top10 || [];
+    } catch (e) {
+      top10 = [];
+    }
+    return {
+      engine,
+      top10,
+      brand_rank: findBrandRank(top10, siteName),
+      raw_response: raw,
+      ok: true,
+    };
+  } catch (err) {
+    return {
+      engine,
+      top10: [],
+      brand_rank: null,
+      raw_response: '',
+      ok: false,
+      error: extractEngineError(err),
+    };
   }
-  return {
-    engine,
-    top10,
-    brand_rank: findBrandRank(top10, siteName),
-    raw_response: raw,
-  };
 }
 
 async function testQuestionAcrossEngines(siteId, question, siteName, sessionId = null) {
@@ -93,7 +115,17 @@ async function testQuestionAcrossEngines(siteId, question, siteName, sessionId =
     ENGINES.map(engine => testQuestionOnEngine(question, engine, siteName))
   );
 
-  for (const r of results) {
+  const okResults = results.filter(r => r.ok);
+  if (!okResults.length) {
+    const details = results
+      .map(r => `${r.engine}: ${r.error || 'unknown error'}`)
+      .join(' | ');
+    const err = new Error(`All AI engines failed. ${details}`);
+    err.code = 'ALL_ENGINES_FAILED';
+    throw err;
+  }
+
+  for (const r of okResults) {
     await pool.query(
       `INSERT INTO ai_visibility_results (site_id, question, engine, rankings, brand_rank, raw_response, session_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,

@@ -554,7 +554,18 @@ router.post('/:siteId/ai-visibility/scan', auth, verifySite, async (req, res) =>
     res.json({ results })
   } catch (err) {
     console.error('ai-visibility/scan error:', err)
-    res.status(500).json({ error: 'Scan failed' })
+    const detail =
+      err?.error?.error?.message ||
+      err?.error?.message ||
+      err?.message ||
+      'Scan failed'
+    const isBilling =
+      /credit balance|billing|quota|insufficient/i.test(String(detail))
+    res.status(isBilling ? 402 : 500).json({
+      error: isBilling
+        ? 'AI provider credits are exhausted. Top up Anthropic (and check OpenAI) billing to run scans again.'
+        : String(detail).slice(0, 400),
+    })
   }
 })
 
