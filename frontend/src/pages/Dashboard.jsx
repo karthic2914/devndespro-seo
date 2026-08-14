@@ -18,7 +18,6 @@ import {
   faBullseye,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
-import { HealthScore, ActionItem, NextBestAction, ScoreGauge } from '../components/seo/SeoComponents'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -186,17 +185,37 @@ export default function Dashboard() {
   }
 
   const handleActionDone = async (action) => {
+    if (!action?.id) {
+      toast.error('Open Action Plan to mark this task fixed')
+      navigate(`/site/${siteId}/actions`)
+      return
+    }
     try {
       const { data } = await api.put(`/sites/${siteId}/actions/${action.id}`, { done: true })
+      const remaining = actions.filter(a => !a.done && a.id !== action.id)
       setActions(p => p.map(a => a.id === action.id ? { ...a, done: true } : a))
       applyHealthFromAction(data)
+      const nextUp = [...remaining].sort((a, b) => {
+        const rank = (impact) => {
+          const i = String(impact || '').toLowerCase()
+          if (i === 'critical') return 0
+          if (i === 'high') return 1
+          if (i === 'medium') return 2
+          if (i === 'low') return 3
+          return 4
+        }
+        return rank(a.impact) - rank(b.impact)
+      })[0]
       if (data?.healthDelta) {
         toast.success(
           `Marked fixed. Site Health +${data.healthDelta}` +
-            (data.health != null ? ` → ${data.health}` : '')
+            (data.health != null ? ` → ${data.health}` : '') +
+            (nextUp?.text ? `. Next: ${String(nextUp.text).slice(0, 70)}` : '')
         )
+      } else if (nextUp?.text) {
+        toast.success(`Marked fixed. Next: ${String(nextUp.text).slice(0, 70)}`)
       } else {
-        toast.success('Marked fixed')
+        toast.success('Marked fixed — Action Plan clear for now')
       }
     } catch {
       toast.error('Could not update action')
@@ -235,7 +254,16 @@ export default function Dashboard() {
   const auditPassCount = auditChecks.filter(c => c.status === 'pass').length
 
   const pendingActions = actions.filter(a => !a.done)
-  const nextStoredAction = pendingActions.find(a => String(a.impact || '').toLowerCase() === 'high') || pendingActions[0]
+  const impactRank = (impact) => {
+    const i = String(impact || '').toLowerCase()
+    if (i === 'critical') return 0
+    if (i === 'high') return 1
+    if (i === 'medium') return 2
+    if (i === 'low') return 3
+    return 4
+  }
+  const sortedPending = [...pendingActions].sort((a, b) => impactRank(a.impact) - impactRank(b.impact))
+  const nextStoredAction = sortedPending[0] || null
 
   const inferCategory = (text = '') => {
     const t = String(text).toLowerCase()
@@ -322,8 +350,8 @@ export default function Dashboard() {
   const nextActionCategory = nextAction?.category || inferCategory(nextAction?.text)
   const pendingCount = pendingActions.length || auditIssueCandidates.length
   const previewKeywords = keywords.slice(0, 5)
-  const previewActions = pendingActions.length
-    ? pendingActions.slice(0, 3)
+  const previewActions = sortedPending.length
+    ? sortedPending.slice(0, 4)
     : auditIssueCandidates.slice(0, 3)
 
   const toNum = (v, fallback = 0) => {
@@ -692,19 +720,6 @@ export default function Dashboard() {
 
       <div style={{ width: '100%', padding: '1.25rem 1rem 1.5rem' }}>
 
-        {/* Next Best Action banner */}
-        {nextAction && (
-          <div style={{ marginBottom: '1.5rem' }}>
-            <NextBestAction
-              action={nextAction.text}
-              impact={nextAction.impact}
-              onDone={() => handleActionDone(nextAction)}
-              onSkip={() => handleActionSkip(nextAction)}
-            />
-          </div>
-        )}
-
-
         <style>{`
           @media (max-width: 1050px) {
             .overview-work-grid {
@@ -718,7 +733,7 @@ export default function Dashboard() {
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
 
-        {/* Decision Snapshot */}
+        {/* Next Best Move */}
         <Card
           padding="0"
           style={{
@@ -817,22 +832,40 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleNextMoveClick}
-              style={{
-                minWidth: 118,
-                height: 36,
-                background: 'transparent',
-                color: '#34D399',
-                border: '1px solid #34D399',
-                fontWeight: 750,
-              }}
-            >
-              {nextMoveButtonLabel}
-              <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 7 }} />
-            </Button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+              {nextAction?.id ? (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleActionSkip(nextAction)}
+                  style={{
+                    height: 36,
+                    background: 'transparent',
+                    color: '#94A3B8',
+                    border: '1px solid #334155',
+                    fontWeight: 650,
+                  }}
+                >
+                  Skip
+                </Button>
+              ) : null}
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handleNextMoveClick}
+                style={{
+                  minWidth: 118,
+                  height: 36,
+                  background: 'transparent',
+                  color: '#34D399',
+                  border: '1px solid #34D399',
+                  fontWeight: 750,
+                }}
+              >
+                {nextMoveButtonLabel}
+                <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 7 }} />
+              </Button>
+            </div>
           </div>
         </Card>
 

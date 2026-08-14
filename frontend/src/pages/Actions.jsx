@@ -92,9 +92,19 @@ export default function Actions() {
     }
   }
 
-  const done = actions.filter(a => a.done).length
-  const pending = actions.filter(a => !a.done)
+  const pending = [...actions.filter(a => !a.done)].sort((a, b) => {
+    const rank = (impact) => {
+      const i = String(impact || '').toLowerCase()
+      if (i === 'critical') return 0
+      if (i === 'high') return 1
+      if (i === 'medium') return 2
+      if (i === 'low') return 3
+      return 4
+    }
+    return rank(a.impact) - rank(b.impact)
+  })
   const completed = actions.filter(a => a.done)
+  const done = completed.length
 
   return (
     <div className="fade-in page-content">
