@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -10,6 +10,7 @@ import {
   Legend,
 } from 'recharts'
 import { BrandFavicon } from './SiteFavicon'
+import api from '../utils/api'
 
 function domainOf(b) {
   const raw = b.source_domain || b.name || b.url || ''
@@ -149,15 +150,60 @@ function DrPill({ dr }) {
   )
 }
 
-export default function BacklinksInsightPanels({ backlinks = [], onFilterDomain, onFilterAnchor }) {
+export default function BacklinksInsightPanels({
+  siteId,
+  backlinks = [],
+  onFilterDomain,
+  onFilterAnchor,
+}) {
   const [rangeMonths, setRangeMonths] = useState(12)
   const [domainLimit, setDomainLimit] = useState(5)
   const [anchorLimit, setAnchorLimit] = useState(5)
+  const [growthLive, setGrowthLive] = useState(null)
+  const [growthLoading, setGrowthLoading] = useState(false)
+  const [growthMeta, setGrowthMeta] = useState({ source: 'tracked' })
 
-  const growth = useMemo(
+  const localGrowth = useMemo(
     () => buildGrowth(backlinks, rangeMonths),
     [backlinks, rangeMonths]
   )
+
+  useEffect(() => {
+    if (!siteId) {
+      setGrowthLive(null)
+      setGrowthMeta({ source: 'tracked' })
+      return undefined
+    }
+
+    let cancelled = false
+    setGrowthLoading(true)
+
+    api
+      .get(`/sites/${siteId}/backlinks/growth`, { params: { months: rangeMonths } })
+      .then(({ data }) => {
+        if (cancelled) return
+        const series = Array.isArray(data?.series) ? data.series : []
+        setGrowthLive(series.length ? series : null)
+        setGrowthMeta({
+          source: data?.source || 'tracked',
+          cached: !!data?.cached,
+          warning: data?.warning || null,
+          cost: data?.cost || 0,
+        })
+      })
+      .catch(() => {
+        if (cancelled) return
+        setGrowthLive(null)
+        setGrowthMeta({ source: 'tracked' })
+      })
+      .finally(() => {
+        if (!cancelled) setGrowthLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [siteId, rangeMonths])
+
+  const growth = growthLive?.length ? growthLive : localGrowth
   const domains = useMemo(
     () => topReferringDomains(backlinks, domainLimit),
     [backlinks, domainLimit]
@@ -176,6 +222,35 @@ export default function BacklinksInsightPanels({ backlinks = [], onFilterDomain,
     boxSizing: 'border-box',
   }
 
+  const sourceLabel =
+    growthMeta.source === 'dataforseo'
+      ? (growthMeta.cached ? 'Live · DataForSEO (cached)' : 'Live · DataForSEO')
+      : 'From tracked links'
+
+  const refreshGrowth = () => {
+    if (!siteId || growthLoading) return
+    setGrowthLoading(true)
+    api
+      .get(`/sites/${siteId}/backlinks/growth`, {
+        params: { months: rangeMonths, refresh: 1 },
+      })
+      .then(({ data }) => {
+        const series = Array.isArray(data?.series) ? data.series : []
+        setGrowthLive(series.length ? series : null)
+        setGrowthMeta({
+          source: data?.source || 'tracked',
+          cached: !!data?.cached,
+          warning: data?.warning || null,
+          cost: data?.cost || 0,
+        })
+      })
+      .catch(() => {
+        setGrowthLive(null)
+        setGrowthMeta({ source: 'tracked' })
+      })
+      .finally(() => setGrowthLoading(false))
+  }
+
   return (
     <div
       className="bl-insight-grid"
@@ -188,28 +263,71 @@ export default function BacklinksInsightPanels({ backlinks = [], onFilterDomain,
     >
       <div style={panelStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Backlink growth</div>
-          <select
-            value={rangeMonths}
-            onChange={e => setRangeMonths(Number(e.target.value))}
-            style={{
-              height: 30,
-              border: '1px solid #E5E7EB',
-              borderRadius: 7,
-              fontSize: 11,
-              fontWeight: 650,
-              color: '#475569',
-              background: '#fff',
-              padding: '0 8px',
-            }}
-          >
-            <option value={6}>6 months</option>
-            <option value={12}>12 months</option>
-            <option value={24}>24 months</option>
-          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Backlink growth</div>
+            <span
+              title={growthMeta.warning || undefined}
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: growthMeta.source === 'dataforseo' ? '#15803d' : '#64748B',
+                background: growthMeta.source === 'dataforseo' ? '#dcfce7' : '#F1F5F9',
+                borderRadius: 999,
+                padding: '2px 8px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {growthLoading ? 'Loading…' : sourceLabel}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <select
+              value={rangeMonths}
+              onChange={e => setRangeMonths(Number(e.target.value))}
+              style={{
+                height: 30,
+                border: '1px solid #E5E7EB',
+                borderRadius: 7,
+                fontSize: 11,
+                fontWeight: 650,
+                color: '#475569',
+                background: '#fff',
+                padding: '0 8px',
+              }}
+            >
+              <option value={6}>6 months</option>
+              <option value={12}>12 months</option>
+              <option value={24}>24 months</option>
+            </select>
+            {siteId && (
+              <button
+                type="button"
+                onClick={refreshGrowth}
+                disabled={growthLoading}
+                title="Refresh live DataForSEO history"
+                style={{
+                  height: 30,
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 7,
+                  background: '#fff',
+                  color: '#475569',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  padding: '0 10px',
+                  cursor: growthLoading ? 'wait' : 'pointer',
+                }}
+              >
+                Refresh
+              </button>
+            )}
+          </div>
         </div>
         <div style={{ width: '100%', height: 220 }}>
-          {growth.every(p => p.backlinks === 0) ? (
+          {growthLoading && !growth?.length ? (
+            <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: '#94A3B8', fontSize: 12 }}>
+              Loading live growth…
+            </div>
+          ) : growth.every(p => p.backlinks === 0) ? (
             <div style={{ height: '100%', display: 'grid', placeItems: 'center', color: '#94A3B8', fontSize: 12 }}>
               No dated backlink history yet.
             </div>

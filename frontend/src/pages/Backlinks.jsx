@@ -560,6 +560,7 @@ export default function Backlinks() {
 
       {!loading && backlinks.length > 0 && (
         <BacklinksInsightPanels
+          siteId={siteId}
           backlinks={backlinks}
           onFilterDomain={(domain) => {
             setTableSearchSeed(domain)

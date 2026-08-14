@@ -4,7 +4,11 @@ const { auth, verifySite } = require('../middleware')
 const { firstValueByKey, parseCsvRows, toInt } = require('../utils/helpers')
 const { analyzeBacklinkLandscape } = require('../utils/backlinkEngine')
 const { verifyBacklink } = require('../utils/backlinkVerifier')
-const { fetchDataForSeoBacklinks } = require('../utils/dataForSeoBacklinks')
+const {
+  fetchDataForSeoBacklinks,
+  fetchDataForSeoTimeseries,
+  normalizeTarget,
+} = require('../utils/dataForSeoBacklinks')
 const { calculateBacklinkQuality, calculateAuthority } = require('../utils/backlinkScoreEngine')
 const { discoverCandidates, verifyCandidateBatch } = require('../utils/backlinkDiscoveryEngine')
 const { crawlLinkGraph, normalizeHost: normalizeIndexHost } = require('../utils/webLinkCrawler')
@@ -113,6 +117,19 @@ const ensureBacklinkIntelligenceSchema = async () => {
       site_id,
       lower(source_domain),
       lower(COALESCE(source_url, ''))
+    )
+  `)
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS backlink_growth_cache (
+      site_id BIGINT NOT NULL REFERENCES sites(id) ON DELETE CASCADE,
+      months INTEGER NOT NULL,
+      source TEXT NOT NULL DEFAULT 'tracked',
+      target TEXT DEFAULT '',
+      series JSONB NOT NULL DEFAULT '[]'::jsonb,
+      cost NUMERIC DEFAULT 0,
+      fetched_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (site_id, months)
     )
   `)
 
@@ -1856,6 +1873,192 @@ router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {
     opportunities: Number(opps.rows[0]?.opportunities || 0),
   })
 })
+
+const monthKeyFromDate = (value) => {
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return null
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+}
+
+const monthLabelFromKey = (key) => {
+  const [y, m] = String(key).split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', {
+    month: 'short',
+    year: '2-digit',
+    timeZone: 'UTC',
+  })
+}
+
+const buildMonthKeys = (months) => {
+  const now = new Date()
+  const keys = []
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1))
+    keys.push(`${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`)
+  }
+  return keys
+}
+
+const buildTrackedGrowthSeries = async (siteId, months) => {
+  const keys = buildMonthKeys(months)
+  const { rows } = await pool.query(
+    `SELECT
+       COALESCE(provider_first_seen, first_seen, created_at, verified_at, last_seen) AS seen_at,
+       COALESCE(NULLIF(source_domain, ''), NULLIF(name, '')) AS domain
+     FROM backlinks
+     WHERE site_id = $1
+       AND COALESCE(source, '') <> 'domain'`,
+    [siteId]
+  )
+
+  const events = rows
+    .map((r) => ({
+      key: monthKeyFromDate(r.seen_at),
+      domain: String(r.domain || '').replace(/^www\./i, '').toLowerCase() || 'unknown',
+    }))
+    .filter((e) => e.key)
+
+  return keys.map((key) => {
+    const upTo = events.filter((e) => e.key <= key)
+    const domains = new Set(upTo.map((e) => e.domain))
+    return {
+      key,
+      label: monthLabelFromKey(key),
+      backlinks: upTo.length,
+      referringDomains: domains.size,
+    }
+  })
+}
+
+const decorateSeries = (series) =>
+  (Array.isArray(series) ? series : []).map((point) => ({
+    ...point,
+    label: point.label || monthLabelFromKey(point.key),
+  }))
+
+// Live growth chart: DataForSEO timeseries first, tracked DB fallback.
+// Cached 24h to avoid re-billing on every page load (?refresh=1 to bypass).
+router.get('/:siteId/backlinks/growth', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const months = Math.max(1, Math.min(36, Number(req.query.months || 12)))
+  const forceRefresh = String(req.query.refresh || '') === '1'
+
+  try {
+    if (!forceRefresh) {
+      const cached = await pool.query(
+        `SELECT source, target, series, cost, fetched_at
+         FROM backlink_growth_cache
+         WHERE site_id = $1
+           AND months = $2
+           AND fetched_at > NOW() - INTERVAL '24 hours'`,
+        [req.siteId, months]
+      )
+      if (cached.rows[0]) {
+        return res.json({
+          source: cached.rows[0].source,
+          target: cached.rows[0].target || null,
+          months,
+          cached: true,
+          fetchedAt: cached.rows[0].fetched_at,
+          cost: Number(cached.rows[0].cost || 0),
+          series: decorateSeries(cached.rows[0].series),
+        })
+      }
+    }
+
+    const siteResult = await pool.query(
+      'SELECT url FROM sites WHERE id = $1',
+      [req.siteId]
+    )
+    const siteUrl = siteResult.rows[0]?.url || ''
+    let source = 'tracked'
+    let target = siteUrl ? normalizeTarget(siteUrl) : ''
+    let series = []
+    let cost = 0
+    let error = null
+
+    if (siteUrl) {
+      try {
+        const live = await fetchDataForSeoTimeseries({
+          target: siteUrl,
+          months,
+        })
+        if (live.series?.length) {
+          source = 'dataforseo'
+          target = live.target
+          cost = Number(live.cost || 0)
+          // Align to requested month window (fill missing months with last known / 0)
+          const keys = buildMonthKeys(months)
+          const byKey = new Map(live.series.map((p) => [p.key, p]))
+          let lastBacklinks = 0
+          let lastDomains = 0
+          series = keys.map((key) => {
+            const hit = byKey.get(key)
+            if (hit) {
+              lastBacklinks = hit.backlinks
+              lastDomains = hit.referringDomains
+            }
+            return {
+              key,
+              label: monthLabelFromKey(key),
+              backlinks: hit ? hit.backlinks : lastBacklinks,
+              referringDomains: hit ? hit.referringDomains : lastDomains,
+              rank: hit?.rank || 0,
+            }
+          })
+        }
+      } catch (err) {
+        error = err.message || 'DataForSEO growth unavailable'
+        console.warn('backlinks/growth DataForSEO fallback:', error)
+      }
+    }
+
+    if (!series.length) {
+      source = 'tracked'
+      series = await buildTrackedGrowthSeries(req.siteId, months)
+    }
+
+    await pool.query(
+      `INSERT INTO backlink_growth_cache (site_id, months, source, target, series, cost, fetched_at)
+       VALUES ($1, $2, $3, $4, $5::jsonb, $6, NOW())
+       ON CONFLICT (site_id, months) DO UPDATE SET
+         source = EXCLUDED.source,
+         target = EXCLUDED.target,
+         series = EXCLUDED.series,
+         cost = EXCLUDED.cost,
+         fetched_at = NOW()`,
+      [req.siteId, months, source, target || '', JSON.stringify(series), cost]
+    )
+
+    res.json({
+      source,
+      target: target || null,
+      months,
+      cached: false,
+      fetchedAt: new Date().toISOString(),
+      cost,
+      warning: error || undefined,
+      series: decorateSeries(series),
+    })
+  } catch (err) {
+    console.error('backlinks/growth error:', err)
+    try {
+      const series = await buildTrackedGrowthSeries(req.siteId, months)
+      return res.json({
+        source: 'tracked',
+        target: null,
+        months,
+        cached: false,
+        series: decorateSeries(series),
+        warning: err.message || 'Failed to load live growth',
+      })
+    } catch (fallbackErr) {
+      res.status(500).json({ error: 'Failed to load backlink growth' })
+    }
+  }
+})
+
 router.post('/:siteId/backlinks/:id/verify', auth, verifySite, async (req, res) => {
   await ensureBacklinkIntelligenceSchema()
 

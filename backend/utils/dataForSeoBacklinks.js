@@ -258,7 +258,131 @@ const fetchDataForSeoBacklinks = async ({
   }
 }
 
+const TIMESERIES_ENDPOINT =
+  'https://api.dataforseo.com/v3/backlinks/timeseries_summary/live'
+
+const formatYmd = (date) => {
+  const d = date instanceof Date ? date : new Date(date)
+  if (Number.isNaN(d.getTime())) return null
+  return d.toISOString().slice(0, 10)
+}
+
+/**
+ * Live monthly backlink / referring-domain history from DataForSEO.
+ * Docs: POST /v3/backlinks/timeseries_summary/live
+ */
+const fetchDataForSeoTimeseries = async ({
+  target,
+  months = 12,
+  dateFrom,
+  dateTo,
+}) => {
+  const credentials = getCredentials()
+
+  if (!credentials.login || !credentials.password) {
+    throw new Error(
+      'DataForSEO credentials are missing. Set DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD in the backend environment.'
+    )
+  }
+
+  const normalizedTarget = normalizeTarget(target)
+  if (!normalizedTarget) {
+    throw new Error('Invalid backlink target')
+  }
+
+  const safeMonths = Math.max(1, Math.min(36, Number(months || 12)))
+  const to = dateTo ? new Date(dateTo) : new Date()
+  const from = dateFrom
+    ? new Date(dateFrom)
+    : new Date(to.getFullYear(), to.getMonth() - (safeMonths - 1), 1)
+
+  const auth = Buffer.from(
+    `${credentials.login}:${credentials.password}`
+  ).toString('base64')
+
+  const response = await fetch(TIMESERIES_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${auth}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify([
+      {
+        target: normalizedTarget,
+        date_from: formatYmd(from),
+        date_to: formatYmd(to),
+        group_range: 'month',
+        include_subdomains: true,
+        rank_scale: 'one_hundred',
+        tag: 'devndespro-backlink-growth',
+      },
+    ]),
+  })
+
+  const text = await response.text()
+  let payload
+  try {
+    payload = JSON.parse(text)
+  } catch {
+    throw new Error(
+      `DataForSEO returned invalid JSON (HTTP ${response.status})`
+    )
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      `DataForSEO HTTP ${response.status}: ` +
+      String(payload?.status_message || text || 'Request failed').slice(0, 300)
+    )
+  }
+
+  const task = payload?.tasks?.[0]
+  if (!task) {
+    throw new Error('DataForSEO response contained no task')
+  }
+  if (Number(task.status_code || 0) >= 40000) {
+    throw new Error(
+      `DataForSEO task failed: ${task.status_message || task.status_code}`
+    )
+  }
+
+  const result = task?.result?.[0] || {}
+  const items = Array.isArray(result?.items) ? result.items : []
+
+  const series = items
+    .map((item) => {
+      const date = parseDate(item?.date) || item?.date
+      const d = date ? new Date(date) : null
+      if (!d || Number.isNaN(d.getTime())) return null
+      const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`
+      return {
+        key,
+        date: formatYmd(d),
+        backlinks: Number(item?.backlinks || 0),
+        referringDomains: Number(
+          item?.referring_main_domains ||
+          item?.referring_domains ||
+          0
+        ),
+        rank: Number(item?.rank || 0),
+      }
+    })
+    .filter(Boolean)
+    .sort((a, b) => String(a.key).localeCompare(String(b.key)))
+
+  return {
+    provider: 'dataforseo',
+    target: normalizedTarget,
+    dateFrom: formatYmd(from),
+    dateTo: formatYmd(to),
+    cost: Number(task?.cost || 0),
+    series,
+  }
+}
+
 module.exports = {
   fetchDataForSeoBacklinks,
+  fetchDataForSeoTimeseries,
   normalizeTarget,
 }
