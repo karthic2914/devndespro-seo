@@ -10,12 +10,14 @@ function scrollToId(id) {
 /**
  * Consistent process guide for every major page.
  * Steps can scroll in-page (sectionId) or navigate (path).
+ * compact: denser chips for sticky headers beside the page title.
  */
 export default function PageProcessGuide({
   title = 'How this page works',
   tip = 'Click a step to go there. Follow the order the first time.',
   steps = [],
   style,
+  compact = false,
 }) {
   const navigate = useNavigate()
   const { siteId } = useParams()
@@ -37,6 +39,31 @@ export default function PageProcessGuide({
     },
   }))
 
+  const body = (
+    <>
+      <ProcessSteps title={title} steps={mapped} compact={compact} style={{ marginBottom: 0 }} />
+      {!compact && tip ? (
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 10, lineHeight: 1.45 }}>
+          {tip}
+        </div>
+      ) : null}
+    </>
+  )
+
+  if (compact) {
+    return (
+      <div
+        style={{
+          minWidth: 0,
+          flex: 1,
+          ...style,
+        }}
+      >
+        {body}
+      </div>
+    )
+  }
+
   return (
     <Card
       padding="1rem 1.25rem"
@@ -47,12 +74,7 @@ export default function PageProcessGuide({
         ...style,
       }}
     >
-      <ProcessSteps title={title} steps={mapped} style={{ marginBottom: 0 }} />
-      {tip ? (
-        <div style={{ fontSize: 11, color: T.muted, marginTop: 10, lineHeight: 1.45 }}>
-          {tip}
-        </div>
-      ) : null}
+      {body}
     </Card>
   )
 }

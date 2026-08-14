@@ -189,6 +189,7 @@
     const [discovery, setDiscovery] = useState(null)
     const [discoveryOpen, setDiscoveryOpen] = useState(false)
     const [discoverRunning, setDiscoverRunning] = useState(false)
+    const [scrollFlowId, setScrollFlowId] = useState(null)
     const [trackedSearch, setTrackedSearch] = useState('')
     const [trackedTier, setTrackedTier] = useState('all')
     const [trackedShowAll, setTrackedShowAll] = useState(false)
@@ -257,6 +258,41 @@
         }
       }).catch(() => {})
     }, [siteId])
+
+    // Sticky flow: highlight the step whose section is in view while scrolling
+    useEffect(() => {
+      const sectionIds = [...new Set(KEYWORDS_PAGE_FLOW.map((s) => s.sectionId).filter(Boolean))]
+      const root = document.querySelector('.app-main')
+      if (!root || !sectionIds.length) return undefined
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+          const top = visible[0]
+          if (!top?.target?.id) return
+          const sectionId = top.target.id
+          const matches = KEYWORDS_PAGE_FLOW.filter((s) => s.sectionId === sectionId)
+          if (!matches.length) return
+          // Shared section (track + rank): highlight last matching step id (rank)
+          if (matches.length === 1) setScrollFlowId(matches[0].id)
+          else setScrollFlowId(matches[matches.length - 1].id)
+        },
+        {
+          root,
+          rootMargin: '-12% 0px -55% 0px',
+          threshold: [0.05, 0.2, 0.4, 0.6],
+        }
+      )
+
+      sectionIds.forEach((id) => {
+        const el = document.getElementById(id)
+        if (el) observer.observe(el)
+      })
+
+      return () => observer.disconnect()
+    }, [loading, discovery, keywords.length])
 
     const runAutoDiscover = async () => {
       console.log('[Keywords] Rediscover starting', { siteId })
@@ -748,13 +784,70 @@
 
     return (
       <div className="fade-in">
-        {/* Fixed header */}
-        <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', margin: 0 }}>Keywords</h1>
-            <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Track your target keyword positions</p>
+        {/* Sticky title + process flow — stays visible while scrolling sections */}
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          background: '#fff',
+          borderBottom: `1px solid ${T.border}`,
+          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
+        }}>
+          <div style={{
+            padding: '0.85rem 1.5rem 0.65rem',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            gap: 16,
+            flexWrap: 'wrap',
+          }}>
+            <div style={{ flex: '0 0 auto', minWidth: 140, paddingTop: 2 }}>
+              <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', margin: 0 }}>Keywords</h1>
+              <p style={{ fontSize: 12, color: T.muted, marginTop: 2, marginBottom: 0 }}>Track your target keyword positions</p>
+            </div>
+            {(() => {
+              const hasResearch = Boolean(dfsMatching.length || dfsRelated.length || dfsQuestions.length)
+              const hasDiscovery = Boolean(discovery)
+              const hasTracked = keywords.length > 0
+              const hasRanks = trackedCoverage.checked > 0
+              const hasFound = hasDiscovery || hasResearch || hasTracked
+              const next =
+                !hasFound ? 'gap'
+                  : !hasDiscovery ? 'discover'
+                    : !hasResearch ? 'research'
+                      : !hasTracked ? 'track'
+                        : !hasRanks ? 'rank'
+                          : null
+              const doneMap = {
+                gap: hasFound,
+                discover: hasDiscovery,
+                research: hasResearch,
+                track: hasTracked,
+                rank: hasRanks,
+              }
+              const activeId = scrollFlowId || next
+              return (
+                <PageProcessGuide
+                  compact
+                  title="Process"
+                  tip={null}
+                  steps={KEYWORDS_PAGE_FLOW.map((s) => ({
+                    ...s,
+                    done: Boolean(doneMap[s.id]),
+                    active: activeId === s.id,
+                  }))}
+                  style={{ marginBottom: 0, maxWidth: '100%' }}
+                />
+              )
+            })()}
           </div>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <div style={{
+            padding: '0 1.5rem 0.75rem',
+            display: 'flex',
+            gap: 8,
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+          }}>
             <button onClick={runAutoDiscover} disabled={discoverRunning} style={{
               background: T.orangeDim, border: `1px solid ${T.orange}33`, borderRadius: 8,
               padding: '7px 14px', fontSize: 12, fontWeight: 700, color: T.orange,
@@ -785,45 +878,11 @@
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          {(() => {
-            const hasResearch = Boolean(dfsMatching.length || dfsRelated.length || dfsQuestions.length)
-            const hasDiscovery = Boolean(discovery)
-            const hasTracked = keywords.length > 0
-            const hasRanks = trackedCoverage.checked > 0
-            const hasFound = hasDiscovery || hasResearch || hasTracked
-            const next =
-              !hasFound ? 'gap'
-                : !hasDiscovery ? 'discover'
-                  : !hasResearch ? 'research'
-                    : !hasTracked ? 'track'
-                      : !hasRanks ? 'rank'
-                        : null
-            const doneMap = {
-              gap: hasFound,
-              discover: hasDiscovery,
-              research: hasResearch,
-              track: hasTracked,
-              rank: hasRanks,
-            }
-            return (
-              <PageProcessGuide
-                title="Keywords process — follow these steps"
-                tip="Same pattern as Overview / Backlinks / Audit: click a step to jump. Do them in order the first time."
-                steps={KEYWORDS_PAGE_FLOW.map((s) => ({
-                  ...s,
-                  done: Boolean(doneMap[s.id]),
-                  active: next === s.id,
-                }))}
-                style={{ marginBottom: 0 }}
-              />
-            )
-          })()}
-
-          <div id="kw-section-gap">
+          <div id="kw-section-gap" style={{ scrollMarginTop: 140 }}>
             <KeywordGapPanel siteId={siteId} onAdded={load} />
           </div>
 
-          <div id="kw-section-discovery">
+          <div id="kw-section-discovery" style={{ scrollMarginTop: 140 }}>
           {!discovery && (
             <Card padding="1rem 1.25rem">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
@@ -957,7 +1016,7 @@
           </div>
 
           {/* DataForSEO Keyword Research Panel */}
-          <div id="kw-section-research">
+          <div id="kw-section-research" style={{ scrollMarginTop: 140 }}>
           <Card padding="1.25rem">
             <CollapsibleSection
               title="Keyword Research"
@@ -1437,7 +1496,7 @@
           </Card>
           </div>
 
-          <div id="kw-section-tracked">
+          <div id="kw-section-tracked" style={{ scrollMarginTop: 140 }}>
           {/* Manual add + AI suggestions */}
           <Card padding="1.25rem">
             <SectionLabel>Add keyword manually</SectionLabel>
