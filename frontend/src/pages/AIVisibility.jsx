@@ -411,8 +411,15 @@ export default function AIVisibility() {
   const isCustomTab = selectedProduct === 'Custom Questions'
 
   const allTabs = ['All Questions', ...combinedQuestionSets.map(s => s.product)]
-  const visibleTabs = allTabs.slice(0, 5)
-  const overflowTabs = allTabs.slice(5)
+  const visibleTabs = allTabs.slice(0, 4)
+  const overflowTabs = allTabs.slice(4)
+
+  function chipLabel(tab) {
+    if (tab === 'All Questions') return `All (${flatQuestions.length})`
+    const count = combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0
+    const short = tab.length > 24 ? `${tab.slice(0, 22)}…` : tab
+    return `${short} (${count})`
+  }
 
   const visibleQuestionSets = selectedProduct === 'All Questions'
     ? combinedQuestionSets
@@ -938,12 +945,11 @@ export default function AIVisibility() {
 
         .ai-questions-toolbar {
           display: flex;
-          margin-top: 16px;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          align-items: stretch;
           gap: 10px;
+          margin-top: 16px;
           margin-bottom: 10px;
-          flex-wrap: wrap;
           width: 100%;
           max-width: 100%;
           min-width: 0;
@@ -953,17 +959,20 @@ export default function AIVisibility() {
         .ai-questions-chips {
           display: flex;
           align-items: center;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           gap: 8px;
           min-width: 0;
-          flex: 1 1 280px;
+          width: 100%;
+          overflow: hidden;
         }
 
         .ai-questions-actions {
           display: flex;
           align-items: center;
+          justify-content: flex-end;
           gap: 8px;
-          margin-left: auto;
+          width: 100%;
+          margin-left: 0;
           flex: 0 0 auto;
         }
 
@@ -977,6 +986,10 @@ export default function AIVisibility() {
           font-weight: 600;
           cursor: pointer;
           white-space: nowrap;
+          max-width: 200px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex: 0 1 auto;
         }
 
         .ai-question-chip.active {
@@ -987,7 +1000,7 @@ export default function AIVisibility() {
 
         .ai-question-search {
           margin-left: 0;
-          width: 200px;
+          width: 220px;
           min-width: 160px;
           height: 32px;
           border: 1px solid #E5E7EB;
@@ -2483,29 +2496,32 @@ export default function AIVisibility() {
 
       <div style={{ marginBottom: 14 }}>
 
-          {/* Product / question filters */}
+          {/* Row 1: category chips | Row 2: search + actions */}
           <div className="ai-questions-toolbar">
             <div className="ai-questions-chips">
             {visibleTabs.map(tab => (
               <button
                 key={tab}
+                type="button"
+                title={tab === 'All Questions' ? 'All Questions' : tab}
                 className={'ai-question-chip ' + (selectedProduct === tab ? 'active' : '')}
                 onClick={() => setSelectedProduct(tab)}
               >
-                {tab === 'All Questions'
-                  ? `All (${flatQuestions.length})`
-                  : `${tab} (${combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0})`
-                }
+                {chipLabel(tab)}
               </button>
             ))}
 
             {overflowTabs.length > 0 && (
-              <div ref={moreTabsRef} style={{ position: 'relative' }}>
+              <div ref={moreTabsRef} style={{ position: 'relative', flex: '0 0 auto' }}>
                 <button
+                  type="button"
                   className={'ai-question-chip ' + (overflowTabs.includes(selectedProduct) ? 'active' : '')}
                   onClick={() => setShowMoreTabs(v => !v)}
+                  style={{ maxWidth: 'none' }}
                 >
-                  More ({overflowTabs.length})
+                  {overflowTabs.includes(selectedProduct)
+                    ? chipLabel(selectedProduct)
+                    : `More (${overflowTabs.length})`}
                   <FontAwesomeIcon icon={faChevronDown} style={{ marginLeft: 5, fontSize: 9 }} />
                 </button>
 
@@ -2514,8 +2530,9 @@ export default function AIVisibility() {
                     style={{
                       position: 'absolute',
                       top: 'calc(100% + 5px)',
-                      right: 0,
-                      minWidth: 200,
+                      left: 0,
+                      minWidth: 240,
+                      maxWidth: 320,
                       zIndex: 100,
                       background: '#fff',
                       border: '1px solid #E5E7EB',
@@ -2526,6 +2543,7 @@ export default function AIVisibility() {
                     {overflowTabs.map(tab => (
                       <button
                         key={tab}
+                        type="button"
                         onClick={() => {
                           setSelectedProduct(tab)
                           setShowMoreTabs(false)
@@ -2542,7 +2560,9 @@ export default function AIVisibility() {
                           cursor: 'pointer',
                         }}
                       >
-                        {tab}
+                        {tab === 'All Questions'
+                          ? `All (${flatQuestions.length})`
+                          : `${tab} (${combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0})`}
                       </button>
                     ))}
                   </div>
@@ -2559,11 +2579,12 @@ export default function AIVisibility() {
               placeholder="Search questions..."
             />
 
-            <button className="ai-question-filter-button">
+            <button type="button" className="ai-question-filter-button">
               Filters
             </button>
 
             <button
+              type="button"
               className="ai-question-add-button"
               onClick={() => setAddingQuestion(true)}
               disabled={addingQuestion}
