@@ -27,9 +27,11 @@ function priorityColors(priority) {
 const cardStyle = {
   background: '#fff',
   border: '1px solid #E5E7EB',
-  borderRadius: 12,
+  borderRadius: 14,
   padding: 16,
   boxSizing: 'border-box',
+  boxShadow: '0 1px 2px rgba(15,23,42,.04)',
+  transition: 'box-shadow .2s ease, transform .15s ease, border-color .15s ease',
 }
 
 const titleStyle = {
@@ -724,7 +726,7 @@ export function VisibilityResultsCard({
 
 // ---------- Overview: KPI cards row ----------
 const KPI_META = {
-  overallScore: { label: 'Visibility Score', icon: faWandMagicSparkles, color: '#7C3AED', bg: '#F5F3FF' },
+  overallScore: { label: 'Visibility Score', icon: faWandMagicSparkles, color: '#F97316', bg: '#FFF7ED' },
   mentionRate: { label: 'Mention Rate', icon: faArrowRight, color: '#16A34A', bg: '#F0FDF4' },
   averageRank: { label: 'Average Position (Top 10)', icon: faHistory, color: '#2563EB', bg: '#EFF6FF' },
   enginesInTop10: { label: 'Engines in Top 10', icon: faSquareCheck, color: '#D97706', bg: '#FFFBEB' },
@@ -775,7 +777,7 @@ export function VisibilityKPICards({
     : 0
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 10, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
+    <div className="ai-vis-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
       {(loading || !summary) ? (
         <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
           <div style={emptyStyle}>{loading ? 'Loading overview...' : 'No visibility scan yet. Run a scan below to populate this.'}</div>
@@ -786,15 +788,32 @@ export function VisibilityKPICards({
         const positive = hasDelta && c.delta > 0
         const negative = hasDelta && c.delta < 0
         return (
-          <div key={c.key} style={cardStyle}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-              <div style={{ width: 26, height: 26, borderRadius: 6, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <FontAwesomeIcon icon={meta.icon} style={{ color: meta.color, fontSize: 11 }} />
+          <div
+            key={c.key}
+            className="ai-vis-kpi-card"
+            style={{
+              ...cardStyle,
+              borderTop: `3px solid ${meta.color}`,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.boxShadow = '0 8px 22px rgba(15,23,42,.08)'
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.borderColor = '#FDBA74'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.boxShadow = cardStyle.boxShadow
+              e.currentTarget.style.transform = 'none'
+              e.currentTarget.style.borderColor = '#E5E7EB'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <FontAwesomeIcon icon={meta.icon} style={{ color: meta.color, fontSize: 12 }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>{meta.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>{meta.label}</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-              <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{c.value}</div>
+              <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em' }}>{c.value ?? 'N/A'}</div>
               {hasDelta && c.delta !== 0 && (
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: positive ? '#16A34A' : '#DC2626', display: 'flex', alignItems: 'center', gap: 2 }}>
                   <FontAwesomeIcon icon={faArrowRight} style={{ transform: positive ? 'rotate(-90deg)' : 'rotate(90deg)', fontSize: 9 }} />
@@ -802,28 +821,44 @@ export function VisibilityKPICards({
                 </span>
               )}
             </div>
-            <div style={{ fontSize: 9.5, color: '#9CA3AF', marginTop: 2 }}>{summary.comparisonLabel}</div>
+            <div style={{ fontSize: 9.5, color: '#94A3B8', marginTop: 4 }}>{summary.comparisonLabel}</div>
           </div>
         )
       })}
       {/* Questions Tested - real data (how many generated/custom questions
           have actually been scanned at least once), not a fake placeholder */}
-      <div style={cardStyle}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 26, height: 26, borderRadius: 6, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <FontAwesomeIcon icon={faListCheck} style={{ color: '#F97316', fontSize: 11 }} />
+      <div
+        className="ai-vis-kpi-card"
+        style={{
+          ...cardStyle,
+          borderTop: '3px solid #F97316',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.boxShadow = '0 8px 22px rgba(15,23,42,.08)'
+          e.currentTarget.style.transform = 'translateY(-2px)'
+          e.currentTarget.style.borderColor = '#FDBA74'
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.boxShadow = cardStyle.boxShadow
+          e.currentTarget.style.transform = 'none'
+          e.currentTarget.style.borderColor = '#E5E7EB'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FontAwesomeIcon icon={faListCheck} style={{ color: '#F97316', fontSize: 12 }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 600, color: '#374151' }}>Questions Tested</span>
+          <span style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>Questions Tested</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#111827' }}>{safeQuestionsTested} / {totalQuestions}</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em' }}>{safeQuestionsTested} / {totalQuestions}</div>
           {totalQuestions > 0 && (
             <span style={{ fontSize: 10.5, fontWeight: 700, color: '#16A34A' }}>{testedPct}%</span>
           )}
         </div>
         {totalQuestions > 0 && (
-          <div style={{ background: '#F3F4F6', borderRadius: 3, height: 5, overflow: 'hidden', marginTop: 8 }}>
-            <div style={{ width: testedPct + '%', height: '100%', background: '#F97316', borderRadius: 3 }} />
+          <div style={{ background: '#F1F5F9', borderRadius: 99, height: 6, overflow: 'hidden', marginTop: 10 }}>
+            <div style={{ width: testedPct + '%', height: '100%', background: 'linear-gradient(90deg,#FF8A4C,#F97316)', borderRadius: 99, transition: 'width .4s ease' }} />
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faComments } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faComments, faBolt, faInbox } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
 import {
@@ -939,19 +939,160 @@ export default function AIVisibility() {
           width: 100%;
           max-width: min(1440px, 100%);
           margin: 0 auto;
-          padding: 18px 22px 28px;
+          padding: 18px 22px 32px;
           box-sizing: border-box;
           overflow-x: hidden;
+          position: relative;
+          animation: aiVisFadeIn .35s ease-out;
+        }
+        .ai-vis-page::before {
+          content: '';
+          position: absolute;
+          inset: 0 0 auto 0;
+          height: 220px;
+          background:
+            radial-gradient(ellipse 70% 80% at 0% 0%, rgba(255,107,43,.09), transparent 55%),
+            radial-gradient(ellipse 50% 60% at 100% 10%, rgba(255,237,213,.55), transparent 50%);
+          pointer-events: none;
+          z-index: 0;
+        }
+        .ai-vis-page > *:not(style) {
+          position: relative;
+          z-index: 1;
+        }
+        @keyframes aiVisFadeIn {
+          from { opacity: 0; transform: translateY(6px); }
+          to { opacity: 1; transform: none; }
+        }
+        @keyframes aiVisPulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: .55; }
         }
         .ai-vis-header {
           display: flex;
           align-items: flex-start;
           justify-content: space-between;
           gap: 16px;
-          margin-bottom: 16px;
+          margin-bottom: 18px;
           max-width: 100%;
           min-width: 0;
           flex-wrap: wrap;
+        }
+        .ai-vis-title-row {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin: 0 0 6px;
+        }
+        .ai-vis-title-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 10px;
+          background: linear-gradient(145deg, #FF8A4C, #FF6B2B);
+          color: #fff;
+          display: grid;
+          place-items: center;
+          font-size: 15px;
+          box-shadow: 0 6px 16px rgba(255,107,43,.28);
+          flex-shrink: 0;
+        }
+        .ai-vis-title {
+          font-size: 22px;
+          font-weight: 800;
+          margin: 0;
+          color: #0F172A;
+          letter-spacing: -0.02em;
+          line-height: 1.2;
+        }
+        .ai-vis-domain-pill {
+          display: inline-flex;
+          align-items: center;
+          margin-left: 8px;
+          padding: 3px 9px;
+          border-radius: 999px;
+          background: #fff;
+          border: 1px solid #E5E7EB;
+          font-size: 11px;
+          font-weight: 600;
+          color: #64748B;
+          vertical-align: middle;
+        }
+        .ai-vis-subtitle {
+          font-size: 12.5px;
+          color: #64748B;
+          margin: 0;
+          line-height: 1.45;
+          max-width: 460px;
+        }
+        .ai-vis-session-banner {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+          margin-bottom: 16px;
+          padding: 10px 14px;
+          border-radius: 10px;
+          border: 1px solid #FED7AA;
+          background: linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%);
+          font-size: 12px;
+          color: #9A3412;
+        }
+        .ai-vis-session-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #F97316;
+          box-shadow: 0 0 0 3px rgba(249,115,22,.2);
+          animation: aiVisPulse 1.8s ease-in-out infinite;
+          flex-shrink: 0;
+        }
+        .ai-vis-empty-state {
+          grid-column: 1 / -1;
+          padding: 36px 20px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+        }
+        .ai-vis-empty-icon {
+          width: 48px;
+          height: 48px;
+          border-radius: 14px;
+          background: #FFF7ED;
+          color: #F97316;
+          display: grid;
+          place-items: center;
+          font-size: 18px;
+          margin-bottom: 4px;
+        }
+        .ai-vis-empty-title {
+          font-size: 13px;
+          font-weight: 800;
+          color: #0F172A;
+        }
+        .ai-vis-empty-text {
+          font-size: 11.5px;
+          color: #64748B;
+          max-width: 280px;
+          line-height: 1.5;
+          margin-bottom: 6px;
+        }
+        .ai-vis-rank-empty {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 10px 0 4px;
+        }
+        .ai-vis-rank-empty-title {
+          font-size: 11px;
+          font-weight: 700;
+          color: #475569;
+        }
+        .ai-vis-rank-empty-hint {
+          font-size: 10.5px;
+          color: #94A3B8;
+          line-height: 1.45;
         }
         .ai-vis-layout {
           display: grid;
@@ -1078,12 +1219,20 @@ export default function AIVisibility() {
           overflow: hidden;
           text-overflow: ellipsis;
           flex: 0 1 auto;
+          transition: border-color .15s, background .15s, color .15s, transform .15s;
+        }
+
+        .ai-question-chip:hover {
+          border-color: #FDBA74;
+          color: #EA580C;
+          background: #FFFBEB;
         }
 
         .ai-question-chip.active {
           border-color: #F97316;
           color: #EA580C;
           background: #FFF7ED;
+          box-shadow: 0 0 0 2px rgba(249,115,22,.12);
         }
 
         .ai-questions-more-dropdown {
@@ -1134,9 +1283,15 @@ export default function AIVisibility() {
         .ai-question-panel {
           background: #fff;
           border: 1px solid #E5E7EB;
-          border-radius: 12px;
+          border-radius: 14px;
           min-width: 0;
           overflow: hidden;
+          box-shadow: 0 1px 2px rgba(15,23,42,.04);
+          transition: box-shadow .2s ease;
+        }
+
+        .ai-question-panel:hover {
+          box-shadow: 0 8px 24px rgba(15,23,42,.06);
         }
 
         .ai-question-panel-header {
@@ -1144,14 +1299,16 @@ export default function AIVisibility() {
           align-items: center;
           justify-content: space-between;
           gap: 12px;
-          padding: 14px 16px 11px;
+          padding: 15px 16px 12px;
+          background: linear-gradient(180deg, #FFFCFA 0%, #fff 100%);
         }
 
         .ai-question-panel-title {
           margin: 0;
-          color: #111827;
-          font-size: 14px;
+          color: #0F172A;
+          font-size: 14.5px;
           font-weight: 800;
+          letter-spacing: -0.01em;
         }
 
         .ai-question-stats {
@@ -1449,38 +1606,44 @@ export default function AIVisibility() {
         }
 
         .ai-question-row-selected {
-          background: #FFF7ED !important;
+          background: linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+          box-shadow: inset 3px 0 0 #F97316;
         }
 
         .ai-response-shell {
           background: #fff;
           border: 1px solid #E5E7EB;
-          border-radius: 12px;
+          border-radius: 14px;
           overflow: hidden;
+          box-shadow: 0 1px 2px rgba(15,23,42,.04);
         }
 
         .ai-response-header {
-          padding: 14px 16px 10px;
+          padding: 15px 16px 10px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           gap: 10px;
+          background: linear-gradient(180deg, #FFFCFA 0%, #fff 100%);
         }
 
         .ai-response-title {
-          font-size: 14px;
+          font-size: 14.5px;
           font-weight: 800;
-          color: #111827;
+          color: #0F172A;
+          letter-spacing: -0.01em;
         }
 
         .ai-response-selected-question {
           margin: 0 14px 12px;
-          padding: 10px 12px;
-          background: #FFF7ED;
-          border-radius: 7px;
+          padding: 11px 13px;
+          background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+          border: 1px solid #FED7AA;
+          border-radius: 9px;
           font-size: 12px;
           font-weight: 700;
-          color: #111827;
+          color: #9A3412;
+          line-height: 1.45;
         }
 
         .ai-response-engine-grid {
@@ -1492,9 +1655,11 @@ export default function AIVisibility() {
 
         .ai-response-engine-card {
           border: 1px solid #E5E7EB;
-          border-radius: 8px;
-          padding: 12px;
+          border-radius: 10px;
+          padding: 13px;
           min-width: 0;
+          background: #FAFAFA;
+          transition: border-color .15s, box-shadow .15s, background .15s, transform .15s;
         }
 
         .ai-response-engine-top {
@@ -1616,38 +1781,44 @@ export default function AIVisibility() {
         }
 
         .ai-question-row-selected {
-          background: #FFF7ED !important;
+          background: linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+          box-shadow: inset 3px 0 0 #F97316;
         }
 
         .ai-response-shell {
           background: #fff;
           border: 1px solid #E5E7EB;
-          border-radius: 12px;
+          border-radius: 14px;
           overflow: hidden;
+          box-shadow: 0 1px 2px rgba(15,23,42,.04);
         }
 
         .ai-response-header {
-          padding: 14px 16px 10px;
+          padding: 15px 16px 10px;
           display: flex;
           justify-content: space-between;
           align-items: center;
           gap: 10px;
+          background: linear-gradient(180deg, #FFFCFA 0%, #fff 100%);
         }
 
         .ai-response-title {
-          font-size: 14px;
+          font-size: 14.5px;
           font-weight: 800;
-          color: #111827;
+          color: #0F172A;
+          letter-spacing: -0.01em;
         }
 
         .ai-response-selected-question {
           margin: 0 14px 12px;
-          padding: 10px 12px;
-          background: #FFF7ED;
-          border-radius: 7px;
+          padding: 11px 13px;
+          background: linear-gradient(135deg, #FFF7ED, #FFEDD5);
+          border: 1px solid #FED7AA;
+          border-radius: 9px;
           font-size: 12px;
           font-weight: 700;
-          color: #111827;
+          color: #9A3412;
+          line-height: 1.45;
         }
 
         .ai-response-engine-grid {
@@ -1659,9 +1830,11 @@ export default function AIVisibility() {
 
         .ai-response-engine-card {
           border: 1px solid #E5E7EB;
-          border-radius: 8px;
-          padding: 12px;
+          border-radius: 10px;
+          padding: 13px;
           min-width: 0;
+          background: #FAFAFA;
+          transition: border-color .15s, box-shadow .15s, background .15s, transform .15s;
         }
 
         .ai-response-engine-top {
@@ -2354,7 +2527,19 @@ export default function AIVisibility() {
 
         /* Selected question */
         .ai-question-table tbody tr.ai-question-row-selected {
-          background: #FFF7ED !important;
+          background: linear-gradient(90deg, #FFF7ED 0%, #FFEDD5 100%) !important;
+          box-shadow: inset 3px 0 0 #F97316;
+        }
+
+        .ai-question-table tbody tr:hover:not(.ai-question-row-selected) {
+          background: #F8FAFC !important;
+        }
+
+        .ai-rank-muted {
+          color: #CBD5E1;
+          font-weight: 600;
+          font-size: 10px;
+          letter-spacing: 0.02em;
         }
 
 
@@ -2433,7 +2618,16 @@ export default function AIVisibility() {
         }
 
         .ai-response-engine-card {
-          padding: 12px !important;
+          padding: 13px !important;
+          border-radius: 10px !important;
+          background: #FAFAFA !important;
+        }
+
+        .ai-response-engine-card:hover {
+          border-color: #FDBA74 !important;
+          box-shadow: 0 6px 16px rgba(249, 115, 22, 0.1) !important;
+          background: #fff !important;
+          transform: translateY(-1px);
         }
 
         .ai-response-engine-top {
@@ -2537,13 +2731,17 @@ export default function AIVisibility() {
 
       <div className="ai-vis-header">
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 800, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 9 }}>
-            <FontAwesomeIcon icon={faWandMagicSparkles} style={{ color: '#F97316' }} />
-            AI Visibility
-            {site && <span style={{ fontSize: 12, fontWeight: 400, color: '#6B7280' }}>- {domain}</span>}
-          </h1>
-          <p style={{ fontSize: 12, color: '#6B7280', margin: 0 }}>
-            See how AI engines perceive and recommend your products & services.
+          <div className="ai-vis-title-row">
+            <div className="ai-vis-title-icon">
+              <FontAwesomeIcon icon={faWandMagicSparkles} />
+            </div>
+            <h1 className="ai-vis-title">
+              AI Visibility
+              {site && <span className="ai-vis-domain-pill">{domain}</span>}
+            </h1>
+          </div>
+          <p className="ai-vis-subtitle">
+            Track whether ChatGPT and Claude recommend your brand — and compare scores before vs after changes.
           </p>
         </div>
 
@@ -2759,16 +2957,31 @@ export default function AIVisibility() {
       </div>
 
       {currentSession && (
-        <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <span style={{ fontWeight: 700 }}>Active session:</span>
-          <span>{currentSession.name}</span>
-          <span style={{ color: '#C2410C', fontSize: 11 }}>
-            · {currentSession.questionsTested || 0} questions tested · score {currentSession.score || 0}%
+        <div className="ai-vis-session-banner">
+          <span className="ai-vis-session-dot" aria-hidden />
+          <span style={{ fontWeight: 800 }}>Active session</span>
+          <span style={{ fontWeight: 700 }}>{currentSession.name}</span>
+          <span style={{ color: '#C2410C', fontSize: 11.5 }}>
+            {currentSession.questionsTested || 0} tested · score {currentSession.score || 0}%
           </span>
-          <span style={{ fontSize: 11, color: '#9A3412', opacity: 0.85 }}>
-            New Test/Re-test runs save into this session.
+          <span style={{ fontSize: 11, opacity: 0.85 }}>
+            New tests save here
           </span>
-          <button onClick={() => setCurrentSession(null)} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#9A3412', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
+          <button
+            type="button"
+            onClick={() => setCurrentSession(null)}
+            style={{
+              marginLeft: 'auto',
+              border: '1px solid #FDBA74',
+              background: '#fff',
+              color: '#9A3412',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontWeight: 700,
+              borderRadius: 6,
+              padding: '4px 10px',
+            }}
+          >
             Clear
           </button>
         </div>
@@ -3017,14 +3230,28 @@ export default function AIVisibility() {
                             <td>
                               {chatgptRank
                                 ? <span className="ai-rank-good">#{chatgptRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>--</span>
+                                : (
+                                  <span
+                                    className="ai-rank-muted"
+                                    title={isTested ? 'Tested — brand not ranked in Top 10' : 'Not tested yet'}
+                                  >
+                                    {isTested ? 'NR' : '—'}
+                                  </span>
+                                )
                               }
                             </td>
 
                             <td>
                               {claudeRank
                                 ? <span className="ai-rank-good">#{claudeRank}</span>
-                                : <span style={{ color: '#94A3B8' }}>--</span>
+                                : (
+                                  <span
+                                    className="ai-rank-muted"
+                                    title={isTested ? 'Tested — brand not ranked in Top 10' : 'Not tested yet'}
+                                  >
+                                    {isTested ? 'NR' : '—'}
+                                  </span>
+                                )
                               }
                             </td>
 
@@ -3034,7 +3261,7 @@ export default function AIVisibility() {
                                     'en-GB',
                                     { day: 'numeric', month: 'short', year: 'numeric' }
                                   )
-                                : '--'
+                                : '—'
                               }
                             </td>
 
@@ -3186,27 +3413,19 @@ export default function AIVisibility() {
 
                   ) : selectedQuestionResults.length === 0 ? (
 
-                    <div
-                      style={{
-                        gridColumn: '1 / -1',
-                        padding: '28px 18px',
-                        textAlign: 'center'
-                      }}
-                    >
-                      <div
-                        style={{
-                          color: '#64748B',
-                          fontSize: 11,
-                          marginBottom: 12
-                        }}
-                      >
-                        This question has not been tested yet.
+                    <div className="ai-vis-empty-state">
+                      <div className="ai-vis-empty-icon">
+                        <FontAwesomeIcon icon={faBolt} />
                       </div>
-
+                      <div className="ai-vis-empty-title">Not tested yet</div>
+                      <div className="ai-vis-empty-text">
+                        Run a scan to see whether ChatGPT and Claude mention your brand for this question.
+                      </div>
                       <button
                         type="button"
                         className="ai-primary-action"
                         onClick={testSelectedQuestion}
+                        style={{ height: 36, padding: '0 16px', borderRadius: 8, fontSize: 12 }}
                       >
                         Test Question
                       </button>
@@ -3314,10 +3533,12 @@ export default function AIVisibility() {
                           <div className="ai-response-rank">
                             Rank:{' '}
 
-                            <strong>
+                            <strong style={{ color: mentioned ? '#0F172A' : '#94A3B8' }}>
                               {mentioned
                                 ? '#' + result.brandRank
-                                : 'Not in Top 10'
+                                : rankings.length
+                                  ? 'Not in Top 10'
+                                  : 'No brands ranked'
                               }
                             </strong>
                           </div>
@@ -3372,14 +3593,15 @@ export default function AIVisibility() {
 
                             </ol>
                           ) : (
-                            <div
-                              style={{
-                                color: '#94A3B8',
-                                fontSize: 10,
-                                padding: '8px 0 12px'
-                              }}
-                            >
-                              No ranked brands returned.
+                            <div className="ai-vis-rank-empty">
+                              <div className="ai-vis-rank-empty-title">
+                                <FontAwesomeIcon icon={faInbox} style={{ marginRight: 6, color: '#F97316' }} />
+                                No brands listed
+                              </div>
+                              <div className="ai-vis-rank-empty-hint">
+                                This answer was advice-only — AI didn’t name agencies.
+                                Try a “best / hire / top agencies” style question to get ranked brands.
+                              </div>
                             </div>
                           )}
 
