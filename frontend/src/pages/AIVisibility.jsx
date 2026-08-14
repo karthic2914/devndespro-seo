@@ -9,7 +9,6 @@ import {
   VisibilityReasoningCard,
   VisibilityKPICards,
   VisibilityEngineTable,
-  VisibilityCompetitorsPanel,
 } from '../components/AIVisibilitySections3to7'
 
 // Picks a colored icon for a detected product card based on what it actually
@@ -183,6 +182,8 @@ export default function AIVisibility() {
   const [currentSession, setCurrentSession] = useState(null)
   const [creatingSession, setCreatingSession] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
+  const [showSessionMenu, setShowSessionMenu] = useState(false)
+  const sessionMenuRef = useRef(null)
   // Real tested/ready status per question, loaded from the database - not
   // the AI's own guess, so the Status column in the Questions table below
   // reflects what has actually been scanned.
@@ -279,12 +280,29 @@ export default function AIVisibility() {
         setQuestionStatuses(res.data.statuses || [])
       }).catch(() => {})
       api.get('/sites/' + siteId + '/ai-visibility/sessions').then(res => {
-        setSessions(res.data.sessions || [])
+        const list = res.data.sessions || []
+        setSessions(list)
+        setCurrentSession(prev => {
+          if (!prev?.id) return prev
+          return list.find(s => String(s.id) === String(prev.id)) || prev
+        })
       }).catch(() => {})
     }
     window.addEventListener('ai-visibility-scan-complete', handler)
     return () => window.removeEventListener('ai-visibility-scan-complete', handler)
   }, [siteId])
+
+  useEffect(() => {
+    if (!showSessionMenu) return
+    const onClick = (e) => {
+      if (sessionMenuRef.current && !sessionMenuRef.current.contains(e.target)) {
+        setShowSessionMenu(false)
+        setCreatingSession(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [showSessionMenu])
 
   useEffect(() => {
     api.get('/sites').then(res => {
@@ -381,22 +399,52 @@ export default function AIVisibility() {
     }
   }
 
-  // Creates a named session and makes it the active one - future scans
-  // (run from AI Visibility Results) get tagged to it via sessionId, so
-  // this scan run can be found again later in Recent Sessions.
+  async function refreshSessions() {
+    try {
+      const res = await api.get('/sites/' + siteId + '/ai-visibility/sessions')
+      const list = res.data.sessions || []
+      setSessions(list)
+      if (currentSession?.id) {
+        const updated = list.find(s => String(s.id) === String(currentSession.id))
+        if (updated) setCurrentSession(updated)
+      }
+    } catch {
+      // keep existing session list on refresh failure
+    }
+  }
+
+  // Named sessions group Test/Re-test scans so you can compare visibility
+  // over time (e.g. "Before blog update" vs "After blog update").
   async function createNewSession() {
-    const name = (newSessionName.trim() || (visibleQuestions[0] || 'New session')).slice(0, 200)
+    const name = (newSessionName.trim() || ('Session ' + new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }))).slice(0, 200)
     setCreatingSession(true)
     try {
       const res = await api.post('/sites/' + siteId + '/ai-visibility/sessions', { name })
-      setSessions(prev => [{ ...res.data, questionsTested: 0, score: 0, averageRank: null }, ...prev])
-      setCurrentSession(res.data)
+      const created = {
+        ...res.data,
+        questionsTested: 0,
+        score: 0,
+        averageRank: null,
+        topEnginesCount: 0,
+        totalEngines: 2,
+      }
+      setSessions(prev => [created, ...prev])
+      setCurrentSession(created)
       setNewSessionName('')
-      showSnackbar('New session started: "' + name + '"', 'success')
+      setCreatingSession(false)
+      setShowSessionMenu(false)
+      showSnackbar('Session started. New tests will be saved under "' + name + '".', 'success')
     } catch (e) {
       showSnackbar('Failed to create session: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+      setCreatingSession(false)
     }
+  }
+
+  function selectSession(session) {
+    setCurrentSession(session)
+    setShowSessionMenu(false)
     setCreatingSession(false)
+    showSnackbar('Active session: "' + session.name + '"', 'info')
   }
 
   async function shareReport() {
@@ -685,6 +733,9 @@ export default function AIVisibility() {
         statusRes.data?.statuses || []
       )
 
+      window.dispatchEvent(new CustomEvent('ai-visibility-scan-complete'))
+      await refreshSessions()
+
       showSnackbar(
         'Question tested successfully',
         'success'
@@ -764,6 +815,9 @@ export default function AIVisibility() {
       setQuestionStatuses(
         statusRes.data?.statuses || []
       )
+
+      window.dispatchEvent(new CustomEvent('ai-visibility-scan-complete'))
+      await refreshSessions()
 
       showSnackbar(
         'Question re-tested with ChatGPT and Claude',
@@ -2500,28 +2554,201 @@ export default function AIVisibility() {
               <span style={{ fontSize: 10, color: '#9CA3AF' }}>{summaryPeriod.comparisonLabel}</span>
             </div>
           )}
-          <button
-            onClick={() => setCreatingSession(v => !v)}
-            style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #FED7AA', background: '#FFF7ED', color: '#EA580C', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
-          >
-            {creatingSession ? 'Cancel' : '+ New Session'}
-          </button>
-          {creatingSession && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', padding: 12, zIndex: 100, width: 280 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 6 }}>Name this session</div>
-              <input
-                autoFocus
-                value={newSessionName}
-                onChange={e => setNewSessionName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') createNewSession() }}
-                placeholder="e.g. SEO tools for small businesses"
-                style={{ width: '100%', padding: '8px 10px', border: '1px solid #D1D5DB', borderRadius: 6, fontSize: 12, color: '#111827', boxSizing: 'border-box', marginBottom: 8 }}
-              />
-              <button onClick={createNewSession} style={{ width: '100%', padding: '8px 0', borderRadius: 6, border: 'none', background: '#F97316', color: '#fff', fontWeight: 700, fontSize: 11, cursor: 'pointer' }}>
-                Start Session
-              </button>
-            </div>
-          )}
+
+          <div ref={sessionMenuRef} style={{ position: 'relative' }}>
+            <button
+              type="button"
+              onClick={() => {
+                setShowSessionMenu(v => !v)
+                setCreatingSession(false)
+              }}
+              style={{
+                padding: '8px 13px',
+                borderRadius: 7,
+                border: '1px solid #FED7AA',
+                background: '#FFF7ED',
+                color: '#EA580C',
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+              title="Group Test/Re-test runs into named sessions to compare visibility over time"
+            >
+              {currentSession ? currentSession.name : 'Sessions'}
+              <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 10 }} />
+            </button>
+
+            {showSessionMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 6px)',
+                  right: 0,
+                  background: '#fff',
+                  border: '1px solid #E5E7EB',
+                  borderRadius: 10,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                  padding: 10,
+                  zIndex: 120,
+                  width: 300,
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
+                  Visibility sessions
+                </div>
+                <div style={{ fontSize: 10, color: '#6B7280', marginBottom: 10, lineHeight: 1.4 }}>
+                  Group tests under a named session so you can compare scores before/after changes.
+                </div>
+
+                {!creatingSession ? (
+                  <button
+                    type="button"
+                    onClick={() => setCreatingSession(true)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 0',
+                      borderRadius: 6,
+                      border: '1px solid #F97316',
+                      background: '#F97316',
+                      color: '#fff',
+                      fontWeight: 700,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      marginBottom: 8,
+                    }}
+                  >
+                    + New Session
+                  </button>
+                ) : (
+                  <div style={{ marginBottom: 8 }}>
+                    <input
+                      autoFocus
+                      value={newSessionName}
+                      onChange={e => setNewSessionName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') createNewSession() }}
+                      placeholder="e.g. After homepage rewrite"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: 6,
+                        fontSize: 12,
+                        color: '#111827',
+                        boxSizing: 'border-box',
+                        marginBottom: 6,
+                      }}
+                    />
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={() => setCreatingSession(false)}
+                        style={{
+                          flex: 1,
+                          padding: '7px 0',
+                          borderRadius: 6,
+                          border: '1px solid #E5E7EB',
+                          background: '#fff',
+                          fontSize: 11,
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          color: '#374151',
+                        }}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={createNewSession}
+                        style={{
+                          flex: 1,
+                          padding: '7px 0',
+                          borderRadius: 6,
+                          border: 'none',
+                          background: '#F97316',
+                          color: '#fff',
+                          fontWeight: 700,
+                          fontSize: 11,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Start
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {currentSession && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCurrentSession(null)
+                      setShowSessionMenu(false)
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '7px 8px',
+                      border: 0,
+                      background: 'transparent',
+                      color: '#9A3412',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      marginBottom: 4,
+                    }}
+                  >
+                    Clear active session
+                  </button>
+                )}
+
+                <div style={{ maxHeight: 180, overflowY: 'auto', borderTop: '1px solid #F3F4F6', paddingTop: 6 }}>
+                  {!sessions.length ? (
+                    <div style={{ fontSize: 11, color: '#9CA3AF', padding: '8px 4px' }}>
+                      No sessions yet. Create one before testing questions.
+                    </div>
+                  ) : (
+                    sessions.slice(0, 8).map(s => (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => selectSession(s)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                          padding: '8px 8px',
+                          border: 0,
+                          borderRadius: 6,
+                          background: currentSession?.id === s.id ? '#FFF7ED' : 'transparent',
+                          cursor: 'pointer',
+                          textAlign: 'left',
+                        }}
+                      >
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {s.name}
+                          </div>
+                          <div style={{ fontSize: 10, color: '#9CA3AF' }}>
+                            {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            {' · '}{s.questionsTested || 0} tested
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: (s.score || 0) >= 60 ? '#16A34A' : (s.score || 0) >= 30 ? '#D97706' : '#DC2626' }}>
+                          {s.score || 0}%
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           <button onClick={downloadImage} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
             <FontAwesomeIcon icon={faDownload} style={{ marginRight: 6 }} /> Export Report
           </button>
@@ -2532,8 +2759,15 @@ export default function AIVisibility() {
       </div>
 
       {currentSession && (
-        <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontWeight: 700 }}>Active session:</span> {currentSession.name}
+        <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 12, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 700 }}>Active session:</span>
+          <span>{currentSession.name}</span>
+          <span style={{ color: '#C2410C', fontSize: 11 }}>
+            · {currentSession.questionsTested || 0} questions tested · score {currentSession.score || 0}%
+          </span>
+          <span style={{ fontSize: 11, color: '#9A3412', opacity: 0.85 }}>
+            New Test/Re-test runs save into this session.
+          </span>
           <button onClick={() => setCurrentSession(null)} style={{ marginLeft: 'auto', border: 0, background: 'transparent', color: '#9A3412', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}>
             Clear
           </button>
@@ -3215,7 +3449,67 @@ export default function AIVisibility() {
               siteName={visibilitySiteName}
             />
 
-            <VisibilityCompetitorsPanel />
+            <div className="ai-session-history-card" style={{
+              background: '#fff',
+              border: '1px solid #E5E7EB',
+              borderRadius: 12,
+              padding: '14px 14px 12px',
+              minWidth: 0,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', marginBottom: 4 }}>
+                Recent Sessions
+              </div>
+              <div style={{ fontSize: 10.5, color: '#6B7280', marginBottom: 10, lineHeight: 1.4 }}>
+                Compare visibility scores across named test runs.
+              </div>
+
+              {!sessions.length ? (
+                <div style={{ fontSize: 11, color: '#9CA3AF', padding: '10px 0' }}>
+                  No sessions yet. Open <strong>Sessions</strong> above and create one, then Test questions to fill it.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {sessions.slice(0, 5).map(s => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => selectSession(s)}
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'minmax(0,1fr) auto',
+                        gap: 8,
+                        alignItems: 'center',
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: currentSession?.id === s.id ? '1px solid #FDBA74' : '1px solid #F3F4F6',
+                        background: currentSession?.id === s.id ? '#FFF7ED' : '#FAFAFA',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 11.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {s.name}
+                        </div>
+                        <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2 }}>
+                          {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                          {' · '}{s.questionsTested || 0} tested
+                          {s.averageRank != null ? ` · avg #${s.averageRank}` : ''}
+                        </div>
+                      </div>
+                      <div style={{
+                        fontSize: 13,
+                        fontWeight: 800,
+                        color: (s.score || 0) >= 60 ? '#16A34A' : (s.score || 0) >= 30 ? '#D97706' : '#DC2626',
+                      }}>
+                        {s.score || 0}%
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

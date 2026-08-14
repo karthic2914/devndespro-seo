@@ -146,7 +146,23 @@ async function runFullVisibilityScan(siteId, siteName, questions, sessionId = nu
 
 // ---------- Sessions: named, saved scan runs ----------
 
+async function ensureSessionsTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS ai_visibility_sessions (
+      id SERIAL PRIMARY KEY,
+      site_id INTEGER NOT NULL,
+      name TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    );
+    CREATE INDEX IF NOT EXISTS idx_ai_vis_sessions_site
+      ON ai_visibility_sessions(site_id, created_at DESC);
+    ALTER TABLE ai_visibility_results
+      ADD COLUMN IF NOT EXISTS session_id INTEGER;
+  `)
+}
+
 async function createSession(siteId, name) {
+  await ensureSessionsTable()
   const { rows } = await pool.query(
     `INSERT INTO ai_visibility_sessions (site_id, name) VALUES ($1, $2) RETURNING id, name, created_at`,
     [siteId, name]
@@ -159,6 +175,7 @@ async function createSession(siteId, name) {
 // than stored redundantly - so the numbers are always accurate even if
 // results get added to a session after it was created.
 async function listSessions(siteId) {
+  await ensureSessionsTable()
   const { rows: sessions } = await pool.query(
     `SELECT id, name, created_at FROM ai_visibility_sessions
      WHERE site_id = $1 ORDER BY created_at DESC`,
