@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -9,6 +9,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, OrangeBtn, GhostBtn } from './UI'
 import CollapsibleSection from './CollapsibleSection'
+import ProcessSteps from './ProcessSteps'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -149,6 +150,46 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
       : view === 'unique' ? (result?.uniqueToYou || [])
         : (result?.missing || [])
 
+  const filledCompetitors = useMemo(
+    () => inputs.map((v) => String(v || '').trim()).filter(Boolean).length,
+    [inputs]
+  )
+
+  const processSteps = useMemo(() => {
+    const hasComps = filledCompetitors > 0
+    const compared = Boolean(result)
+    return [
+      {
+        id: 'competitors',
+        label: 'Add competitors',
+        hint: 'Type domains or tap Auto-fill',
+        done: hasComps,
+        active: !hasComps,
+      },
+      {
+        id: 'market',
+        label: 'Pick market',
+        hint: 'Country for search data',
+        done: hasComps,
+        active: hasComps && !compared,
+      },
+      {
+        id: 'compare',
+        label: 'Compare',
+        hint: 'Find keyword gaps',
+        done: compared,
+        active: hasComps && !compared,
+      },
+      {
+        id: 'track',
+        label: 'Track keywords',
+        hint: 'Add Missing terms to track',
+        done: false,
+        active: compared,
+      },
+    ]
+  }, [filledCompetitors, result, view])
+
   return (
     <Card style={{ marginBottom: 16 }}>
       <CollapsibleSection
@@ -157,196 +198,203 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
         icon={<FontAwesomeIcon icon={faChartLine} style={{ color: '#EA580C' }} />}
         defaultOpen
       >
-      <CollapsibleSection
-        title="Competitors setup"
-        subtitle="Your domain + competitors and market."
-        defaultOpen
-        style={{
+        <ProcessSteps steps={processSteps} />
+
+        <div style={{
           border: '1px solid #E2E8F0',
           borderRadius: 12,
           padding: 14,
           background: '#F8FAFC',
           marginBottom: 12,
-        }}
-      >
-        <div style={{ display: 'grid', gap: 10 }}>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: 11, fontWeight: 800, color: '#EA580C', background: '#FFF7ED',
-              borderRadius: 6, padding: '4px 8px', minWidth: 44, textAlign: 'center',
-            }}>You</span>
-            <input
-              value={youDomain}
-              readOnly
-              style={{
-                flex: 1, minWidth: 160, height: 36, borderRadius: 8,
-                border: '1px solid #FED7AA', background: '#FFFBEB', padding: '0 12px', fontWeight: 700,
-              }}
-            />
-            <select
-              value={locationCode}
-              onChange={(e) => setLocationCode(Number(e.target.value))}
-              style={{ height: 36, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 10px' }}
-            >
-              {LOCATIONS.map((l) => (
-                <option key={l.code} value={l.code}>{l.name}</option>
-              ))}
-            </select>
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+            Competitors setup
+          </div>
+          <div style={{ fontSize: 12, color: '#64748B', marginBottom: 12, lineHeight: 1.4 }}>
+            Your domain + up to 4 competitors, then Compare.
           </div>
 
-          {inputs.map((val, i) => (
-            <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
               <span style={{
-                fontSize: 11, fontWeight: 800, color: '#334155', background: '#E2E8F0',
+                fontSize: 11, fontWeight: 800, color: '#EA580C', background: '#FFF7ED',
                 borderRadius: 6, padding: '4px 8px', minWidth: 44, textAlign: 'center',
-              }}>
-                C{i + 1}
-              </span>
+              }}>You</span>
               <input
-                value={val}
-                onChange={(e) => setInputs((p) => p.map((x, idx) => (idx === i ? e.target.value : x)))}
-                placeholder="Add competitor domain"
-                style={{ flex: 1, minWidth: 160, height: 36, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 12px' }}
-              />
-              {inputs.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => setInputs((p) => p.filter((_, idx) => idx !== i))}
-                  style={{ background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer' }}
-                >
-                  <FontAwesomeIcon icon={faXmark} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {inputs.length < 4 && (
-              <GhostBtn onClick={() => setInputs((p) => [...p, ''])}>+ Add up to {4 - inputs.length} more</GhostBtn>
-            )}
-            <GhostBtn onClick={autoDiscover} disabled={discovering}>
-              <FontAwesomeIcon icon={discovering ? faRotate : faWandMagicSparkles} spin={discovering} style={{ marginRight: 6 }} />
-              Auto-fill competitors
-            </GhostBtn>
-          </div>
-          <OrangeBtn onClick={compare} disabled={running}>
-            <FontAwesomeIcon icon={running ? faRotate : faChartLine} spin={running} style={{ marginRight: 6 }} />
-            {running ? 'Comparing…' : 'Compare'}
-          </OrangeBtn>
-        </div>
-      </CollapsibleSection>
-
-      {result && (
-        <CollapsibleSection
-          title="Gap results"
-          subtitle="Missing, shared, and unique keywords."
-          defaultOpen
-        >
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-            {[
-              { id: 'missing', label: 'Missing', count: result.counts?.missing },
-              { id: 'shared', label: 'Shared', count: result.counts?.shared },
-              { id: 'unique', label: 'Unique to you', count: result.counts?.uniqueToYou },
-            ].map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setView(t.id)}
+                value={youDomain}
+                readOnly
                 style={{
-                  border: 0,
-                  borderRadius: 8,
-                  padding: '7px 12px',
-                  fontSize: 12,
-                  fontWeight: 750,
-                  cursor: 'pointer',
-                  background: view === t.id ? '#0B1F36' : '#F1F5F9',
-                  color: view === t.id ? '#fff' : '#475569',
+                  flex: 1, minWidth: 160, height: 36, borderRadius: 8,
+                  border: '1px solid #FED7AA', background: '#FFFBEB', padding: '0 12px', fontWeight: 700,
                 }}
+              />
+              <select
+                value={locationCode}
+                onChange={(e) => setLocationCode(Number(e.target.value))}
+                style={{ height: 36, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 10px' }}
               >
-                {t.label}
-                <span style={{ marginLeft: 6, opacity: 0.85 }}>{t.count ?? 0}</span>
-              </button>
+                {LOCATIONS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {inputs.map((val, i) => (
+              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 800, color: '#334155', background: '#E2E8F0',
+                  borderRadius: 6, padding: '4px 8px', minWidth: 44, textAlign: 'center',
+                }}>
+                  C{i + 1}
+                </span>
+                <input
+                  value={val}
+                  onChange={(e) => setInputs((p) => p.map((x, idx) => (idx === i ? e.target.value : x)))}
+                  placeholder="Add competitor domain"
+                  style={{ flex: 1, minWidth: 160, height: 36, borderRadius: 8, border: '1px solid #E2E8F0', padding: '0 12px' }}
+                />
+                {inputs.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => setInputs((p) => p.filter((_, idx) => idx !== i))}
+                    style={{ background: 'none', border: 0, color: '#94A3B8', cursor: 'pointer' }}
+                  >
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                )}
+              </div>
             ))}
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0,1.6fr) 70px 70px 90px 110px 100px',
-            gap: 8,
-            fontSize: 10,
-            fontWeight: 800,
-            color: '#94A3B8',
-            textTransform: 'uppercase',
-            marginBottom: 6,
-          }}>
-            <span>Keyword</span>
-            <span style={{ textAlign: 'right' }}>Volume</span>
-            <span style={{ textAlign: 'right' }}>You</span>
-            <span style={{ textAlign: 'right' }}>Best comp.</span>
-            <span>Opportunity</span>
-            <span />
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {inputs.length < 4 && (
+                <GhostBtn onClick={() => setInputs((p) => [...p, ''])}>+ Add up to {4 - inputs.length} more</GhostBtn>
+              )}
+              <GhostBtn onClick={autoDiscover} disabled={discovering}>
+                <FontAwesomeIcon icon={discovering ? faRotate : faWandMagicSparkles} spin={discovering} style={{ marginRight: 6 }} />
+                Auto-fill competitors
+              </GhostBtn>
+            </div>
+            <OrangeBtn onClick={compare} disabled={running}>
+              <FontAwesomeIcon icon={running ? faRotate : faChartLine} spin={running} style={{ marginRight: 6 }} />
+              {running ? 'Comparing…' : 'Compare'}
+            </OrangeBtn>
           </div>
+        </div>
 
-          {!rows.length ? (
-            <div style={{ fontSize: 12, color: '#94A3B8', padding: '16px 0' }}>No keywords in this view.</div>
-          ) : (
-            rows.slice(0, 60).map((row) => (
-              <div
-                key={row.keyword}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0,1.6fr) 70px 70px 90px 110px 100px',
-                  gap: 8,
-                  alignItems: 'center',
-                  padding: '9px 0',
-                  borderBottom: '1px solid #F1F5F9',
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {row.keyword}
+        {result && (
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A', marginBottom: 4 }}>
+              Gap results
+            </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginBottom: 10 }}>
+              Missing = competitors rank, you don’t. Track the best ones.
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {[
+                { id: 'missing', label: 'Missing', count: result.counts?.missing },
+                { id: 'shared', label: 'Shared', count: result.counts?.shared },
+                { id: 'unique', label: 'Unique to you', count: result.counts?.uniqueToYou },
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setView(t.id)}
+                  style={{
+                    border: 0,
+                    borderRadius: 8,
+                    padding: '7px 12px',
+                    fontSize: 12,
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    background: view === t.id ? '#0B1F36' : '#F1F5F9',
+                    color: view === t.id ? '#fff' : '#475569',
+                  }}
+                >
+                  {t.label}
+                  <span style={{ marginLeft: 6, opacity: 0.85 }}>{t.count ?? 0}</span>
+                </button>
+              ))}
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'minmax(0,1.6fr) 70px 70px 90px 110px 100px',
+              gap: 8,
+              fontSize: 10,
+              fontWeight: 800,
+              color: '#94A3B8',
+              textTransform: 'uppercase',
+              marginBottom: 6,
+            }}>
+              <span>Keyword</span>
+              <span style={{ textAlign: 'right' }}>Volume</span>
+              <span style={{ textAlign: 'right' }}>You</span>
+              <span style={{ textAlign: 'right' }}>Best comp.</span>
+              <span>Opportunity</span>
+              <span />
+            </div>
+
+            {!rows.length ? (
+              <div style={{ fontSize: 12, color: '#94A3B8', padding: '16px 0' }}>No keywords in this view.</div>
+            ) : (
+              rows.slice(0, 60).map((row) => (
+                <div
+                  key={row.keyword}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'minmax(0,1.6fr) 70px 70px 90px 110px 100px',
+                    gap: 8,
+                    alignItems: 'center',
+                    padding: '9px 0',
+                    borderBottom: '1px solid #F1F5F9',
+                  }}
+                >
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {row.keyword}
+                    </div>
+                    {row.bestCompetitor && view !== 'unique' && (
+                      <div style={{ fontSize: 11, color: '#94A3B8' }}>via {row.bestCompetitor}</div>
+                    )}
                   </div>
-                  {row.bestCompetitor && view !== 'unique' && (
-                    <div style={{ fontSize: 11, color: '#94A3B8' }}>via {row.bestCompetitor}</div>
-                  )}
+                  <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>{row.volume || 0}</div>
+                  <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, color: row.yourPosition ? '#0F172A' : '#94A3B8' }}>
+                    {row.yourPosition ?? '—'}
+                  </div>
+                  <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>
+                    {row.bestCompetitorPosition ?? '—'}
+                  </div>
+                  <div><OppPill label={row.opportunity} /></div>
+                  <div style={{ textAlign: 'right' }}>
+                    {view !== 'unique' && (
+                      <button
+                        type="button"
+                        disabled={addingKey === row.keyword}
+                        onClick={() => addKeyword(row)}
+                        style={{
+                          border: '1px solid #FED7AA',
+                          background: '#FFF7ED',
+                          color: '#C2410C',
+                          borderRadius: 6,
+                          padding: '4px 8px',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <FontAwesomeIcon icon={faPlus} style={{ marginRight: 4 }} />
+                        Track
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>{row.volume || 0}</div>
-                <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, color: row.yourPosition ? '#0F172A' : '#94A3B8' }}>
-                  {row.yourPosition ?? '—'}
-                </div>
-                <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>
-                  {row.bestCompetitorPosition ?? '—'}
-                </div>
-                <div><OppPill label={row.opportunity} /></div>
-                <div style={{ textAlign: 'right' }}>
-                  {view !== 'unique' && (
-                    <button
-                      type="button"
-                      disabled={addingKey === row.keyword}
-                      onClick={() => addKeyword(row)}
-                      style={{
-                        border: '1px solid #FED7AA',
-                        background: '#FFF7ED',
-                        color: '#C2410C',
-                        borderRadius: 6,
-                        padding: '4px 8px',
-                        fontSize: 11,
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <FontAwesomeIcon icon={faPlus} style={{ marginRight: 4 }} />
-                      Track
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </CollapsibleSection>
-      )}
+              ))
+            )}
+          </div>
+        )}
       </CollapsibleSection>
     </Card>
   )
