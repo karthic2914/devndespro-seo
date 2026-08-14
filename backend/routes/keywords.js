@@ -14,7 +14,7 @@ const {
 const { fetchSerpVisibility, scanSiteKeywordTransitions, getDfsRankedPosition } = require('../utils/serp')
 const { sendRankScanReportEmail } = require('../utils/email')
 const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
-const { runKeywordAutoDiscover, getCachedDiscovery } = require('../utils/keywordDiscover')
+const { runKeywordAutoDiscover, getCachedDiscovery, runKeywordGap } = require('../utils/keywordDiscover')
 
 const router = express.Router()
 
@@ -406,6 +406,27 @@ router.post('/:siteId/keywords/auto-discover', auth, verifySite, requireFeature(
     console.error('Keyword auto-discover failed:', e.response?.data || e.message)
     if (e.status === 404) return res.status(404).json({ error: 'Site not found' })
     res.status(500).json({ error: 'Keyword auto-discovery failed' })
+  }
+})
+
+// Keyword Gap — keywords competitors rank for that you don't
+router.post('/:siteId/keywords/gap', auth, verifySite, requireFeature('keywords'), async (req, res) => {
+  try {
+    const domains = Array.isArray(req.body?.domains) ? req.body.domains : []
+    const locationCode = req.body?.locationCode != null ? Number(req.body.locationCode) : null
+    const limit = Math.min(Math.max(Number(req.body?.limit) || 80, 20), 150)
+    const payload = await runKeywordGap({
+      siteId: req.siteId,
+      competitorDomains: domains,
+      locationCode,
+      limit,
+    })
+    res.json(payload)
+  } catch (e) {
+    console.error('Keyword gap failed:', e.response?.data || e.message)
+    if (e.status === 404) return res.status(404).json({ error: 'Site not found' })
+    if (e.status === 503) return res.status(503).json({ error: e.message })
+    res.status(500).json({ error: e.message || 'Keyword gap failed' })
   }
 })
 

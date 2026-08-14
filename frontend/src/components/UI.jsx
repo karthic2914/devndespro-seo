@@ -181,8 +181,8 @@ export const OrangeBtn = ({ onClick, children, style, disabled, type = 'button' 
   </button>
 )
 
-export const GhostBtn = ({ onClick, children, style }) => (
-  <button onClick={onClick} className="ghost-btn" style={style}>
+export const GhostBtn = ({ onClick, children, style, disabled }) => (
+  <button onClick={onClick} className="ghost-btn" style={style} disabled={disabled}>
     {children}
   </button>
 )

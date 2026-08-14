@@ -6,6 +6,7 @@
     faMagnifyingGlass, faChartLine, faBolt, faCircleCheck, faTrash,
   } from '@fortawesome/free-solid-svg-icons'
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
+  import KeywordGapPanel from '../components/KeywordGapPanel'
   import api from '../utils/api'
   import toast from '../utils/toast'
   import {
@@ -639,6 +640,8 @@
         </div>
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          <KeywordGapPanel siteId={siteId} onAdded={load} />
 
           {discovery && (
             <Card padding="1.25rem">

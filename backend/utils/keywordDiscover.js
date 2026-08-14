@@ -16,7 +16,7 @@ const BUSINESS_TERMS = [
   'webutvikling', 'webshop', 'e-commerce', 'ecommerce',
 ]
 
-// Known false positives � platform/tool names that pass the business-term
+// Known false positives � platform/tool names that pass the business-term
 // or commercial-intent check but aren't real content opportunities.
 const EXCLUDED_TERMS = [
   'uniweb', 'rcube', 'kontrollpanel', 'websupporten',
@@ -181,7 +181,7 @@ function buildWhy(item, seed) {
   if (item.difficultyScore != null) parts.push(`KD ${item.difficultyScore}`)
   if (item.intent) parts.push(`${item.intent} intent`)
   if (item.volume) parts.push(`${Number(item.volume).toLocaleString()} searches/mo`)
-  // Use ASCII separator only â€” Unicode middot gets mojibake'd in some DB/client paths
+  // Use ASCII separator only — Unicode middot gets mojibake'd in some DB/client paths
   return parts.join(' | ') || 'Adjacent opportunity for your niche'
 }
 
@@ -664,8 +664,155 @@ async function runKeywordAutoDiscover({ siteId, userId }) {
 module.exports = {
   AUTO_DISCOVER_QUERY,
   runKeywordAutoDiscover,
+  runKeywordGap,
   getCachedDiscovery,
   persistDiscovery,
   sanitizeDiscoveryText,
   sanitizeDiscoveryPayload,
+}
+
+/**
+ * Keyword Gap: keywords competitors rank for that you don't (or where they outrank you).
+ */
+async function runKeywordGap({ siteId, competitorDomains = [], locationCode = null, limit = 80 }) {
+  const { rows: siteRows } = await pool.query('SELECT * FROM sites WHERE id=$1', [siteId])
+  const site = siteRows[0]
+  if (!site) {
+    const err = new Error('Site not found')
+    err.status = 404
+    throw err
+  }
+
+  const yourDomain = extractDomain(site.url)
+  let domains = (Array.isArray(competitorDomains) ? competitorDomains : [])
+    .map((d) => extractDomain(d) || String(d || '').trim().toLowerCase())
+    .filter((d) => d && d !== yourDomain)
+
+  if (!domains.length) {
+    const { rows } = await pool.query(
+      'SELECT name, url FROM competitors WHERE site_id=$1 ORDER BY dr DESC LIMIT 4',
+      [siteId]
+    )
+    domains = rows
+      .map((r) => extractDomain(r.url || r.name) || String(r.name || '').toLowerCase())
+      .filter((d) => d && d !== yourDomain)
+      .slice(0, 4)
+  }
+
+  domains = [...new Set(domains)].slice(0, 4)
+  if (!domains.length) {
+    return {
+      yourDomain,
+      competitors: [],
+      missing: [],
+      shared: [],
+      uniqueToYou: [],
+      warning: 'Add competitor domains first.',
+    }
+  }
+
+  const authHeader = getDataForSEOAuth()
+  if (!authHeader) {
+    const err = new Error('DataForSEO credentials are not configured')
+    err.status = 503
+    throw err
+  }
+
+  const location = locationCode && DFS_LOCATIONS[locationCode]
+    ? DFS_LOCATIONS[locationCode]
+    : resolveLocation(site)
+
+  const perDomainLimit = Math.max(30, Math.min(150, Number(limit) || 80))
+
+  const [yours, ...compLists] = await Promise.all([
+    fetchDfsRankedKeywords({ authHeader, domain: yourDomain, location, limit: perDomainLimit }),
+    ...domains.map((domain) =>
+      fetchDfsRankedKeywords({ authHeader, domain, location, limit: perDomainLimit })
+    ),
+  ])
+
+  const yourMap = new Map(yours.map((k) => [keywordKey(k.keyword), k]))
+  const competitorMaps = domains.map((domain, i) => ({
+    domain,
+    map: new Map((compLists[i] || []).map((k) => [keywordKey(k.keyword), k])),
+  }))
+
+  const allCompKeys = new Set()
+  for (const c of competitorMaps) {
+    for (const key of c.map.keys()) allCompKeys.add(key)
+  }
+
+  const missing = []
+  const shared = []
+  for (const key of allCompKeys) {
+    const yoursItem = yourMap.get(key)
+    const fromCompetitors = competitorMaps
+      .map((c) => {
+        const item = c.map.get(key)
+        if (!item) return null
+        return { domain: c.domain, position: item.position, volume: item.volume, difficulty: item.difficultyScore }
+      })
+      .filter(Boolean)
+      .sort((a, b) => (a.position || 999) - (b.position || 999))
+
+    if (!fromCompetitors.length) continue
+    const best = fromCompetitors[0]
+    const base = competitorMaps
+      .map((c) => c.map.get(key))
+      .find(Boolean)
+
+    const row = {
+      keyword: base.keyword,
+      volume: base.volume || best.volume || 0,
+      difficulty: base.difficulty,
+      difficultyScore: base.difficultyScore,
+      intent: base.intent,
+      yourPosition: yoursItem?.position ?? null,
+      bestCompetitor: best.domain,
+      bestCompetitorPosition: best.position,
+      competitors: fromCompetitors,
+      opportunity: opportunityTag(base.volume || 0, base.difficultyScore || 50),
+    }
+
+    if (yoursItem == null) {
+      missing.push(row)
+    } else {
+      shared.push(row)
+    }
+  }
+
+  const uniqueToYou = yours
+    .filter((k) => !allCompKeys.has(keywordKey(k.keyword)))
+    .map((k) => ({
+      keyword: k.keyword,
+      volume: k.volume || 0,
+      difficulty: k.difficulty,
+      difficultyScore: k.difficultyScore,
+      intent: k.intent,
+      yourPosition: k.position,
+      opportunity: opportunityTag(k.volume || 0, k.difficultyScore || 50),
+    }))
+
+  const byOpp = (a, b) =>
+    (b.volume || 0) - (a.volume || 0) ||
+    (a.bestCompetitorPosition || 99) - (b.bestCompetitorPosition || 99) ||
+    (a.difficultyScore || 50) - (b.difficultyScore || 50)
+
+  missing.sort(byOpp)
+  shared.sort(byOpp)
+  uniqueToYou.sort((a, b) => (b.volume || 0) - (a.volume || 0))
+
+  return {
+    yourDomain,
+    competitors: domains,
+    location: location.name || location.code,
+    missing: missing.slice(0, 100),
+    shared: shared.slice(0, 50),
+    uniqueToYou: uniqueToYou.slice(0, 50),
+    counts: {
+      missing: missing.length,
+      shared: shared.length,
+      uniqueToYou: uniqueToYou.length,
+    },
+  }
 }

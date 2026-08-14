@@ -7,7 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
-import BacklinksCompetitorPanel from '../components/BacklinksCompetitorPanel'
+import BacklinkCompetitiveHub from '../components/BacklinkCompetitiveHub'
 import api from '../utils/api'
 
 export default function Backlinks() {
@@ -37,6 +37,7 @@ export default function Backlinks() {
   const [importingCsv, setImportingCsv] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [quickDiscovering, setQuickDiscovering] = useState(false)
+  const [toolTab, setToolTab] = useState('overview')
 
   const load = () =>
     Promise.all([
@@ -360,25 +361,26 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Track live links, manage outreach prospects, and discover new opportunities."
+        subtitle="Broken links, referring domains, backlink gap, and live link tracking — industry-grade competitive analysis."
       />
 
-      {backlinkSummary && (
-        <div className="bl-real-summary" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: 10,
-          marginBottom: 12,
-        }}>
-          <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} />
-          <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" />
-          <MetricCard label="Dofollow" value={`${backlinkSummary.dofollowRatio || 0}%`} accent="var(--green)" />
-          <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" />
-          <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--red)" />
-          <MetricCard label="Opportunities" value={backlinkSummary.opportunities || savedOpportunities.length} accent="var(--amber)" />
-        </div>
-      )}
-
+      <BacklinkCompetitiveHub
+        siteId={siteId}
+        backlinks={backlinks}
+        backlinkSummary={backlinkSummary}
+        activeTab={toolTab}
+        onTabChange={setToolTab}
+        onReload={load}
+        onFilterDomain={(domain) => {
+          setToolTab('overview')
+          setTableSearchSeed(domain)
+          setTableSearchSeedKey(k => k + 1)
+          setTimeout(() => {
+            document.getElementById('all-backlinks')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }, 50)
+        }}
+        overviewContent={
+          <>
       <div className="bl-metric-strip">
         <MetricCard label="Total" value={backlinks.length} />
         <MetricCard label="Dofollow" value={dofollow} accent="var(--green)" />
@@ -559,29 +561,6 @@ export default function Backlinks() {
         </Card>
       )}
 
-      <BacklinksCompetitorPanel
-        siteId={siteId}
-        onSaveOpportunity={async (opp) => {
-          try {
-            await api.post(`/sites/${siteId}/backlink-opportunities`, {
-              sourceDomain: String(opp.site || '').trim(),
-              sourceUrl: String(opp.siteUrl || '').trim(),
-              strategy: String(opp.strategy || '').trim(),
-              opportunityType: String(opp.type || 'competitor-link-gap'),
-              relevance: String(opp.relevance || ''),
-              estimatedDR: Number(opp.estimatedDR || 0),
-              evidence: String(opp.evidence || ''),
-              status: 'Prospect',
-              source: 'competitor-gap',
-            })
-            toast.success('Saved as opportunity')
-            load()
-          } catch (e) {
-            toast.error(e?.response?.data?.error || 'Failed to save opportunity')
-          }
-        }}
-      />
-
       {!loading && backlinks.length > 0 && (
         <BacklinksInsightPanels
           siteId={siteId}
@@ -669,7 +648,7 @@ export default function Backlinks() {
               <div className="bl-inline-actions">
                 <OrangeBtn onClick={importDetailedCsv} disabled={importingCsv}>
                   {importingCsv
-                    ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importingâ€¦</>
+                    ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Importing…</>
                     : <>Import rows</>
                   }
                 </OrangeBtn>
@@ -687,7 +666,7 @@ export default function Backlinks() {
                   <FontAwesomeIcon icon={faSpider} style={{ color: 'var(--orange)' }} />
                   Build our backlink index
                 </div>
-                <span className="crawler-toggle">{showCrawler ? 'â–²' : 'â–¼'}</span>
+                <span className="crawler-toggle">{showCrawler ? '▲' : '▼'}</span>
               </div>
 
               {showCrawler && (
@@ -706,7 +685,7 @@ export default function Backlinks() {
                   <div className="bl-inline-actions">
                     <OrangeBtn onClick={crawl} disabled={crawling}>
                       {crawling
-                        ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawlingâ€¦</>
+                        ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Crawling…</>
                         : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Run crawler</>}
                     </OrangeBtn>
                     {crawlResult && (
@@ -721,6 +700,9 @@ export default function Backlinks() {
           </div>
         )}
       </Card>
+          </>
+        }
+      />
     </div>
   )
 }

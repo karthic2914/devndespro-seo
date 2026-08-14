@@ -1881,6 +1881,60 @@ router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {
   })
 })
 
+/** Aggregated referring domains from tracked + synced backlinks */
+router.get('/:siteId/backlinks/referring-domains', auth, verifySite, async (req, res) => {
+  try {
+    await ensureBacklinkIntelligenceSchema()
+    const { rows } = await pool.query(
+      `SELECT
+         COALESCE(NULLIF(btrim(source_domain), ''), NULLIF(btrim(name), ''), 'unknown') AS domain,
+         COUNT(*)::int AS backlinks,
+         COUNT(*) FILTER (
+           WHERE COALESCE(
+             dofollow,
+             (
+               LOWER(COALESCE(type, 'dofollow')) <> 'nofollow'
+               AND COALESCE(rel_nofollow, FALSE) = FALSE
+             )
+           ) = TRUE
+         )::int AS dofollow,
+         COUNT(*) FILTER (WHERE is_broken = TRUE)::int AS broken,
+         COUNT(*) FILTER (WHERE is_lost = TRUE)::int AS lost,
+         COUNT(*) FILTER (
+           WHERE is_live = TRUE AND verification_status IN ('Live','Redirected')
+         )::int AS live,
+         COALESCE(MAX(NULLIF(provider_rank, 0)), MAX(NULLIF(dr, 0)), 0)::int AS rank,
+         MIN(COALESCE(first_seen, created_at)) AS first_seen,
+         MAX(COALESCE(last_seen, last_checked, created_at)) AS last_seen
+       FROM backlinks
+       WHERE site_id = $1
+         AND COALESCE(source, '') <> 'domain'
+       GROUP BY 1
+       HAVING COALESCE(NULLIF(btrim(source_domain), ''), NULLIF(btrim(name), ''), 'unknown') <> 'unknown'
+       ORDER BY backlinks DESC, rank DESC
+       LIMIT 500`,
+      [req.siteId]
+    )
+    res.json({
+      total: rows.length,
+      domains: rows.map((r) => ({
+        domain: r.domain,
+        backlinks: Number(r.backlinks || 0),
+        dofollow: Number(r.dofollow || 0),
+        broken: Number(r.broken || 0),
+        lost: Number(r.lost || 0),
+        live: Number(r.live || 0),
+        rank: Number(r.rank || 0),
+        firstSeen: r.first_seen,
+        lastSeen: r.last_seen,
+      })),
+    })
+  } catch (e) {
+    console.error('referring-domains error:', e)
+    res.status(500).json({ error: 'Failed to load referring domains' })
+  }
+})
+
 /**
  * Dynamic backlink competitor comparison:
  * - overview metrics for your site + selected competitors
@@ -1984,23 +2038,32 @@ router.post('/:siteId/backlinks/competitor-compare', auth, verifySite, async (re
     }
 
     let linkGap = []
-    const primary = competitors.find((c) => c.referringDomains != null) || competitors[0]
-    if (primary?.domain) {
+    const gapSeen = new Set()
+    const gapCompetitors = competitors.filter((c) => c.domain).slice(0, 3)
+    for (const primary of gapCompetitors) {
       try {
         const gap = await fetchDomainIntersection({
           targets: { 1: primary.domain },
           excludeTargets: [yourDomain],
-          limit: 15,
+          limit: Number(req.body?.limit) || 20,
         })
         cost += Number(gap.cost || 0)
-        linkGap = (gap.items || []).map((item) => ({
-          ...item,
-          vsCompetitor: primary.domain,
-        }))
+        for (const item of gap.items || []) {
+          const key = String(item.domain || '').toLowerCase()
+          if (!key || gapSeen.has(key) || key === yourDomain) continue
+          gapSeen.add(key)
+          linkGap.push({
+            ...item,
+            vsCompetitor: primary.domain,
+          })
+        }
       } catch (e) {
-        warnings.push(`Link gap unavailable: ${e.message}`)
+        warnings.push(`Link gap vs ${primary.domain}: ${e.message}`)
       }
     }
+    linkGap = linkGap
+      .sort((a, b) => (b.rank || 0) - (a.rank || 0) || (b.backlinks || 0) - (a.backlinks || 0))
+      .slice(0, 50)
 
     res.json({
       yourDomain,

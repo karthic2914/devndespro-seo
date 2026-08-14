@@ -206,6 +206,13 @@ export default function BacklinksTable({
       }
       if (typeFilter === 'New' && !isNewBacklink(b)) return false
       if (typeFilter === 'Lost' && !isLostBacklink(b)) return false
+      if (typeFilter === 'Broken') {
+        const broken =
+          b.is_broken === true ||
+          Number(b.http_status) >= 400 ||
+          String(b.verification_status || '').toLowerCase() === 'broken'
+        if (!broken) return false
+      }
       if (statusFilter !== 'All' && b.status !== statusFilter) return false
       if (spamFilter === 'Spam' && !isSpam(b)) return false
       if (spamFilter === 'Clean' && isSpam(b)) return false
@@ -293,6 +300,11 @@ export default function BacklinksTable({
   const nofollow = backlinks.filter(b => b.type === 'nofollow').length
   const newCount = backlinks.filter(isNewBacklink).length
   const lostCount = backlinks.filter(isLostBacklink).length
+  const brokenCount = backlinks.filter(b =>
+    b.is_broken === true ||
+    Number(b.http_status) >= 400 ||
+    String(b.verification_status || '').toLowerCase() === 'broken'
+  ).length
   const spam = backlinks.filter(b => isSpam(b)).length
 
   if (loading) return <div className="bl-empty">Loading…</div>
@@ -307,6 +319,7 @@ export default function BacklinksTable({
             { key: 'Nofollow', label: 'Nofollow', count: nofollow },
             { key: 'New', label: 'New', count: newCount },
             { key: 'Lost', label: 'Lost', count: lostCount },
+            { key: 'Broken', label: 'Broken', count: brokenCount },
           ].map(t => (
             <button
               key={t.key}
