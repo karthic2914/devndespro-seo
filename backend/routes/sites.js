@@ -629,41 +629,43 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
     let discovered = []
     let source = 'mixed'
 
-    // 1) Ranking-overlap first (closer to real market competitors than raw backlink overlap)
+    // 1) Ranking-overlap (try NO + US — small markets can return empty)
     const authHeader = getDataForSEOAuthSites()
     if (authHeader) {
-      try {
-        const { data } = await axios.post(
-          'https://api.dataforseo.com/v3/dataforseo_labs/google/competitors_domain/live',
-          [{
-            target: targetDomain,
-            language_name: 'English',
-            location_code: 2578,
-            limit: 12,
-            exclude_top_domains: true,
-          }],
-          { headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' }, timeout: 20000 }
-        )
-        const items = data?.tasks?.[0]?.result?.[0]?.items || []
-        const labs = items
-          .filter(item => item?.domain && item.domain.toLowerCase() !== targetDomain.toLowerCase())
-          .map(item => {
-            const etv = Number(item?.full_domain_metrics?.organic?.etv || item?.metrics?.organic?.etv || 0)
-            const keywordCount = Number(item?.full_domain_metrics?.organic?.count || item?.metrics?.organic?.count || 0)
-            const estAuthority = Math.max(1, Math.min(100, Math.round(Math.log10(etv + 1) * 18 + Math.log10(keywordCount + 1) * 6)))
-            return {
-              name: item.domain,
-              dr: estAuthority,
-              notes: `Ranking overlap: ${keywordCount} shared keywords`,
-              source: 'labs',
-            }
-          })
-        if (labs.length) {
-          discovered = discovered.concat(labs)
-          source = 'dataforseo'
+      for (const locationCode of [2578, 2840]) {
+        try {
+          const { data } = await axios.post(
+            'https://api.dataforseo.com/v3/dataforseo_labs/google/competitors_domain/live',
+            [{
+              target: targetDomain,
+              language_name: 'English',
+              location_code: locationCode,
+              limit: 12,
+              exclude_top_domains: true,
+            }],
+            { headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' }, timeout: 20000 }
+          )
+          const items = data?.tasks?.[0]?.result?.[0]?.items || []
+          const labs = items
+            .filter(item => item?.domain && item.domain.toLowerCase() !== targetDomain.toLowerCase())
+            .map(item => {
+              const etv = Number(item?.full_domain_metrics?.organic?.etv || item?.metrics?.organic?.etv || 0)
+              const keywordCount = Number(item?.full_domain_metrics?.organic?.count || item?.metrics?.organic?.count || 0)
+              const estAuthority = Math.max(1, Math.min(100, Math.round(Math.log10(etv + 1) * 18 + Math.log10(keywordCount + 1) * 6)))
+              return {
+                name: item.domain,
+                dr: estAuthority,
+                notes: `Ranking overlap: ${keywordCount} shared keywords`,
+                source: 'labs',
+              }
+            })
+          if (labs.length) {
+            discovered = discovered.concat(labs)
+            source = 'dataforseo'
+          }
+        } catch (e) {
+          console.error(`DataForSEO competitors_domain (${locationCode}) failed:`, e.response?.data || e.message)
         }
-      } catch (e) {
-        console.error('DataForSEO competitors_domain failed:', e.response?.data || e.message)
       }
     }
 
@@ -859,8 +861,59 @@ Return ONLY valid JSON:
       }
     }
 
+    // Last resort: keep top candidates (including weak) so Auto-fill never returns empty
+    if (!profiles.length && discovered.length) {
+      source = 'labs-fallback'
+      profiles = discovered.slice(0, 6).map((d) => ({
+        name: d.name,
+        dr: Number(d.dr || 0),
+        title: d.title || '',
+        summary: d.summary || 'Competitor candidate from search/backlink data — verify niche fit',
+        industry: 'Digital / marketing related (verify)',
+        location: '',
+        notes: `Auto-fill fallback: ${d.notes || d.source || ''}`.slice(0, 280),
+        url: d.url || `https://${d.name}`,
+        source: d.source || 'fallback',
+      }))
+    }
+
+    // Absolute last resort: invent plausible same-niche agencies via short AI prompt
+    if (!profiles.length) {
+      source = 'ai-seed'
+      try {
+        const prompt = `Return ONLY JSON with 5 real web design / web development / SEO agency competitor domains for a company like ${site.name} (${targetDomain}), preferably Norway/Scandinavia/Europe if relevant.
+{"competitors":[{"domain":"x.com","industry":"Web design & SEO agency","summary":"...","location":"...","reason":"..."}]}`
+        const r = await anthropic.messages.create({
+          model: 'claude-sonnet-5',
+          max_tokens: 900,
+          messages: [{ role: 'user', content: prompt }],
+        })
+        const text = r.content?.[0]?.text?.trim() || '{}'
+        const jsonStart = text.indexOf('{')
+        const jsonEnd = text.lastIndexOf('}')
+        const parsed = JSON.parse(jsonStart >= 0 ? text.slice(jsonStart, jsonEnd + 1) : text)
+        profiles = (Array.isArray(parsed.competitors) ? parsed.competitors : [])
+          .map((c) => ({
+            name: normalizeCompetitorDomain(c?.domain),
+            dr: 0,
+            title: '',
+            summary: String(c.summary || '').trim().slice(0, 280),
+            industry: String(c.industry || 'Web design & SEO agency').trim().slice(0, 120),
+            location: String(c.location || '').trim().slice(0, 120),
+            notes: `AI-suggested: ${String(c.reason || '').trim()}`.slice(0, 280),
+            url: `https://${normalizeCompetitorDomain(c?.domain)}`,
+            source: 'ai',
+          }))
+          .filter((c) => c.name && c.name !== targetDomain)
+          .slice(0, 5)
+      } catch (e) {
+        console.error('AI seed competitors failed:', e.message)
+      }
+    }
+
+    // Never wipe the list if we failed to find replacements
     let pruned = 0
-    if (prune) {
+    if (prune && profiles.length > 0) {
       for (const row of existingRows) {
         if (!isAutoSourcedCompetitor(row)) continue
         const keep = profiles.some((p) => p.name === normalizeCompetitorDomain(row.name))
@@ -869,6 +922,8 @@ Return ONLY valid JSON:
           pruned += 1
         }
       }
+    } else if (prune && !profiles.length) {
+      console.warn('Auto-discover: skipping prune because no replacement competitors were found')
     }
 
     const { rows: afterPrune } = await pool.query('SELECT name FROM competitors WHERE site_id=$1', [req.siteId])
@@ -876,29 +931,36 @@ Return ONLY valid JSON:
 
     let inserted = 0
     let updated = 0
+    const insertErrors = []
     for (const c of profiles) {
-      if (existingDomains.has(c.name.toLowerCase())) {
-        await pool.query(
-          `UPDATE competitors
-           SET dr=CASE WHEN $3::int > 0 THEN $3 ELSE dr END,
-               notes=$4,
-               url=$5,
-               title=COALESCE(NULLIF($6,''), title),
-               summary=COALESCE(NULLIF($7,''), summary),
-               industry=COALESCE(NULLIF($8,''), industry),
-               location=COALESCE(NULLIF($9,''), location)
-           WHERE site_id=$1 AND lower(btrim(name))=lower(btrim($2))`,
-          [req.siteId, c.name, c.dr || 0, c.notes, c.url, c.title || '', c.summary || '', c.industry || '', c.location || '']
-        )
-        updated += 1
-      } else {
-        await pool.query(
-          `INSERT INTO competitors (site_id, name, dr, notes, url, title, summary, industry, location)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-          [req.siteId, c.name, c.dr || 0, c.notes, c.url, c.title || '', c.summary || '', c.industry || '', c.location || '']
-        )
-        existingDomains.add(c.name.toLowerCase())
-        inserted += 1
+      if (!c?.name) continue
+      try {
+        if (existingDomains.has(c.name.toLowerCase())) {
+          await pool.query(
+            `UPDATE competitors
+             SET dr=CASE WHEN $3::int > 0 THEN $3 ELSE dr END,
+                 notes=$4,
+                 url=$5,
+                 title=COALESCE(NULLIF($6,''), title),
+                 summary=COALESCE(NULLIF($7,''), summary),
+                 industry=COALESCE(NULLIF($8,''), industry),
+                 location=COALESCE(NULLIF($9,''), location)
+             WHERE site_id=$1 AND lower(btrim(name))=lower(btrim($2))`,
+            [req.siteId, c.name, c.dr || 0, c.notes || '', c.url || `https://${c.name}`, c.title || '', c.summary || '', c.industry || '', c.location || '']
+          )
+          updated += 1
+        } else {
+          await pool.query(
+            `INSERT INTO competitors (site_id, name, dr, notes, url, title, summary, industry, location)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+            [req.siteId, c.name, c.dr || 0, c.notes || '', c.url || `https://${c.name}`, c.title || '', c.summary || '', c.industry || '', c.location || '']
+          )
+          existingDomains.add(c.name.toLowerCase())
+          inserted += 1
+        }
+      } catch (e) {
+        insertErrors.push(`${c.name}: ${e.message}`)
+        console.error('Competitor upsert failed:', c.name, e.message)
       }
     }
 
@@ -906,6 +968,19 @@ Return ONLY valid JSON:
       'SELECT * FROM competitors WHERE site_id=$1 ORDER BY dr DESC, name ASC',
       [req.siteId]
     )
+
+    if (!allRows.length) {
+      return res.status(422).json({
+        inserted: 0,
+        updated: 0,
+        pruned: 0,
+        competitors: [],
+        errors: insertErrors,
+        error: 'No competitors could be saved. Add a Business description on Competitors, or type domains manually in C1.',
+        tip: 'Example: Web design, web development and SEO agency for businesses in Norway / Scandinavia.',
+      })
+    }
+
     res.json({
       inserted,
       updated,
@@ -913,13 +988,14 @@ Return ONLY valid JSON:
       skipped: Math.max(0, profiles.length - inserted - updated),
       source,
       competitors: allRows,
+      errors: insertErrors.length ? insertErrors : undefined,
       tip: !String(site.description || '').trim()
         ? 'Add a Business description on Competitors for even better niche matching.'
         : undefined,
     })
   } catch (e) {
     console.error('Auto-discover competitors failed:', e.response?.data || e.message)
-    res.status(500).json({ error: 'Could not auto-discover competitors' })
+    res.status(500).json({ error: e.message || 'Could not auto-discover competitors' })
   }
 })
 

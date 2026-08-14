@@ -319,17 +319,40 @@ function BacklinkGapPanel({ siteId, onSaved }) {
       const { data } = await api.post(`/sites/${siteId}/competitors/auto-discover`, { prune: true })
       const list = Array.isArray(data?.competitors) ? data.competitors : []
       setSavedCompetitors(list)
-      setInputs(list.slice(0, 4).map((c) => c.name).concat(['']).slice(0, Math.max(2, Math.min(4, list.length || 1))))
+      const names = list.map((c) => String(c?.name || '').trim()).filter(Boolean)
+      if (!names.length) {
+        toast.error(data?.error || 'No competitors returned. Add a Business description on Competitors, or type a domain in C1.')
+        if (data?.tip) toast(data.tip)
+        return
+      }
+      const filled = names.slice(0, 4)
+      if (filled.length < 4) filled.push('')
+      setInputs(filled)
       const parts = []
       if (data?.pruned) parts.push(`removed ${data.pruned} off-niche`)
       if (data?.inserted) parts.push(`added ${data.inserted}`)
       if (data?.updated) parts.push(`updated ${data.updated}`)
-      toast.success(parts.length ? `Competitors refreshed (${parts.join(', ')})` : 'Competitors refreshed')
+      toast.success(parts.length ? `Competitors refreshed (${parts.join(', ')})` : `Loaded ${names.length} competitor${names.length === 1 ? '' : 's'}`)
       if (data?.tip) toast(data.tip)
     } catch (e) {
-      toast.error(e?.response?.data?.error || 'Auto-discover failed')
+      const msg = e?.response?.data?.error || 'Auto-discover failed'
+      toast.error(msg)
+      if (e?.response?.data?.tip) toast(e.response.data.tip)
+      // Still try to show whatever is already saved
+      try {
+        const r = await api.get(`/sites/${siteId}/competitors`)
+        const list = Array.isArray(r.data) ? r.data : []
+        setSavedCompetitors(list)
+        const names = list.map((c) => String(c?.name || '').trim()).filter(Boolean)
+        if (names.length) {
+          const filled = names.slice(0, 4)
+          if (filled.length < 4) filled.push('')
+          setInputs(filled.slice(0, 4))
+        }
+      } catch { /* ignore */ }
+    } finally {
+      setDiscovering(false)
     }
-    setDiscovering(false)
   }
 
   const findProspects = async () => {

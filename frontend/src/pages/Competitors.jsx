@@ -63,10 +63,12 @@ export default function Competitors() {
       if (inserted) parts.push(`added ${inserted}`)
       if (updated) parts.push(`updated ${updated} with details`)
       if (parts.length) toast.success(`Competitors refreshed (${parts.join(', ')})`)
-      else toast('No new relevant competitors found this time')
+      else toast.success('Competitors refreshed')
       if (res?.data?.tip) toast(res.data.tip)
     } catch (e) {
       toast.error(e?.response?.data?.error || 'Auto-discover failed')
+      if (e?.response?.data?.tip) toast(e.response.data.tip)
+      load()
     }
     setDiscovering(false)
   }
