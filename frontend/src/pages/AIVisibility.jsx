@@ -3153,7 +3153,7 @@ export default function AIVisibility() {
           <div className="ai-question-main-grid">
 
             {/* LEFT - Questions */}
-            <section className="ai-question-panel">
+            <section id="ai-questions-panel" className="ai-question-panel">
               <div className="ai-question-panel-header">
                 <div>
                   <h2 className="ai-question-panel-title">

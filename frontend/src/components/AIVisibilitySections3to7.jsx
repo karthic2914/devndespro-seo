@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWandMagicSparkles,
@@ -8,6 +10,7 @@ import {
   faSquareCheck,
   faSquare,
   faListCheck,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
 import api from '../utils/api'
@@ -878,6 +881,7 @@ const ENGINE_ROWS = [
 export function VisibilityEngineTable({ siteId }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showDetails, setShowDetails] = useState(false)
 
   const load = useCallback(() => {
     setLoading(true)
@@ -895,12 +899,12 @@ export function VisibilityEngineTable({ siteId }) {
   )
 
   return (
-    <div style={{ ...cardStyle, minHeight: 260 }}>
+    <div id="ai-vis-engine-card" style={{ ...cardStyle, minHeight: 260 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
         <div style={titleStyle}>AI Visibility by Engine</div>
         <button
           type="button"
-          onClick={() => scrollToId('step-analyze')}
+          onClick={() => setShowDetails(true)}
           style={{
             border: 0,
             background: 'transparent',
@@ -980,6 +984,133 @@ export function VisibilityEngineTable({ siteId }) {
           )
         })}
       </div>
+
+      {showDetails && createPortal(
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="AI Visibility by Engine details"
+          onClick={() => setShowDetails(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15,23,42,0.45)',
+            zIndex: 5000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: 'min(560px, 100%)',
+              background: '#fff',
+              borderRadius: 14,
+              border: '1px solid #E5E7EB',
+              boxShadow: '0 20px 50px rgba(15,23,42,0.2)',
+              padding: 18,
+              maxHeight: '85vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#0F172A' }}>Engine visibility details</div>
+              <button
+                type="button"
+                onClick={() => setShowDetails(false)}
+                style={{ border: 0, background: '#F8FAFC', width: 28, height: 28, borderRadius: 8, cursor: 'pointer' }}
+              >
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            </div>
+            <div style={{ fontSize: 11, color: '#64748B', marginBottom: 14 }}>
+              Last 30 days of ChatGPT and Claude scans. Gemini and Perplexity are not connected yet.
+            </div>
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1.2fr 0.8fr 0.9fr 0.8fr',
+                gap: 8,
+                fontSize: 10,
+                fontWeight: 700,
+                color: '#94A3B8',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+                paddingBottom: 8,
+                borderBottom: '1px solid #E5E7EB',
+              }}
+            >
+              <span>Engine</span>
+              <span>Mention rate</span>
+              <span>Best rank</span>
+              <span>Avg position</span>
+            </div>
+
+            {ENGINE_ROWS.map(meta => {
+              const data = byEngine[meta.key]
+              const hasData = !!data?.hasData
+              return (
+                <div
+                  key={meta.key}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1.2fr 0.8fr 0.9fr 0.8fr',
+                    gap: 8,
+                    alignItems: 'center',
+                    padding: '10px 0',
+                    borderBottom: '1px solid #F1F5F9',
+                    fontSize: 12,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, color: '#0F172A' }}>
+                    <BrandFavicon name={meta.label} size={18} />
+                    {meta.label}
+                  </div>
+                  {!meta.live ? (
+                    <span style={{ gridColumn: '2 / 5', color: '#94A3B8', fontWeight: 700, fontSize: 11 }}>Coming soon</span>
+                  ) : (
+                    <>
+                      <span style={{ fontWeight: 700 }}>{hasData ? `${data.mentionRate}%` : '0%'}</span>
+                      <span style={{ fontWeight: 800, color: data?.bestRank ? '#16A34A' : '#94A3B8' }}>
+                        {data?.bestRank ? `#${data.bestRank}` : (hasData ? 'Out of Top 10' : 'No scans')}
+                      </span>
+                      <span style={{ fontWeight: 700, color: '#334155' }}>
+                        {data?.averagePosition != null ? `#${data.averagePosition}` : 'N/A'}
+                      </span>
+                    </>
+                  )}
+                </div>
+              )
+            })}
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowDetails(false)
+                scrollToId('ai-questions-panel')
+              }}
+              style={{
+                marginTop: 14,
+                width: '100%',
+                padding: '10px 0',
+                borderRadius: 8,
+                border: '1px solid #FDBA74',
+                background: '#FFF7ED',
+                color: '#EA580C',
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Go to questions to re-test
+            </button>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   )
 }
@@ -1005,8 +1136,10 @@ function ComingSoonButton({ label }) {
 }
 
 export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
+  const navigate = useNavigate()
   const [data, setData] = useState({ yourScore: 0, competitors: [] })
   const [loading, setLoading] = useState(true)
+  const [showAll, setShowAll] = useState(false)
 
   const load = useCallback(() => {
     if (!siteId) return
@@ -1022,8 +1155,9 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
   useEffect(() => load(), [load])
   useScanRefresh(load)
 
-  const competitors = (data.competitors || []).slice(0, 5)
-  const maxScore = Math.max(1, ...competitors.map(c => c.visibilityScore || 0), data.yourScore || 0)
+  const allCompetitors = data.competitors || []
+  const competitors = showAll ? allCompetitors : allCompetitors.slice(0, 5)
+  const maxScore = Math.max(1, ...allCompetitors.map(c => c.visibilityScore || 0), data.yourScore || 0)
 
   return (
     <div style={{ ...cardStyle, minHeight: 260 }}>
@@ -1032,12 +1166,11 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
         <button
           type="button"
           onClick={() => {
-            try {
-              const path = window.location.pathname.replace(/\/ai-visibility.*/, '/competitors')
-              window.location.assign(path)
-            } catch {
-              /* ignore */
+            if (allCompetitors.length > 5 && !showAll) {
+              setShowAll(true)
+              return
             }
+            navigate(`/site/${siteId}/competitors`)
           }}
           style={{
             border: 0,
@@ -1050,7 +1183,7 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
             whiteSpace: 'nowrap',
           }}
         >
-          View all →
+          {showAll || allCompetitors.length <= 5 ? 'Manage competitors →' : 'View all →'}
         </button>
       </div>
       <div style={{ ...subStyle, marginBottom: 12 }}>
@@ -1130,6 +1263,25 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
               </div>
             )
           })}
+
+          {showAll && allCompetitors.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setShowAll(false)}
+              style={{
+                marginTop: 8,
+                border: 0,
+                background: 'transparent',
+                color: '#64748B',
+                fontSize: 11,
+                fontWeight: 600,
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              Show less
+            </button>
+          )}
         </>
       )}
     </div>
