@@ -3,10 +3,12 @@ export const PLAN_META = {
     id: 'free',
     label: 'Free',
     blurb: 'Core SEO basics for getting started.',
+    priceNok: 0,
+    priceLabel: '0 kr',
     bullets: [
       'Keywords basic (view & track)',
       'Overview & Site Audit',
-      'AI Visibility',
+      'AI Visibility — overall score only',
       'Alerts & Integrations',
     ],
   },
@@ -14,8 +16,11 @@ export const PLAN_META = {
     id: 'pro',
     label: 'Pro',
     blurb: 'Growth tools for link building and AI.',
+    priceNok: 199,
+    priceLabel: '199 kr/mo',
     bullets: [
       'Everything in Free',
+      'Full AI Visibility (scans, engines, recommendations)',
       'Backlinks',
       'AI Assistant',
       'Keyword Pro tools',
@@ -25,12 +30,23 @@ export const PLAN_META = {
     id: 'agency',
     label: 'Agency',
     blurb: 'Full suite for client and outreach work.',
+    priceNok: 499,
+    priceLabel: '499 kr/mo',
     bullets: [
       'Everything in Pro',
-      'Cold Email',
+      'Cold Email outreach',
       'Team-ready access',
     ],
   },
+}
+
+export function formatPlanPrice(planOrMeta) {
+  const meta = typeof planOrMeta === 'string' ? PLAN_META[planOrMeta] : planOrMeta
+  if (!meta) return ''
+  if (meta.priceLabel) return meta.priceLabel
+  const n = Number(meta.priceNok) || 0
+  if (n <= 0) return '0 kr'
+  return `${n} kr/mo`
 }
 
 export function isAdminUser(user) {
@@ -76,4 +92,13 @@ export function canUseColdEmails(user) {
   if (user.features?.cold_emails != null) return Boolean(user.features.cold_emails)
   const plan = resolvePlan(user)
   return plan === 'agency' || Boolean(user.cold_emails_enabled)
+}
+
+/** Full AI Visibility beyond overall score. */
+export function canUseAiVisibilityFull(user) {
+  if (!user) return false
+  if (isAdminUser(user)) return true
+  if (user.features?.ai_visibility_full != null) return Boolean(user.features.ai_visibility_full)
+  const plan = resolvePlan(user)
+  return plan === 'pro' || plan === 'agency' || Boolean(user.is_paid)
 }

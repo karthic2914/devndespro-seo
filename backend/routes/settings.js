@@ -84,8 +84,9 @@ router.get('/me', auth, async (req, res) => {
         ai_assistant: flags.ai_assistant,
         keywords_pro: flags.keywords,
         cold_emails: flags.cold_emails,
+        ai_visibility_full: flags.ai_visibility_full,
       },
-      plans: PLANS.map(id => PLAN_META[id]),
+      plans: PLANS.map(id => ({ ...PLAN_META[id] })),
     })
   } catch (e) {
     console.error(e)

@@ -9,10 +9,12 @@ const PLAN_META = {
     id: 'free',
     label: 'Free',
     blurb: 'Core SEO basics for getting started.',
+    priceNok: 0,
+    priceLabel: '0 kr',
     bullets: [
       'Keywords basic (view & track)',
       'Overview & Site Audit',
-      'AI Visibility',
+      'AI Visibility — overall score only',
       'Alerts & Integrations',
     ],
   },
@@ -20,8 +22,11 @@ const PLAN_META = {
     id: 'pro',
     label: 'Pro',
     blurb: 'Growth tools for link building and AI.',
+    priceNok: 199,
+    priceLabel: '199 kr/mo',
     bullets: [
       'Everything in Free',
+      'Full AI Visibility (scans, engines, recommendations)',
       'Backlinks',
       'AI Assistant',
       'Keyword Pro tools',
@@ -31,9 +36,11 @@ const PLAN_META = {
     id: 'agency',
     label: 'Agency',
     blurb: 'Full suite for client and outreach work.',
+    priceNok: 499,
+    priceLabel: '499 kr/mo',
     bullets: [
       'Everything in Pro',
-      'Cold Email',
+      'Cold Email outreach',
       'Team-ready access',
     ],
   },
@@ -99,6 +106,13 @@ function canUseColdEmails(user) {
   return plan === 'agency' || Boolean(user?.cold_emails_enabled)
 }
 
+/** Full AI Visibility (scans, engines, recommendations). Free = score teaser only. */
+function canUseAiVisibilityFull(user) {
+  if (isAdminUser(user)) return true
+  const plan = resolvePlan(user)
+  return plan === 'pro' || plan === 'agency' || Boolean(user?.is_paid)
+}
+
 function featureFlagsFor(user) {
   const plan = resolvePlan(user)
   return {
@@ -108,6 +122,7 @@ function featureFlagsFor(user) {
     keywords: canUseKeywords(user),
     ai_assistant: canUseAiAssistant(user),
     cold_emails: canUseColdEmails(user),
+    ai_visibility_full: canUseAiVisibilityFull(user),
     isAdmin: isAdminUser(user),
   }
 }
@@ -275,6 +290,7 @@ module.exports = {
   canUseKeywords,
   canUseAiAssistant,
   canUseColdEmails,
+  canUseAiVisibilityFull,
   featureFlagsFor,
   flagsForPlan,
   setUserPlan,

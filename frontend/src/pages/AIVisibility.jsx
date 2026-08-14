@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles, faCircleCheck, faRotateRight, faShareNodes, faDownload, faChevronDown, faXmark, faPalette, faCode, faLink, faServer, faMagnifyingGlass, faLayerGroup, faComments, faBolt, faInbox } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
 import { useSnackbar } from '../App'
+import { useAuth } from '../hooks/useAuth'
+import { canUseAiVisibilityFull } from '../utils/features'
 import {
   VisibilityKPICards,
 } from '../components/AIVisibilitySections3to7'
@@ -157,6 +159,9 @@ function ExternalAnswerIcon() {
 export default function AIVisibility() {
   const { siteId } = useParams()
   const showSnackbar = useSnackbar()
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const fullAccess = canUseAiVisibilityFull(user)
   const reportRef = useRef(null)
   const [site, setSite] = useState(null)
   const [sharing, setSharing] = useState(false)
@@ -934,6 +939,73 @@ export default function AIVisibility() {
     fontSize: 11,
     fontWeight: 800,
     flexShrink: 0,
+  }
+
+  if (!fullAccess) {
+    return (
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px 40px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 10,
+            background: 'linear-gradient(145deg, #FF8A4C, #FF6B2B)',
+            color: '#fff', display: 'grid', placeItems: 'center',
+          }}>
+            <FontAwesomeIcon icon={faWandMagicSparkles} />
+          </div>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0F172A' }}>AI Visibility</h1>
+            <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748B' }}>
+              Free plan shows your overall score. Upgrade for full scans and insights.
+            </p>
+          </div>
+        </div>
+
+        <div style={{
+          marginTop: 18,
+          background: '#fff',
+          border: '1px solid #E5E7EB',
+          borderRadius: 14,
+          padding: 20,
+        }}>
+          <VisibilityKPICards
+            siteId={siteId}
+            freeTeaser
+            onSummaryLoaded={setSummaryPeriod}
+          />
+          <div style={{
+            marginTop: 18,
+            padding: 16,
+            borderRadius: 12,
+            background: '#FFF7F3',
+            border: '1px solid #FED7AA',
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#9A3412', marginBottom: 6 }}>
+              Unlock full AI Visibility on Pro
+            </div>
+            <div style={{ fontSize: 13, color: '#78716C', lineHeight: 1.5, marginBottom: 12 }}>
+              Engine breakdown, question tests, competitors, reasoning, and recommendations —
+              from <strong>199 kr/mo</strong> (Pro) or <strong>499 kr/mo</strong> (Agency).
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/settings')}
+              style={{
+                border: 0,
+                background: '#E66A39',
+                color: '#fff',
+                borderRadius: 8,
+                padding: '10px 16px',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              View plans & upgrade
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (

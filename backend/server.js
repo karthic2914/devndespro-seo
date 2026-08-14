@@ -20,6 +20,7 @@ const reportsRouter = require('./routes/reports')
 const settingsRouter = require('./routes/settings')
 const publicAuditRouter = require('./routes/publicAudit')
 const usageRouter = require('./routes/usage')
+const { router: billingRouter, handleStripeWebhook } = require('./routes/billing')
 const { wrapAiClients } = require('./utils/wrapAiClients')
 const { ensureAiUsageTable } = require('./utils/aiUsage')
 
@@ -29,6 +30,14 @@ const PORT = process.env.PORT || 4000
 wrapAiClients()
 
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }))
+
+// Stripe needs the raw body for signature verification
+app.post(
+  '/api/billing/stripe-webhook',
+  express.raw({ type: 'application/json' }),
+  handleStripeWebhook
+)
+
 app.use(express.json())
 
 app.use('/api/auth', authRouter)
@@ -43,6 +52,7 @@ app.use('/api/sites', alertsSiteRouter)
 app.use('/api/alerts', alertsGlobalRouter)
 app.use('/api/sites', emailReportsRouter)
 app.use('/api/users', usersRouter)
+app.use('/api/billing', billingRouter)
 app.use('/api/reports', reportsRouter)
 app.use('/api/extract', extractRouter)
 app.use('/api/admin-email', adminEmailRouter)

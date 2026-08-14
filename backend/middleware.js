@@ -6,6 +6,7 @@ const {
   canUseKeywords,
   canUseAiAssistant,
   canUseColdEmails,
+  canUseAiVisibilityFull,
   isAdminUser,
 } = require('./utils/features')
 
@@ -16,7 +17,7 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     const { rows } = await pool.query('SELECT id, email FROM users WHERE id=$1 LIMIT 1', [decoded.id])
     if (!rows[0]) return res.status(401).json({ error: 'Session expired. Please login again.' })
-    req.user = decoded
+    req.user = { id: rows[0].id, email: rows[0].email }
     next()
   } catch {
     res.status(401).json({ error: 'Invalid token' })
@@ -68,6 +69,7 @@ const requireFeature = (feature) => async (req, res, next) => {
       : feature === 'keywords' ? canUseKeywords(user)
       : feature === 'ai_assistant' ? canUseAiAssistant(user)
       : feature === 'cold_emails' ? canUseColdEmails(user)
+      : feature === 'ai_visibility_full' ? canUseAiVisibilityFull(user)
       : false
 
     if (!allowed) {

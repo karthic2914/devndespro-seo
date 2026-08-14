@@ -740,7 +740,8 @@ export function VisibilityKPICards({
   siteId,
   onSummaryLoaded,
   totalQuestions = 0,
-  testedQuestions = 0
+  testedQuestions = 0,
+  freeTeaser = false,
 }) {
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -759,12 +760,13 @@ export function VisibilityKPICards({
   useEffect(() => load(), [load])
   useScanRefresh(load)
 
-  const cards = summary ? [
+  const allCards = summary ? [
     { key: 'overallScore', value: summary.overallScore + '%', delta: summary.deltas?.overallScore, unit: 'pt' },
     { key: 'mentionRate', value: summary.mentionRate + '%', delta: summary.deltas?.mentionRate, unit: 'pt' },
     { key: 'averageRank', value: summary.averageRank, delta: summary.deltas?.averageRank, unit: '' },
     { key: 'enginesInTop10', value: summary.enginesInTop10, delta: summary.deltas?.enginesInTop10, unit: '' },
   ] : []
+  const cards = freeTeaser ? allCards.filter(c => c.key === 'overallScore') : allCards
 
   const safeQuestionsTested = Math.min(
     Math.max(Number(testedQuestions) || 0, 0),
@@ -781,10 +783,10 @@ export function VisibilityKPICards({
     : 0
 
   return (
-    <div className="ai-vis-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
+    <div className="ai-vis-kpi-grid" style={{ display: 'grid', gridTemplateColumns: freeTeaser ? '1fr' : 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: 12, marginBottom: 0, maxWidth: '100%', minWidth: 0 }}>
       {(loading || !summary) ? (
         <div style={{ ...cardStyle, gridColumn: '1 / -1' }}>
-          <div style={emptyStyle}>{loading ? 'Loading overview...' : 'No visibility scan yet. Run a scan below to populate this.'}</div>
+          <div style={emptyStyle}>{loading ? 'Loading overview...' : (freeTeaser ? 'No score yet — upgrade to Pro to run AI visibility scans.' : 'No visibility scan yet. Run a scan below to populate this.')}</div>
         </div>
       ) : cards.map(c => {
         const meta = KPI_META[c.key]
@@ -831,6 +833,7 @@ export function VisibilityKPICards({
       })}
       {/* Questions Tested - real data (how many generated/custom questions
           have actually been scanned at least once), not a fake placeholder */}
+      {!freeTeaser && (
       <div
         className="ai-vis-kpi-card"
         style={{
@@ -866,6 +869,7 @@ export function VisibilityKPICards({
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }

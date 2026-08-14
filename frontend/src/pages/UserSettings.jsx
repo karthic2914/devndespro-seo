@@ -41,24 +41,87 @@ export default function UserSettings() {
   const [auditAlertEmail, setAuditAlertEmail] = useState(true)
   const [access, setAccess] = useState(null)
   const [plans, setPlans] = useState([])
+  const [checkoutEnabled, setCheckoutEnabled] = useState(false)
+  const [checkoutPlan, setCheckoutPlan] = useState(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const sessionId = params.get('session_id')
+    const upgraded = params.get('upgraded') === '1'
+    const planParam = params.get('plan') || 'paid'
+
+    if (params.get('checkout') === 'cancel') {
+      setError('Checkout cancelled — no charge was made.')
+      window.history.replaceState({}, '', '/settings')
+      return
+    }
+
+    if (!upgraded && !sessionId) return
+
+    let cancelled = false
+    ;(async () => {
+      try {
+        if (sessionId) {
+          await api.post('/billing/confirm-session', { sessionId })
+        }
+        if (refreshUser) await refreshUser()
+        const me = await api.get('/settings/me')
+        if (cancelled) return
+        setAccess(me.data?.access || null)
+        setMsg(`You're on ${planParam} — welcome! Features are unlocked.`)
+      } catch (e) {
+        if (!cancelled) {
+          setMsg(`Payment received — activating ${planParam}. Refresh in a moment if features are still locked.`)
+          if (refreshUser) refreshUser()
+        }
+      } finally {
+        window.history.replaceState({}, '', '/settings')
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [refreshUser])
+
+  useEffect(() => {
     setLoading(true)
-    api.get('/settings/me')
-      .then(({ data }) => {
+    Promise.all([
+      api.get('/settings/me'),
+      api.get('/billing/plans').catch(() => ({ data: null })),
+    ])
+      .then(([me, billing]) => {
+        const data = me.data
         setName(data?.profile?.name || user?.name || '')
         setWeeklyRankEmail(!!data?.preferences?.weekly_rank_email)
         setAuditAlertEmail(!!data?.preferences?.audit_alert_email)
         setAccess(data?.access || null)
-        setPlans(Array.isArray(data?.plans) ? data.plans : [])
+        const fromBilling = Array.isArray(billing.data?.plans) ? billing.data.plans : null
+        setPlans(fromBilling || (Array.isArray(data?.plans) ? data.plans : []))
+        setCheckoutEnabled(!!billing.data?.checkoutEnabled)
       })
       .catch(() => setError('Failed to load settings'))
       .finally(() => setLoading(false))
   }, [user?.name])
+
+  const startCheckout = async (planId) => {
+    if (planId === 'free') return
+    setCheckoutPlan(planId)
+    setError('')
+    try {
+      const { data } = await api.post('/billing/checkout', { plan: planId })
+      if (data?.url) {
+        window.location.href = data.url
+        return
+      }
+      setError(data?.error || 'Checkout unavailable')
+    } catch (e) {
+      setError(e.response?.data?.error || 'Checkout failed')
+    }
+    setCheckoutPlan(null)
+  }
 
   const save = async () => {
     setSaving(true)
@@ -155,6 +218,8 @@ export default function UserSettings() {
             }}>
               {(plans.length ? plans : Object.values(PLAN_META)).map(p => {
                 const active = (access?.plan || 'free') === p.id
+                const price = p.priceLabel || (p.priceNok === 0 ? '0 kr' : `${p.priceNok} kr/mo`)
+                const canBuy = p.id !== 'free' && !active
                 return (
                   <div
                     key={p.id}
@@ -164,6 +229,8 @@ export default function UserSettings() {
                       padding: '12px 12px 14px',
                       background: active ? '#FFF7F3' : '#fff',
                       boxShadow: active ? '0 0 0 1px rgba(230,106,57,0.12)' : 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
                     }}
                   >
                     <div style={{
@@ -186,23 +253,56 @@ export default function UserSettings() {
                         </span>
                       )}
                     </div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: T.text, marginBottom: 6 }}>
+                      {price}
+                    </div>
                     <div style={{ fontSize: 11, color: T.muted, lineHeight: 1.45, marginBottom: 8 }}>
                       {p.blurb}
                     </div>
-                    <ul style={{ margin: 0, paddingLeft: 16, fontSize: 11, color: T.text2, lineHeight: 1.55 }}>
+                    <ul style={{ margin: '0 0 12px', paddingLeft: 16, fontSize: 11, color: T.text2, lineHeight: 1.55, flex: 1 }}>
                       {(p.bullets || []).map(b => (
                         <li key={b}>{b}</li>
                       ))}
                     </ul>
+                    {canBuy && (
+                      <button
+                        type="button"
+                        disabled={!!checkoutPlan}
+                        onClick={() => startCheckout(p.id)}
+                        style={{
+                          width: '100%',
+                          border: 0,
+                          borderRadius: 8,
+                          padding: '9px 12px',
+                          fontSize: 12,
+                          fontWeight: 700,
+                          cursor: checkoutPlan ? 'wait' : 'pointer',
+                          background: checkoutEnabled ? T.orange : '#F1F5F9',
+                          color: checkoutEnabled ? '#fff' : '#64748B',
+                        }}
+                      >
+                        {checkoutPlan === p.id
+                          ? 'Redirecting…'
+                          : checkoutEnabled
+                          ? `Select ${p.label} — pay`
+                          : `Request ${p.label}`}
+                      </button>
+                    )}
+                    {p.id === 'free' && !active && (
+                      <div style={{ fontSize: 11, color: T.muted, textAlign: 'center' }}>Included by default</div>
+                    )}
                   </div>
                 )
               })}
             </div>
             <div style={{ fontSize: 12, color: T.muted, lineHeight: 1.55, marginBottom: 10 }}>
-              Plans are assigned by an admin (or after payment). Self-checkout coming later.
+              {checkoutEnabled
+                ? 'Low launch pricing: Pro 199 kr/mo · Agency 499 kr/mo. Pay with card via Stripe — unlocks instantly after checkout.'
+                : 'Stripe is not configured yet (add STRIPE_SECRET_KEY on the server). Until then an admin can assign your plan on Users.'}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {[
+                { label: 'AI Visibility full', on: access?.ai_visibility_full },
                 { label: 'Backlinks', on: access?.backlinks },
                 { label: 'AI Assistant', on: access?.ai_assistant },
                 { label: 'KW Pro', on: access?.keywords_pro },

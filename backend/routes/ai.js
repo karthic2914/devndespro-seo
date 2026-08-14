@@ -306,7 +306,14 @@ router.post('/:siteId/ai/link-opportunities', auth, verifySite, requireFeature('
   } catch (e) { console.error(e); res.status(500).json({ error: 'Link opportunities failed' }) }
 })
 
-router.post('/:siteId/ai-visibility/analyse', auth, verifySite, async (req, res) => {
+// Free plan: only GET .../ai-visibility/summary. Everything else needs Pro/Agency.
+router.use('/:siteId/ai-visibility', auth, verifySite, (req, res, next) => {
+  const path = String(req.path || '')
+  if (req.method === 'GET' && /\/summary\/?$/.test(path)) return next()
+  return requireFeature('ai_visibility_full')(req, res, next)
+})
+
+router.post('/:siteId/ai-visibility/analyse', async (req, res) => {
   try {
     const engine = String(req.body?.engine || 'Claude')
     const [sR, mR, kR, aR] = await Promise.all([
@@ -430,7 +437,7 @@ router.get('/:siteId/products', auth, verifySite, async (req, res) => {
   }
 })
 
-router.post('/:siteId/products/detect', auth, verifySite, async (req, res) => {
+router.post('/:siteId/products/detect', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
   try {
     const engine = String(req.body?.engine || 'claude')
     const { rows: s } = await pool.query('SELECT name, url FROM sites WHERE id=$1', [req.siteId])
@@ -505,7 +512,7 @@ router.post('/:siteId/products/questions', auth, verifySite, async (req, res) =>
 // Custom questions - user-added questions, persisted to the database so
 // they survive a page refresh (unlike AI-generated questionSets, which
 // are ephemeral and regenerate each session).
-router.get('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
+router.get('/:siteId/custom-questions', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
   try {
     const { rows } = await pool.query(
       'SELECT id, question, created_at FROM custom_questions WHERE site_id=$1 ORDER BY created_at DESC',
@@ -518,7 +525,7 @@ router.get('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
   }
 })
 
-router.post('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
+router.post('/:siteId/custom-questions', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
   try {
     const question = String(req.body?.question || '').trim()
     if (!question) return res.status(400).json({ error: 'question is required' })
@@ -534,7 +541,7 @@ router.post('/:siteId/custom-questions', auth, verifySite, async (req, res) => {
   }
 })
 
-router.delete('/:siteId/custom-questions/:questionId', auth, verifySite, async (req, res) => {
+router.delete('/:siteId/custom-questions/:questionId', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
   try {
     await pool.query(
       'DELETE FROM custom_questions WHERE id=$1 AND site_id=$2',
