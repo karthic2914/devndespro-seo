@@ -18,7 +18,6 @@ export default function Backlinks() {
   const [form, setForm] = useState({ name: '', dr: '', status: 'Todo', url: '', anchor: '', type: 'dofollow' })
   const [addMode, setAddMode] = useState('domain')
   const [quickDomain, setQuickDomain] = useState('')
-  const [quickSettings, setQuickSettings] = useState({ status: 'Todo', type: 'dofollow' })
   const [adding, setAdding] = useState(false)
   const [crawling, setCrawling] = useState(false)
   const [crawlResult, setCrawlResult] = useState(null)
@@ -357,150 +356,171 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Add backlinks by domain, log exact links manually, and keep discovery tools out of the way until you need them."
+        subtitle="Track live links, manage outreach prospects, and discover new opportunities."
       />
+
+      {backlinkSummary && (
+        <div className="bl-real-summary" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: 10,
+          marginBottom: 12,
+        }}>
+          <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} />
+          <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" />
+          <MetricCard label="Dofollow" value={`${backlinkSummary.dofollowRatio || 0}%`} accent="var(--green)" />
+          <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" />
+          <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--red)" />
+          <MetricCard label="Opportunities" value={backlinkSummary.opportunities || savedOpportunities.length} accent="var(--amber)" />
+        </div>
+      )}
+
+      <div className="bl-metric-strip">
+        <MetricCard label="Total" value={backlinks.length} />
+        <MetricCard label="Dofollow" value={dofollow} accent="var(--green)" />
+        <MetricCard label="Live" value={live} accent="var(--blue)" />
+        <MetricCard label="Pending" value={pending} accent="var(--amber)" />
+        <MetricCard label="To do" value={todo} accent="var(--red)" />
+        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
+        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
+      </div>
 
       <Card style={{ marginBottom: 14 }}>
         <div className="bl-intake">
-          <div className="bl-intake-head">
-            <div className="bl-intake-copy">
-              <div className="bl-intake-kicker">Simpler workflow</div>
-              <div className="bl-intake-title">Start with a prospect domain. Add a backlink only when the exact referring page is confirmed.</div>
-              <div className="bl-intake-sub">
-                Prospect mode keeps outreach targets separate from verified backlinks. Manual mode is for confirmed links with a real source URL.
-              </div>
+          <div className="bl-intake-toolbar">
+            <div className="bl-mode-switch" role="tablist" aria-label="Add mode">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={addMode === 'domain'}
+                className={`bl-mode-btn${addMode === 'domain' ? ' bl-mode-btn--active' : ''}`}
+                onClick={() => setAddMode('domain')}
+              >
+                Prospect
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={addMode === 'manual'}
+                className={`bl-mode-btn${addMode === 'manual' ? ' bl-mode-btn--active' : ''}`}
+                onClick={() => setAddMode('manual')}
+              >
+                Verified link
+              </button>
             </div>
-            <div className="bl-intake-actions">
-              <OrangeBtn onClick={discoverFromProject} disabled={quickDiscovering} title={!canDiscover ? 'Upgrade to unlock' : ''}>
-                {quickDiscovering
-                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discoveringâ€¦</>
-                  : !canDiscover
-                    ? <><FontAwesomeIcon icon={faLock} style={{ marginRight: 6 }} />Discover from project</>
-                    : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover from project</>
-                }
-              </OrangeBtn>
-              <GhostBtn onClick={loadAiOpportunities} style={{ height: 38 }}>
-                {loadingOpps
-                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Findingâ€¦</>
-                  : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Find opportunities</>
-                }
-              </GhostBtn>
-              <GhostBtn onClick={() => setShowAdvanced(p => !p)} style={{ height: 38 }}>
-                {showAdvanced ? 'Hide advanced tools' : 'Open advanced tools'}
-              </GhostBtn>
-            </div>
-          </div>
 
-          <div className="bl-mode-switch">
-            <button className={`bl-mode-btn${addMode === 'domain' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('domain')}>
-              Add prospect
-            </button>
-            <button className={`bl-mode-btn${addMode === 'manual' ? ' bl-mode-btn--active' : ''}`} onClick={() => setAddMode('manual')}>
-              Add manually
-            </button>
+            <div className="bl-intake-actions">
+              <GhostBtn onClick={discoverFromProject} disabled={quickDiscovering} title={!canDiscover ? 'Upgrade to unlock' : 'Crawl your project for referring pages'}>
+                {quickDiscovering
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Discovering...</>
+                  : !canDiscover
+                    ? <><FontAwesomeIcon icon={faLock} style={{ marginRight: 6 }} />Discover</>
+                    : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover</>
+                }
+              </GhostBtn>
+              <GhostBtn onClick={loadAiOpportunities} style={{ height: 36 }}>
+                {loadingOpps
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding...</>
+                  : <><FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 6 }} />Opportunities</>
+                }
+              </GhostBtn>
+              <GhostBtn onClick={() => setShowAdvanced(p => !p)} style={{ height: 36 }}>
+                {showAdvanced ? 'Hide tools' : 'Import / crawl'}
+              </GhostBtn>
+            </div>
           </div>
 
           <div className="bl-form-shell">
             {addMode === 'domain' ? (
-              <>
-                <div className="bl-domain-row">
-                  <div className="bl-field">
-                    <label>Domain or site</label>
-                    <input
-                      placeholder="clutch.co or https://clutch.co"
-                      value={quickDomain}
-                      onChange={e => setQuickDomain(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addDomain()}
-                    />
-                  </div>
-                  <div className="bl-field">
-                    <label>Type</label>
-                    <select value={quickSettings.type} onChange={e => setQuickSettings(p => ({ ...p, type: e.target.value }))}>
-                      <option value="dofollow">Dofollow</option>
-                      <option value="nofollow">Nofollow</option>
-                    </select>
-                  </div>
-                  <div className="bl-field">
-                    <label>Starting status</label>
-                    <select value={quickSettings.status} onChange={e => setQuickSettings(p => ({ ...p, status: e.target.value }))}>
-                      <option>Todo</option>
-                      <option>Pending</option>
-                      <option>Live</option>
-                    </select>
-                  </div>
-                  <OrangeBtn onClick={addDomain} disabled={adding} style={{ alignSelf: 'end', justifyContent: 'center' }}>
-                    {adding ? 'Addingâ€¦' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add prospect</>}
+              <div className="bl-quick-add">
+                <div className="bl-field bl-field--grow">
+                  <label htmlFor="bl-prospect-domain">Target domain</label>
+                  <input
+                    id="bl-prospect-domain"
+                    placeholder="e.g. clutch.co"
+                    value={quickDomain}
+                    onChange={e => setQuickDomain(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addDomain()}
+                    autoComplete="off"
+                  />
+                </div>
+                <OrangeBtn onClick={addDomain} disabled={adding || !quickDomain.trim()} style={{ alignSelf: 'end', justifyContent: 'center', minWidth: 140 }}>
+                  {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add prospect</>}
+                </OrangeBtn>
+                <p className="bl-form-help bl-form-help--inline">
+                  Outreach target only — won’t count toward live backlinks until a real URL is verified.
+                </p>
+              </div>
+            ) : (
+              <div className="bl-manual-grid">
+                <div className="bl-field">
+                  <label htmlFor="bl-source-url">Referring page URL</label>
+                  <input
+                    id="bl-source-url"
+                    placeholder="https://example.com/post-with-your-link"
+                    value={form.url}
+                    onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
+                  />
+                </div>
+                <div className="bl-field">
+                  <label htmlFor="bl-domain-name">Domain (optional)</label>
+                  <input
+                    id="bl-domain-name"
+                    placeholder="Auto from URL"
+                    value={form.name}
+                    onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+                  />
+                </div>
+                <div className="bl-field bl-field--full">
+                  <label htmlFor="bl-anchor">Anchor text</label>
+                  <input
+                    id="bl-anchor"
+                    placeholder="Visible link text"
+                    value={form.anchor}
+                    onChange={e => setForm(p => ({ ...p, anchor: e.target.value }))}
+                    onKeyDown={e => e.key === 'Enter' && addManual()}
+                  />
+                </div>
+                <div className="bl-field">
+                  <label htmlFor="bl-dr">DR</label>
+                  <input
+                    id="bl-dr"
+                    placeholder="0–100"
+                    value={form.dr}
+                    type="number"
+                    min="0"
+                    max="100"
+                    onChange={e => setForm(p => ({ ...p, dr: e.target.value }))}
+                  />
+                </div>
+                <div className="bl-field">
+                  <label htmlFor="bl-type">Type</label>
+                  <select id="bl-type" value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
+                    <option value="dofollow">Dofollow</option>
+                    <option value="nofollow">Nofollow</option>
+                  </select>
+                </div>
+                <div className="bl-field">
+                  <label htmlFor="bl-status">Status</label>
+                  <select id="bl-status" value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
+                    <option>Todo</option>
+                    <option>Pending</option>
+                    <option>Live</option>
+                  </select>
+                </div>
+                <div className="bl-field bl-field--action">
+                  <label>&nbsp;</label>
+                  <OrangeBtn onClick={addManual} disabled={adding} style={{ justifyContent: 'center' }}>
+                    {adding ? 'Saving...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Save link</>}
                   </OrangeBtn>
                 </div>
-                <div className="bl-form-help">Use this for domains you want to earn a backlink from. It will not increase backlink totals until a real link is verified.</div>
-              </>
-            ) : (
-              <>
-                <div className="bl-manual-grid">
-                  <div className="bl-field">
-                    <label>Referring domain or site</label>
-                    <input
-                      placeholder="Clutch.co"
-                      value={form.name}
-                      onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="bl-field">
-                    <label>Source URL</label>
-                    <input
-                      placeholder="https://example.com/post"
-                      value={form.url}
-                      onChange={e => setForm(p => ({ ...p, url: e.target.value }))}
-                    />
-                  </div>
-                  <div className="bl-field bl-field--full">
-                    <label>Anchor text</label>
-                    <input
-                      placeholder="Best SEO agency"
-                      value={form.anchor}
-                      onChange={e => setForm(p => ({ ...p, anchor: e.target.value }))}
-                      onKeyDown={e => e.key === 'Enter' && addManual()}
-                    />
-                  </div>
-                  <div className="bl-field">
-                    <label>DR</label>
-                    <input
-                      placeholder="0-100"
-                      value={form.dr}
-                      type="number"
-                      onChange={e => setForm(p => ({ ...p, dr: e.target.value }))}
-                    />
-                  </div>
-                  <div className="bl-field">
-                    <label>Type</label>
-                    <select value={form.type} onChange={e => setForm(p => ({ ...p, type: e.target.value }))}>
-                      <option value="dofollow">Dofollow</option>
-                      <option value="nofollow">Nofollow</option>
-                    </select>
-                  </div>
-                  <div className="bl-field">
-                    <label>Status</label>
-                    <select value={form.status} onChange={e => setForm(p => ({ ...p, status: e.target.value }))}>
-                      <option>Todo</option>
-                      <option>Pending</option>
-                      <option>Live</option>
-                    </select>
-                  </div>
-                  <div className="bl-field bl-field--action">
-                    <label>&nbsp;</label>
-                    <OrangeBtn onClick={addManual} disabled={adding} style={{ justifyContent: 'center' }}>
-                      {adding ? 'Addingâ€¦' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Save backlink</>}
-                    </OrangeBtn>
-                  </div>
-                </div>
-                <div className="bl-form-help">If you leave the site name empty, it will be derived automatically from the source URL.</div>
-              </>
+              </div>
             )}
           </div>
 
           {opportunities.length > 0 && (
             <div className="bl-opportunities">
-              <SectionLabel>Link opportunities</SectionLabel>
+              <SectionLabel>Suggested opportunities</SectionLabel>
               <div className="bl-opportunity-list">
                 {opportunities.slice(0, 4).map((opp, idx) => (
                   <div key={`${opp.site}-${idx}`} className="bl-opportunity-card">
@@ -525,32 +545,6 @@ export default function Backlinks() {
           )}
         </div>
       </Card>
-
-      {backlinkSummary && (
-        <div className="bl-real-summary" style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-          gap: 10,
-          marginBottom: 12,
-        }}>
-          <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} />
-          <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" />
-          <MetricCard label="Dofollow" value={`${backlinkSummary.dofollowRatio || 0}%`} accent="var(--green)" />
-          <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" />
-          <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--red)" />
-          <MetricCard label="Opportunities" value={backlinkSummary.opportunities || savedOpportunities.length} accent="var(--amber)" />
-        </div>
-      )}
-      {/* Metric strip */}
-      <div className="bl-metric-strip">
-        <MetricCard label="Total" value={backlinks.length} />
-        <MetricCard label="Dofollow" value={dofollow} accent="var(--green)" />
-        <MetricCard label="Live" value={live} accent="var(--blue)" />
-        <MetricCard label="Pending" value={pending} accent="var(--amber)" />
-        <MetricCard label="To do" value={todo} accent="var(--red)" />
-        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
-        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
-      </div>
 
       {(ahrefsBacklinks > backlinks.length || ahrefsRefDomains > 0) && (
         <Card style={{ marginBottom: 12 }}>
