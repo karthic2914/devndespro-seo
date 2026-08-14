@@ -15,6 +15,7 @@ const { fetchSerpVisibility, scanSiteKeywordTransitions, getDfsRankedPosition } 
 const { sendRankScanReportEmail } = require('../utils/email')
 const { getGscAccessToken, resolveGscPropertyUrl } = require('../utils/gsc')
 const { runKeywordAutoDiscover, getCachedDiscovery, runKeywordGap } = require('../utils/keywordDiscover')
+const { parseAiOverviewFromSerpResult, languageCodeFromName } = require('../utils/aiOverview')
 
 const router = express.Router()
 
@@ -108,6 +109,18 @@ async function dfsPost(authHeader, path, payload) {
     }
   )
   return data?.tasks?.[0]?.result?.[0] || null
+}
+
+async function dfsPostTasks(authHeader, path, payloads, timeout = 90000) {
+  const { data } = await axios.post(
+    `https://api.dataforseo.com/v3/${path}`,
+    payloads,
+    {
+      headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
+      timeout,
+    }
+  )
+  return data?.tasks || []
 }
 
 router.get('/:siteId/keywords', auth, verifySite, async (req, res) => {
@@ -328,6 +341,109 @@ router.post('/:siteId/keywords/dataforseo-suggest', auth, verifySite, requireFea
   } catch (e) {
     console.error('DataForSEO suggest error:', e.response?.data || e.message)
     res.status(500).json({ error: 'DataForSEO request failed' })
+  }
+})
+
+// Google AI Overview presence + citations (DataForSEO SERP live advanced)
+router.post('/:siteId/keywords/ai-overview', auth, verifySite, requireFeature('keywords'), async (req, res) => {
+  const authHeader = getDataForSEOAuth()
+  if (!authHeader) return res.status(500).json({ error: 'DataForSEO not configured' })
+
+  const rawList = Array.isArray(req.body?.keywords) ? req.body.keywords : []
+  const keywords = [...new Set(
+    rawList
+      .map((k) => String(k || '').trim())
+      .filter(Boolean)
+  )].slice(0, 15)
+
+  if (!keywords.length) return res.status(400).json({ error: 'keywords required (max 15)' })
+
+  const locationCode = Number(req.body?.locationCode) || 2840
+  const location = DFS_LOCATIONS[locationCode] || DFS_LOCATIONS[2840]
+  const languageName =
+    typeof req.body?.languageName === 'string' && req.body.languageName.trim()
+      ? req.body.languageName.trim()
+      : location.language
+  const languageCode = languageCodeFromName(languageName)
+  const loadAsync = req.body?.loadAsync !== false
+
+  try {
+    const payloads = keywords.map((keyword) => ({
+      keyword,
+      location_code: location.code,
+      language_code: languageCode,
+      language_name: languageName,
+      device: 'desktop',
+      os: 'windows',
+      depth: 10,
+      load_async_ai_overview: loadAsync,
+    }))
+
+    const tasks = await dfsPostTasks(
+      authHeader,
+      'serp/google/organic/live/advanced',
+      payloads,
+      120000
+    )
+
+    const byKeyword = {}
+    for (const kw of keywords) {
+      byKeyword[kw.toLowerCase()] = {
+        keyword: kw,
+        hasAiOverview: false,
+        citations: [],
+        snippet: null,
+        error: null,
+      }
+    }
+
+    for (const task of tasks) {
+      const kw = String(task?.data?.keyword || task?.result?.[0]?.keyword || '').trim()
+      const key = kw.toLowerCase()
+      if (!key) continue
+
+      if (task?.status_code && task.status_code !== 20000) {
+        byKeyword[key] = {
+          keyword: kw,
+          hasAiOverview: false,
+          citations: [],
+          snippet: null,
+          error: task.status_message || 'SERP task failed',
+        }
+        continue
+      }
+
+      const result = Array.isArray(task?.result) ? task.result[0] : null
+      const parsed = parseAiOverviewFromSerpResult(result)
+      byKeyword[key] = {
+        keyword: kw,
+        hasAiOverview: parsed.hasAiOverview,
+        citations: parsed.citations,
+        snippet: parsed.snippet,
+        asynchronous: parsed.asynchronous,
+        incomplete: parsed.incomplete,
+        error: null,
+      }
+    }
+
+    const results = keywords.map((kw) => byKeyword[kw.toLowerCase()])
+
+    res.json({
+      results,
+      meta: {
+        locationCode: location.code,
+        locationName: location.name,
+        languageName,
+        languageCode,
+        checked: results.length,
+        withAiOverview: results.filter((r) => r.hasAiOverview).length,
+        source: 'dataforseo',
+        note: 'Uses Google Organic SERP Live Advanced with load_async_ai_overview (billed per keyword).',
+      },
+    })
+  } catch (e) {
+    console.error('AI Overview check error:', e.response?.data || e.message)
+    res.status(500).json({ error: e.response?.data?.tasks?.[0]?.status_message || 'AI Overview check failed' })
   }
 })
 

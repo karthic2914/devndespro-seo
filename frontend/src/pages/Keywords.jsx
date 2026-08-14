@@ -4,6 +4,7 @@
   import {
     faPlus, faXmark, faArrowsRotate, faWandMagicSparkles,
     faMagnifyingGlass, faChartLine, faBolt, faCircleCheck, faTrash,
+    faChevronUp, faChevronDown,
   } from '@fortawesome/free-solid-svg-icons'
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
   import KeywordGapPanel from '../components/KeywordGapPanel'
@@ -177,6 +178,10 @@
     const [trackedSearch, setTrackedSearch] = useState('')
     const [trackedTier, setTrackedTier] = useState('all')
     const [trackedShowAll, setTrackedShowAll] = useState(false)
+    const [showAiOverview, setShowAiOverview] = useState(false)
+    const [aiOverviewMap, setAiOverviewMap] = useState({})
+    const [aiOverviewLoading, setAiOverviewLoading] = useState(false)
+    const [aiOverviewMeta, setAiOverviewMeta] = useState(null)
 
     const applyResearchPayload = (data, queryFallback = '') => {
       const matching = data.matching || data.suggestions || []
@@ -289,6 +294,8 @@
       setDfsRelated([])
       setDfsQuestions([])
       setDfsMeta(null)
+      setAiOverviewMap({})
+      setAiOverviewMeta(null)
       try {
         const loc = RESEARCH_LOCATIONS.find((l) => l.code === Number(researchLocation))
         const { data } = await api.post(`/sites/${siteId}/keywords/dataforseo-suggest`, {
@@ -333,6 +340,69 @@
       const avgKd = kdVals.length ? Math.round(kdVals.reduce((a, b) => a + b, 0) / kdVals.length) : 0
       return { count: visibleResearch.length, volume: vol, avgKd }
     }, [visibleResearch])
+
+    const loadAiOverviewForVisible = async (force = false) => {
+      const pending = visibleResearch
+        .map((s) => s.keyword)
+        .filter((kw) => {
+          const key = String(kw || '').toLowerCase().trim()
+          if (!key) return false
+          if (force) return true
+          return !aiOverviewMap[key]
+        })
+        .slice(0, 15)
+
+      if (!pending.length) {
+        toast.success('AI Overview already loaded for visible keywords')
+        return
+      }
+
+      setAiOverviewLoading(true)
+      setAiOverviewMap((prev) => {
+        const next = { ...prev }
+        pending.forEach((kw) => {
+          next[String(kw).toLowerCase().trim()] = { ...(next[String(kw).toLowerCase().trim()] || {}), loading: true }
+        })
+        return next
+      })
+
+      try {
+        const { data } = await api.post(`/sites/${siteId}/keywords/ai-overview`, {
+          keywords: pending,
+          locationCode: Number(researchLocation) || 2840,
+          languageName: researchLanguage || 'English',
+        })
+        setAiOverviewMeta(data.meta || null)
+        setAiOverviewMap((prev) => {
+          const next = { ...prev }
+          for (const row of data.results || []) {
+            const key = String(row.keyword || '').toLowerCase().trim()
+            if (!key) continue
+            next[key] = { ...row, loading: false }
+          }
+          return next
+        })
+        const withAio = data.meta?.withAiOverview ?? (data.results || []).filter((r) => r.hasAiOverview).length
+        toast.success(`AI Overview: ${withAio}/${pending.length} keywords trigger it`)
+      } catch (e) {
+        setAiOverviewMap((prev) => {
+          const next = { ...prev }
+          pending.forEach((kw) => {
+            const key = String(kw).toLowerCase().trim()
+            next[key] = {
+              keyword: kw,
+              hasAiOverview: false,
+              citations: [],
+              loading: false,
+              error: e.response?.data?.error || 'Failed',
+            }
+          })
+          return next
+        })
+        toast.error(e.response?.data?.error || 'AI Overview check failed')
+      }
+      setAiOverviewLoading(false)
+    }
 
     const addDfsSuggestion = async (s, { silent = false } = {}) => {
       const key = s.keyword.toLowerCase().trim()
@@ -659,13 +729,25 @@
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setDiscoveryOpen((v) => !v)}
+                  aria-expanded={discoveryOpen}
+                  aria-label={discoveryOpen ? 'Collapse' : 'Expand'}
+                  title={discoveryOpen ? 'Collapse' : 'Expand'}
                   style={{
-                    background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
-                    padding: '7px 12px', fontSize: 12, fontWeight: 600, color: T.text2, cursor: 'pointer',
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    border: `1px solid ${T.border}`,
+                    background: T.surface2,
+                    color: T.text2,
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
-                  {discoveryOpen ? 'Collapse' : 'Expand'}
+                  <FontAwesomeIcon icon={discoveryOpen ? faChevronUp : faChevronDown} style={{ fontSize: 12 }} />
                 </button>
               </div>
 
@@ -797,6 +879,55 @@
               </OrangeBtn>
             </div>
 
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+              flexWrap: 'wrap', marginTop: 10,
+            }}>
+              <label style={{
+                display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 600,
+                color: T.text2, cursor: 'pointer', userSelect: 'none',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={showAiOverview}
+                  onChange={(e) => {
+                    const on = e.target.checked
+                    setShowAiOverview(on)
+                    if (on && (dfsMatching.length || dfsRelated.length || dfsQuestions.length)) {
+                      // Load shortly after toggle so visible rows are ready
+                      setTimeout(() => loadAiOverviewForVisible(false), 0)
+                    }
+                  }}
+                />
+                Show AI Overview data
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: '#7C3AED', background: '#EDE9FE',
+                  borderRadius: 99, padding: '2px 7px',
+                }}>New</span>
+              </label>
+              {showAiOverview && (dfsMatching.length > 0 || dfsRelated.length > 0 || dfsQuestions.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => loadAiOverviewForVisible(false)}
+                  disabled={aiOverviewLoading}
+                  style={{
+                    background: T.surface2, border: `1px solid ${T.border}`, borderRadius: 8,
+                    padding: '6px 12px', fontSize: 12, fontWeight: 600, color: T.text2, cursor: 'pointer',
+                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  <FontAwesomeIcon icon={faArrowsRotate} spin={aiOverviewLoading} />
+                  {aiOverviewLoading ? 'Checking SERP…' : 'Load AI Overview (top 15)'}
+                </button>
+              )}
+            </div>
+            {showAiOverview && aiOverviewMeta && (
+              <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
+                Checked {aiOverviewMeta.checked} · with AI Overview {aiOverviewMeta.withAiOverview}
+                {aiOverviewMeta.locationName ? ` · ${aiOverviewMeta.locationName}` : ''}
+              </div>
+            )}
+
             {(dfsMatching.length > 0 || dfsRelated.length > 0 || dfsQuestions.length > 0) && (
               <div style={{ marginTop: 14 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -876,14 +1007,19 @@
                 <div style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'auto' }}>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                    gridTemplateColumns: showAiOverview
+                      ? 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 88px minmax(120px,1fr) 90px'
+                      : 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
                     gap: 8,
                     padding: '8px 12px',
                     background: T.surface2,
                     borderBottom: `1px solid ${T.border}`,
-                    minWidth: 900,
+                    minWidth: showAiOverview ? 1180 : 900,
                   }}>
-                    {['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', ''].map((h) => (
+                    {(showAiOverview
+                      ? ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', 'AI Overview', 'Citations', '']
+                      : ['Keyword', 'Intent', 'Opportunity', 'Volume', 'Trend', 'Difficulty', 'CPC', 'Comp.', '']
+                    ).map((h) => (
                       <div key={h || 'action'} style={{ fontSize: 11, fontWeight: 700, color: T.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</div>
                     ))}
                   </div>
@@ -896,16 +1032,19 @@
                     const key = s.keyword.toLowerCase().trim()
                     const isAdded = addedKeywords.has(key)
                     const isAdding = addingKeywords.has(key)
+                    const aio = aiOverviewMap[key]
                     return (
                       <div key={`${researchTab}-${s.keyword}-${i}`} style={{
                         display: 'grid',
-                        gridTemplateColumns: 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
+                        gridTemplateColumns: showAiOverview
+                          ? 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 88px minmax(120px,1fr) 90px'
+                          : 'minmax(160px,1.4fr) 90px 100px 70px 56px 150px 70px 60px 90px',
                         gap: 8,
                         padding: '10px 12px',
                         alignItems: 'center',
                         borderBottom: i < visibleResearch.length - 1 ? '1px solid #F3F4F6' : 'none',
                         background: isAdded ? '#F0FDF4' : '#fff',
-                        minWidth: 900,
+                        minWidth: showAiOverview ? 1180 : 900,
                       }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{s.keyword}</div>
@@ -926,6 +1065,63 @@
                         <div style={{ fontSize: 12, color: T.text2 }}>
                           {s.competition ? `${(s.competition * 100).toFixed(0)}%` : '-'}
                         </div>
+                        {showAiOverview && (
+                          <>
+                            <div>
+                              {aio?.loading ? (
+                                <span style={{ fontSize: 11, color: T.muted }}>
+                                  <FontAwesomeIcon icon={faArrowsRotate} spin /> Checking…
+                                </span>
+                              ) : aio?.error ? (
+                                <span style={{ fontSize: 11, color: '#DC2626' }} title={aio.error}>Error</span>
+                              ) : aio == null ? (
+                                <span style={{ fontSize: 11, color: T.muted }}>—</span>
+                              ) : aio.hasAiOverview ? (
+                                <span style={{
+                                  fontSize: 11, fontWeight: 800, color: '#6D28D9', background: '#EDE9FE',
+                                  borderRadius: 99, padding: '3px 8px',
+                                }} title={aio.snippet || 'AI Overview present'}>
+                                  Yes
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: 11, color: T.muted }}>No</span>
+                              )}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              {aio?.loading ? (
+                                <span style={{ fontSize: 11, color: T.muted }}>…</span>
+                              ) : aio?.hasAiOverview && (aio.citations || []).length ? (
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                  {aio.citations.slice(0, 4).map((c) => (
+                                    <a
+                                      key={`${key}-${c.domain}`}
+                                      href={c.url || `https://${c.domain}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      title={c.title || c.domain}
+                                      style={{
+                                        fontSize: 10, fontWeight: 700, color: '#6D28D9',
+                                        textDecoration: 'none', maxWidth: 110,
+                                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      {c.domain}
+                                    </a>
+                                  ))}
+                                  {aio.citations.length > 4 && (
+                                    <span style={{ fontSize: 10, color: T.muted }}>+{aio.citations.length - 4}</span>
+                                  )}
+                                </div>
+                              ) : aio?.hasAiOverview ? (
+                                <span style={{ fontSize: 11, color: T.muted }}>No citations returned</span>
+                              ) : aio == null ? (
+                                <span style={{ fontSize: 11, color: T.muted }}>—</span>
+                              ) : (
+                                <span style={{ fontSize: 11, color: T.muted }}>No AI overview</span>
+                              )}
+                            </div>
+                          </>
+                        )}
                         <div>
                           {isAdded ? (
                             <span style={{ fontSize: 11, color: T.green, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>

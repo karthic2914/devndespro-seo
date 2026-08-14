@@ -14,7 +14,7 @@ import {
   faListCheck,
   faArrowRight,
   faChevronDown,
-  faChevronRight,
+  faChevronUp,
   faBullseye,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
@@ -651,7 +651,7 @@ export default function Dashboard() {
           title={overviewSections[section] ? 'Collapse' : 'Expand'}
         >
           <FontAwesomeIcon
-            icon={overviewSections[section] ? faChevronDown : faChevronRight}
+            icon={overviewSections[section] ? faChevronUp : faChevronDown}
             style={{ fontSize: 11 }}
           />
         </button>
