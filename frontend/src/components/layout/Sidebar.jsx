@@ -4,7 +4,7 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
-import { Logo, ProgressBar, T } from '../UI'
+import { Logo, T } from '../UI'
 
 const NAV_ITEMS = [
   { path: '',            label: 'Overview',     icon: '▦',  end: true },
@@ -51,7 +51,7 @@ function NavItem({ to, icon, faIcon, label, end }) {
   )
 }
 
-export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, daGoal = 20 }) {
+export default function Sidebar({ siteId, site, user, onSignOut, daScore = null }) {
   const navigate = useNavigate()
 
   return (
@@ -85,8 +85,10 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = 0, da
                 <div style={{ fontSize: 10, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.url}</div>
               </div>
             </div>
-            <div style={{ fontSize: 10, color: T.muted, marginBottom: 4 }}>DA {daScore} / {daGoal} goal</div>
-            <ProgressBar value={daScore} max={daGoal} height={4} />
+            <div style={{ fontSize: 10, color: T.muted }}>
+              Authority {daScore != null ? daScore : (site?.authority_score ?? '—')}
+              {(daScore != null || site?.authority_score != null) && '/100'}
+            </div>
           </div>
           <button
             onClick={() => navigate('/')}

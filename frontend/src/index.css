@@ -203,7 +203,7 @@ body:has(.app-shell),
 .site-card__info { overflow: hidden; flex: 1; }
 .site-card__name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-card__url  { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.site-card__da   { font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+.site-card__da   { font-size: 10px; color: var(--muted); margin-top: 8px; margin-bottom: 0; }
 
 .sidebar__back-btn {
   margin-top: 8px; width: 100%; background: none;

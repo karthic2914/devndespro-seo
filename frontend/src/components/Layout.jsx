@@ -8,7 +8,7 @@ import {
   faArrowLeft, faRightFromBracket, faBell, faPlug, faEnvelope,
   faPaperPlane, faUserGroup,
 } from '@fortawesome/free-solid-svg-icons'
-import { Logo, ProgressBar } from '../components/UI'
+import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 
@@ -79,8 +79,10 @@ export default function Layout() {
                   <div className="site-card__url">{site.url}</div>
                 </div>
               </div>
-              <div className="site-card__da">Authority {site.authority_score ?? 0} / 20 goal</div>
-              <ProgressBar value={site.authority_score ?? 0} max={20} height={3} />
+              <div className="site-card__da">
+                Authority {site.authority_score != null ? site.authority_score : '—'}
+                {site.authority_score != null && <span style={{ color: 'var(--muted)' }}>/100</span>}
+              </div>
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
               <FontAwesomeIcon icon={faArrowLeft} /> All Projects
