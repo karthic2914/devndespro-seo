@@ -784,65 +784,22 @@
 
     return (
       <div className="fade-in">
-        {/* Sticky title + process flow — stays visible while scrolling sections */}
+        {/* Title + actions scroll away; only Process stays sticky */}
         <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
+          padding: '0.85rem 1.5rem 0.65rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
           background: '#fff',
           borderBottom: `1px solid ${T.border}`,
-          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.04)',
         }}>
-          <div style={{
-            padding: '0.85rem 1.5rem 0.65rem',
-            display: 'flex',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 16,
-            flexWrap: 'wrap',
-          }}>
-            <div style={{ flex: '0 0 auto', minWidth: 140, paddingTop: 2 }}>
-              <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', margin: 0 }}>Keywords</h1>
-              <p style={{ fontSize: 12, color: T.muted, marginTop: 2, marginBottom: 0 }}>Track your target keyword positions</p>
-            </div>
-            {(() => {
-              const hasResearch = Boolean(dfsMatching.length || dfsRelated.length || dfsQuestions.length)
-              const hasDiscovery = Boolean(discovery)
-              const hasTracked = keywords.length > 0
-              const hasRanks = trackedCoverage.checked > 0
-              const hasFound = hasDiscovery || hasResearch || hasTracked
-              const next =
-                !hasFound ? 'gap'
-                  : !hasDiscovery ? 'discover'
-                    : !hasResearch ? 'research'
-                      : !hasTracked ? 'track'
-                        : !hasRanks ? 'rank'
-                          : null
-              const doneMap = {
-                gap: hasFound,
-                discover: hasDiscovery,
-                research: hasResearch,
-                track: hasTracked,
-                rank: hasRanks,
-              }
-              const activeId = scrollFlowId || next
-              return (
-                <PageProcessGuide
-                  compact
-                  title="Process"
-                  tip={null}
-                  steps={KEYWORDS_PAGE_FLOW.map((s) => ({
-                    ...s,
-                    done: Boolean(doneMap[s.id]),
-                    active: activeId === s.id,
-                  }))}
-                  style={{ marginBottom: 0, maxWidth: '100%' }}
-                />
-              )
-            })()}
+          <div style={{ flex: '0 0 auto', minWidth: 140 }}>
+            <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em', margin: 0 }}>Keywords</h1>
+            <p style={{ fontSize: 12, color: T.muted, marginTop: 2, marginBottom: 0 }}>Track your target keyword positions</p>
           </div>
           <div style={{
-            padding: '0 1.5rem 0.75rem',
             display: 'flex',
             gap: 8,
             flexWrap: 'wrap',
@@ -876,13 +833,56 @@
           </div>
         </div>
 
+        <div style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          background: '#fff',
+          borderBottom: `1px solid ${T.border}`,
+          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
+          padding: '0.65rem 1.5rem',
+        }}>
+          {(() => {
+            // Research counts as done once a search returned overview, SERP, or idea lists
+            const hasResearch = Boolean(
+              dfsMatching.length || dfsRelated.length || dfsQuestions.length || dfsOverview || dfsOrganic.length
+            )
+            const hasDiscovery = Boolean(discovery)
+            const hasTracked = keywords.length > 0
+            const hasRanks = trackedCoverage.checked > 0
+            const hasFound = hasDiscovery || hasResearch || hasTracked
+            const doneMap = {
+              gap: hasFound,
+              discover: hasDiscovery,
+              research: hasResearch,
+              track: hasTracked,
+              rank: hasRanks,
+            }
+            // Only highlight the section currently in view — not “next unfinished”
+            // (that made Research look broken when other steps were green).
+            return (
+              <PageProcessGuide
+                compact
+                title="Process"
+                tip={null}
+                steps={KEYWORDS_PAGE_FLOW.map((s) => ({
+                  ...s,
+                  done: Boolean(doneMap[s.id]),
+                  active: scrollFlowId === s.id,
+                }))}
+                style={{ marginBottom: 0, maxWidth: '100%' }}
+              />
+            )
+          })()}
+        </div>
+
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-          <div id="kw-section-gap" style={{ scrollMarginTop: 140 }}>
+          <div id="kw-section-gap" style={{ scrollMarginTop: 72 }}>
             <KeywordGapPanel siteId={siteId} onAdded={load} />
           </div>
 
-          <div id="kw-section-discovery" style={{ scrollMarginTop: 140 }}>
+          <div id="kw-section-discovery" style={{ scrollMarginTop: 72 }}>
           {!discovery && (
             <Card padding="1rem 1.25rem">
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
@@ -1016,7 +1016,7 @@
           </div>
 
           {/* DataForSEO Keyword Research Panel */}
-          <div id="kw-section-research" style={{ scrollMarginTop: 140 }}>
+          <div id="kw-section-research" style={{ scrollMarginTop: 72 }}>
           <Card padding="1.25rem">
             <CollapsibleSection
               title="Keyword Research"
@@ -1496,7 +1496,7 @@
           </Card>
           </div>
 
-          <div id="kw-section-tracked" style={{ scrollMarginTop: 140 }}>
+          <div id="kw-section-tracked" style={{ scrollMarginTop: 72 }}>
           {/* Manual add + AI suggestions */}
           <Card padding="1.25rem">
             <SectionLabel>Add keyword manually</SectionLabel>
