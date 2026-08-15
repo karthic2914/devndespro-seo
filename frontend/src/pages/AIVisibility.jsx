@@ -218,6 +218,9 @@ export default function AIVisibility() {
   const [editQuestionDraft, setEditQuestionDraft] = useState('')
   const [savingEditQuestion, setSavingEditQuestion] = useState(false)
   const [showAllAnswersModal, setShowAllAnswersModal] = useState(false)
+  const [scoreExpanded, setScoreExpanded] = useState(false)
+  const [insightsOpen, setInsightsOpen] = useState(false)
+  const [prOpen, setPrOpen] = useState(false)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
@@ -637,8 +640,8 @@ export default function AIVisibility() {
   const isCustomTab = selectedProduct === 'Custom Questions'
 
   const allTabs = ['All Questions', ...combinedQuestionSets.map(s => s.product)]
-  const visibleTabs = allTabs.slice(0, 4)
-  const overflowTabs = allTabs.slice(4)
+  const visibleTabs = allTabs.slice(0, 2)
+  const overflowTabs = allTabs.slice(2)
 
   function chipLabel(tab) {
     if (tab === 'All Questions') return `All (${flatQuestions.length})`
@@ -1176,11 +1179,18 @@ export default function AIVisibility() {
                   ? currentQuestionsTested > 0
                   : prOutletCount > 0,
             active: scrollFlowId === s.id,
+            onClick: () => {
+              if (s.id === 'score') setScoreExpanded(true)
+              if (s.id === 'pr') setPrOpen(true)
+              if (s.sectionId) {
+                document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }
+            },
           }))}
           style={{ marginBottom: 0, maxWidth: '100%' }}
         />
         <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.3 }}>
-          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
+          1 Score · 2 Test questions · 3 Digital PR (optional)
         </div>
       </div>
 
@@ -1422,7 +1432,7 @@ export default function AIVisibility() {
           flex-direction: row;
           align-items: center;
           gap: 10px;
-          margin-top: 16px;
+          margin-top: 0;
           margin-bottom: 10px;
           width: 100%;
           max-width: 100%;
@@ -3273,40 +3283,80 @@ export default function AIVisibility() {
         </div>
       )}
 
-      <div id="ai-section-score" style={{ scrollMarginTop: 72, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 800, color: '#9A3412',
-            background: '#FFF7ED', border: '1px solid #FED7AA',
-            borderRadius: 99, padding: '3px 10px',
-          }}>Step 1</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>See your AI visibility score before you dig into questions.</div>
+      <div id="ai-section-score" style={{ scrollMarginTop: 72, marginBottom: 12 }}>
+        <button
+          type="button"
+          onClick={() => setScoreExpanded(v => !v)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '10px 12px',
+            borderRadius: 10,
+            border: '1px solid #E5E7EB',
+            background: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+            font: 'inherit',
+            marginBottom: scoreExpanded ? 10 : 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, color: '#9A3412',
+              background: '#FFF7ED', border: '1px solid #FED7AA',
+              borderRadius: 99, padding: '3px 10px', flexShrink: 0,
+            }}>1</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
+              <div style={{ fontSize: 11, color: '#64748B' }}>
+                {currentQuestionsTested}/{currentQuestionTotal || 0} questions tested
+                {summaryPeriod?.periodLabel ? ` · ${summaryPeriod.periodLabel}` : ''}
+              </div>
+            </div>
           </div>
-        </div>
-        <VisibilityKPICards
-          siteId={siteId}
-          onSummaryLoaded={setSummaryPeriod}
-          totalQuestions={currentQuestionTotal}
-          testedQuestions={currentQuestionsTested}
-        />
+          <FontAwesomeIcon icon={faChevronDown} style={{
+            color: '#94A3B8',
+            fontSize: 11,
+            transform: scoreExpanded ? 'rotate(180deg)' : 'none',
+            transition: 'transform .15s',
+          }} />
+        </button>
+        {scoreExpanded ? (
+          <VisibilityKPICards
+            siteId={siteId}
+            onSummaryLoaded={setSummaryPeriod}
+            totalQuestions={currentQuestionTotal}
+            testedQuestions={currentQuestionsTested}
+          />
+        ) : (
+          <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden>
+            <VisibilityKPICards
+              siteId={siteId}
+              onSummaryLoaded={setSummaryPeriod}
+              totalQuestions={currentQuestionTotal}
+              testedQuestions={currentQuestionsTested}
+            />
+          </div>
+        )}
       </div>
 
-      <div id="ai-section-test" style={{ scrollMarginTop: 72, marginBottom: 14 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+      <div id="ai-section-test" style={{ scrollMarginTop: 72, marginBottom: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
           <span style={{
             fontSize: 11, fontWeight: 800, color: '#9A3412',
             background: '#FFF7ED', border: '1px solid #FED7AA',
             borderRadius: 99, padding: '3px 10px',
-          }}>Step 2</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>Pick a question and check whether ChatGPT / Claude mention you.</div>
-          </div>
+          }}>2</span>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
+          <span style={{ fontSize: 11, color: '#64748B' }}>
+            {testedQuestionsCount} tested · {readyQuestionsCount} ready
+          </span>
         </div>
 
-      <div style={{ marginBottom: 14 }}>
+      <div style={{ marginBottom: 10 }}>
 
           {/* Single row: chips + search + add */}
           <div id="ai-questions-toolbar" className="ai-questions-toolbar">
@@ -3344,12 +3394,8 @@ export default function AIVisibility() {
               className="ai-question-search"
               value={questionSearch}
               onChange={e => setQuestionSearch(e.target.value)}
-              placeholder="Search questions..."
+              placeholder="Search…"
             />
-
-            <button type="button" className="ai-question-filter-button">
-              Filters
-            </button>
 
             <button
               type="button"
@@ -3358,7 +3404,7 @@ export default function AIVisibility() {
               disabled={addingQuestion}
               style={addingQuestion ? { opacity: 0.55, cursor: 'default' } : undefined}
             >
-              + Add Question
+              + Add
             </button>
             </div>
           </div>
@@ -3992,44 +4038,105 @@ export default function AIVisibility() {
           </div>
 
 
-          {/* Lower intelligence cards - like target UX */}
-          <div className="ai-question-lower-grid">
-            <VisibilityEngineTable siteId={siteId} />
-
-            <VisibilityReasoningCard
-              siteId={siteId}
-              siteName={visibilitySiteName}
-            />
-
-            <VisibilityCompetitorsPanel
-              siteId={siteId}
-              siteName={visibilitySiteName}
-            />
+          {/* Lower intelligence - collapsed by default to reduce clutter */}
+          <div style={{ marginTop: 12 }}>
+            <button
+              type="button"
+              onClick={() => setInsightsOpen(v => !v)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                padding: '10px 12px',
+                borderRadius: 10,
+                border: '1px solid #E5E7EB',
+                background: '#fff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                font: 'inherit',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Insights & competitors</div>
+                <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                  Engine breakdown, why you are not ranking, top competitors
+                </div>
+              </div>
+              <FontAwesomeIcon icon={faChevronDown} style={{
+                color: '#94A3B8',
+                fontSize: 11,
+                transform: insightsOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform .15s',
+              }} />
+            </button>
+            {insightsOpen ? (
+              <div className="ai-question-lower-grid" style={{ marginTop: 10 }}>
+                <VisibilityEngineTable siteId={siteId} />
+                <VisibilityReasoningCard
+                  siteId={siteId}
+                  siteName={visibilitySiteName}
+                />
+                <VisibilityCompetitorsPanel
+                  siteId={siteId}
+                  siteName={visibilitySiteName}
+                />
+              </div>
+            ) : null}
           </div>
 
         </div>
       </div>
 
       <div id="ai-section-pr" style={{ scrollMarginTop: 72, marginBottom: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 800, color: '#9A3412',
-            background: '#FFF7ED', border: '1px solid #FED7AA',
-            borderRadius: 99, padding: '3px 10px',
-          }}>Step 3</span>
-          <div>
-            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>
-              After testing, discover media outlets to earn mentions AI models trust. Skip this until Steps 1-2 are clear.
+        <button
+          type="button"
+          onClick={() => setPrOpen(v => !v)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '10px 12px',
+            borderRadius: 10,
+            border: '1px solid #E5E7EB',
+            background: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+            font: 'inherit',
+            marginBottom: prOpen ? 10 : 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <span style={{
+              fontSize: 11, fontWeight: 800, color: '#64748B',
+              background: '#F8FAFC', border: '1px solid #E5E7EB',
+              borderRadius: 99, padding: '3px 10px', flexShrink: 0,
+            }}>3</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
+              <div style={{ fontSize: 11, color: '#64748B' }}>
+                {prOutletCount > 0 ? `${prOutletCount} outlets saved` : 'Discover media after you finish testing'}
+              </div>
             </div>
           </div>
-        </div>
-        <AiMediaTrustPanel
-          siteId={siteId}
-          siteName={site?.name}
-          siteUrl={site?.url || domain}
-          onOutletCountChange={setPrOutletCount}
-        />
+          <FontAwesomeIcon icon={faChevronDown} style={{
+            color: '#94A3B8',
+            fontSize: 11,
+            transform: prOpen ? 'rotate(180deg)' : 'none',
+            transition: 'transform .15s',
+          }} />
+        </button>
+        {prOpen ? (
+          <AiMediaTrustPanel
+            siteId={siteId}
+            siteName={site?.name}
+            siteUrl={site?.url || domain}
+            onOutletCountChange={setPrOutletCount}
+          />
+        ) : null}
       </div>
 
       {showMoreTabs && moreTabsPos && createPortal(
