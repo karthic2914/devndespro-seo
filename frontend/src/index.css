@@ -203,6 +203,65 @@ body:has(.app-shell),
 .site-card__info { overflow: hidden; flex: 1; }
 .site-card__name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .site-card__url  { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Compact Site Health under project — no heavy pill/box */
+.site-card__health {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid #F1F5F9;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+.site-card__health:hover .site-card__health-label {
+  color: #0F172A;
+}
+.site-card__health:hover .site-card__health-track {
+  background: #E2E8F0;
+}
+.site-card__health-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.site-card__health-label {
+  font-size: 10px;
+  font-weight: 650;
+  color: #94A3B8;
+  letter-spacing: 0.02em;
+}
+.site-card__health-value {
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.site-card__health-max {
+  font-size: 9px;
+  font-weight: 600;
+  color: #94A3B8;
+  margin-left: 1px;
+}
+.site-card__health-track {
+  height: 4px;
+  border-radius: 99px;
+  background: #F1F5F9;
+  overflow: hidden;
+}
+.site-card__health-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.25s ease;
+}
+
+/* Legacy Authority classes kept for any leftover refs */
 .site-card__da {
   display: flex;
   align-items: center;

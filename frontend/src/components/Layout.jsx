@@ -155,30 +155,36 @@ export default function Layout() {
               </div>
               <button
                 type="button"
-                className="site-card__da"
-                title="Site Health from your latest audit (0-100). Click to open Site Audit."
+                className="site-card__health"
+                title="Site Health from your latest audit. Click to open Site Audit."
                 onClick={() => navigate(`/site/${siteId}/audit`)}
-                style={{
-                  width: '100%',
-                  cursor: 'pointer',
-                  font: 'inherit',
-                  textAlign: 'left',
-                }}
               >
-                <span className="site-card__da-label">Site Health</span>
                 {(() => {
-                  const score = siteHealth
-                  const tier =
-                    score == null || !Number.isFinite(Number(score)) ? 'empty'
-                    : score >= 80 ? 'high'
-                    : score >= 60 ? 'mid'
-                    : 'low'
+                  const score = siteHealth != null && Number.isFinite(Number(siteHealth))
+                    ? Math.round(Number(siteHealth))
+                    : null
+                  const pct = score != null ? Math.max(0, Math.min(100, score)) : 0
+                  const barColor =
+                    score == null ? '#CBD5E1'
+                    : score >= 80 ? '#16A34A'
+                    : score >= 60 ? '#EA580C'
+                    : '#DC2626'
                   return (
-                    <span className={`site-card__da-score site-card__da-score--${tier}`}>
-                      {score != null && Number.isFinite(Number(score))
-                        ? <>{Math.round(Number(score))}<span>/100</span></>
-                        : 'N/A'}
-                    </span>
+                    <>
+                      <div className="site-card__health-top">
+                        <span className="site-card__health-label">Site Health</span>
+                        <span className="site-card__health-value" style={{ color: barColor }}>
+                          {score != null ? score : '—'}
+                          {score != null ? <span className="site-card__health-max">/100</span> : null}
+                        </span>
+                      </div>
+                      <div className="site-card__health-track" aria-hidden>
+                        <div
+                          className="site-card__health-fill"
+                          style={{ width: `${pct}%`, background: barColor }}
+                        />
+                      </div>
+                    </>
                   )
                 })()}
               </button>
