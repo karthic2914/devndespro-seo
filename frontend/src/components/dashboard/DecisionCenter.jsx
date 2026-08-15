@@ -101,6 +101,7 @@ export default function DecisionCenter({
   auditData,
   multipageResults,
   authorityScore,
+  domainRank,
   authorityDetails,
 }) {
   const data = useMemo(() => {
@@ -108,7 +109,14 @@ export default function DecisionCenter({
       multipageResults?.siteHealthPct ?? auditData?.score
     )
 
-    const authority = clampScore(authorityScore)
+    const linkScore = clampScore(authorityScore)
+    const industryRank = clampScore(
+      domainRank ??
+      authorityDetails?.domain_rank ??
+      authorityDetails?.breakdown?.domainRank
+    )
+    // Prefer industry Domain Rank for growth score when available
+    const authority = industryRank ?? linkScore
 
     const homepageAudit = clampScore(auditData?.score)
 
@@ -283,6 +291,8 @@ export default function DecisionCenter({
     return {
       siteHealth,
       authority,
+      domainRank: industryRank,
+      linkScore,
       aiVisibility,
       overallScore,
       priorities,
@@ -290,7 +300,7 @@ export default function DecisionCenter({
       topAuthorityOpportunities,
       projectedAuthority,
     }
-  }, [auditData, multipageResults, authorityScore, authorityDetails])
+  }, [auditData, multipageResults, authorityScore, domainRank, authorityDetails])
 
   const scoreColor = getScoreColor(data.overallScore)
 
@@ -392,8 +402,13 @@ export default function DecisionCenter({
         />
 
         <MetricCard
-          label="Authority"
-          value={data.authority}
+          label="Domain Rank"
+          value={data.domainRank}
+        />
+
+        <MetricCard
+          label="Link Score"
+          value={data.linkScore}
         />
 
         <MetricCard
@@ -431,7 +446,7 @@ export default function DecisionCenter({
               color: '#9CA3AF',
               marginTop: 2,
             }}>
-              Why your authority is where it is and how to improve it
+              Why your Domain Rank / Link Score is where it is and how to improve it
             </div>
           </div>
 

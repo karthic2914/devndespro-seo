@@ -546,6 +546,7 @@ export default function SiteAudit() {
   const issuesRef = useRef(null)
   const [logoAlign, setLogoAlign] = useState('center')
   const [authorityScore, setAuthorityScore] = useState(null)
+  const [domainRank, setDomainRank] = useState(null)
   const [authorityDetails, setAuthorityDetails] = useState(null)
   const [authorityUpdatedAt, setAuthorityUpdatedAt] = useState(null)
   const [refreshingAuthority, setRefreshingAuthority] = useState(false)
@@ -749,6 +750,21 @@ export default function SiteAudit() {
       else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
       if (siteRes?.data?.authority_score !== undefined) setAuthorityScore(siteRes.data.authority_score)
       if (siteRes?.data?.authority_updated_at) setAuthorityUpdatedAt(siteRes.data.authority_updated_at)
+      const storedRank =
+        siteRes?.data?.domain_rank ??
+        siteRes?.data?.authority_breakdown?.domainRank ??
+        siteRes?.data?.dr
+      if (storedRank !== undefined && storedRank !== null) {
+        setDomainRank(Number(storedRank))
+      }
+      if (siteRes?.data?.authority_breakdown) {
+        setAuthorityDetails((prev) => ({
+          ...(prev || {}),
+          breakdown: siteRes.data.authority_breakdown,
+          domain_rank: siteRes.data.domain_rank ?? storedRank ?? null,
+          methodology: prev?.methodology,
+        }))
+      }
       if (multipageRes?.data && multipageRes.data.status === 'complete' && multipageRes.data.results) {
         setMultipageResults(multipageRes.data.results)
         setMultipageStatus('complete')
@@ -1533,10 +1549,16 @@ export default function SiteAudit() {
     setRefreshingAuthority(true)
     try {
       const r = await api.post(`/sites/${siteId}/authority-score`)
-      setAuthorityScore(r.data.authority_score)
+      setAuthorityScore(r.data.authority_score ?? r.data.link_score)
       setAuthorityDetails(r.data)
       setAuthorityUpdatedAt(r.data.authority_updated_at)
-      showSnackbar('Authority score updated!', 'success')
+      if (r.data.domain_rank != null) setDomainRank(Number(r.data.domain_rank))
+      showSnackbar(
+        r.data.domain_rank != null
+          ? 'Domain Rank & Link Score updated'
+          : 'Link Score updated (Domain Rank unavailable)',
+        'success'
+      )
     } catch (e) {
       showSnackbar('Failed to update authority score', 'error')
     }
@@ -1962,6 +1984,7 @@ export default function SiteAudit() {
             auditData={auditData}
             multipageResults={multipageResults}
             authorityScore={authorityScore}
+            domainRank={domainRank}
             authorityDetails={authorityDetails}
           />
         )}
@@ -2611,31 +2634,54 @@ export default function SiteAudit() {
             </div>
           </Modal>
 
-          {/* Authority Score */}
+          {/* Domain Rank + Link Score */}
           <div style={{
             background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '1rem',
             padding: 'clamp(10px, 3vw, 14px) clamp(10px, 3vw, 16px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            flexWrap: 'wrap', gap: 10,
           }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
-                Authority Score
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
-                {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
-              </div>
-              {authorityUpdatedAt && (
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  Updated: {new Date(authorityUpdatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            <div style={{
+              display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
+              flexWrap: 'wrap', gap: 10, marginBottom: 10,
+            }}>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Domain Authority
                 </div>
-              )}
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2, maxWidth: 320 }}>
+                  Domain Rank is industry DA-style (DataForSEO). Link Score is from your verified backlinks — not Moz DA.
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={refreshAuthorityScore} disabled={refreshingAuthority}>
+                <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: refreshingAuthority ? 'spin 1s linear infinite' : 'none' }} />
+                <span className='btn-label'>{refreshingAuthority ? 'Calculating...' : 'Refresh Scores'}</span>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" onClick={refreshAuthorityScore} disabled={refreshingAuthority}>
-              <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: refreshingAuthority ? 'spin 1s linear infinite' : 'none' }} />
-              <span className='btn-label'>{refreshingAuthority ? 'Calculating...' : 'Refresh Score'}</span>
-            </Button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                  Domain Rank
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
+                  {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>DataForSEO · DA-style</div>
+              </div>
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                  Link Score
+                </div>
+                <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
+                  {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
+                </div>
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>In-app · verified links</div>
+              </div>
+            </div>
+            {authorityUpdatedAt && (
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 8 }}>
+                Updated: {new Date(authorityUpdatedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </div>
+            )}
           </div>
 
           {/* Crawl snapshot */}

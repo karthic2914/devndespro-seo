@@ -143,7 +143,10 @@ const ensureBacklinkIntelligenceSchema = async () => {
     await pool.query(`
     ALTER TABLE sites
       ADD COLUMN IF NOT EXISTS authority_version TEXT DEFAULT '3.0',
-      ADD COLUMN IF NOT EXISTS authority_breakdown JSONB DEFAULT '{}'::jsonb
+      ADD COLUMN IF NOT EXISTS authority_breakdown JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS domain_rank INTEGER,
+      ADD COLUMN IF NOT EXISTS domain_rank_updated_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS domain_rank_meta JSONB DEFAULT '{}'::jsonb
   `)
 backlinkSchemaReady = true
 }
@@ -1644,6 +1647,18 @@ router.post('/:siteId/backlinks/dataforseo-sync', auth, verifySite, async (req, 
       rows: authorityRows.rows,
     })
 
+    const { rows: existingAuth } = await pool.query(
+      `SELECT authority_breakdown FROM sites WHERE id=$1`,
+      [req.siteId]
+    )
+    const prevBreakdown = existingAuth[0]?.authority_breakdown || {}
+    const mergedBreakdown = {
+      ...authority.breakdown,
+      domainRank: prevBreakdown.domainRank ?? null,
+      domainRankSource: prevBreakdown.domainRankSource || null,
+      domainRankMeta: prevBreakdown.domainRankMeta || null,
+    }
+
     await pool.query(
       `UPDATE sites
        SET
@@ -1655,7 +1670,7 @@ router.post('/:siteId/backlinks/dataforseo-sync', auth, verifySite, async (req, 
       [
         authority.score,
         authority.version,
-        JSON.stringify(authority.breakdown),
+        JSON.stringify(mergedBreakdown),
         req.siteId,
       ]
     )
@@ -2478,43 +2493,125 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
       rows,
     })
 
+    const { rows: siteRows } = await pool.query(
+      `SELECT url FROM sites WHERE id=$1`,
+      [req.siteId]
+    )
+    const siteUrl = siteRows[0]?.url || ''
+
+    let domainRank = null
+    let domainRankMeta = {}
+    try {
+      const overview = await fetchBacklinkOverview({ target: siteUrl })
+      domainRank = Number.isFinite(Number(overview.rank))
+        ? Math.max(0, Math.min(100, Math.round(Number(overview.rank))))
+        : null
+      domainRankMeta = {
+        source: 'dataforseo',
+        provider: overview.provider || 'dataforseo',
+        target: overview.target || normalizeTarget(siteUrl),
+        referringDomains: overview.referringDomains,
+        backlinks: overview.backlinks,
+        referringPages: overview.referringPages,
+        dofollow: overview.dofollow,
+        brokenBacklinks: overview.brokenBacklinks,
+        cost: overview.cost,
+        fetchedAt: new Date().toISOString(),
+      }
+    } catch (rankError) {
+      console.warn(
+        '[authority-score] Domain rank fetch failed:',
+        rankError?.message || rankError
+      )
+      domainRankMeta = {
+        source: 'dataforseo',
+        error: String(rankError?.message || rankError),
+        fetchedAt: new Date().toISOString(),
+      }
+    }
+
+    const breakdown = {
+      ...authority.breakdown,
+      domainRank,
+      domainRankSource: 'dataforseo',
+      domainRankMeta,
+    }
+
     const { rows: updated } = await pool.query(
       `UPDATE sites
        SET
          authority_score=$1,
          authority_updated_at=NOW(),
          authority_version=$2,
-         authority_breakdown=$3::jsonb
-       WHERE id=$4
+         authority_breakdown=$3::jsonb,
+         domain_rank=COALESCE($4, domain_rank),
+         domain_rank_updated_at=CASE
+           WHEN $4 IS NOT NULL THEN NOW()
+           ELSE domain_rank_updated_at
+         END,
+         domain_rank_meta=CASE
+           WHEN $4 IS NOT NULL THEN $5::jsonb
+           ELSE COALESCE(domain_rank_meta, '{}'::jsonb)
+         END
+       WHERE id=$6
        RETURNING
          authority_score,
          authority_updated_at,
          authority_version,
-         authority_breakdown`,
+         authority_breakdown,
+         domain_rank,
+         domain_rank_updated_at,
+         domain_rank_meta`,
       [
         authority.score,
         authority.version,
-        JSON.stringify(authority.breakdown),
+        JSON.stringify(breakdown),
+        domainRank,
+        JSON.stringify(domainRankMeta),
         req.siteId,
       ]
     )
 
+    if (domainRank != null) {
+      await pool.query(
+        `INSERT INTO seo_metrics (site_id, dr)
+         VALUES ($1, $2)
+         ON CONFLICT (site_id) DO UPDATE SET
+           dr=$2,
+           updated_at=NOW()`,
+        [req.siteId, domainRank]
+      )
+    }
+
+    const row = updated[0] || {}
+
     res.json({
-      ...updated[0],
+      ...row,
       authority_version: authority.version,
+      link_score: authority.score,
+      domain_rank: row.domain_rank ?? domainRank,
+      domain_rank_meta: row.domain_rank_meta || domainRankMeta,
       counts: authority.counts,
-      breakdown: authority.breakdown,
+      breakdown,
       methodology: {
-        name: 'DevnDespro Authority Score',
-        scale: '0-100',
-        verifiedLinksOnly: true,
-        weights: {
-          domainDiversity: 30,
-          verifiedLinkQuality: 25,
-          followNaturality: 15,
-          linkStability: 10,
-          verificationFreshness: 10,
-          domainConcentration: 10,
+        linkScore: {
+          name: 'DevnDespro Link Score',
+          scale: '0-100',
+          verifiedLinksOnly: true,
+          note: 'In-app score from your verified backlinks. Not Moz Domain Authority.',
+          weights: {
+            domainDiversity: 30,
+            verifiedLinkQuality: 25,
+            followNaturality: 15,
+            linkStability: 10,
+            verificationFreshness: 10,
+            domainConcentration: 10,
+          },
+        },
+        domainRank: {
+          name: 'DataForSEO Domain Rank',
+          scale: '0-100',
+          note: 'Industry DA-style score (not Moz DA). Same 0–100 class as Moz DA / Ahrefs DR.',
         },
       },
     })
