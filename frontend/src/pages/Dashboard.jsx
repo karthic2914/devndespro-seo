@@ -1320,6 +1320,57 @@ export default function Dashboard() {
               </Card>
             </div>
 
+            {/* Step 3: Grow — must sit in the left column after Keywords so scroll-spy order is correct */}
+            <Card
+              id="overview-section-grow"
+              padding="0"
+              style={{ scrollMarginTop: 72 }}
+            >
+              <div style={{
+                padding: '12px 14px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start',
+                gap: 10,
+                flexWrap: 'wrap',
+              }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 800, color: '#9A3412',
+                      background: '#FFF7ED', border: '1px solid #FED7AA',
+                      borderRadius: 99, padding: '3px 10px',
+                    }}>Step 3</span>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>
+                      Grow with backlinks & AI Visibility
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                    After fixes and keywords, build authority and get mentioned in AI answers.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate(`/site/${siteId}/backlinks`)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    Backlinks
+                    <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/site/${siteId}/ai-visibility`)}
+                    style={{ whiteSpace: 'nowrap' }}
+                  >
+                    AI Visibility
+                    <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+                  </Button>
+                </div>
+              </div>
+            </Card>
 
           </div>
 
@@ -1574,7 +1625,6 @@ export default function Dashboard() {
             </Card>
 
             {/* Backlink Profile removed from Overview - use Backlinks page (admin only) */}
-            <div id="overview-section-grow" style={{ scrollMarginTop: 72 }} />
 
 
           </div>

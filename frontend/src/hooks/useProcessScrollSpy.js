@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
  * Highlight the process step whose section is currently in view while scrolling.
  * Uses .app-main as the scroll root (app shell).
  *
+ * Rule: last section whose top has crossed under the sticky process bar wins.
+ * Near-bottom only activates the last step if that section is actually on screen.
+ *
  * @param {Array<{ id: string, sectionId?: string }>} steps
  * @param {unknown[]} [deps] - rebind when layout-changing state updates
  */
@@ -25,22 +28,33 @@ export default function useProcessScrollSpy(steps = [], deps = []) {
     if (!sectionSteps.length) return undefined
 
     const update = () => {
-      // Activate when a section header reaches the upper reading zone
-      // (under the sticky process bar), not only when it hits the bar itself.
-      const activateLine = 160
+      // Sticky process bar + small buffer — do NOT use a deep "reading zone"
+      // or mid-page markers (e.g. sidebar) will jump the active step early.
+      const stickyLine = 96
       let current = sectionSteps[0].stepId
 
       for (const item of sectionSteps) {
         const el = document.getElementById(item.sectionId)
         if (!el) continue
-        const top = el.getBoundingClientRect().top
-        if (top <= activateLine) current = item.stepId
+        const rect = el.getBoundingClientRect()
+        // Ignore zero-size placeholders (empty markers break scroll-spy)
+        if (rect.height < 8 && rect.width < 8) continue
+        if (rect.top <= stickyLine) current = item.stepId
       }
 
-      // Near page bottom → last section (Digital PR / final step)
-      const remaining = root.scrollHeight - root.scrollTop - root.clientHeight
-      if (remaining < 160) {
-        current = sectionSteps[sectionSteps.length - 1].stepId
+      // Near page end: only force last step if that section is visible
+      const last = sectionSteps[sectionSteps.length - 1]
+      const lastEl = last ? document.getElementById(last.sectionId) : null
+      if (lastEl) {
+        const lastRect = lastEl.getBoundingClientRect()
+        const remaining = root.scrollHeight - root.scrollTop - root.clientHeight
+        const lastVisible =
+          lastRect.height >= 8 &&
+          lastRect.top < root.clientHeight * 0.7 &&
+          lastRect.bottom > stickyLine
+        if (remaining < 64 && lastVisible) {
+          current = last.stepId
+        }
       }
 
       setActiveId((prev) => (prev === current ? prev : current))
@@ -49,7 +63,6 @@ export default function useProcessScrollSpy(steps = [], deps = []) {
     update()
     root.addEventListener('scroll', update, { passive: true })
     window.addEventListener('resize', update)
-    // Sections expand/collapse after paint — re-check once
     const raf = requestAnimationFrame(update)
 
     return () => {
