@@ -196,7 +196,9 @@ export default function AIVisibility() {
   const [creatingSession, setCreatingSession] = useState(false)
   const [newSessionName, setNewSessionName] = useState('')
   const [showSessionMenu, setShowSessionMenu] = useState(false)
+  const [sessionMenuPos, setSessionMenuPos] = useState(null)
   const sessionMenuRef = useRef(null)
+  const sessionBtnRef = useRef(null)
   // Real tested/ready status per question, loaded from the database - not
   // the AI's own guess, so the Status column in the Questions table below
   // reflects what has actually been scanned.
@@ -320,13 +322,32 @@ export default function AIVisibility() {
   useEffect(() => {
     if (!showSessionMenu) return
     const onClick = (e) => {
-      if (sessionMenuRef.current && !sessionMenuRef.current.contains(e.target)) {
-        setShowSessionMenu(false)
-        setCreatingSession(false)
-      }
+      if (
+        e.target.closest('.ai-session-menu-dropdown') ||
+        e.target.closest('.ai-session-menu-btn')
+      ) return
+      setShowSessionMenu(false)
+      setCreatingSession(false)
+      setSessionMenuPos(null)
     }
+    const reposition = () => {
+      const btn = sessionBtnRef.current
+      if (!btn) return
+      const r = btn.getBoundingClientRect()
+      setSessionMenuPos({
+        top: r.bottom + 6,
+        left: Math.max(8, r.right - 300),
+      })
+    }
+    reposition()
     document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
+    window.addEventListener('resize', reposition)
+    window.addEventListener('scroll', reposition, true)
+    return () => {
+      document.removeEventListener('mousedown', onClick)
+      window.removeEventListener('resize', reposition)
+      window.removeEventListener('scroll', reposition, true)
+    }
   }, [showSessionMenu])
 
   useEffect(() => {
@@ -562,6 +583,7 @@ export default function AIVisibility() {
       setNewSessionName('')
       setCreatingSession(false)
       setShowSessionMenu(false)
+      setSessionMenuPos(null)
       showSnackbar('Session started. New tests will be saved under "' + name + '".', 'success')
     } catch (e) {
       showSnackbar('Failed to create session: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
@@ -572,6 +594,7 @@ export default function AIVisibility() {
   function selectSession(session) {
     setCurrentSession(session)
     setShowSessionMenu(false)
+    setSessionMenuPos(null)
     setCreatingSession(false)
     showSnackbar('Active session: "' + session.name + '"', 'info')
   }
@@ -1199,6 +1222,9 @@ export default function AIVisibility() {
         .ai-vis-page > *:not(style):not(.modal-overlay) {
           position: relative;
           z-index: 1;
+        }
+        .ai-vis-page > .ai-vis-header {
+          z-index: 50;
         }
         @keyframes aiVisFadeIn {
           from { opacity: 0; transform: translateY(6px); }
@@ -3032,9 +3058,21 @@ export default function AIVisibility() {
           <div ref={sessionMenuRef} style={{ position: 'relative' }}>
             <button
               type="button"
+              className="ai-session-menu-btn"
+              ref={sessionBtnRef}
               onClick={() => {
-                setShowSessionMenu(v => !v)
+                const next = !showSessionMenu
+                setShowSessionMenu(next)
                 setCreatingSession(false)
+                if (next && sessionBtnRef.current) {
+                  const r = sessionBtnRef.current.getBoundingClientRect()
+                  setSessionMenuPos({
+                    top: r.bottom + 6,
+                    left: Math.max(8, r.right - 300),
+                  })
+                } else {
+                  setSessionMenuPos(null)
+                }
               }}
               style={{
                 padding: '8px 13px',
@@ -3054,21 +3092,24 @@ export default function AIVisibility() {
               {currentSession ? currentSession.name : 'Sessions'}
               <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 10 }} />
             </button>
+          </div>
 
-            {showSessionMenu && (
+          {showSessionMenu && sessionMenuPos && createPortal(
               <div
+                className="ai-session-menu-dropdown"
                 style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 6px)',
-                  right: 0,
+                  position: 'fixed',
+                  top: sessionMenuPos.top,
+                  left: sessionMenuPos.left,
                   background: '#fff',
                   border: '1px solid #E5E7EB',
                   borderRadius: 10,
                   boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
                   padding: 10,
-                  zIndex: 120,
+                  zIndex: 10050,
                   width: 300,
                 }}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
                   Visibility sessions
@@ -3160,6 +3201,7 @@ export default function AIVisibility() {
                     onClick={() => {
                       setCurrentSession(null)
                       setShowSessionMenu(false)
+                      setSessionMenuPos(null)
                     }}
                     style={{
                       width: '100%',
@@ -3220,8 +3262,7 @@ export default function AIVisibility() {
                   )}
                 </div>
               </div>
-            )}
-          </div>
+          , document.body)}
 
           <button onClick={downloadImage} style={{ padding: '8px 13px', borderRadius: 7, border: '1px solid #E5E7EB', background: '#fff', fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#374151' }}>
             <FontAwesomeIcon icon={faDownload} style={{ marginRight: 6 }} /> Export Report
