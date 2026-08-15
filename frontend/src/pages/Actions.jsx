@@ -255,6 +255,9 @@ export default function Actions() {
       const { data } = await api.put(`/sites/${siteId}/actions/${id}`, { done: !done })
       if (!done && data?.healthDelta) {
         toast.success(`Completed. Site Health +${data.healthDelta}`)
+        if (data.health != null) {
+          window.dispatchEvent(new CustomEvent('site-health-updated', { detail: { health: data.health } }))
+        }
       } else {
         toast.success(done ? 'Action moved to pending' : 'Action marked complete')
       }

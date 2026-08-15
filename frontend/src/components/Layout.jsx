@@ -51,6 +51,7 @@ export default function Layout() {
   ])
   const hideGlobalUsageBar = pageKey !== null && PROCESS_TOPBAR_PAGES.has(pageKey)
   const [site, setSite] = useState(null)
+  const [siteHealth, setSiteHealth] = useState(null)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [unreadAlerts, setUnreadAlerts] = useState(0)
@@ -66,6 +67,33 @@ export default function Layout() {
   useEffect(() => {
     const stored = localStorage.getItem('activeSite')
     if (stored) setSite(JSON.parse(stored))
+
+    api.get(`/sites/${siteId}`)
+      .then((r) => {
+        if (r.data) {
+          setSite(r.data)
+          if (r.data.health != null) setSiteHealth(Number(r.data.health))
+        }
+      })
+      .catch(() => {})
+
+    // Prefer full-site audit health when available (same source as Overview)
+    Promise.all([
+      api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
+      api.get(`/sites/${siteId}/metrics`).catch(() => null),
+    ]).then(([mpRes, metricsRes]) => {
+      const mp = mpRes?.data
+      const mpHealth = mp?.status === 'complete'
+        ? Number(mp.site_health_pct ?? mp.results?.siteHealthPct)
+        : NaN
+      if (Number.isFinite(mpHealth)) {
+        setSiteHealth(mpHealth)
+        return
+      }
+      const mHealth = Number(metricsRes?.data?.health)
+      if (Number.isFinite(mHealth)) setSiteHealth(mHealth)
+    })
+
     api.get(`/sites/${siteId}/alerts`)
       .then(r => setUnreadAlerts((r.data || []).filter(a => !a.read).length))
       .catch(() => {})
@@ -73,6 +101,16 @@ export default function Layout() {
       .then(r => setModules(prev => ({ ...prev, ...(r.data || {}) })))
       .catch(() => {})
   }, [siteId])
+
+  // Keep sidebar health in sync when Overview/Action Plan bumps it
+  useEffect(() => {
+    const onHealth = (e) => {
+      const next = Number(e?.detail?.health)
+      if (Number.isFinite(next)) setSiteHealth(next)
+    }
+    window.addEventListener('site-health-updated', onHealth)
+    return () => window.removeEventListener('site-health-updated', onHealth)
+  }, [])
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -115,25 +153,35 @@ export default function Layout() {
                   <div className="site-card__url">{site.url}</div>
                 </div>
               </div>
-              <div
+              <button
+                type="button"
                 className="site-card__da"
-                title="Authority score from your verified backlinks (0-100). Refresh on Site Audit."
+                title="Site Health from your latest audit (0-100). Click to open Site Audit."
+                onClick={() => navigate(`/site/${siteId}/audit`)}
+                style={{
+                  width: '100%',
+                  cursor: 'pointer',
+                  font: 'inherit',
+                  textAlign: 'left',
+                }}
               >
-                <span className="site-card__da-label">Authority</span>
+                <span className="site-card__da-label">Site Health</span>
                 {(() => {
-                  const score = site.authority_score
+                  const score = siteHealth
                   const tier =
-                    score == null ? 'empty'
-                    : score >= 70 ? 'high'
-                    : score >= 40 ? 'mid'
+                    score == null || !Number.isFinite(Number(score)) ? 'empty'
+                    : score >= 80 ? 'high'
+                    : score >= 60 ? 'mid'
                     : 'low'
                   return (
                     <span className={`site-card__da-score site-card__da-score--${tier}`}>
-                      {score != null ? <>{score}<span>/100</span></> : 'N/A'}
+                      {score != null && Number.isFinite(Number(score))
+                        ? <>{Math.round(Number(score))}<span>/100</span></>
+                        : 'N/A'}
                     </span>
                   )
                 })()}
-              </div>
+              </button>
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
               <FontAwesomeIcon icon={faArrowLeft} /> All Projects

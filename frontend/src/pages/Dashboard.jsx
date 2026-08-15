@@ -87,6 +87,7 @@ export default function Dashboard() {
           if (Array.isArray(r.data?.actions)) setActions(r.data.actions)
           if (r.data?.health != null) {
             setMetrics(m => ({ ...m, health: r.data.health }))
+            window.dispatchEvent(new CustomEvent('site-health-updated', { detail: { health: r.data.health } }))
             setMultipageLatest(prev => {
               if (!prev?.results) return prev
               return {
@@ -165,16 +166,20 @@ export default function Dashboard() {
   const applyHealthFromAction = (data) => {
     const delta = Number(data?.healthDelta) || 0
     if (delta > 0) {
-      setMetrics(m => ({
-        ...m,
-        health: data.health != null
-          ? data.health
-          : Math.min(100, Number(m.health || 0) + delta),
-      }))
+      const nextHealth = data.health != null
+        ? data.health
+        : null
+      setMetrics(m => {
+        const health = nextHealth != null
+          ? nextHealth
+          : Math.min(100, Number(m.health || 0) + delta)
+        window.dispatchEvent(new CustomEvent('site-health-updated', { detail: { health } }))
+        return { ...m, health }
+      })
       setMultipageLatest(prev => {
         if (!prev?.results) return prev
         const prevPct = Number(prev.results.siteHealthPct ?? prev.site_health_pct ?? 0)
-        const nextPct = Math.min(100, prevPct + delta)
+        const nextPct = data.health != null ? data.health : Math.min(100, prevPct + delta)
         return {
           ...prev,
           site_health_pct: nextPct,

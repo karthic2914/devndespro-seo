@@ -51,8 +51,9 @@ function NavItem({ to, icon, faIcon, label, end }) {
   )
 }
 
-export default function Sidebar({ siteId, site, user, onSignOut, daScore = null }) {
+export default function Sidebar({ siteId, site, user, onSignOut, healthScore = null }) {
   const navigate = useNavigate()
+  const score = healthScore != null ? healthScore : (site?.health ?? null)
 
   return (
     <aside style={{
@@ -81,10 +82,23 @@ export default function Sidebar({ siteId, site, user, onSignOut, daScore = null 
                 <div style={{ fontSize: 10, color: T.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{site.url}</div>
               </div>
             </div>
-            <div style={{ fontSize: 10, color: T.muted }}>
-              Authority {daScore != null ? daScore : (site?.authority_score ?? 'N/A')}
-              {(daScore != null || site?.authority_score != null) && '/100'}
-            </div>
+            <button
+              type="button"
+              onClick={() => navigate(`/site/${siteId}/audit`)}
+              title="Site Health from your latest audit"
+              style={{
+                fontSize: 10,
+                color: T.muted,
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Site Health {score != null ? Math.round(Number(score)) : 'N/A'}
+              {score != null && '/100'}
+            </button>
           </div>
           <button
             onClick={() => navigate('/')}
