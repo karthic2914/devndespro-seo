@@ -345,7 +345,6 @@ export default function Backlinks() {
   return (
     <div className="fade-in">
       <AppProcessTopBar
-        title="Backlinks process"
         steps={BACKLINKS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'overview' ? Boolean(backlinkSummary || backlinks.length) : toolTab === 'gap' && s.id === 'gap',

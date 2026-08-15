@@ -298,9 +298,8 @@ export default function Actions() {
 
   return (
     <div className="fade-in">
-      <AppProcessTopBar
-        title="Action Plan process"
-        steps={ACTIONS_PAGE_FLOW.map((s) => ({
+        <AppProcessTopBar
+          steps={ACTIONS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'pending' ? pending.length === 0 && actions.length > 0 : false,
           active: s.id === 'priority' || (s.id === 'pending' && pending.length > 0),

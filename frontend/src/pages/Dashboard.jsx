@@ -662,7 +662,6 @@ export default function Dashboard() {
   return (
     <div style={{ flex: 1 }}>
       <AppProcessTopBar
-        title="Overview process"
         steps={OVERVIEW_PAGE_FLOW.map((s, i) => ({
           ...s,
           done: s.id === 'fix' ? pendingActions.length === 0 && actions.length > 0 : false,

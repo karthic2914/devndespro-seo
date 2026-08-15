@@ -93,7 +93,6 @@ export default function Competitors() {
   return (
     <div className="fade-in">
       <AppProcessTopBar
-        title="Competitors process"
         steps={COMPETITORS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'add' ? competitors.length > 0 : s.id === 'describe' ? Boolean(description.trim()) : false,

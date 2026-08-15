@@ -1619,7 +1619,6 @@ export default function SiteAudit() {
     return (
       <div className="fade-in">
         <AppProcessTopBar
-          title="Site Audit process"
           steps={AUDIT_PAGE_FLOW.map((s) => ({
             ...s,
             done: false,
@@ -1638,7 +1637,6 @@ export default function SiteAudit() {
     return (
       <div className="fade-in">
         <AppProcessTopBar
-          title="Site Audit process"
           steps={AUDIT_PAGE_FLOW.map((s) => ({
             ...s,
             done: false,
@@ -1680,7 +1678,6 @@ export default function SiteAudit() {
   return (
     <div className="fade-in">
       <AppProcessTopBar
-        title="Site Audit process"
         steps={AUDIT_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'run' ? Boolean(auditData) : s.id === 'review' ? Boolean(auditData?.checks?.length) : false,

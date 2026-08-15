@@ -801,7 +801,6 @@
     return (
       <div className="fade-in">
         <AppProcessTopBar
-          title="Keywords process"
           steps={KEYWORDS_PAGE_FLOW.map((s) => ({
             ...s,
             done: Boolean(doneMap[s.id]),

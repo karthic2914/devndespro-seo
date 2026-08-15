@@ -39,19 +39,19 @@ export const APP_SEO_JOURNEY = [
 export const OVERVIEW_PAGE_FLOW = [
   {
     id: 'fix',
-    label: '1. Fix website',
+    label: 'Fix website',
     hint: 'Highest-impact Action Plan tasks',
     sectionId: 'overview-section-fixes',
   },
   {
     id: 'keywords',
-    label: '2. Keywords',
+    label: 'Keywords',
     hint: 'Track & improve rankings',
     path: 'keywords',
   },
   {
     id: 'grow',
-    label: '3. Grow',
+    label: 'Grow',
     hint: 'Backlinks & AI Visibility',
     path: 'backlinks',
   },
@@ -198,19 +198,19 @@ export const ACTIONS_PAGE_FLOW = [
 export const AI_VISIBILITY_PAGE_FLOW = [
   {
     id: 'score',
-    label: '1. Score',
+    label: 'Score Overview',
     hint: 'See if AI mentions you',
     sectionId: 'ai-section-score',
   },
   {
     id: 'test',
-    label: '2. Test questions',
+    label: 'Test Question',
     hint: 'Check ChatGPT & Claude',
     sectionId: 'ai-section-test',
   },
   {
     id: 'pr',
-    label: '3. Digital PR',
+    label: 'Digital PR',
     hint: 'Earn media that AI trusts',
     sectionId: 'ai-section-pr',
   },

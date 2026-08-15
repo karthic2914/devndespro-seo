@@ -1,6 +1,6 @@
 ﻿/**
  * Numbered process / flow - clickable steps for guided full-page workflows.
- * compact: denser chips for sticky page headers
+ * compact: connected top-bar stepper (Test → Understand → Improve style)
  *
  * Colors:
  * - active (in view): orange highlight (brand)
@@ -10,16 +10,127 @@
 export default function ProcessSteps({ steps = [], style, title, compact = false }) {
   if (!steps.length) return null
 
+  if (compact) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0,
+          flexWrap: 'nowrap',
+          overflowX: 'auto',
+          minWidth: 0,
+          ...style,
+        }}
+      >
+        {steps.map((step, i) => {
+          const done = Boolean(step.done)
+          const active = Boolean(step.active)
+          const clickable = typeof step.onClick === 'function'
+          const Comp = clickable ? 'button' : 'div'
+
+          let badgeBg = '#E2E8F0'
+          let badgeColor = '#64748B'
+          let labelColor = '#64748B'
+          let labelWeight = 650
+
+          if (active) {
+            badgeBg = '#EA580C'
+            badgeColor = '#fff'
+            labelColor = '#C2410C'
+            labelWeight = 800
+          } else if (done) {
+            badgeBg = '#16A34A'
+            badgeColor = '#fff'
+            labelColor = '#166534'
+            labelWeight = 700
+          }
+
+          return (
+            <div
+              key={step.id || step.label || i}
+              style={{ display: 'inline-flex', alignItems: 'center', flex: '0 0 auto' }}
+            >
+              {i > 0 ? (
+                <span
+                  aria-hidden
+                  style={{
+                    color: active || done ? '#FDBA74' : '#CBD5E1',
+                    fontSize: 14,
+                    fontWeight: 700,
+                    padding: '0 8px',
+                    lineHeight: 1,
+                    userSelect: 'none',
+                  }}
+                >
+                  ›
+                </span>
+              ) : null}
+              <Comp
+                type={clickable ? 'button' : undefined}
+                onClick={clickable ? step.onClick : undefined}
+                title={step.hint || step.label}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '4px 2px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: clickable ? 'pointer' : 'default',
+                  font: 'inherit',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <span
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 99,
+                    flexShrink: 0,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    color: badgeColor,
+                    background: badgeBg,
+                    boxShadow: active ? '0 0 0 3px #FFEDD5' : undefined,
+                  }}
+                >
+                  {done && !active ? '✓' : i + 1}
+                </span>
+                {step.icon ? (
+                  <span style={{ color: active ? '#EA580C' : done ? '#16A34A' : '#94A3B8', fontSize: 12, lineHeight: 1 }}>
+                    {step.icon}
+                  </span>
+                ) : null}
+                <span
+                  style={{
+                    fontSize: 12,
+                    fontWeight: labelWeight,
+                    color: labelColor,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  {step.label}
+                </span>
+              </Comp>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <div style={style}>
       {title ? (
         <div style={{
-          fontSize: compact ? 10 : 12,
+          fontSize: 12,
           fontWeight: 800,
           color: '#0F172A',
-          marginBottom: compact ? 2 : 8,
-          letterSpacing: compact ? '0.02em' : undefined,
-          textTransform: compact ? 'uppercase' : undefined,
+          marginBottom: 8,
           lineHeight: 1.2,
         }}>
           {title}
@@ -28,11 +139,9 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
       <div
         style={{
           display: 'flex',
-          gap: compact ? 6 : 8,
-          flexWrap: compact ? 'nowrap' : 'wrap',
+          gap: 8,
+          flexWrap: 'wrap',
           alignItems: 'stretch',
-          overflowX: compact ? 'auto' : undefined,
-          paddingBottom: compact ? 2 : 0,
         }}
       >
         {steps.map((step, i) => {
@@ -70,13 +179,13 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
               onClick={clickable ? step.onClick : undefined}
               title={step.hint || step.label}
               style={{
-                flex: compact ? '0 0 auto' : '1 1 150px',
-                minWidth: compact ? 0 : 130,
+                flex: '1 1 150px',
+                minWidth: 130,
                 display: 'flex',
-                gap: compact ? 6 : 8,
-                alignItems: compact ? 'center' : 'flex-start',
-                padding: compact ? '6px 10px' : '10px 12px',
-                borderRadius: compact ? 8 : 10,
+                gap: 8,
+                alignItems: 'flex-start',
+                padding: '10px 12px',
+                borderRadius: 10,
                 border: `1.5px solid ${border}`,
                 background,
                 cursor: clickable ? 'pointer' : 'default',
@@ -88,14 +197,14 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
             >
               <span
                 style={{
-                  width: compact ? 18 : 22,
-                  height: compact ? 18 : 22,
+                  width: 22,
+                  height: 22,
                   borderRadius: 99,
                   flexShrink: 0,
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: compact ? 10 : 11,
+                  fontSize: 11,
                   fontWeight: 800,
                   color: badgeColor,
                   background: badgeBg,
@@ -105,20 +214,19 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
               </span>
               <div style={{ minWidth: 0 }}>
                 <div style={{
-                  fontSize: compact ? 11 : 12,
+                  fontSize: 12,
                   fontWeight: 800,
                   color: labelColor,
                   lineHeight: 1.25,
-                  whiteSpace: compact ? 'nowrap' : undefined,
                 }}>
                   {step.label}
                 </div>
-                {!compact && step.hint ? (
+                {step.hint ? (
                   <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.35 }}>
                     {step.hint}
                   </div>
                 ) : null}
-                {!compact && clickable ? (
+                {clickable ? (
                   <div style={{ fontSize: 10, fontWeight: 700, color: active ? '#EA580C' : '#94A3B8', marginTop: 4 }}>
                     Go >
                   </div>

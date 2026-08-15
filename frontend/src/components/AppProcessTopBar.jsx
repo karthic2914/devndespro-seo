@@ -3,10 +3,9 @@ import UsageBar from './UsageBar'
 
 /**
  * Shared sticky top strip: page process + compact AI usage.
- * Replaces the full-width UsageBar on process pages to save vertical space.
+ * Connected stepper style (no title) to match the compact journey bar.
  */
 export default function AppProcessTopBar({
-  title = 'Process',
   steps = [],
   tip = null,
 }) {
@@ -19,7 +18,7 @@ export default function AppProcessTopBar({
         zIndex: 40,
         background: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%)',
         borderBottom: '1px solid #E5E7EB',
-        padding: '6px 14px',
+        padding: '8px 16px',
         margin: 0,
         flex: '0 0 auto',
         alignSelf: 'stretch',
@@ -27,7 +26,7 @@ export default function AppProcessTopBar({
         alignItems: 'center',
         gap: 12,
         flexWrap: 'wrap',
-        minHeight: 36,
+        minHeight: 40,
         boxSizing: 'border-box',
         width: '100%',
       }}
@@ -35,7 +34,7 @@ export default function AppProcessTopBar({
       <div style={{ flex: '1 1 280px', minWidth: 0 }}>
         <PageProcessGuide
           compact
-          title={title}
+          title={null}
           tip={tip}
           steps={steps}
           style={{ marginBottom: 0, maxWidth: '100%' }}

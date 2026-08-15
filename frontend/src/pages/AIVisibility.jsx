@@ -259,26 +259,6 @@ export default function AIVisibility() {
     }
   }, [products.length, questionSets.length, questionsHydrated])
 
-  // Sticky process: highlight the section currently in view
-  useEffect(() => {
-    if (!fullAccess) return
-    const onScroll = () => {
-      const stickyOffset = 72
-      let current = AI_VISIBILITY_PAGE_FLOW[0]?.id || 'score'
-      for (const step of AI_VISIBILITY_PAGE_FLOW) {
-        const el = document.getElementById(step.sectionId)
-        if (!el) continue
-        if (el.getBoundingClientRect().top - stickyOffset <= 8) current = step.id
-      }
-      setScrollFlowId(current)
-    }
-    onScroll()
-    const root = document.querySelector('.app-main')
-    const target = root || window
-    target.addEventListener('scroll', onScroll, { passive: true })
-    return () => target.removeEventListener('scroll', onScroll)
-  }, [fullAccess])
-
   useEffect(() => {
     if (!showMoreTabs) return
     const handleClick = (e) => {
@@ -709,6 +689,28 @@ export default function AIVisibility() {
         )
       )
     : 0
+
+  // Sticky process: highlight the section currently in view
+  useEffect(() => {
+    if (!fullAccess) return
+    const onScroll = () => {
+      const stickyOffset = 72
+      const scoreEl = document.getElementById('ai-section-score')
+      const testEl = document.getElementById('ai-section-test')
+      const prEl = document.getElementById('ai-section-pr')
+      let current = 'score'
+      if (prEl && prEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'pr'
+      else if (testEl && testEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'test'
+      else if (scoreEl && scoreEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'score'
+      setScrollFlowId(current)
+    }
+    onScroll()
+    const root = document.querySelector('.app-main')
+    const target = root || window
+    target.addEventListener('scroll', onScroll, { passive: true })
+    return () => target.removeEventListener('scroll', onScroll)
+  }, [fullAccess])
+
 // RESET QUESTION PAGINATION
   // Changing product/category or search should always return to page 1.
   useEffect(() => {
@@ -1151,7 +1153,6 @@ export default function AIVisibility() {
   return (
     <>
       <AppProcessTopBar
-        title="AI Visibility process"
         steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
           ...s,
           done:
@@ -1165,6 +1166,7 @@ export default function AIVisibility() {
             if (s.id === 'score') setScoreExpanded(true)
             if (s.id === 'test') setTestExpanded(true)
             if (s.id === 'pr') setPrOpen(true)
+            setScrollFlowId(s.id)
             if (s.sectionId) {
               document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }
@@ -3298,7 +3300,7 @@ export default function AIVisibility() {
               background: '#FFF7ED', border: '1px solid #FED7AA', flexShrink: 0,
             }}>1</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score Overview</div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {currentQuestionsTested}/{currentQuestionTotal || 0} questions tested
                 {summaryPeriod?.periodLabel ? ` · ${summaryPeriod.periodLabel}` : ''}
@@ -3370,7 +3372,7 @@ export default function AIVisibility() {
               background: '#FFF7ED', border: '1px solid #FED7AA', flexShrink: 0,
             }}>2</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test Question</div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {testedQuestionsCount} tested · {readyQuestionsCount} ready · {flatQuestions.length} total
               </div>
@@ -4169,7 +4171,7 @@ export default function AIVisibility() {
               background: '#F8FAFC', border: '1px solid #E5E7EB', flexShrink: 0,
             }}>3</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Digital PR</div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {prOutletCount > 0 ? `${prOutletCount} outlets saved` : 'Discover media after you finish testing'}
               </div>
