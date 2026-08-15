@@ -534,11 +534,11 @@ export default function DecisionCenter({
               color: '#9CA3AF',
               marginTop: 2,
             }}>
-              Why your Domain Rank / Link Score is where it is and how to improve it
+              External Domain Rank vs in-app Link Score components — kept separate on purpose
             </div>
           </div>
 
-          {data.authority !== null &&
+          {data.linkScore !== null &&
            data.projectedAuthority !== null && (
             <div style={{
               textAlign: 'right',
@@ -553,7 +553,7 @@ export default function DecisionCenter({
                 fontWeight: 700,
                 textTransform: 'uppercase',
               }}>
-                Potential
+                Link Score potential
               </div>
 
               <div style={{
@@ -561,7 +561,14 @@ export default function DecisionCenter({
                 fontWeight: 800,
                 color: '#16A34A',
               }}>
-                {data.authority} → {data.projectedAuthority}
+                {data.linkScore} → {Math.min(
+                  100,
+                  data.linkScore +
+                    data.topAuthorityOpportunities.reduce(
+                      (sum, item) => sum + item.gain,
+                      0
+                    )
+                )}
               </div>
             </div>
           )}
@@ -579,6 +586,50 @@ export default function DecisionCenter({
             padding: '12px 14px',
             background: '#fff',
           }}>
+            {data.domainRank !== null && (
+              <div style={{
+                marginBottom: 12,
+                padding: '10px 12px',
+                borderRadius: 9,
+                background: '#F8FAFC',
+                border: '1px solid #E2E8F0',
+              }}>
+                <div style={{
+                  fontSize: 9,
+                  fontWeight: 800,
+                  color: '#64748B',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  marginBottom: 6,
+                }}>
+                  External score
+                </div>
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'baseline',
+                  gap: 8,
+                }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                      Domain Rank
+                    </div>
+                    <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
+                      DataForSEO · not part of Link Score
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: 18,
+                    fontWeight: 800,
+                    color: getScoreColor(data.domainRank),
+                  }}>
+                    {data.domainRank}
+                    <span style={{ fontSize: 11, fontWeight: 500, color: '#94A3B8' }}>/100</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{
               fontSize: 10,
               fontWeight: 800,
@@ -587,7 +638,14 @@ export default function DecisionCenter({
               letterSpacing: '0.05em',
               marginBottom: 4,
             }}>
-              Score Breakdown
+              Link Score breakdown
+            </div>
+            <div style={{
+              fontSize: 10,
+              color: '#9CA3AF',
+              marginBottom: 6,
+            }}>
+              In-app composite from your verified backlinks
             </div>
 
             {data.breakdown ? (
@@ -595,11 +653,6 @@ export default function DecisionCenter({
                 <AuthorityBreakdownRow
                   label="Referring Domains"
                   value={data.breakdown.referringDomains}
-                />
-
-                <AuthorityBreakdownRow
-                  label="Domain Rank"
-                  value={data.breakdown.averageDR}
                 />
 
                 <AuthorityBreakdownRow
@@ -618,7 +671,7 @@ export default function DecisionCenter({
                 color: '#9CA3AF',
                 padding: '14px 0',
               }}>
-                Authority breakdown will appear after the latest authority refresh.
+                Link Score breakdown will appear after the latest authority refresh.
               </div>
             )}
           </div>
