@@ -29,13 +29,6 @@ const STATUS_OPTIONS = [
   { value: 'ai_cited', label: 'AI cited' },
 ]
 
-const WORKFLOW = [
-  { id: 'discover', label: '1. Discover', hint: 'Find AI-trust media' },
-  { id: 'shortlist', label: '2. Shortlist', hint: 'Pick High-trust first' },
-  { id: 'outreach', label: '3. Outreach', hint: 'Pitch editors' },
-  { id: 'track', label: '4. Track', hint: 'Published → AI cited' },
-]
-
 function authorityStyle(level) {
   const v = String(level || '').toLowerCase()
   if (v === 'high') return { bg: '#DCFCE7', color: '#166534', label: 'High' }
@@ -47,7 +40,7 @@ function statusLabel(value) {
   return STATUS_OPTIONS.find((s) => s.value === value)?.label || value
 }
 
-export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
+export default function AiMediaTrustPanel({ siteId, siteName, siteUrl, onOutletCountChange }) {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
@@ -69,9 +62,11 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
     setError('')
     try {
       const { data } = await api.get(`/sites/${siteId}/ai-visibility/media-opportunities`)
-      setOutlets(Array.isArray(data?.outlets) ? data.outlets : [])
+      const list = Array.isArray(data?.outlets) ? data.outlets : []
+      setOutlets(list)
       setMeta(data?.meta || null)
-      const published = (data?.outlets || []).some((o) =>
+      onOutletCountChange?.(list.length)
+      const published = list.some((o) =>
         ['published', 'ai_cited'].includes(o.status) || o.mentionFound
       )
       setShowRetestBanner(published)
@@ -96,9 +91,11 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
         market,
         niche: niche.trim(),
       })
-      setOutlets(Array.isArray(data?.outlets) ? data.outlets : [])
+      const list = Array.isArray(data?.outlets) ? data.outlets : []
+      setOutlets(list)
       setMeta(data?.meta || null)
-      if (!data?.outlets?.length) setError('No media suggestions returned. Try again.')
+      onOutletCountChange?.(list.length)
+      if (!list.length) setError('No media suggestions returned. Try again.')
     } catch (e) {
       setError(e.response?.data?.error || 'Could not find media opportunities')
     }
@@ -110,7 +107,9 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
     setError('')
     try {
       const { data } = await api.post(`/sites/${siteId}/ai-visibility/media-opportunities/check-mentions`)
-      setOutlets(Array.isArray(data?.outlets) ? data.outlets : [])
+      const list = Array.isArray(data?.outlets) ? data.outlets : []
+      setOutlets(list)
+      onOutletCountChange?.(list.length)
       setMentionSummary({ checked: data?.checked || 0, found: data?.found || 0 })
       if ((data?.found || 0) > 0) setShowRetestBanner(true)
     } catch (e) {
@@ -211,43 +210,23 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
     published: outlets.filter((o) => ['published', 'ai_cited'].includes(o.status)).length,
   }
 
-  const activeStep =
-    !outlets.length ? 'discover'
-      : counts.published > 0 ? 'track'
-        : counts.contacted > 0 ? 'outreach'
-          : counts.shortlisted > 0 ? 'shortlist'
-            : 'discover'
-
   return (
     <Card
       padding="1.15rem 1.25rem"
       style={{
         marginBottom: 14,
-        border: `1px solid ${T.orange}33`,
-        background: 'linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 42%)',
+        border: `1px solid ${T.border}`,
+        background: '#fff',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <FontAwesomeIcon icon={faNewspaper} style={{ color: T.orange }} />
-            <SectionLabel>Digital PR for AI visibility</SectionLabel>
-            <span style={{
-              fontSize: 10,
-              fontWeight: 800,
-              letterSpacing: '0.04em',
-              textTransform: 'uppercase',
-              color: '#9A3412',
-              background: '#FFEDD5',
-              borderRadius: 99,
-              padding: '3px 8px',
-            }}>
-              Industry workflow
-            </span>
+            <SectionLabel>Find media & track outreach</SectionLabel>
           </div>
           <div style={{ fontSize: 13, color: T.muted, marginTop: 4, lineHeight: 1.45, maxWidth: 720 }}>
-            Get covered by media that ChatGPT / Claude / Perplexity often trust.
-            Pipeline: discover outlets → shortlist High AI-trust → outreach → track publish & AI citations.
+            Discover → shortlist High AI-trust → outreach → check mentions. Start with Discover media.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -331,33 +310,7 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
         </div>
       </div>
 
-      {/* Workflow strip */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-        gap: 8,
-        marginTop: 14,
-      }}>
-        {WORKFLOW.map((step) => {
-          const on = activeStep === step.id
-          return (
-            <div
-              key={step.id}
-              style={{
-                padding: '10px 10px',
-                borderRadius: 10,
-                border: `1px solid ${on ? '#FDBA74' : T.border}`,
-                background: on ? '#FFF7ED' : '#F8FAFC',
-              }}
-            >
-              <div style={{ fontSize: 12, fontWeight: 800, color: on ? '#9A3412' : T.text }}>{step.label}</div>
-              <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>{step.hint}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* KPI chips */}
+      {/* Pipeline status chips */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
         <Chip label="Outlets" value={counts.total || 0} />
         <Chip label="High AI trust" value={counts.high || 0} tone="green" />
@@ -396,7 +349,7 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl }) {
             type="button"
             onClick={() => {
               setShowRetestBanner(false)
-              document.getElementById('ai-questions-toolbar')?.scrollIntoView?.({ behavior: 'smooth' })
+              document.getElementById('ai-section-test')?.scrollIntoView?.({ behavior: 'smooth' })
             }}
             style={{
               height: 34,

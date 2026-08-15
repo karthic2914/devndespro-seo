@@ -172,3 +172,24 @@ export const ACTIONS_PAGE_FLOW = [
     sectionId: 'actions-section-list',
   },
 ]
+
+export const AI_VISIBILITY_PAGE_FLOW = [
+  {
+    id: 'score',
+    label: '1. Score',
+    hint: 'See if AI mentions you',
+    sectionId: 'ai-section-score',
+  },
+  {
+    id: 'test',
+    label: '2. Test questions',
+    hint: 'Check ChatGPT & Claude',
+    sectionId: 'ai-section-test',
+  },
+  {
+    id: 'pr',
+    label: '3. Digital PR',
+    hint: 'Earn media that AI trusts',
+    sectionId: 'ai-section-pr',
+  },
+]

@@ -17,6 +17,8 @@ import {
 } from '../components/AIVisibilityInsightCards'
 import AiMediaTrustPanel from '../components/AiMediaTrustPanel'
 import { BrandFavicon } from '../components/SiteFavicon'
+import PageProcessGuide from '../components/PageProcessGuide'
+import { AI_VISIBILITY_PAGE_FLOW } from '../constants/pageFlows'
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -207,6 +209,8 @@ export default function AIVisibility() {
   const [selectedQuestion, setSelectedQuestion] = useState('')
   const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
   const [questionMenuPos, setQuestionMenuPos] = useState(null)
+  const [scrollFlowId, setScrollFlowId] = useState('score')
+  const [prOutletCount, setPrOutletCount] = useState(0)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
@@ -243,6 +247,24 @@ export default function AIVisibility() {
       generateProductQuestions(false)
     }
   }, [products.length, questionSets.length, questionsHydrated])
+
+  // Sticky process: highlight the section currently in view
+  useEffect(() => {
+    if (!fullAccess) return
+    const onScroll = () => {
+      const stickyOffset = 88
+      let current = AI_VISIBILITY_PAGE_FLOW[0]?.id || 'score'
+      for (const step of AI_VISIBILITY_PAGE_FLOW) {
+        const el = document.getElementById(step.sectionId)
+        if (!el) continue
+        if (el.getBoundingClientRect().top - stickyOffset <= 8) current = step.id
+      }
+      setScrollFlowId(current)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [fullAccess])
 
   useEffect(() => {
     if (!showMoreTabs) return
@@ -3104,18 +3126,71 @@ export default function AIVisibility() {
         </div>
       )}
 
-      <VisibilityKPICards
-        siteId={siteId}
-        onSummaryLoaded={setSummaryPeriod}
-        totalQuestions={currentQuestionTotal}
-        testedQuestions={currentQuestionsTested}
-      />
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 30,
+          background: '#fff',
+          borderBottom: '1px solid #E5E7EB',
+          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
+          margin: '0 -22px 16px',
+          padding: '0.65rem 22px',
+        }}
+      >
+        <PageProcessGuide
+          compact
+          title="AI Visibility process"
+          tip={null}
+          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
+            ...s,
+            done:
+              s.id === 'score'
+                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
+                : s.id === 'test'
+                  ? currentQuestionsTested > 0
+                  : prOutletCount > 0,
+            active: scrollFlowId === s.id,
+          }))}
+          style={{ marginBottom: 0, maxWidth: '100%' }}
+        />
+        <div style={{ fontSize: 11, color: '#64748B', marginTop: 6, lineHeight: 1.4 }}>
+          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
+        </div>
+      </div>
 
-      <AiMediaTrustPanel
-        siteId={siteId}
-        siteName={site?.name}
-        siteUrl={site?.url || domain}
-      />
+      <div id="ai-section-score" style={{ scrollMarginTop: 96, marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 800, color: '#9A3412',
+            background: '#FFF7ED', border: '1px solid #FED7AA',
+            borderRadius: 99, padding: '3px 10px',
+          }}>Step 1</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
+            <div style={{ fontSize: 12, color: '#64748B' }}>See your AI visibility score before you dig into questions.</div>
+          </div>
+        </div>
+        <VisibilityKPICards
+          siteId={siteId}
+          onSummaryLoaded={setSummaryPeriod}
+          totalQuestions={currentQuestionTotal}
+          testedQuestions={currentQuestionsTested}
+        />
+      </div>
+
+      <div id="ai-section-test" style={{ scrollMarginTop: 96, marginBottom: 18 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 800, color: '#9A3412',
+            background: '#FFF7ED', border: '1px solid #FED7AA',
+            borderRadius: 99, padding: '3px 10px',
+          }}>Step 2</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
+            <div style={{ fontSize: 12, color: '#64748B' }}>Pick a question and check whether ChatGPT / Claude mention you.</div>
+          </div>
+        </div>
 
       <div style={{ marginBottom: 14 }}>
 
@@ -3817,6 +3892,29 @@ export default function AIVisibility() {
           </div>
 
         </div>
+      </div>
+
+      <div id="ai-section-pr" style={{ scrollMarginTop: 96, marginBottom: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
+          <span style={{
+            fontSize: 11, fontWeight: 800, color: '#9A3412',
+            background: '#FFF7ED', border: '1px solid #FED7AA',
+            borderRadius: 99, padding: '3px 10px',
+          }}>Step 3</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
+            <div style={{ fontSize: 12, color: '#64748B' }}>
+              After testing, discover media outlets to earn mentions AI models trust. Skip this until Steps 1-2 are clear.
+            </div>
+          </div>
+        </div>
+        <AiMediaTrustPanel
+          siteId={siteId}
+          siteName={site?.name}
+          siteUrl={site?.url || domain}
+          onOutletCountChange={setPrOutletCount}
+        />
+      </div>
 
       {showMoreTabs && moreTabsPos && createPortal(
         <div
