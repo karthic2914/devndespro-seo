@@ -10,6 +10,7 @@ import {
   faBolt,
 } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
+import { Modal } from './UI'
 import api from '../utils/api'
 
 const cardStyle = {
@@ -528,6 +529,7 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
   const [loading, setLoading] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const [expanded, setExpanded] = useState(null)
+  const [showManageModal, setShowManageModal] = useState(false)
 
   const load = useCallback(() => {
     if (!siteId) return
@@ -553,19 +555,24 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
     <div style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <div style={titleStyle}>Top Competitors</div>
-        <button
-          type="button"
-          onClick={() => {
-            if (allCompetitors.length > 5 && !showAll) {
-              setShowAll(true)
-              return
-            }
-            navigate(`/site/${siteId}/competitors`)
-          }}
-          style={linkStyle()}
-        >
-          {showAll || allCompetitors.length <= 5 ? 'Manage →' : 'View all →'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {allCompetitors.length > 5 && !showAll ? (
+            <button
+              type="button"
+              onClick={() => setShowAll(true)}
+              style={linkStyle()}
+            >
+              View all →
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setShowManageModal(true)}
+            style={linkStyle()}
+          >
+            Manage →
+          </button>
+        </div>
       </div>
 
       {!loading && allCompetitors.length > 0 && (
@@ -709,6 +716,104 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
           Show less
         </button>
       )}
+
+      <Modal
+        open={showManageModal}
+        onClose={() => setShowManageModal(false)}
+        title="AI competitors"
+        subtitle="Brands that appear in ChatGPT / Claude answers for your questions. Track them on the Competitors page if you want to monitor SEO rivalry."
+        width={560}
+        closeOnOverlayClick
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => setShowManageModal(false)}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: '1px solid #E5E7EB',
+                background: '#fff',
+                color: '#374151',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setShowManageModal(false)
+                if (siteId) navigate(`/site/${siteId}/competitors`)
+              }}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: 0,
+                background: '#E66A39',
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              Open Competitors page
+              <FontAwesomeIcon icon={faArrowRight} />
+            </button>
+          </>
+        }
+      >
+        {!allCompetitors.length ? (
+          <div style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, textAlign: 'center', padding: '20px 8px' }}>
+            No AI competitors yet. Test questions to see which brands engines recommend.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 'min(55vh, 420px)', overflowY: 'auto' }}>
+            {allCompetitors.map((c, i) => {
+              const gap = Math.max(0, (c.visibilityScore || 0) - yourScore)
+              return (
+                <div
+                  key={`mgmt-${c.name}-${i}`}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '28px minmax(0,1fr) 56px 48px',
+                    gap: 10,
+                    alignItems: 'center',
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid #E5E7EB',
+                    background: i === 0 ? '#FFF7ED' : '#fff',
+                  }}
+                >
+                  <BrandFavicon name={c.name} size={20} />
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 750, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {c.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                      {c.mentions || 0} mention{(c.mentions || 0) === 1 ? '' : 's'}
+                      {c.averageRank != null ? ` · avg #${c.averageRank}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', textAlign: 'right' }}>
+                    {c.visibilityScore || 0}%
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: gap > 0 ? '#EA580C' : '#16A34A', textAlign: 'right' }}>
+                    {gap > 0 ? `+${gap}` : 'Tied'}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

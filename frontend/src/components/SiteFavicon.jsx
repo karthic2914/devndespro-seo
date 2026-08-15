@@ -108,11 +108,11 @@ export function BrandFavicon({ name = '', size = 16 }) {
   const domainGuess = useMemo(() => {
     const raw = String(name || '').trim()
     if (!raw) return ''
+    // Only fetch favicons for real domains - guessing "BrandName.com" causes noisy 404s
     if (/\./.test(raw)) {
       return raw.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0]
     }
-    const slug = raw.toLowerCase().replace(/[^a-z0-9]+/g, '')
-    return slug ? `${slug}.com` : ''
+    return ''
   }, [name])
 
   const faviconUrl = domainGuess
@@ -127,6 +127,7 @@ export function BrandFavicon({ name = '', size = 16 }) {
         alt=""
         width={size}
         height={size}
+        referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
         style={{
           width: size,
