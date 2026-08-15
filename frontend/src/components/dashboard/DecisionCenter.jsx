@@ -23,7 +23,7 @@ function getScoreLabel(score) {
   return 'Priority'
 }
 
-function MetricCard({ label, value }) {
+function MetricCard({ label, value, hint }) {
   const score = clampScore(value)
 
   return (
@@ -42,7 +42,9 @@ function MetricCard({ label, value }) {
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         marginBottom: 5,
-      }}>
+      }}
+        title={hint || undefined}
+      >
         {label}
       </div>
 
@@ -60,6 +62,17 @@ function MetricCard({ label, value }) {
           /100
         </span>
       </div>
+
+      {hint ? (
+        <div style={{
+          fontSize: 10,
+          color: '#9CA3AF',
+          marginTop: 4,
+          lineHeight: 1.35,
+        }}>
+          {hint}
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -97,6 +110,36 @@ function AuthorityBreakdownRow({ label, value }) {
     </div>
   )
 }
+function categoryPassScore(checks, categoryName) {
+  const issues = (Array.isArray(checks) ? checks : []).filter(
+    (item) => String(item?.category || '') === categoryName
+  )
+  if (!issues.length) return null
+
+  return clampScore(
+    Math.round(
+      issues.reduce(
+        (sum, item) =>
+          sum +
+          (item.status === 'pass'
+            ? 100
+            : item.status === 'warning'
+              ? 55
+              : 15),
+        0
+      ) / issues.length
+    )
+  )
+}
+
+function averageScores(scores) {
+  const values = scores.filter((score) => score !== null)
+  if (!values.length) return null
+  return Math.round(
+    values.reduce((sum, score) => sum + score, 0) / values.length
+  )
+}
+
 export default function DecisionCenter({
   auditData,
   multipageResults,
@@ -120,17 +163,35 @@ export default function DecisionCenter({
 
     const homepageAudit = clampScore(auditData?.score)
 
-    const aiScores = [
-      clampScore(auditData?.chatgptScore),
-      clampScore(auditData?.claudeScore),
-    ].filter((score) => score !== null)
+    // ChatGPT / Claude = citation rates from AI Visibility tests (seo_metrics).
+    // AI Snippet / AEO = on-page readiness from the latest audit checks.
+    const chatgpt = clampScore(auditData?.chatgptScore)
+    const claude = clampScore(auditData?.claudeScore)
+    const aiSnippet = categoryPassScore(auditData?.checks, 'AI Snippet')
+    const aeo = categoryPassScore(auditData?.checks, 'AEO')
 
-    const aiVisibility = aiScores.length
-      ? Math.round(
-          aiScores.reduce((sum, score) => sum + score, 0) /
-          aiScores.length
-        )
-      : null
+    const engineScores = [chatgpt, claude].filter((score) => score !== null)
+    const readinessScores = [aiSnippet, aeo].filter((score) => score !== null)
+    const enginesAllZero =
+      engineScores.length > 0 && engineScores.every((score) => score === 0)
+
+    // If engines are missing or all 0 (usually "not tested yet"), use audit
+    // AI Snippet/AEO readiness so the card is not stuck at a misleading 0.
+    let aiVisibility = null
+    let aiVisibilitySource = null
+    if (readinessScores.length && (!engineScores.length || enginesAllZero)) {
+      aiVisibility = averageScores(readinessScores)
+      aiVisibilitySource = 'audit'
+    } else if (engineScores.length && readinessScores.length) {
+      aiVisibility = averageScores([...engineScores, ...readinessScores])
+      aiVisibilitySource = 'mixed'
+    } else if (engineScores.length) {
+      aiVisibility = averageScores(engineScores)
+      aiVisibilitySource = 'engines'
+    } else if (readinessScores.length) {
+      aiVisibility = averageScores(readinessScores)
+      aiVisibilitySource = 'audit'
+    }
 
     /*
       Digital Growth Score v1
@@ -308,6 +369,7 @@ export default function DecisionCenter({
       domainRank: industryRank,
       linkScore,
       aiVisibility,
+      aiVisibilitySource,
       overallScore,
       priorities,
       breakdown,
@@ -413,21 +475,33 @@ export default function DecisionCenter({
         <MetricCard
           label="Site Health"
           value={data.siteHealth}
+          hint="From latest site audit"
         />
 
         <MetricCard
           label="Domain Rank"
           value={data.domainRank}
+          hint="External · DataForSEO (DA-style, not Ahrefs/Moz)"
         />
 
         <MetricCard
           label="Link Score"
           value={data.linkScore}
+          hint="In-app · verified backlinks"
         />
 
         <MetricCard
           label="AI Visibility"
           value={data.aiVisibility}
+          hint={
+            data.aiVisibilitySource === 'engines'
+              ? 'ChatGPT / Claude citation rate'
+              : data.aiVisibilitySource === 'mixed'
+                ? 'Engines + AI Snippet / AEO'
+                : data.aiVisibilitySource === 'audit'
+                  ? 'From AI Snippet / AEO audit checks'
+                  : 'Run audit or AI Visibility tests'
+          }
         />
       </div>
 
