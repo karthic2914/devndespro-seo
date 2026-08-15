@@ -197,28 +197,41 @@ export default function DecisionCenter({
       auditData?.authorityBreakdown ||
       null
 
+    const pickScore = (...candidates) => {
+      for (const candidate of candidates) {
+        if (candidate === null || candidate === undefined) continue
+        if (typeof candidate === 'object') {
+          if (candidate.score !== null && candidate.score !== undefined) {
+            return clampScore(candidate.score)
+          }
+          continue
+        }
+        return clampScore(candidate)
+      }
+      return null
+    }
+
+    // Prefer server Link Score keys (calibrated). Client keys are fallback only —
+    // the old client dofollow formula capped at 100 once ratio ≥ 70%.
     const breakdown = authorityBreakdown
       ? {
-          referringDomains:
-            authorityBreakdown.referringDomains?.score ??
-            authorityBreakdown.referringDomains ??
-            null,
-
-          averageDR:
-            industryRank ??
-            authorityBreakdown.averageDR?.score ??
-            authorityBreakdown.averageDR ??
-            null,
-
-          dofollow:
-            authorityBreakdown.dofollow?.score ??
-            authorityBreakdown.dofollow ??
-            null,
-
-          backlinks:
-            authorityBreakdown.backlinks?.score ??
-            authorityBreakdown.backlinks ??
-            null,
+          referringDomains: pickScore(
+            authorityBreakdown.domainDiversity,
+            authorityBreakdown.referringDomains
+          ),
+          averageDR: pickScore(
+            industryRank,
+            authorityBreakdown.domainRank,
+            authorityBreakdown.averageDR
+          ),
+          dofollow: pickScore(
+            authorityBreakdown.followNaturality,
+            authorityBreakdown.dofollow
+          ),
+          backlinks: pickScore(
+            authorityBreakdown.verifiedLinkQuality,
+            authorityBreakdown.backlinks
+          ),
         }
       : null
 
@@ -254,8 +267,8 @@ export default function DecisionCenter({
         breakdown.dofollow < 75
       ) {
         opportunities.push({
-          title: 'Improve dofollow link quality',
-          detail: 'Increase the share of valuable editorial links',
+          title: 'Balance dofollow vs nofollow mix',
+          detail: 'A profile that is almost all dofollow can look unnatural',
           gain: 2,
           priority: 'Medium',
         })
@@ -516,12 +529,12 @@ export default function DecisionCenter({
                 />
 
                 <AuthorityBreakdownRow
-                  label="Dofollow Quality"
+                  label="Follow Naturality"
                   value={data.breakdown.dofollow}
                 />
 
                 <AuthorityBreakdownRow
-                  label="Backlink Strength"
+                  label="Link Quality"
                   value={data.breakdown.backlinks}
                 />
               </>

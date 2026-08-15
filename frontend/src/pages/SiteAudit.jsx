@@ -623,39 +623,63 @@ export default function SiteAudit() {
           logScore(totalBacklinks, 1000)
 
         if (!cancelled) {
-          setAuthorityDetails((prev) => ({
-            ...(prev || {}),
-            breakdown: {
-              ...(prev?.breakdown || {}),
-              referringDomains: {
-                value: referringDomains,
-                score: referringDomainScore,
-                weight: 40,
+          setAuthorityDetails((prev) => {
+            const existing = prev?.breakdown || {}
+            // Do not overwrite calibrated server Link Score components
+            // with the simpler client estimate (e.g. dofollow → 100 at ≥70%).
+            const hasServerLinkScore = Boolean(
+              existing.domainDiversity ||
+              existing.followNaturality ||
+              existing.verifiedLinkQuality
+            )
+
+            if (hasServerLinkScore) {
+              return {
+                ...(prev || {}),
+                breakdown: {
+                  ...existing,
+                  domainRank:
+                    existing.domainRank ??
+                    prev?.domain_rank ??
+                    null,
+                },
+                domain_rank: prev?.domain_rank ?? null,
+              }
+            }
+
+            return {
+              ...(prev || {}),
+              breakdown: {
+                ...existing,
+                referringDomains: {
+                  value: referringDomains,
+                  score: referringDomainScore,
+                  weight: 40,
+                },
+                averageDR: {
+                  value: Math.round(avgDr * 10) / 10,
+                  score: drScore,
+                  weight: 30,
+                },
+                dofollow: {
+                  count: dofollowCount,
+                  ratio: Math.round(dofollowRatio * 10) / 10,
+                  score: dofollowScore,
+                  weight: 15,
+                },
+                backlinks: {
+                  value: totalBacklinks,
+                  score: backlinkVolumeScore,
+                  weight: 15,
+                },
+                domainRank:
+                  existing.domainRank ??
+                  prev?.domain_rank ??
+                  null,
               },
-              averageDR: {
-                value: Math.round(avgDr * 10) / 10,
-                score: drScore,
-                weight: 30,
-              },
-              dofollow: {
-                count: dofollowCount,
-                ratio: Math.round(dofollowRatio * 10) / 10,
-                score: dofollowScore,
-                weight: 15,
-              },
-              backlinks: {
-                value: totalBacklinks,
-                score: backlinkVolumeScore,
-                weight: 15,
-              },
-              // Keep industry Domain Rank if already fetched
-              domainRank:
-                prev?.breakdown?.domainRank ??
-                prev?.domain_rank ??
-                null,
-            },
-            domain_rank: prev?.domain_rank ?? null,
-          }))
+              domain_rank: prev?.domain_rank ?? null,
+            }
+          })
         }
       } catch (error) {
         console.warn(
@@ -804,7 +828,16 @@ export default function SiteAudit() {
             if (r?.data?.authority_updated_at) {
               setAuthorityUpdatedAt(r.data.authority_updated_at)
             }
-            if (r?.data) setAuthorityDetails(r.data)
+            if (r?.data) {
+              setAuthorityDetails((prev) => ({
+                ...(prev || {}),
+                ...r.data,
+                breakdown: {
+                  ...(prev?.breakdown || {}),
+                  ...(r.data.breakdown || {}),
+                },
+              }))
+            }
             if (r?.data?.domain_rank != null) {
               setDomainRank(Number(r.data.domain_rank))
             } else if (r?.data?.domain_rank_meta?.error) {
@@ -1606,7 +1639,14 @@ export default function SiteAudit() {
     try {
       const r = await api.post(`/sites/${siteId}/authority-score`)
       setAuthorityScore(r.data.authority_score ?? r.data.link_score)
-      setAuthorityDetails(r.data)
+      setAuthorityDetails((prev) => ({
+        ...(prev || {}),
+        ...r.data,
+        breakdown: {
+          ...(prev?.breakdown || {}),
+          ...(r.data.breakdown || {}),
+        },
+      }))
       setAuthorityUpdatedAt(r.data.authority_updated_at)
       if (r.data.domain_rank != null) setDomainRank(Number(r.data.domain_rank))
       showSnackbar(
