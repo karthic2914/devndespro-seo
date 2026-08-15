@@ -19,6 +19,7 @@ import AiMediaTrustPanel from '../components/AiMediaTrustPanel'
 import { BrandFavicon } from '../components/SiteFavicon'
 import PageProcessGuide from '../components/PageProcessGuide'
 import { AI_VISIBILITY_PAGE_FLOW } from '../constants/pageFlows'
+import { Modal } from '../components/UI'
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -211,6 +212,11 @@ export default function AIVisibility() {
   const [questionMenuPos, setQuestionMenuPos] = useState(null)
   const [scrollFlowId, setScrollFlowId] = useState('score')
   const [prOutletCount, setPrOutletCount] = useState(0)
+  const [deleteConfirmQuestion, setDeleteConfirmQuestion] = useState('')
+  const [deletingQuestion, setDeletingQuestion] = useState(false)
+  const [editQuestionOriginal, setEditQuestionOriginal] = useState('')
+  const [editQuestionDraft, setEditQuestionDraft] = useState('')
+  const [savingEditQuestion, setSavingEditQuestion] = useState(false)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
@@ -450,71 +456,75 @@ export default function AIVisibility() {
     }
   }
 
-  async function handleDeleteQuestion(questionText) {
+  function requestDeleteQuestion(questionText) {
     const q = String(questionText || '').trim()
     if (!q) return
-    const custom = customQuestions.find(c => c.question === q)
-    const ok = window.confirm(`Delete this question?\n\n"${q.slice(0, 120)}${q.length > 120 ? '…' : ''}"`)
-    if (!ok) return
-
-    if (custom?.id) {
-      const deleted = await deleteCustomQuestion(custom.id)
-      if (!deleted) return
-    } else {
-      const nextSets = questionSets
-        .map(set => ({
-          ...set,
-          questions: (set.questions || []).filter(item => item !== q),
-        }))
-        .filter(set => (set.questions || []).length > 0)
-      try {
-        const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
-        setQuestionSets(res.data?.questionSets || nextSets)
-      } catch (e) {
-        showSnackbar('Failed to delete question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-        return
-      }
-    }
-
-    clearQuestionLocalState(q)
-    showSnackbar('Question deleted', 'success')
+    setDeleteConfirmQuestion(q)
   }
 
-  async function handleEditQuestion(questionText) {
+  async function confirmDeleteQuestion() {
+    const q = String(deleteConfirmQuestion || '').trim()
+    if (!q || deletingQuestion) return
+    setDeletingQuestion(true)
+    const custom = customQuestions.find(c => c.question === q)
+
+    try {
+      if (custom?.id) {
+        const deleted = await deleteCustomQuestion(custom.id)
+        if (!deleted) return
+      } else {
+        const nextSets = questionSets
+          .map(set => ({
+            ...set,
+            questions: (set.questions || []).filter(item => item !== q),
+          }))
+          .filter(set => (set.questions || []).length > 0)
+        const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
+        setQuestionSets(res.data?.questionSets || nextSets)
+      }
+      clearQuestionLocalState(q)
+      setDeleteConfirmQuestion('')
+      showSnackbar('Question deleted', 'success')
+    } catch (e) {
+      showSnackbar('Failed to delete question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    } finally {
+      setDeletingQuestion(false)
+    }
+  }
+
+  function requestEditQuestion(questionText) {
     const q = String(questionText || '').trim()
     if (!q) return
-    const custom = customQuestions.find(c => c.question === q)
-    const next = window.prompt('Edit question', q)
-    if (next === null) return
-    const trimmed = String(next).trim()
-    if (!trimmed || trimmed === q) return
+    setEditQuestionOriginal(q)
+    setEditQuestionDraft(q)
+  }
 
-    if (custom?.id) {
-      try {
-        const res = await api.patch('/sites/' + siteId + '/custom-questions/' + custom.id, { question: trimmed })
-        setCustomQuestions(prev => prev.map(c => (c.id === custom.id ? { ...c, ...res.data } : c)))
-        if (selectedQuestion === q) setSelectedQuestion(trimmed)
-        setQuestionStatuses(prev => prev.map(s => (s.question === q ? { ...s, question: trimmed } : s)))
-        if (questionResultsCacheRef.current?.[q]) {
-          const cache = { ...questionResultsCacheRef.current }
-          cache[trimmed] = cache[q]
-          delete cache[q]
-          questionResultsCacheRef.current = cache
-        }
-        showSnackbar('Question updated', 'success')
-      } catch (e) {
-        showSnackbar('Failed to update question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
-      }
+  async function confirmEditQuestion() {
+    const q = String(editQuestionOriginal || '').trim()
+    const trimmed = String(editQuestionDraft || '').trim()
+    if (!q || !trimmed || savingEditQuestion) return
+    if (trimmed === q) {
+      setEditQuestionOriginal('')
+      setEditQuestionDraft('')
       return
     }
 
-    const nextSets = questionSets.map(set => ({
-      ...set,
-      questions: (set.questions || []).map(item => (item === q ? trimmed : item)),
-    }))
+    setSavingEditQuestion(true)
+    const custom = customQuestions.find(c => c.question === q)
+
     try {
-      const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
-      setQuestionSets(res.data?.questionSets || nextSets)
+      if (custom?.id) {
+        const res = await api.patch('/sites/' + siteId + '/custom-questions/' + custom.id, { question: trimmed })
+        setCustomQuestions(prev => prev.map(c => (c.id === custom.id ? { ...c, ...res.data } : c)))
+      } else {
+        const nextSets = questionSets.map(set => ({
+          ...set,
+          questions: (set.questions || []).map(item => (item === q ? trimmed : item)),
+        }))
+        const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
+        setQuestionSets(res.data?.questionSets || nextSets)
+      }
+
       if (selectedQuestion === q) setSelectedQuestion(trimmed)
       setQuestionStatuses(prev => prev.map(s => (s.question === q ? { ...s, question: trimmed } : s)))
       if (questionResultsCacheRef.current?.[q]) {
@@ -523,9 +533,13 @@ export default function AIVisibility() {
         delete cache[q]
         questionResultsCacheRef.current = cache
       }
+      setEditQuestionOriginal('')
+      setEditQuestionDraft('')
       showSnackbar('Question updated', 'success')
     } catch (e) {
       showSnackbar('Failed to update question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+    } finally {
+      setSavingEditQuestion(false)
     }
   }
 
@@ -4102,7 +4116,7 @@ export default function AIVisibility() {
               const q = openQuestionMenu
               setOpenQuestionMenu(null)
               setQuestionMenuPos(null)
-              handleEditQuestion(q)
+              requestEditQuestion(q)
             }}
           >
             <FontAwesomeIcon
@@ -4121,7 +4135,7 @@ export default function AIVisibility() {
               const q = openQuestionMenu
               setOpenQuestionMenu(null)
               setQuestionMenuPos(null)
-              handleDeleteQuestion(q)
+              requestDeleteQuestion(q)
             }}
           >
             <FontAwesomeIcon
@@ -4133,6 +4147,151 @@ export default function AIVisibility() {
         </div>,
         document.body
       )}
+
+      <Modal
+        open={Boolean(deleteConfirmQuestion)}
+        onClose={() => {
+          if (deletingQuestion) return
+          setDeleteConfirmQuestion('')
+        }}
+        title="Delete question?"
+        subtitle="This removes it from your AI Visibility list. You can add it again later if needed."
+        width={440}
+        closeOnOverlayClick={!deletingQuestion}
+        footer={
+          <>
+            <button
+              type="button"
+              disabled={deletingQuestion}
+              onClick={() => setDeleteConfirmQuestion('')}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: '1px solid #E5E7EB',
+                background: '#fff',
+                color: '#374151',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: deletingQuestion ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={deletingQuestion}
+              onClick={confirmDeleteQuestion}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: 0,
+                background: '#DC2626',
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: deletingQuestion ? 'not-allowed' : 'pointer',
+                opacity: deletingQuestion ? 0.75 : 1,
+              }}
+            >
+              {deletingQuestion ? 'Deleting…' : 'Delete question'}
+            </button>
+          </>
+        }
+      >
+        <div style={{
+          padding: '12px 14px',
+          borderRadius: 10,
+          background: '#FEF2F2',
+          border: '1px solid #FECACA',
+          color: '#7F1D1D',
+          fontSize: 13,
+          fontWeight: 650,
+          lineHeight: 1.45,
+          wordBreak: 'break-word',
+        }}>
+          {deleteConfirmQuestion}
+        </div>
+      </Modal>
+
+      <Modal
+        open={Boolean(editQuestionOriginal)}
+        onClose={() => {
+          if (savingEditQuestion) return
+          setEditQuestionOriginal('')
+          setEditQuestionDraft('')
+        }}
+        title="Edit question"
+        subtitle="Update the wording used for ChatGPT and Claude tests."
+        width={520}
+        closeOnOverlayClick={!savingEditQuestion}
+        footer={
+          <>
+            <button
+              type="button"
+              disabled={savingEditQuestion}
+              onClick={() => {
+                setEditQuestionOriginal('')
+                setEditQuestionDraft('')
+              }}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: '1px solid #E5E7EB',
+                background: '#fff',
+                color: '#374151',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: savingEditQuestion ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={savingEditQuestion || !editQuestionDraft.trim()}
+              onClick={confirmEditQuestion}
+              style={{
+                height: 36,
+                padding: '0 14px',
+                borderRadius: 8,
+                border: 0,
+                background: '#E66A39',
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 13,
+                cursor: savingEditQuestion || !editQuestionDraft.trim() ? 'not-allowed' : 'pointer',
+                opacity: savingEditQuestion || !editQuestionDraft.trim() ? 0.7 : 1,
+              }}
+            >
+              {savingEditQuestion ? 'Saving…' : 'Save changes'}
+            </button>
+          </>
+        }
+      >
+        <textarea
+          value={editQuestionDraft}
+          onChange={(e) => setEditQuestionDraft(e.target.value)}
+          rows={4}
+          autoFocus
+          placeholder="Enter the question…"
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            border: '1px solid #D1D5DB',
+            borderRadius: 10,
+            padding: '12px 14px',
+            fontSize: 13,
+            lineHeight: 1.45,
+            color: '#0F172A',
+            fontFamily: 'inherit',
+            resize: 'vertical',
+            minHeight: 96,
+          }}
+        />
+      </Modal>
 
     </div>
     </>
