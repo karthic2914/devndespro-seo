@@ -252,7 +252,7 @@ export default function AIVisibility() {
   useEffect(() => {
     if (!fullAccess) return
     const onScroll = () => {
-      const stickyOffset = 88
+      const stickyOffset = 72
       let current = AI_VISIBILITY_PAGE_FLOW[0]?.id || 'score'
       for (const step of AI_VISIBILITY_PAGE_FLOW) {
         const el = document.getElementById(step.sectionId)
@@ -262,8 +262,10 @@ export default function AIVisibility() {
       setScrollFlowId(current)
     }
     onScroll()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
+    const root = document.querySelector('.app-main')
+    const target = root || window
+    target.addEventListener('scroll', onScroll, { passive: true })
+    return () => target.removeEventListener('scroll', onScroll)
   }, [fullAccess])
 
   useEffect(() => {
@@ -1038,9 +1040,9 @@ export default function AIVisibility() {
           width: 100%;
           max-width: min(1440px, 100%);
           margin: 0 auto;
-          padding: 18px 22px 32px;
+          padding: 10px 22px 32px;
           box-sizing: border-box;
-          overflow-x: hidden;
+          overflow-x: clip;
           position: relative;
           animation: aiVisFadeIn .35s ease-out;
         }
@@ -1072,7 +1074,7 @@ export default function AIVisibility() {
           align-items: flex-start;
           justify-content: space-between;
           gap: 16px;
-          margin-bottom: 18px;
+          margin-bottom: 12px;
           max-width: 100%;
           min-width: 0;
           flex-wrap: wrap;
@@ -1128,7 +1130,7 @@ export default function AIVisibility() {
           align-items: center;
           gap: 10px;
           flex-wrap: wrap;
-          margin-bottom: 16px;
+          margin-bottom: 10px;
           padding: 10px 14px;
           border-radius: 10px;
           border: 1px solid #FED7AA;
@@ -2868,6 +2870,40 @@ export default function AIVisibility() {
       `}
         </style>
 
+      <div
+        className="ai-vis-process-sticky"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          background: '#fff',
+          borderBottom: '1px solid #E5E7EB',
+          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
+          margin: '0 -22px 10px',
+          padding: '8px 22px 6px',
+        }}
+      >
+        <PageProcessGuide
+          compact
+          title="AI Visibility process"
+          tip={null}
+          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
+            ...s,
+            done:
+              s.id === 'score'
+                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
+                : s.id === 'test'
+                  ? currentQuestionsTested > 0
+                  : prOutletCount > 0,
+            active: scrollFlowId === s.id,
+          }))}
+          style={{ marginBottom: 0, maxWidth: '100%' }}
+        />
+        <div style={{ fontSize: 11, color: '#64748B', marginTop: 4, lineHeight: 1.35 }}>
+          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
+        </div>
+      </div>
+
       <div className="ai-vis-header">
         <div>
           <div className="ai-vis-title-row">
@@ -3126,40 +3162,7 @@ export default function AIVisibility() {
         </div>
       )}
 
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-          background: '#fff',
-          borderBottom: '1px solid #E5E7EB',
-          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
-          margin: '0 -22px 16px',
-          padding: '0.65rem 22px',
-        }}
-      >
-        <PageProcessGuide
-          compact
-          title="AI Visibility process"
-          tip={null}
-          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
-            ...s,
-            done:
-              s.id === 'score'
-                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
-                : s.id === 'test'
-                  ? currentQuestionsTested > 0
-                  : prOutletCount > 0,
-            active: scrollFlowId === s.id,
-          }))}
-          style={{ marginBottom: 0, maxWidth: '100%' }}
-        />
-        <div style={{ fontSize: 11, color: '#64748B', marginTop: 6, lineHeight: 1.4 }}>
-          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
-        </div>
-      </div>
-
-      <div id="ai-section-score" style={{ scrollMarginTop: 96, marginBottom: 18 }}>
+      <div id="ai-section-score" style={{ scrollMarginTop: 72, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <span style={{
             fontSize: 11, fontWeight: 800, color: '#9A3412',
@@ -3179,7 +3182,7 @@ export default function AIVisibility() {
         />
       </div>
 
-      <div id="ai-section-test" style={{ scrollMarginTop: 96, marginBottom: 18 }}>
+      <div id="ai-section-test" style={{ scrollMarginTop: 72, marginBottom: 14 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <span style={{
             fontSize: 11, fontWeight: 800, color: '#9A3412',
@@ -3894,7 +3897,7 @@ export default function AIVisibility() {
         </div>
       </div>
 
-      <div id="ai-section-pr" style={{ scrollMarginTop: 96, marginBottom: 8 }}>
+      <div id="ai-section-pr" style={{ scrollMarginTop: 72, marginBottom: 8 }}>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <span style={{
             fontSize: 11, fontWeight: 800, color: '#9A3412',
