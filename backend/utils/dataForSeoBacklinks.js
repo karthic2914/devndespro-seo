@@ -488,7 +488,11 @@ async function fetchBacklinkOverview({ target } = {}) {
     provider: 'dataforseo',
     target: normalizedTarget,
     cost,
-    rank: Number(result?.rank || 0),
+    // Keep null when API omits rank — do not coerce missing → 0
+    rank:
+      result?.rank === undefined || result?.rank === null
+        ? null
+        : Number(result.rank),
     backlinks: Number(result?.backlinks || 0),
     referringDomains: Number(
       result?.referring_main_domains || result?.referring_domains || 0

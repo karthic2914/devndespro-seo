@@ -574,10 +574,15 @@ export default function SiteAudit() {
 
         const avgDr =
           totalBacklinks > 0
-            ? live.reduce(
-                (sum, item) => sum + Number(item?.dr || 0),
-                0
-              ) / totalBacklinks
+            ? live.reduce((sum, item) => {
+                const rank = Number(
+                  item?.provider_rank ||
+                  item?.dr ||
+                  item?.quality_score ||
+                  0
+                )
+                return sum + rank
+              }, 0) / totalBacklinks
             : 0
 
         const dofollowCount = live.filter(
@@ -618,8 +623,10 @@ export default function SiteAudit() {
           logScore(totalBacklinks, 1000)
 
         if (!cancelled) {
-          setAuthorityDetails({
+          setAuthorityDetails((prev) => ({
+            ...(prev || {}),
             breakdown: {
+              ...(prev?.breakdown || {}),
               referringDomains: {
                 value: referringDomains,
                 score: referringDomainScore,
@@ -641,8 +648,14 @@ export default function SiteAudit() {
                 score: backlinkVolumeScore,
                 weight: 15,
               },
+              // Keep industry Domain Rank if already fetched
+              domainRank:
+                prev?.breakdown?.domainRank ??
+                prev?.domain_rank ??
+                null,
             },
-          })
+            domain_rank: prev?.domain_rank ?? null,
+          }))
         }
       } catch (error) {
         console.warn(
@@ -750,13 +763,28 @@ export default function SiteAudit() {
       else if (auditRes?.data?.url) setSiteUrl(auditRes.data.url)
       if (siteRes?.data?.authority_score !== undefined) setAuthorityScore(siteRes.data.authority_score)
       if (siteRes?.data?.authority_updated_at) setAuthorityUpdatedAt(siteRes.data.authority_updated_at)
-      const storedRank =
-        siteRes?.data?.domain_rank ??
-        siteRes?.data?.authority_breakdown?.domainRank ??
-        siteRes?.data?.dr
-      if (storedRank !== undefined && storedRank !== null) {
+
+      // Only trust an explicit Domain Rank fetch — never fall back to
+      // default seo_metrics.dr=0 (that made the UI show 0 before any refresh).
+      const hasFetchedDomainRank = Boolean(
+        siteRes?.data?.domain_rank_updated_at ||
+        siteRes?.data?.domain_rank_meta?.fetchedAt ||
+        siteRes?.data?.authority_breakdown?.domainRankMeta?.fetchedAt
+      )
+      const storedRank = hasFetchedDomainRank
+        ? (
+            siteRes?.data?.domain_rank ??
+            siteRes?.data?.authority_breakdown?.domainRank ??
+            null
+          )
+        : (siteRes?.data?.domain_rank ?? null)
+
+      if (storedRank !== undefined && storedRank !== null && Number.isFinite(Number(storedRank))) {
         setDomainRank(Number(storedRank))
+      } else {
+        setDomainRank(null)
       }
+
       if (siteRes?.data?.authority_breakdown) {
         setAuthorityDetails((prev) => ({
           ...(prev || {}),
@@ -764,6 +792,34 @@ export default function SiteAudit() {
           domain_rank: siteRes.data.domain_rank ?? storedRank ?? null,
           methodology: prev?.methodology,
         }))
+      }
+
+      // Auto-fetch industry Domain Rank once if missing
+      if (siteRes?.data?.domain_rank == null && siteRes?.data?.id) {
+        api.post(`/sites/${siteId}/authority-score`)
+          .then((r) => {
+            if (r?.data?.authority_score != null) {
+              setAuthorityScore(r.data.authority_score ?? r.data.link_score)
+            }
+            if (r?.data?.authority_updated_at) {
+              setAuthorityUpdatedAt(r.data.authority_updated_at)
+            }
+            if (r?.data) setAuthorityDetails(r.data)
+            if (r?.data?.domain_rank != null) {
+              setDomainRank(Number(r.data.domain_rank))
+            } else if (r?.data?.domain_rank_meta?.error) {
+              console.warn(
+                'Domain Rank fetch failed:',
+                r.data.domain_rank_meta.error
+              )
+            }
+          })
+          .catch((err) => {
+            console.warn(
+              'Domain Rank refresh failed:',
+              err?.response?.data?.detail || err?.message || err
+            )
+          })
       }
       if (multipageRes?.data && multipageRes.data.status === 'complete' && multipageRes.data.results) {
         setMultipageResults(multipageRes.data.results)

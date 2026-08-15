@@ -205,6 +205,7 @@ export default function DecisionCenter({
             null,
 
           averageDR:
+            industryRank ??
             authorityBreakdown.averageDR?.score ??
             authorityBreakdown.averageDR ??
             null,
@@ -510,7 +511,7 @@ export default function DecisionCenter({
                 />
 
                 <AuthorityBreakdownRow
-                  label="Average Domain Rating"
+                  label="Domain Rank"
                   value={data.breakdown.averageDR}
                 />
 

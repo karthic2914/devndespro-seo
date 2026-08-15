@@ -144,7 +144,7 @@ router.get('/:siteId', auth, verifySite, async (req, res) => {
     `SELECT
       s.*,
       m.health AS health,
-      COALESCE(m.dr, 0) AS dr,
+      m.dr AS dr,
       COALESCE(k.keyword_count, 0) AS keyword_count,
       COALESCE(b.backlink_count, 0) AS backlink_count
     FROM sites s

@@ -2477,35 +2477,25 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
   try {
     await ensureBacklinkIntelligenceSchema()
 
-    // Always refresh individual link-quality scores before
-    // calculating the domain-level authority score.
-    await recalculateBacklinkQualityForSite(req.siteId)
-
-    const { rows } = await pool.query(
-      `SELECT *
-       FROM backlinks
-       WHERE site_id=$1
-         AND COALESCE(source, '') <> 'domain'`,
-      [req.siteId]
-    )
-
-    const authority = calculateAuthority({
-      rows,
-    })
-
     const { rows: siteRows } = await pool.query(
-      `SELECT url FROM sites WHERE id=$1`,
+      `SELECT url, authority_breakdown FROM sites WHERE id=$1`,
       [req.siteId]
     )
     const siteUrl = siteRows[0]?.url || ''
+    const prevBreakdown = siteRows[0]?.authority_breakdown || {}
 
+    // 1) Domain Rank first — independent of link-quality recalc so a
+    // slow/failed quality pass cannot leave domain_rank null forever.
     let domainRank = null
     let domainRankMeta = {}
     try {
       const overview = await fetchBacklinkOverview({ target: siteUrl })
-      domainRank = Number.isFinite(Number(overview.rank))
-        ? Math.max(0, Math.min(100, Math.round(Number(overview.rank))))
-        : null
+      domainRank =
+        overview.rank === null || overview.rank === undefined
+          ? null
+          : Number.isFinite(Number(overview.rank))
+            ? Math.max(0, Math.min(100, Math.round(Number(overview.rank))))
+            : null
       domainRankMeta = {
         source: 'dataforseo',
         provider: overview.provider || 'dataforseo',
@@ -2530,11 +2520,65 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
       }
     }
 
+    if (domainRank != null) {
+      await pool.query(
+        `UPDATE sites
+         SET
+           domain_rank=$1,
+           domain_rank_updated_at=NOW(),
+           domain_rank_meta=$2::jsonb,
+           authority_breakdown = COALESCE(authority_breakdown, '{}'::jsonb)
+             || jsonb_build_object(
+               'domainRank', $1::int,
+               'domainRankSource', 'dataforseo',
+               'domainRankMeta', $2::jsonb
+             )
+         WHERE id=$3`,
+        [domainRank, JSON.stringify(domainRankMeta), req.siteId]
+      )
+      await pool.query(
+        `INSERT INTO seo_metrics (site_id, dr)
+         VALUES ($1, $2)
+         ON CONFLICT (site_id) DO UPDATE SET
+           dr=$2,
+           updated_at=NOW()`,
+        [req.siteId, domainRank]
+      )
+    } else {
+      await pool.query(
+        `UPDATE sites
+         SET domain_rank_meta=$1::jsonb
+         WHERE id=$2`,
+        [JSON.stringify(domainRankMeta), req.siteId]
+      )
+    }
+
+    // 2) Link Score from verified backlinks
+    await recalculateBacklinkQualityForSite(req.siteId)
+
+    const { rows } = await pool.query(
+      `SELECT *
+       FROM backlinks
+       WHERE site_id=$1
+         AND COALESCE(source, '') <> 'domain'`,
+      [req.siteId]
+    )
+
+    const authority = calculateAuthority({
+      rows,
+    })
+
     const breakdown = {
       ...authority.breakdown,
-      domainRank,
+      domainRank:
+        domainRank ??
+        prevBreakdown.domainRank ??
+        null,
       domainRankSource: 'dataforseo',
-      domainRankMeta,
+      domainRankMeta:
+        Object.keys(domainRankMeta).length
+          ? domainRankMeta
+          : (prevBreakdown.domainRankMeta || {}),
     }
 
     const { rows: updated } = await pool.query(
@@ -2543,17 +2587,8 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
          authority_score=$1,
          authority_updated_at=NOW(),
          authority_version=$2,
-         authority_breakdown=$3::jsonb,
-         domain_rank=COALESCE($4, domain_rank),
-         domain_rank_updated_at=CASE
-           WHEN $4 IS NOT NULL THEN NOW()
-           ELSE domain_rank_updated_at
-         END,
-         domain_rank_meta=CASE
-           WHEN $4 IS NOT NULL THEN $5::jsonb
-           ELSE COALESCE(domain_rank_meta, '{}'::jsonb)
-         END
-       WHERE id=$6
+         authority_breakdown=$3::jsonb
+       WHERE id=$4
        RETURNING
          authority_score,
          authority_updated_at,
@@ -2566,22 +2601,9 @@ router.post('/:siteId/authority-score', auth, verifySite, async (req, res) => {
         authority.score,
         authority.version,
         JSON.stringify(breakdown),
-        domainRank,
-        JSON.stringify(domainRankMeta),
         req.siteId,
       ]
     )
-
-    if (domainRank != null) {
-      await pool.query(
-        `INSERT INTO seo_metrics (site_id, dr)
-         VALUES ($1, $2)
-         ON CONFLICT (site_id) DO UPDATE SET
-           dr=$2,
-           updated_at=NOW()`,
-        [req.siteId, domainRank]
-      )
-    }
 
     const row = updated[0] || {}
 
