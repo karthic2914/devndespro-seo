@@ -19,7 +19,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
 import PageProcessGuide from '../components/PageProcessGuide'
-import { APP_SEO_JOURNEY } from '../constants/pageFlows'
+import { OVERVIEW_PAGE_FLOW } from '../constants/pageFlows'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -50,7 +50,7 @@ export default function Dashboard() {
   const [showAuditMenu, setShowAuditMenu] = useState(false)
   const [overviewSections, setOverviewSections] = useState({
     decisionSnapshot: true,
-    weeklyTraffic: true,
+    weeklyTraffic: false,
     keywordRankings: true,
     actionPlan: true,
     siteHealth: true,
@@ -352,9 +352,8 @@ export default function Dashboard() {
   const nextActionCategory = nextAction?.category || inferCategory(nextAction?.text)
   const pendingCount = pendingActions.length || auditIssueCandidates.length
   const previewKeywords = keywords.slice(0, 5)
-  const previewActions = sortedPending.length
-    ? sortedPending.slice(0, 4)
-    : auditIssueCandidates.slice(0, 3)
+  // First page: show many important website fixes (Action Plan, else live audit issues)
+  const fixItems = (sortedPending.length ? sortedPending : auditIssueCandidates).slice(0, 8)
 
   const toNum = (v, fallback = 0) => {
     const n = Number(v)
@@ -723,11 +722,11 @@ export default function Dashboard() {
       <div style={{ width: '100%', padding: '1.25rem 1rem 1.5rem' }}>
 
         <PageProcessGuide
-          title="SEO journey - follow across the app"
-          tip="Same process style on every page. Click a step to open that area."
-          steps={APP_SEO_JOURNEY.map((s, i) => ({
+          title="Overview process - fix your site first"
+          tip="Start with Step 1 below. Keywords and growth come after the important website fixes."
+          steps={OVERVIEW_PAGE_FLOW.map((s, i) => ({
             ...s,
-            done: false,
+            done: s.id === 'fix' ? pendingActions.length === 0 && actions.length > 0 : false,
             active: i === 0,
           }))}
         />
@@ -890,6 +889,151 @@ export default function Dashboard() {
           <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop />
         </div>
 
+        {/* Step 1: website fixes first on Overview */}
+        <Card
+          id="overview-section-fixes"
+          padding="0"
+          style={{
+            scrollMarginTop: 72,
+            border: `1px solid ${T.orange}55`,
+            boxShadow: '0 2px 10px rgba(230, 106, 57, 0.06)',
+          }}
+        >
+          <div style={{
+            padding: '12px 14px',
+            borderBottom: `1px solid ${T.border}`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            gap: 10,
+            flexWrap: 'wrap',
+            background: 'linear-gradient(180deg, #FFF7ED 0%, #FFFFFF 100%)',
+          }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 800, color: '#9A3412',
+                  background: '#FFEDD5', borderRadius: 99, padding: '3px 10px',
+                }}>Step 1</span>
+                <div style={{ fontSize: 14, fontWeight: 800, color: T.text }}>
+                  <FontAwesomeIcon icon={faListCheck} style={{ marginRight: 6, color: T.orange }} />
+                  Fix your website
+                </div>
+                <Badge variant={fixItems.length > 0 ? 'danger' : 'success'}>
+                  {fixItems.length} important
+                </Badge>
+              </div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                Highest-impact issues first. Fix these before keywords, backlinks, or AI PR.
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/site/${siteId}/actions`)}
+              style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
+            >
+              Full Action Plan
+              <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
+            </Button>
+          </div>
+
+          {fixItems.length > 0 ? (
+            <div>
+              {fixItems.map((action, i) => {
+                const impact = String(action.impact || 'Medium')
+                const high = impact.toLowerCase() === 'high' || impact.toLowerCase() === 'critical'
+                return (
+                  <div
+                    key={action.id || `fix-${i}`}
+                    style={{
+                      padding: '10px 14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      borderBottom: i < fixItems.length - 1 ? '1px solid #F3F4F6' : 'none',
+                    }}
+                  >
+                    <div style={{
+                      width: 26,
+                      height: 26,
+                      borderRadius: 8,
+                      background: i === 0 ? '#FFF7ED' : '#F8FAFC',
+                      border: `1px solid ${i === 0 ? '#FDBA74' : T.border}`,
+                      display: 'grid',
+                      placeItems: 'center',
+                      fontSize: 12,
+                      fontWeight: 800,
+                      color: i === 0 ? '#C2410C' : T.muted,
+                      flexShrink: 0,
+                    }}>
+                      {i + 1}
+                    </div>
+                    {action.id ? (
+                      <button
+                        type="button"
+                        onClick={() => handleActionDone(action)}
+                        title="Mark complete"
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 999,
+                          border: `1px solid ${T.border}`,
+                          background: '#fff',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : null}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{
+                        fontSize: 13,
+                        fontWeight: i === 0 ? 750 : 650,
+                        color: T.text,
+                        lineHeight: 1.35,
+                      }}>
+                        {action.text}
+                        {Number(action.count) > 1 ? ` (${action.count} pages)` : ''}
+                      </div>
+                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                        {action.category || inferCategory(action.text)}
+                        {i === 0 ? ' · Start here' : ''}
+                      </div>
+                    </div>
+                    <Badge variant={high ? 'danger' : 'warning'}>{impact}</Badge>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (action.id) navigate(`/site/${siteId}/actions`)
+                        else navigate(`/site/${siteId}/audit`)
+                      }}
+                      style={{ flexShrink: 0, height: 32, fontWeight: 700 }}
+                    >
+                      Fix
+                      <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 5 }} />
+                    </Button>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>No open website fixes</div>
+              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+                Run a Site Audit or refresh Action Plan to find new issues.
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(`/site/${siteId}/audit`)}
+                style={{ marginTop: 10 }}
+              >
+                Open Site Audit
+              </Button>
+            </div>
+          )}
+        </Card>
 
             {/* Traffic chart */}
             <Card padding="1rem">
@@ -1023,18 +1167,16 @@ export default function Dashboard() {
               )}
             </Card>
 
-                    {/* Keyword Rankings + Action Plan compact row */}
-            <div
-              className="overview-work-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1.08fr) minmax(0, 0.92fr)',
-                gap: '0.85rem',
-                alignItems: 'start',
-              }}
-            >
-
-              {/* Keyword Rankings */}
+                    {/* Step 2: Keyword Rankings */}
+            <div id="overview-section-keywords" style={{ scrollMarginTop: 72 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <span style={{
+                  fontSize: 11, fontWeight: 800, color: '#9A3412',
+                  background: '#FFF7ED', border: '1px solid #FED7AA',
+                  borderRadius: 99, padding: '3px 10px',
+                }}>Step 2</span>
+                <span style={{ fontSize: 12, color: T.muted }}>After website fixes - improve keyword rankings</span>
+              </div>
               <Card padding="0" style={{ minWidth: 0 }}>
                 <div style={{
                   padding: '0.75rem 0.9rem',
@@ -1171,173 +1313,6 @@ export default function Dashboard() {
                   </>
                 )}
               </Card>
-
-
-              {/* Action Plan */}
-              <Card padding="0" style={{ minWidth: 0 }}>
-                <div style={{
-                  padding: '0.75rem 0.9rem',
-                  borderBottom: `1px solid ${T.border}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 7,
-                    minWidth: 0,
-                  }}>
-                    <div style={{
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: T.text,
-                      whiteSpace: 'nowrap',
-                    }}>
-                      <FontAwesomeIcon icon={faListCheck} style={{ marginRight: 6 }} />
-                      Action Plan
-                    </div>
-
-                    <Badge variant={pendingActions.length > 0 ? "danger" : "success"}>
-                      {pendingActions.length} pending
-                    </Badge>
-                  </div>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/site/${siteId}/actions`)}
-                    style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-                  >
-                    View all
-                    <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
-                  </Button>
-                </div>
-
-                {previewActions.length > 0 ? (
-                  <div>
-                    {previewActions.slice(0, 4).map((action, i) => (
-                      <div
-                        key={action.id}
-                        style={{
-                          padding: '8px 11px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          minHeight: 42,
-                          borderBottom:
-                            i < Math.min(previewActions.length, 4) - 1
-                              ? '1px solid #F3F4F6'
-                              : 'none',
-                        }}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleActionDone(action)}
-                          title="Mark complete"
-                          style={{
-                            width: 15,
-                            height: 15,
-                            borderRadius: 999,
-                            border: `1px solid ${T.border}`,
-                            background: '#fff',
-                            cursor: 'pointer',
-                            flexShrink: 0,
-                          }}
-                        />
-
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{
-                            fontSize: 11,
-                            fontWeight: 650,
-                            color: T.text,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}>
-                            {action.text}
-                          </div>
-
-                          {action.category && (
-                            <div style={{
-                              fontSize: 9,
-                              color: T.muted,
-                              marginTop: 2,
-                            }}>
-                              {action.category}
-                            </div>
-                          )}
-                        </div>
-
-                        <Badge
-                          variant={
-                            String(action.impact || '').toLowerCase() === 'high'
-                              ? 'danger'
-                              : 'warning'
-                          }
-                        >
-                          {action.impact || 'Medium'}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div style={{
-                    minHeight: 166,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    padding: '0.8rem 1rem',
-                  }}>
-                    <div style={{
-                      width: 34,
-                      height: 34,
-                      borderRadius: 999,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      background: '#F0FDF4',
-                      color: '#16A34A',
-                      marginBottom: 7,
-                      fontSize: 14,
-                    }}>
-                      <FontAwesomeIcon icon={faListCheck} />
-                    </div>
-
-                    <div style={{
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: T.text,
-                    }}>
-                      You're all caught up
-                    </div>
-
-                    <div style={{
-                      fontSize: 9,
-                      color: T.muted,
-                      marginTop: 3,
-                      maxWidth: 240,
-                      lineHeight: 1.45,
-                    }}>
-                      No pending actions right now. Review your latest audit for new opportunities.
-                    </div>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => navigate(`/site/${siteId}/audit`)}
-                      style={{ marginTop: 8 }}
-                    >
-                      Review Audit
-                      <FontAwesomeIcon icon={faArrowRight} style={{ marginLeft: 6 }} />
-                    </Button>
-                  </div>
-                )}
-              </Card>
-
             </div>
 
 

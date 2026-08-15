@@ -35,6 +35,28 @@ export const APP_SEO_JOURNEY = [
   },
 ]
 
+/** Overview (first page): fix-website first, then grow. */
+export const OVERVIEW_PAGE_FLOW = [
+  {
+    id: 'fix',
+    label: '1. Fix website',
+    hint: 'Highest-impact Action Plan tasks',
+    sectionId: 'overview-section-fixes',
+  },
+  {
+    id: 'keywords',
+    label: '2. Keywords',
+    hint: 'Track & improve rankings',
+    path: 'keywords',
+  },
+  {
+    id: 'grow',
+    label: '3. Grow',
+    hint: 'Backlinks & AI Visibility',
+    path: 'backlinks',
+  },
+]
+
 export const KEYWORDS_PAGE_FLOW = [
   {
     id: 'gap',
