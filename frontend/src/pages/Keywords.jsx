@@ -8,7 +8,7 @@
   } from '@fortawesome/free-solid-svg-icons'
   import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
   import KeywordGapPanel from '../components/KeywordGapPanel'
-  import PageProcessGuide from '../components/PageProcessGuide'
+  import AppProcessTopBar from '../components/AppProcessTopBar'
   import CollapsibleSection from '../components/CollapsibleSection'
   import { KEYWORDS_PAGE_FLOW } from '../constants/pageFlows'
   import api from '../utils/api'
@@ -783,9 +783,32 @@
     })
     const visibleTrackedKeywords = trackedShowAll ? visibleTrackedAll : visibleTrackedAll.slice(0, TRACKED_PAGE_SIZE)
 
+    const hasResearch = Boolean(
+      dfsMatching.length || dfsRelated.length || dfsQuestions.length || dfsOverview || dfsOrganic.length || keywords.length > 0
+    )
+    const hasDiscovery = Boolean(discovery)
+    const hasTracked = keywords.length > 0
+    const hasRanks = trackedCoverage.checked > 0
+    const hasFound = hasDiscovery || hasResearch || hasTracked
+    const doneMap = {
+      gap: hasFound,
+      discover: hasDiscovery,
+      research: hasResearch,
+      track: hasTracked,
+      rank: hasRanks,
+    }
+
     return (
       <div className="fade-in">
-        {/* Title + actions scroll away; only Process stays sticky */}
+        <AppProcessTopBar
+          title="Keywords process"
+          steps={KEYWORDS_PAGE_FLOW.map((s) => ({
+            ...s,
+            done: Boolean(doneMap[s.id]),
+            active: scrollFlowId === s.id,
+          }))}
+        />
+        {/* Title + actions scroll away; process stays sticky above */}
         <div style={{
           padding: '0.85rem 1.5rem 0.65rem',
           display: 'flex',
@@ -832,47 +855,6 @@
               <FontAwesomeIcon icon={faChartLine} />Enrich Volume Data
             </button>
           </div>
-        </div>
-
-        <div style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 30,
-          background: '#fff',
-          borderBottom: `1px solid ${T.border}`,
-          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.06)',
-          padding: '0.65rem 1.5rem',
-        }}>
-          {(() => {
-            // Research done: search results OR already tracking (moved past research)
-            const hasResearch = Boolean(
-              dfsMatching.length || dfsRelated.length || dfsQuestions.length || dfsOverview || dfsOrganic.length || keywords.length > 0
-            )
-            const hasDiscovery = Boolean(discovery)
-            const hasTracked = keywords.length > 0
-            const hasRanks = trackedCoverage.checked > 0
-            const hasFound = hasDiscovery || hasResearch || hasTracked
-            const doneMap = {
-              gap: hasFound,
-              discover: hasDiscovery,
-              research: hasResearch,
-              track: hasTracked,
-              rank: hasRanks,
-            }
-            return (
-              <PageProcessGuide
-                compact
-                title="Process"
-                tip={null}
-                steps={KEYWORDS_PAGE_FLOW.map((s) => ({
-                  ...s,
-                  done: Boolean(doneMap[s.id]),
-                  active: scrollFlowId === s.id,
-                }))}
-                style={{ marginBottom: 0, maxWidth: '100%' }}
-              />
-            )
-          })()}
         </div>
 
         <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: 14 }}>

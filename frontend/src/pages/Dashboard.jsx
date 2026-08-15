@@ -18,7 +18,7 @@ import {
   faBullseye,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
-import PageProcessGuide from '../components/PageProcessGuide'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 import { OVERVIEW_PAGE_FLOW } from '../constants/pageFlows'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
@@ -661,6 +661,14 @@ export default function Dashboard() {
   )
   return (
     <div style={{ flex: 1 }}>
+      <AppProcessTopBar
+        title="Overview process"
+        steps={OVERVIEW_PAGE_FLOW.map((s, i) => ({
+          ...s,
+          done: s.id === 'fix' ? pendingActions.length === 0 && actions.length > 0 : false,
+          active: i === 0,
+        }))}
+      />
 
       {/* Page header */}
       <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -720,16 +728,6 @@ export default function Dashboard() {
       </div>
 
       <div style={{ width: '100%', padding: '1.25rem 1rem 1.5rem' }}>
-
-        <PageProcessGuide
-          title="Overview process - fix your site first"
-          tip="Start with Step 1 below. Keywords and growth come after the important website fixes."
-          steps={OVERVIEW_PAGE_FLOW.map((s, i) => ({
-            ...s,
-            done: s.id === 'fix' ? pendingActions.length === 0 && actions.length > 0 : false,
-            active: i === 0,
-          }))}
-        />
 
         <style>{`
           @media (max-width: 1050px) {

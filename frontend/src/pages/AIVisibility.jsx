@@ -17,9 +17,9 @@ import {
 } from '../components/AIVisibilityInsightCards'
 import AiMediaTrustPanel from '../components/AiMediaTrustPanel'
 import { BrandFavicon } from '../components/SiteFavicon'
-import PageProcessGuide from '../components/PageProcessGuide'
 import { AI_VISIBILITY_PAGE_FLOW } from '../constants/pageFlows'
 import { Modal } from '../components/UI'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -218,7 +218,8 @@ export default function AIVisibility() {
   const [editQuestionDraft, setEditQuestionDraft] = useState('')
   const [savingEditQuestion, setSavingEditQuestion] = useState(false)
   const [showAllAnswersModal, setShowAllAnswersModal] = useState(false)
-  const [scoreExpanded, setScoreExpanded] = useState(false)
+  const [scoreExpanded, setScoreExpanded] = useState(true)
+  const [testExpanded, setTestExpanded] = useState(true)
   const [insightsOpen, setInsightsOpen] = useState(false)
   const [prOpen, setPrOpen] = useState(false)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
@@ -1149,50 +1150,27 @@ export default function AIVisibility() {
 
   return (
     <>
-      <div
-        className="ai-vis-process-sticky"
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          background: '#fff',
-          borderBottom: '1px solid #E5E7EB',
-          boxShadow: '0 1px 0 rgba(15, 23, 42, 0.04)',
-          padding: '6px 22px 5px',
-          margin: 0,
-          flex: '0 0 auto',
-          alignSelf: 'stretch',
-          height: 'auto',
-          maxHeight: 'none',
-        }}
-      >
-        <PageProcessGuide
-          compact
-          title="AI Visibility process"
-          tip={null}
-          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
-            ...s,
-            done:
-              s.id === 'score'
-                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
-                : s.id === 'test'
-                  ? currentQuestionsTested > 0
-                  : prOutletCount > 0,
-            active: scrollFlowId === s.id,
-            onClick: () => {
-              if (s.id === 'score') setScoreExpanded(true)
-              if (s.id === 'pr') setPrOpen(true)
-              if (s.sectionId) {
-                document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }
-            },
-          }))}
-          style={{ marginBottom: 0, maxWidth: '100%' }}
-        />
-        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.3 }}>
-          1 Score · 2 Test questions · 3 Digital PR (optional)
-        </div>
-      </div>
+      <AppProcessTopBar
+        title="AI Visibility process"
+        steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
+          ...s,
+          done:
+            s.id === 'score'
+              ? Boolean(summaryPeriod) || currentQuestionsTested > 0
+              : s.id === 'test'
+                ? currentQuestionsTested > 0
+                : prOutletCount > 0,
+          active: scrollFlowId === s.id,
+          onClick: () => {
+            if (s.id === 'score') setScoreExpanded(true)
+            if (s.id === 'test') setTestExpanded(true)
+            if (s.id === 'pr') setPrOpen(true)
+            if (s.sectionId) {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          },
+        }))}
+      />
 
     <div ref={reportRef} className="ai-vis-page">
       <style>{`
@@ -3283,7 +3261,17 @@ export default function AIVisibility() {
         </div>
       )}
 
-      <div id="ai-section-score" style={{ scrollMarginTop: 72, marginBottom: 12 }}>
+      <div
+        id="ai-section-score"
+        style={{
+          scrollMarginTop: 72,
+          marginBottom: 12,
+          border: '1px solid #E5E7EB',
+          borderRadius: 12,
+          background: '#fff',
+          overflow: 'hidden',
+        }}
+      >
         <button
           type="button"
           onClick={() => setScoreExpanded(v => !v)}
@@ -3293,25 +3281,25 @@ export default function AIVisibility() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
-            padding: '10px 12px',
-            borderRadius: 10,
-            border: '1px solid #E5E7EB',
+            padding: '12px 14px',
+            border: 0,
+            borderBottom: scoreExpanded ? '1px solid #F1F5F9' : 0,
             background: '#fff',
             cursor: 'pointer',
             textAlign: 'left',
             font: 'inherit',
-            marginBottom: scoreExpanded ? 10 : 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <span style={{
-              fontSize: 11, fontWeight: 800, color: '#9A3412',
-              background: '#FFF7ED', border: '1px solid #FED7AA',
-              borderRadius: 99, padding: '3px 10px', flexShrink: 0,
+              width: 24, height: 24, borderRadius: 99,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800, color: '#9A3412',
+              background: '#FFF7ED', border: '1px solid #FED7AA', flexShrink: 0,
             }}>1</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
-              <div style={{ fontSize: 11, color: '#64748B' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score overview</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {currentQuestionsTested}/{currentQuestionTotal || 0} questions tested
                 {summaryPeriod?.periodLabel ? ` · ${summaryPeriod.periodLabel}` : ''}
               </div>
@@ -3319,18 +3307,20 @@ export default function AIVisibility() {
           </div>
           <FontAwesomeIcon icon={faChevronDown} style={{
             color: '#94A3B8',
-            fontSize: 11,
+            fontSize: 12,
             transform: scoreExpanded ? 'rotate(180deg)' : 'none',
             transition: 'transform .15s',
           }} />
         </button>
         {scoreExpanded ? (
-          <VisibilityKPICards
-            siteId={siteId}
-            onSummaryLoaded={setSummaryPeriod}
-            totalQuestions={currentQuestionTotal}
-            testedQuestions={currentQuestionsTested}
-          />
+          <div style={{ padding: '12px 14px 14px' }}>
+            <VisibilityKPICards
+              siteId={siteId}
+              onSummaryLoaded={setSummaryPeriod}
+              totalQuestions={currentQuestionTotal}
+              testedQuestions={currentQuestionsTested}
+            />
+          </div>
         ) : (
           <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }} aria-hidden>
             <VisibilityKPICards
@@ -3343,20 +3333,59 @@ export default function AIVisibility() {
         )}
       </div>
 
-      <div id="ai-section-test" style={{ scrollMarginTop: 72, marginBottom: 12 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-          <span style={{
-            fontSize: 11, fontWeight: 800, color: '#9A3412',
-            background: '#FFF7ED', border: '1px solid #FED7AA',
-            borderRadius: 99, padding: '3px 10px',
-          }}>2</span>
-          <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
-          <span style={{ fontSize: 11, color: '#64748B' }}>
-            {testedQuestionsCount} tested · {readyQuestionsCount} ready
-          </span>
-        </div>
+      <div
+        id="ai-section-test"
+        style={{
+          scrollMarginTop: 72,
+          marginBottom: 12,
+          border: '1px solid #E5E7EB',
+          borderRadius: 12,
+          background: '#fff',
+          overflow: 'hidden',
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setTestExpanded(v => !v)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+            padding: '12px 14px',
+            border: 0,
+            borderBottom: testExpanded ? '1px solid #F1F5F9' : 0,
+            background: '#fff',
+            cursor: 'pointer',
+            textAlign: 'left',
+            font: 'inherit',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <span style={{
+              width: 24, height: 24, borderRadius: 99,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800, color: '#9A3412',
+              background: '#FFF7ED', border: '1px solid #FED7AA', flexShrink: 0,
+            }}>2</span>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test questions</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
+                {testedQuestionsCount} tested · {readyQuestionsCount} ready · {flatQuestions.length} total
+              </div>
+            </div>
+          </div>
+          <FontAwesomeIcon icon={faChevronDown} style={{
+            color: '#94A3B8',
+            fontSize: 12,
+            transform: testExpanded ? 'rotate(180deg)' : 'none',
+            transition: 'transform .15s',
+          }} />
+        </button>
 
-      <div style={{ marginBottom: 10 }}>
+        {testExpanded ? (
+      <div style={{ padding: '12px 14px 14px' }}>
 
           {/* Single row: chips + search + add */}
           <div id="ai-questions-toolbar" className="ai-questions-toolbar">
@@ -4037,9 +4066,18 @@ export default function AIVisibility() {
 
           </div>
 
+      </div>
+        ) : null}
+      </div>
 
-          {/* Lower intelligence - collapsed by default to reduce clutter */}
-          <div style={{ marginTop: 12 }}>
+          {/* Insights - same level as sections 1 & 2 */}
+          <div style={{
+            marginBottom: 12,
+            border: '1px solid #E5E7EB',
+            borderRadius: 12,
+            background: '#fff',
+            overflow: 'hidden',
+          }}>
             <button
               type="button"
               onClick={() => setInsightsOpen(v => !v)}
@@ -4049,30 +4087,38 @@ export default function AIVisibility() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 gap: 10,
-                padding: '10px 12px',
-                borderRadius: 10,
-                border: '1px solid #E5E7EB',
+                padding: '12px 14px',
+                border: 0,
+                borderBottom: insightsOpen ? '1px solid #F1F5F9' : 0,
                 background: '#fff',
                 cursor: 'pointer',
                 textAlign: 'left',
                 font: 'inherit',
               }}
             >
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Insights & competitors</div>
-                <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
-                  Engine breakdown, why you are not ranking, top competitors
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                <span style={{
+                  width: 24, height: 24, borderRadius: 99,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800, color: '#64748B',
+                  background: '#F8FAFC', border: '1px solid #E5E7EB', flexShrink: 0,
+                }}>i</span>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Insights & competitors</div>
+                  <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
+                    Engine breakdown, ranking gaps, top competitors
+                  </div>
                 </div>
               </div>
               <FontAwesomeIcon icon={faChevronDown} style={{
                 color: '#94A3B8',
-                fontSize: 11,
+                fontSize: 12,
                 transform: insightsOpen ? 'rotate(180deg)' : 'none',
                 transition: 'transform .15s',
               }} />
             </button>
             {insightsOpen ? (
-              <div className="ai-question-lower-grid" style={{ marginTop: 10 }}>
+              <div className="ai-question-lower-grid" style={{ padding: '12px 14px 14px' }}>
                 <VisibilityEngineTable siteId={siteId} />
                 <VisibilityReasoningCard
                   siteId={siteId}
@@ -4086,10 +4132,17 @@ export default function AIVisibility() {
             ) : null}
           </div>
 
-        </div>
-      </div>
-
-      <div id="ai-section-pr" style={{ scrollMarginTop: 72, marginBottom: 8 }}>
+      <div
+        id="ai-section-pr"
+        style={{
+          scrollMarginTop: 72,
+          marginBottom: 8,
+          border: '1px solid #E5E7EB',
+          borderRadius: 12,
+          background: '#fff',
+          overflow: 'hidden',
+        }}
+      >
         <button
           type="button"
           onClick={() => setPrOpen(v => !v)}
@@ -4099,43 +4152,45 @@ export default function AIVisibility() {
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: 10,
-            padding: '10px 12px',
-            borderRadius: 10,
-            border: '1px solid #E5E7EB',
+            padding: '12px 14px',
+            border: 0,
+            borderBottom: prOpen ? '1px solid #F1F5F9' : 0,
             background: '#fff',
             cursor: 'pointer',
             textAlign: 'left',
             font: 'inherit',
-            marginBottom: prOpen ? 10 : 0,
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
             <span style={{
-              fontSize: 11, fontWeight: 800, color: '#64748B',
-              background: '#F8FAFC', border: '1px solid #E5E7EB',
-              borderRadius: 99, padding: '3px 10px', flexShrink: 0,
+              width: 24, height: 24, borderRadius: 99,
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, fontWeight: 800, color: '#64748B',
+              background: '#F8FAFC', border: '1px solid #E5E7EB', flexShrink: 0,
             }}>3</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
-              <div style={{ fontSize: 11, color: '#64748B' }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Digital PR (optional)</div>
+              <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {prOutletCount > 0 ? `${prOutletCount} outlets saved` : 'Discover media after you finish testing'}
               </div>
             </div>
           </div>
           <FontAwesomeIcon icon={faChevronDown} style={{
             color: '#94A3B8',
-            fontSize: 11,
+            fontSize: 12,
             transform: prOpen ? 'rotate(180deg)' : 'none',
             transition: 'transform .15s',
           }} />
         </button>
         {prOpen ? (
+          <div style={{ padding: '12px 14px 14px' }}>
           <AiMediaTrustPanel
             siteId={siteId}
             siteName={site?.name}
             siteUrl={site?.url || domain}
             onOutletCountChange={setPrOutletCount}
           />
+          </div>
         ) : null}
       </div>
 

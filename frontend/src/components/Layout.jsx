@@ -1,5 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate, useParams } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -34,6 +34,22 @@ export default function Layout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const { siteId } = useParams()
+  const location = useLocation()
+  // Process pages render AppProcessTopBar (process + compact usage) themselves
+  const pageKey = (() => {
+    const m = location.pathname.match(/\/site\/[^/]+(?:\/([^/]+))?\/?$/)
+    return m ? (m[1] || '') : null
+  })()
+  const PROCESS_TOPBAR_PAGES = new Set([
+    '', // overview
+    'keywords',
+    'backlinks',
+    'audit',
+    'actions',
+    'ai-visibility',
+    'competitors',
+  ])
+  const hideGlobalUsageBar = pageKey !== null && PROCESS_TOPBAR_PAGES.has(pageKey)
   const [site, setSite] = useState(null)
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -225,7 +241,7 @@ export default function Layout() {
       </aside>
 
       <div className="app-main">
-        <UsageBar />
+        {!hideGlobalUsageBar && <UsageBar />}
         <Outlet />
       </div>
 

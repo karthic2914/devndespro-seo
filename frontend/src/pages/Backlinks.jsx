@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar, faLock } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
-import PageProcessGuide from '../components/PageProcessGuide'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 import { BACKLINKS_PAGE_FLOW } from '../constants/pageFlows'
 import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
@@ -343,7 +343,22 @@ export default function Backlinks() {
 .slice(0, 5)
 
   return (
-    <div className="fade-in page-content">
+    <div className="fade-in">
+      <AppProcessTopBar
+        title="Backlinks process"
+        steps={BACKLINKS_PAGE_FLOW.map((s) => ({
+          ...s,
+          done: s.id === 'overview' ? Boolean(backlinkSummary || backlinks.length) : toolTab === 'gap' && s.id === 'gap',
+          active: (s.tab && toolTab === s.tab) || (s.id === 'discover' && !backlinks.length),
+          onClick: () => {
+            if (s.tab) setToolTab(s.tab)
+            setTimeout(() => {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }, 50)
+          },
+        }))}
+      />
+      <div className="page-content">
       <button
         type="button"
         onClick={() => navigate(`/site/${siteId}`)}
@@ -364,22 +379,6 @@ export default function Backlinks() {
       <PageHeader
         title="Backlinks"
         subtitle="Broken links, referring domains, backlink gap, and live tracking - aligned with Moz, Majestic, Ahrefs, Semrush and industry standards (live data via DataForSEO)."
-      />
-
-      <PageProcessGuide
-        title="Backlinks process - follow these steps"
-        tip="Click a step to open that tab or section. Same flow pattern as Keywords and Overview."
-        steps={BACKLINKS_PAGE_FLOW.map((s) => ({
-          ...s,
-          done: s.id === 'overview' ? Boolean(backlinkSummary || backlinks.length) : toolTab === 'gap' && s.id === 'gap',
-          active: (s.tab && toolTab === s.tab) || (s.id === 'discover' && !backlinks.length),
-          onClick: () => {
-            if (s.tab) setToolTab(s.tab)
-            setTimeout(() => {
-              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }, 50)
-          },
-        }))}
       />
 
       <div id="bl-section-hub">
@@ -722,6 +721,7 @@ export default function Backlinks() {
           </>
         }
       />
+      </div>
       </div>
     </div>
   )

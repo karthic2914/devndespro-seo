@@ -4,7 +4,7 @@ import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faCheck, faBolt, faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
-import PageProcessGuide from '../components/PageProcessGuide'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 import { ACTIONS_PAGE_FLOW } from '../constants/pageFlows'
 import api from '../utils/api'
 
@@ -297,7 +297,16 @@ export default function Actions() {
   }
 
   return (
-    <div className="fade-in page-content">
+    <div className="fade-in">
+      <AppProcessTopBar
+        title="Action Plan process"
+        steps={ACTIONS_PAGE_FLOW.map((s) => ({
+          ...s,
+          done: s.id === 'pending' ? pending.length === 0 && actions.length > 0 : false,
+          active: s.id === 'priority' || (s.id === 'pending' && pending.length > 0),
+        }))}
+      />
+      <div className="page-content">
       <PageHeader
         title="Action Plan"
         subtitle="Numbered by ranking impact - start at #1 and work down"
@@ -306,15 +315,6 @@ export default function Actions() {
             {syncing ? 'Refreshing…' : 'Refresh priorities'}
           </OrangeBtn>
         }
-      />
-      <PageProcessGuide
-        title="Action Plan process - follow these steps"
-        tip="Follow the numbers. Do now first, then Soon, then Later."
-        steps={ACTIONS_PAGE_FLOW.map((s) => ({
-          ...s,
-          done: s.id === 'pending' ? pending.length === 0 && actions.length > 0 : false,
-          active: s.id === 'priority' || (s.id === 'pending' && pending.length > 0),
-        }))}
       />
 
       <div
@@ -453,6 +453,7 @@ export default function Actions() {
           )}
         </div>
       )}
+      </div>
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faXmark, faWandMagicSparkles, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
-import PageProcessGuide from '../components/PageProcessGuide'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 import { COMPETITORS_PAGE_FLOW } from '../constants/pageFlows'
 import api from '../utils/api'
 import toast from '../utils/toast'
@@ -91,7 +91,16 @@ export default function Competitors() {
   }
 
   return (
-    <div className="fade-in page-content">
+    <div className="fade-in">
+      <AppProcessTopBar
+        title="Competitors process"
+        steps={COMPETITORS_PAGE_FLOW.map((s) => ({
+          ...s,
+          done: s.id === 'add' ? competitors.length > 0 : s.id === 'describe' ? Boolean(description.trim()) : false,
+          active: s.id === 'describe' ? !description.trim() : s.id === 'add' ? competitors.length === 0 : false,
+        }))}
+      />
+      <div className="page-content">
       {discovering && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 9999,
@@ -105,15 +114,6 @@ export default function Competitors() {
         </div>
       )}
       <PageHeader title="Competitors" subtitle="Type competitors manually, or auto-discover from backlinks, rankings, and your site crawl" />
-      <PageProcessGuide
-        title="Competitors process - follow these steps"
-        tip="Save rivals here, then use Keyword gap and Backlink gap. Same flow pattern app-wide."
-        steps={COMPETITORS_PAGE_FLOW.map((s) => ({
-          ...s,
-          done: s.id === 'add' ? competitors.length > 0 : s.id === 'describe' ? Boolean(description.trim()) : false,
-          active: s.id === 'describe' ? !description.trim() : s.id === 'add' ? competitors.length === 0 : false,
-        }))}
-      />
       <Card style={{ marginBottom: 14 }} id="comp-section-setup">
         <SectionLabel>Business description</SectionLabel>
         <div style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 8 }}>
@@ -198,6 +198,7 @@ export default function Competitors() {
           })
         }
       </Card>
+      </div>
     </div>
   )
 }

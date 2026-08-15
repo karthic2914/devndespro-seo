@@ -12,7 +12,7 @@ import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Button, Modal, Input } from '../components/UI'
-import PageProcessGuide from '../components/PageProcessGuide'
+import AppProcessTopBar from '../components/AppProcessTopBar'
 import { AUDIT_PAGE_FLOW } from '../constants/pageFlows'
 import { useSnackbar } from '../App'
 import { useAuth } from '../hooks/useAuth'
@@ -1617,27 +1617,38 @@ export default function SiteAudit() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#9CA3AF', fontSize: 14 }}>
-        <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 10, opacity: 0.4 }} />
-        Loading audit data...
-      </div>
-    )
-  }
-
-  if (!auditData) {
-    return (
-      <div style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
-        <PageProcessGuide
-          title="Site Audit process - follow these steps"
-          tip="Start with Run audit. Same clickable flow as Overview and Keywords."
+      <div className="fade-in">
+        <AppProcessTopBar
+          title="Site Audit process"
           steps={AUDIT_PAGE_FLOW.map((s) => ({
             ...s,
             done: false,
             active: s.id === 'run',
           }))}
         />
-        <div id="audit-section-run">
-          <EmptyAudit onRun={runAudit} running={running} error={runError} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: '#9CA3AF', fontSize: 14 }}>
+          <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 10, opacity: 0.4 }} />
+          Loading audit data...
+        </div>
+      </div>
+    )
+  }
+
+  if (!auditData) {
+    return (
+      <div className="fade-in">
+        <AppProcessTopBar
+          title="Site Audit process"
+          steps={AUDIT_PAGE_FLOW.map((s) => ({
+            ...s,
+            done: false,
+            active: s.id === 'run',
+          }))}
+        />
+        <div style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
+          <div id="audit-section-run">
+            <EmptyAudit onRun={runAudit} running={running} error={runError} />
+          </div>
         </div>
       </div>
     )
@@ -1667,17 +1678,16 @@ export default function SiteAudit() {
   }
 
   return (
-    <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
-
-      <PageProcessGuide
-        title="Site Audit process - follow these steps"
-        tip="Run → review issues → send to Action Plan. Same clickable flow as other pages."
+    <div className="fade-in">
+      <AppProcessTopBar
+        title="Site Audit process"
         steps={AUDIT_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'run' ? Boolean(auditData) : s.id === 'review' ? Boolean(auditData?.checks?.length) : false,
           active: s.id === 'run' ? !auditData : s.id === 'review' ? Boolean(auditData) : false,
         }))}
       />
+    <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
 
       {/* Page header */}
       <div id="audit-section-run" className='audit-page-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
@@ -2694,6 +2704,7 @@ export default function SiteAudit() {
       </div>
 
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
+    </div>
     </div>
   )
 }
