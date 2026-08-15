@@ -14,6 +14,7 @@ import autoTable from 'jspdf-autotable'
 import { Button, Modal, Input } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { AUDIT_PAGE_FLOW } from '../constants/pageFlows'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import { useSnackbar } from '../App'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -522,6 +523,7 @@ export default function SiteAudit() {
   }
   const [loading,           setLoading]           = useState(true)
   const [running,           setRunning]           = useState(false)
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(AUDIT_PAGE_FLOW, [loading, running])
   const [runError,          setRunError]          = useState(null)
   const [activeTab,         setActiveTab]         = useState('all')
   const auditIssuesRef = useRef(null)
@@ -1681,7 +1683,13 @@ export default function SiteAudit() {
         steps={AUDIT_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'run' ? Boolean(auditData) : s.id === 'review' ? Boolean(auditData?.checks?.length) : false,
-          active: s.id === 'run' ? !auditData : s.id === 'review' ? Boolean(auditData) : false,
+          active: scrollFlowId === s.id,
+          onClick: () => {
+            setScrollFlowId(s.id)
+            if (s.sectionId) {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          },
         }))}
       />
     <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>

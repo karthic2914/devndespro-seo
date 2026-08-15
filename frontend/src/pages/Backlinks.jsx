@@ -7,6 +7,7 @@ import { useAuth } from '../hooks/useAuth'
 import { Card, SectionLabel, MetricCard, OrangeBtn, PageHeader, GhostBtn } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { BACKLINKS_PAGE_FLOW } from '../constants/pageFlows'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
 import BacklinkCompetitiveHub from '../components/BacklinkCompetitiveHub'
@@ -40,6 +41,7 @@ export default function Backlinks() {
   const [importResult, setImportResult] = useState(null)
   const [quickDiscovering, setQuickDiscovering] = useState(false)
   const [toolTab, setToolTab] = useState('overview')
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(BACKLINKS_PAGE_FLOW, [loading, backlinks.length, toolTab])
 
   const load = () =>
     Promise.all([
@@ -348,9 +350,14 @@ export default function Backlinks() {
         steps={BACKLINKS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'overview' ? Boolean(backlinkSummary || backlinks.length) : toolTab === 'gap' && s.id === 'gap',
-          active: (s.tab && toolTab === s.tab) || (s.id === 'discover' && !backlinks.length),
+          active: s.id === 'discover'
+            ? scrollFlowId === 'discover'
+            : s.tab
+              ? toolTab === s.tab && scrollFlowId !== 'discover'
+              : scrollFlowId === s.id,
           onClick: () => {
             if (s.tab) setToolTab(s.tab)
+            setScrollFlowId(s.id)
             setTimeout(() => {
               document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }, 50)

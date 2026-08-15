@@ -20,6 +20,7 @@ import { BrandFavicon } from '../components/SiteFavicon'
 import { AI_VISIBILITY_PAGE_FLOW } from '../constants/pageFlows'
 import { Modal } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 
 // Picks a colored icon for a detected product card based on what it actually
 // is (design, dev, AI-related, backlinks/keywords, infra, or generic audit),
@@ -212,7 +213,20 @@ export default function AIVisibility() {
   const [selectedQuestion, setSelectedQuestion] = useState('')
   const [openQuestionMenu, setOpenQuestionMenu] = useState(null)
   const [questionMenuPos, setQuestionMenuPos] = useState(null)
-  const [scrollFlowId, setScrollFlowId] = useState('score')
+  const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
+  const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
+  const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
+  // In-memory cache: first view hits API/DB, later views of the same
+  // question reuse this until a Test/Re-test refreshes it.
+  const questionResultsCacheRef = useRef({})
+  const [scoreExpanded, setScoreExpanded] = useState(true)
+  const [testExpanded, setTestExpanded] = useState(true)
+  const [insightsOpen, setInsightsOpen] = useState(false)
+  const [prOpen, setPrOpen] = useState(false)
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(
+    AI_VISIBILITY_PAGE_FLOW,
+    [fullAccess, scoreExpanded, testExpanded, prOpen, insightsOpen]
+  )
   const [prOutletCount, setPrOutletCount] = useState(0)
   const [deleteConfirmQuestion, setDeleteConfirmQuestion] = useState('')
   const [deletingQuestion, setDeletingQuestion] = useState(false)
@@ -220,16 +234,6 @@ export default function AIVisibility() {
   const [editQuestionDraft, setEditQuestionDraft] = useState('')
   const [savingEditQuestion, setSavingEditQuestion] = useState(false)
   const [showAllAnswersModal, setShowAllAnswersModal] = useState(false)
-  const [scoreExpanded, setScoreExpanded] = useState(true)
-  const [testExpanded, setTestExpanded] = useState(true)
-  const [insightsOpen, setInsightsOpen] = useState(false)
-  const [prOpen, setPrOpen] = useState(false)
-  const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
-  const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
-  const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
-  // In-memory cache: first view hits API/DB, later views of the same
-  // question reuse this until a Test/Re-test refreshes it.
-  const questionResultsCacheRef = useRef({})
 
   // Load cached product questions first (free). Only generate once if none exist.
   useEffect(() => {
@@ -712,27 +716,6 @@ export default function AIVisibility() {
         )
       )
     : 0
-
-  // Sticky process: highlight the section currently in view
-  useEffect(() => {
-    if (!fullAccess) return
-    const onScroll = () => {
-      const stickyOffset = 72
-      const scoreEl = document.getElementById('ai-section-score')
-      const testEl = document.getElementById('ai-section-test')
-      const prEl = document.getElementById('ai-section-pr')
-      let current = 'score'
-      if (prEl && prEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'pr'
-      else if (testEl && testEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'test'
-      else if (scoreEl && scoreEl.getBoundingClientRect().top - stickyOffset <= 8) current = 'score'
-      setScrollFlowId(current)
-    }
-    onScroll()
-    const root = document.querySelector('.app-main')
-    const target = root || window
-    target.addEventListener('scroll', onScroll, { passive: true })
-    return () => target.removeEventListener('scroll', onScroll)
-  }, [fullAccess])
 
 // RESET QUESTION PAGINATION
   // Changing product/category or search should always return to page 1.

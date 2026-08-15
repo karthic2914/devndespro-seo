@@ -47,12 +47,14 @@ export const OVERVIEW_PAGE_FLOW = [
     id: 'keywords',
     label: 'Keywords',
     hint: 'Track & improve rankings',
+    sectionId: 'overview-section-keywords',
     path: 'keywords',
   },
   {
     id: 'grow',
     label: 'Grow',
     hint: 'Backlinks & AI Visibility',
+    sectionId: 'overview-section-grow',
     path: 'backlinks',
   },
 ]

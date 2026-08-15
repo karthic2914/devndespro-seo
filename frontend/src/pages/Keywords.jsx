@@ -11,6 +11,7 @@
   import AppProcessTopBar from '../components/AppProcessTopBar'
   import CollapsibleSection from '../components/CollapsibleSection'
   import { KEYWORDS_PAGE_FLOW } from '../constants/pageFlows'
+  import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
   import api from '../utils/api'
   import toast from '../utils/toast'
   import {
@@ -189,7 +190,10 @@
     const [discovery, setDiscovery] = useState(null)
     const [discoveryOpen, setDiscoveryOpen] = useState(false)
     const [discoverRunning, setDiscoverRunning] = useState(false)
-    const [scrollFlowId, setScrollFlowId] = useState(null)
+    const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(
+      KEYWORDS_PAGE_FLOW,
+      [loading, discovery, keywords.length]
+    )
     const [trackedSearch, setTrackedSearch] = useState('')
     const [trackedTier, setTrackedTier] = useState('all')
     const [trackedShowAll, setTrackedShowAll] = useState(false)
@@ -258,42 +262,6 @@
         }
       }).catch(() => {})
     }, [siteId])
-
-    // Sticky flow: which step is in view (scroll position vs section tops)
-    useEffect(() => {
-      const root = document.querySelector('.app-main')
-      if (!root) return undefined
-
-      // Prefer first step id per section (track before rank for shared section)
-      const sectionSteps = []
-      const seen = new Set()
-      KEYWORDS_PAGE_FLOW.forEach((s) => {
-        if (!s.sectionId || seen.has(s.sectionId)) return
-        seen.add(s.sectionId)
-        sectionSteps.push({ stepId: s.id, sectionId: s.sectionId })
-      })
-
-      const update = () => {
-        const stickyOffset = 88
-        let current = sectionSteps[0]?.stepId || null
-        for (const item of sectionSteps) {
-          const el = document.getElementById(item.sectionId)
-          if (!el) continue
-          const top = el.getBoundingClientRect().top
-          // Section has reached the sticky process bar line
-          if (top - stickyOffset <= 8) current = item.stepId
-        }
-        setScrollFlowId(current)
-      }
-
-      update()
-      root.addEventListener('scroll', update, { passive: true })
-      window.addEventListener('resize', update)
-      return () => {
-        root.removeEventListener('scroll', update)
-        window.removeEventListener('resize', update)
-      }
-    }, [loading, discovery, keywords.length, dfsMatching.length, dfsOverview])
 
     const runAutoDiscover = async () => {
       console.log('[Keywords] Rediscover starting', { siteId })

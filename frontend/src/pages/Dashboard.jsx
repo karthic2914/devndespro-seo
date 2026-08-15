@@ -20,6 +20,7 @@ import {
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { OVERVIEW_PAGE_FLOW } from '../constants/pageFlows'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
@@ -57,6 +58,7 @@ export default function Dashboard() {
     backlinkProfile: true,
     gscInsights: true,
   })
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(OVERVIEW_PAGE_FLOW, [actions.length, keywords.length])
 
   const toggleOverviewSection = (section) => {
     setOverviewSections((previous) => ({
@@ -662,10 +664,16 @@ export default function Dashboard() {
   return (
     <div style={{ flex: 1 }}>
       <AppProcessTopBar
-        steps={OVERVIEW_PAGE_FLOW.map((s, i) => ({
+        steps={OVERVIEW_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'fix' ? pendingActions.length === 0 && actions.length > 0 : false,
-          active: i === 0,
+          active: scrollFlowId === s.id,
+          onClick: () => {
+            setScrollFlowId(s.id)
+            if (s.sectionId) {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          },
         }))}
       />
 
@@ -1566,6 +1574,7 @@ export default function Dashboard() {
             </Card>
 
             {/* Backlink Profile removed from Overview - use Backlinks page (admin only) */}
+            <div id="overview-section-grow" style={{ scrollMarginTop: 72 }} />
 
 
           </div>

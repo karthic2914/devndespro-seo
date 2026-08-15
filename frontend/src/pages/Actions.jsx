@@ -6,6 +6,7 @@ import { faPlus, faXmark, faCheck, faBolt, faArrowRight } from '@fortawesome/fre
 import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { ACTIONS_PAGE_FLOW } from '../constants/pageFlows'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import api from '../utils/api'
 
 function impactRank(impact) {
@@ -175,6 +176,7 @@ export default function Actions() {
   const [syncing, setSyncing] = useState(false)
   const [form, setForm] = useState({ text: '', impact: 'Medium' })
   const [adding, setAdding] = useState(false)
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(ACTIONS_PAGE_FLOW, [loading, actions.length])
 
   const load = () =>
     api.get(`/sites/${siteId}/actions`)
@@ -302,7 +304,13 @@ export default function Actions() {
           steps={ACTIONS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'pending' ? pending.length === 0 && actions.length > 0 : false,
-          active: s.id === 'priority' || (s.id === 'pending' && pending.length > 0),
+          active: scrollFlowId === s.id,
+          onClick: () => {
+            setScrollFlowId(s.id)
+            if (s.sectionId) {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          },
         }))}
       />
       <div className="page-content">

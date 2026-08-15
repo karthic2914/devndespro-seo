@@ -5,6 +5,7 @@ import { faPlus, faXmark, faWandMagicSparkles, faSpinner } from '@fortawesome/fr
 import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { COMPETITORS_PAGE_FLOW } from '../constants/pageFlows'
+import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -20,6 +21,7 @@ export default function Competitors() {
   const [savingDescription, setSavingDescription] = useState(false)
   const [siteData, setSiteData] = useState(null)
   const [site, setSite] = useState(null)
+  const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(COMPETITORS_PAGE_FLOW, [loading, competitors.length])
 
   const load = () => {
     api.get(`/sites/${siteId}/competitors`).then(r => setCompetitors(r.data)).finally(() => setLoading(false))
@@ -96,7 +98,13 @@ export default function Competitors() {
         steps={COMPETITORS_PAGE_FLOW.map((s) => ({
           ...s,
           done: s.id === 'add' ? competitors.length > 0 : s.id === 'describe' ? Boolean(description.trim()) : false,
-          active: s.id === 'describe' ? !description.trim() : s.id === 'add' ? competitors.length === 0 : false,
+          active: scrollFlowId === s.id,
+          onClick: () => {
+            setScrollFlowId(s.id)
+            if (s.sectionId) {
+              document.getElementById(s.sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+          },
         }))}
       />
       <div className="page-content">
