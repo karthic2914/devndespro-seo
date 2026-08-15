@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 // Snackbar (Toast) component for alerts
 export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClose, position = 'bottom' }) => {
   useEffect(() => {
@@ -257,9 +258,21 @@ export const PageHeader = ({ title, subtitle, action }) => (
 
 export const Modal = ({ open, onClose, title, subtitle, children, footer, width = 500, closeOnOverlayClick = false }) => {
   useEffect(() => {
-    const onEsc = (e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation() } }
+    if (!open) return
+    const onEsc = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose?.()
+      }
+    }
     window.addEventListener('keydown', onEsc, true)
-    return () => window.removeEventListener('keydown', onEsc, true)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onEsc, true)
+      document.body.style.overflow = prevOverflow
+    }
   }, [open, onClose])
 
   if (!open) return null
@@ -268,8 +281,12 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
     if (closeOnOverlayClick) onClose?.()
   }
 
-  return (
-    <div className="modal-overlay" onClick={handleOverlayClick}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={handleOverlayClick}
+      style={{ zIndex: 10050 }}
+    >
       <div className="modal" style={{ maxWidth: width }} onClick={e => e.stopPropagation()}>
         <div className="modal__header">
           <div className="modal__title">{title}</div>
@@ -278,6 +295,7 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
         <div className="modal__body">{children}</div>
         {footer && <div className="modal__footer">{footer}</div>}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

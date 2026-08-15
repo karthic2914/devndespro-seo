@@ -1205,7 +1205,7 @@ export default function AIVisibility() {
           pointer-events: none;
           z-index: 0;
         }
-        .ai-vis-page > *:not(style) {
+        .ai-vis-page > *:not(style):not(.modal-overlay) {
           position: relative;
           z-index: 1;
         }
