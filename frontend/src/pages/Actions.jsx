@@ -1,9 +1,9 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPlus, faXmark, faCheck, faBolt, faArrowRight } from '@fortawesome/free-solid-svg-icons'
-import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T } from '../components/UI'
+import { faPlus, faXmark, faCheck, faBolt, faArrowRight, faWandMagicSparkles, faCopy, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { Card, SectionLabel, Badge, OrangeBtn, PageHeader, EmptyState, T, Modal } from '../components/UI'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { ACTIONS_PAGE_FLOW } from '../constants/pageFlows'
 import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
@@ -49,7 +49,7 @@ function pathForAction(action) {
   return 'audit'
 }
 
-function ActionRow({ a, onToggle, onRemove, navigate, siteId, emphasize, rankNum }) {
+function ActionRow({ a, onToggle, onRemove, onAskAiFix, emphasize, rankNum }) {
   const pri = priorityLabel(a.impact)
   return (
     <div
@@ -138,24 +138,25 @@ function ActionRow({ a, onToggle, onRemove, navigate, siteId, emphasize, rankNum
       </div>
       <button
         type="button"
-        onClick={() => navigate(`/site/${siteId}/${pathForAction(a)}`)}
-        title="Open related tool"
+        onClick={() => onAskAiFix(a)}
+        title="Get AI help to fix this"
         style={{
-          background: T.surface2,
-          border: `1px solid ${T.border}`,
+          background: '#FFF7ED',
+          border: '1px solid #FDBA74',
           borderRadius: 8,
           padding: '6px 10px',
           fontSize: 11,
           fontWeight: 700,
-          color: T.text2,
+          color: '#EA580C',
           cursor: 'pointer',
           flexShrink: 0,
           display: 'inline-flex',
           alignItems: 'center',
-          gap: 4,
+          gap: 5,
         }}
       >
-        Fix <FontAwesomeIcon icon={faArrowRight} />
+        <FontAwesomeIcon icon={faWandMagicSparkles} />
+        AI Fix
       </button>
       <button
         type="button"
@@ -177,6 +178,23 @@ export default function Actions() {
   const [form, setForm] = useState({ text: '', impact: 'Medium' })
   const [adding, setAdding] = useState(false)
   const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(ACTIONS_PAGE_FLOW, [loading, actions.length])
+  const [siteUrl, setSiteUrl] = useState('')
+  const [fixAction, setFixAction] = useState(null)
+  const [aiFix, setAiFix] = useState(null)
+  const [loadingAiFix, setLoadingAiFix] = useState(false)
+  const [copiedFix, setCopiedFix] = useState(false)
+  const aiFixCacheRef = useRef({})
+
+  useEffect(() => {
+    api.get(`/sites/${siteId}`).then((r) => {
+      setSiteUrl(r.data?.url || '')
+    }).catch(() => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('activeSite') || 'null')
+        if (stored?.url) setSiteUrl(stored.url)
+      } catch { /* ignore */ }
+    })
+  }, [siteId])
 
   const load = () =>
     api.get(`/sites/${siteId}/actions`)
@@ -256,6 +274,65 @@ export default function Actions() {
     }
   }
 
+  const askAiFix = async (action) => {
+    setFixAction(action)
+    setCopiedFix(false)
+    const cacheKey = String(action.id)
+    if (aiFixCacheRef.current[cacheKey]) {
+      setAiFix(aiFixCacheRef.current[cacheKey])
+      setLoadingAiFix(false)
+      return
+    }
+    setAiFix(null)
+    setLoadingAiFix(true)
+    try {
+      let url = siteUrl
+      if (!url) {
+        const r = await api.get(`/sites/${siteId}`)
+        url = r.data?.url || ''
+        setSiteUrl(url)
+      }
+      if (!url) throw new Error('Site URL missing')
+      const { data } = await api.post(`/sites/${siteId}/audit/ai-fix`, {
+        siteUrl: url,
+        issue: {
+          message: action.text,
+          category: action.category || 'On-Page SEO',
+          impact: action.impact || 'Medium',
+          status: 'error',
+          detail: action.why || '',
+        },
+      })
+      aiFixCacheRef.current[cacheKey] = data
+      setAiFix(data)
+    } catch (e) {
+      const msg = e?.response?.data?.error || e?.message || 'Could not generate AI fix'
+      setAiFix({ fix: msg, why: 'AI could not generate a fix for this item right now.' })
+      toast.error(msg)
+    }
+    setLoadingAiFix(false)
+  }
+
+  const closeAiFix = () => {
+    setFixAction(null)
+    setAiFix(null)
+    setLoadingAiFix(false)
+    setCopiedFix(false)
+  }
+
+  const copyAiFix = async () => {
+    const text = aiFix?.fix || ''
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedFix(true)
+      toast.success('Fix copied')
+      setTimeout(() => setCopiedFix(false), 2000)
+    } catch {
+      toast.error('Could not copy')
+    }
+  }
+
   const pending = useMemo(
     () => sortPending(actions.filter((a) => !a.done)),
     [actions]
@@ -290,8 +367,7 @@ export default function Actions() {
             emphasize={false}
             onToggle={toggle}
             onRemove={remove}
-            navigate={navigate}
-            siteId={siteId}
+            onAskAiFix={askAiFix}
           />
         ))}
       </Card>
@@ -372,8 +448,7 @@ export default function Actions() {
             emphasize
             onToggle={toggle}
             onRemove={remove}
-            navigate={navigate}
-            siteId={siteId}
+            onAskAiFix={askAiFix}
           />
         </Card>
       ) : null}
@@ -461,6 +536,146 @@ export default function Actions() {
         </div>
       )}
       </div>
+
+      <Modal
+        open={Boolean(fixAction)}
+        onClose={closeAiFix}
+        title="AI Fix help"
+        subtitle={fixAction?.text || ''}
+        width={560}
+        footer={
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={closeAiFix}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 8,
+                border: `1px solid ${T.border}`,
+                background: '#fff',
+                fontWeight: 600,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+            {fixAction ? (
+              <button
+                type="button"
+                onClick={() => {
+                  navigate(`/site/${siteId}/${pathForAction(fixAction)}`)
+                  closeAiFix()
+                }}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 8,
+                  border: `1px solid ${T.border}`,
+                  background: '#fff',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
+                Open related tool <FontAwesomeIcon icon={faArrowRight} />
+              </button>
+            ) : null}
+          </div>
+        }
+      >
+        {loadingAiFix ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '18px 4px', color: T.muted, fontSize: 13 }}>
+            <FontAwesomeIcon icon={faSpinner} spin />
+            Generating a concrete fix with AI…
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              alignSelf: 'flex-start',
+              background: '#FFF7ED',
+              border: '1px solid #FED7AA',
+              borderRadius: 99,
+              padding: '4px 10px',
+              fontSize: 11,
+              fontWeight: 700,
+              color: '#EA580C',
+            }}>
+              <FontAwesomeIcon icon={faWandMagicSparkles} />
+              AI-generated guidance — you still apply the change on your site
+            </div>
+
+            {aiFix?.why ? (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: T.text, marginBottom: 4 }}>Why it matters</div>
+                <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.55 }}>{aiFix.why}</div>
+              </div>
+            ) : null}
+
+            {(aiFix?.before || aiFix?.after) ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                {aiFix.before ? (
+                  <div style={{ background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#991B1B', marginBottom: 4 }}>Before</div>
+                    <code style={{ fontSize: 12, color: '#7F1D1D', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{aiFix.before}</code>
+                  </div>
+                ) : null}
+                {aiFix.after ? (
+                  <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 8, padding: '8px 10px' }}>
+                    <div style={{ fontSize: 11, fontWeight: 800, color: '#166534', marginBottom: 4 }}>After</div>
+                    <code style={{ fontSize: 12, color: '#14532D', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{aiFix.after}</code>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {aiFix?.fix ? (
+              <div style={{ background: '#F8FAFC', border: `1px solid ${T.border}`, borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: T.text }}>Exact fix</div>
+                  <button
+                    type="button"
+                    onClick={copyAiFix}
+                    style={{
+                      border: `1px solid ${T.border}`,
+                      background: '#fff',
+                      borderRadius: 6,
+                      padding: '4px 8px',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      color: copiedFix ? '#16A34A' : T.text2,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 5,
+                    }}
+                  >
+                    <FontAwesomeIcon icon={faCopy} />
+                    {copiedFix ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <div style={{ fontSize: 13, color: '#0F172A', lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{aiFix.fix}</div>
+              </div>
+            ) : null}
+
+            {(aiFix?.timeToFix || aiFix?.priorityNote) ? (
+              <div style={{ fontSize: 12, color: T.muted, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {aiFix.timeToFix ? <span>Estimated time: <strong style={{ color: T.text2 }}>{aiFix.timeToFix}</strong></span> : null}
+                {aiFix.priorityNote ? <span>{aiFix.priorityNote}</span> : null}
+              </div>
+            ) : null}
+
+            {!aiFix?.fix && !aiFix?.why && !loadingAiFix ? (
+              <div style={{ fontSize: 13, color: T.muted }}>No fix details returned. Try again or open the related tool.</div>
+            ) : null}
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }
