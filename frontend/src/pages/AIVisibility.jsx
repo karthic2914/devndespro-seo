@@ -217,6 +217,7 @@ export default function AIVisibility() {
   const [editQuestionOriginal, setEditQuestionOriginal] = useState('')
   const [editQuestionDraft, setEditQuestionDraft] = useState('')
   const [savingEditQuestion, setSavingEditQuestion] = useState(false)
+  const [showAllAnswersModal, setShowAllAnswersModal] = useState(false)
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
@@ -3445,17 +3446,19 @@ export default function AIVisibility() {
                 </div>
 
                 <button
-                  onClick={() => setSelectedQuestion(q)}
+                  type="button"
+                  onClick={() => setShowAllAnswersModal(true)}
                   style={{
                     border: 0,
                     background: 'transparent',
                     color: '#F97316',
                     fontSize: 10.5,
                     fontWeight: 700,
-                    cursor: '--'
-                              }}
+                    cursor: 'pointer',
+                  }}
                 >
-                  View all answers</button>
+                  View all answers
+                </button>
               </div>
 
 
@@ -3703,7 +3706,7 @@ export default function AIVisibility() {
 
 
             {/* RIGHT - actual AI answer / ranking evidence */}
-            <div className="ai-response-column">
+            <div id="ai-responses-panel" className="ai-response-column" style={{ scrollMarginTop: 72 }}>
               <div className="ai-response-shell">
 
                 <div className="ai-response-header">
@@ -4291,6 +4294,135 @@ export default function AIVisibility() {
             minHeight: 96,
           }}
         />
+      </Modal>
+
+      <Modal
+        open={showAllAnswersModal}
+        onClose={() => setShowAllAnswersModal(false)}
+        title="All AI answers"
+        subtitle={`${testedQuestionsCount} tested · ${readyQuestionsCount} ready · click a question to open responses`}
+        width={720}
+        closeOnOverlayClick
+        footer={
+          <button
+            type="button"
+            onClick={() => setShowAllAnswersModal(false)}
+            style={{
+              height: 36,
+              padding: '0 14px',
+              borderRadius: 8,
+              border: '1px solid #E5E7EB',
+              background: '#fff',
+              color: '#374151',
+              fontWeight: 700,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Close
+          </button>
+        }
+      >
+        {testedQuestionsCount === 0 ? (
+          <div style={{
+            padding: '28px 16px',
+            textAlign: 'center',
+            color: '#64748B',
+            fontSize: 13,
+            lineHeight: 1.5,
+          }}>
+            No tested questions yet. Pick a question and click <strong>Test Question</strong> to store ChatGPT / Claude answers here.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 'min(60vh, 480px)', overflowY: 'auto' }}>
+            {questionStatuses.map((status, i) => {
+              const q = status.question
+              if (!q) return null
+              const chatgptRankRaw =
+                status?.engines?.chatgpt ??
+                status?.chatgptRank ??
+                status?.chatgpt_rank ??
+                null
+              const claudeRankRaw =
+                status?.engines?.claude ??
+                status?.claudeRank ??
+                status?.claude_rank ??
+                null
+              const chatgptRank = Number.isFinite(Number(chatgptRankRaw)) && Number(chatgptRankRaw) > 0
+                ? Number(chatgptRankRaw)
+                : null
+              const claudeRank = Number.isFinite(Number(claudeRankRaw)) && Number(claudeRankRaw) > 0
+                ? Number(claudeRankRaw)
+                : null
+              const isSelected = selectedQuestion === q
+
+              return (
+                <button
+                  key={`all-ans-${i}-${q.slice(0, 40)}`}
+                  type="button"
+                  onClick={() => {
+                    setSelectedQuestion(q)
+                    setShowAllAnswersModal(false)
+                    requestAnimationFrame(() => {
+                      document.getElementById('ai-responses-panel')?.scrollIntoView?.({
+                        behavior: 'smooth',
+                        block: 'nearest',
+                      })
+                    })
+                  }}
+                  style={{
+                    textAlign: 'left',
+                    border: `1px solid ${isSelected ? '#FDBA74' : '#E5E7EB'}`,
+                    background: isSelected ? '#FFF7ED' : '#fff',
+                    borderRadius: 10,
+                    padding: '12px 14px',
+                    cursor: 'pointer',
+                    font: 'inherit',
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', lineHeight: 1.4 }}>
+                    {q}
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                    marginTop: 8,
+                    fontSize: 11,
+                    color: '#64748B',
+                    alignItems: 'center',
+                  }}>
+                    <span style={{
+                      fontWeight: 800,
+                      color: '#15803D',
+                      background: '#F0FDF4',
+                      borderRadius: 99,
+                      padding: '2px 8px',
+                    }}>
+                      Tested
+                    </span>
+                    <span>
+                      ChatGPT: {chatgptRank ? `#${chatgptRank}` : 'Not mentioned'}
+                    </span>
+                    <span>·</span>
+                    <span>
+                      Claude: {claudeRank ? `#${claudeRank}` : 'Not mentioned'}
+                    </span>
+                    {status.lastTested ? (
+                      <span style={{ marginLeft: 'auto' }}>
+                        {new Date(status.lastTested).toLocaleDateString('en-GB', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })}
+                      </span>
+                    ) : null}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
       </Modal>
 
     </div>
