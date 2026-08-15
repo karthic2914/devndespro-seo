@@ -1034,26 +1034,64 @@ export default function AIVisibility() {
   }
 
   return (
+    <>
+      <div
+        className="ai-vis-process-sticky"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 40,
+          background: '#fff',
+          borderBottom: '1px solid #E5E7EB',
+          boxShadow: '0 1px 0 rgba(15, 23, 42, 0.04)',
+          padding: '6px 22px 5px',
+          margin: 0,
+          flex: '0 0 auto',
+          alignSelf: 'stretch',
+          height: 'auto',
+          maxHeight: 'none',
+        }}
+      >
+        <PageProcessGuide
+          compact
+          title="AI Visibility process"
+          tip={null}
+          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
+            ...s,
+            done:
+              s.id === 'score'
+                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
+                : s.id === 'test'
+                  ? currentQuestionsTested > 0
+                  : prOutletCount > 0,
+            active: scrollFlowId === s.id,
+          }))}
+          style={{ marginBottom: 0, maxWidth: '100%' }}
+        />
+        <div style={{ fontSize: 11, color: '#64748B', marginTop: 2, lineHeight: 1.3 }}>
+          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
+        </div>
+      </div>
+
     <div ref={reportRef} className="ai-vis-page">
       <style>{`
         .ai-vis-page {
           width: 100%;
           max-width: min(1440px, 100%);
           margin: 0 auto;
-          padding: 10px 22px 32px;
+          padding: 12px 22px 32px;
           box-sizing: border-box;
           overflow-x: clip;
           position: relative;
-          animation: aiVisFadeIn .35s ease-out;
         }
         .ai-vis-page::before {
           content: '';
           position: absolute;
           inset: 0 0 auto 0;
-          height: 220px;
+          height: 180px;
           background:
-            radial-gradient(ellipse 70% 80% at 0% 0%, rgba(255,107,43,.09), transparent 55%),
-            radial-gradient(ellipse 50% 60% at 100% 10%, rgba(255,237,213,.55), transparent 50%);
+            radial-gradient(ellipse 70% 80% at 0% 0%, rgba(255,107,43,.07), transparent 55%),
+            radial-gradient(ellipse 50% 60% at 100% 10%, rgba(255,237,213,.4), transparent 50%);
           pointer-events: none;
           z-index: 0;
         }
@@ -1071,10 +1109,10 @@ export default function AIVisibility() {
         }
         .ai-vis-header {
           display: flex;
-          align-items: flex-start;
+          align-items: center;
           justify-content: space-between;
-          gap: 16px;
-          margin-bottom: 12px;
+          gap: 12px;
+          margin-bottom: 10px;
           max-width: 100%;
           min-width: 0;
           flex-wrap: wrap;
@@ -1082,23 +1120,23 @@ export default function AIVisibility() {
         .ai-vis-title-row {
           display: flex;
           align-items: center;
-          gap: 10px;
-          margin: 0 0 6px;
+          gap: 8px;
+          margin: 0;
         }
         .ai-vis-title-icon {
-          width: 36px;
-          height: 36px;
-          border-radius: 10px;
+          width: 28px;
+          height: 28px;
+          border-radius: 8px;
           background: linear-gradient(145deg, #FF8A4C, #FF6B2B);
           color: #fff;
           display: grid;
           place-items: center;
-          font-size: 15px;
-          box-shadow: 0 6px 16px rgba(255,107,43,.28);
+          font-size: 12px;
+          box-shadow: 0 4px 10px rgba(255,107,43,.22);
           flex-shrink: 0;
         }
         .ai-vis-title {
-          font-size: 22px;
+          font-size: 18px;
           font-weight: 800;
           margin: 0;
           color: #0F172A;
@@ -1119,11 +1157,7 @@ export default function AIVisibility() {
           vertical-align: middle;
         }
         .ai-vis-subtitle {
-          font-size: 12.5px;
-          color: #64748B;
-          margin: 0;
-          line-height: 1.45;
-          max-width: 460px;
+          display: none;
         }
         .ai-vis-session-banner {
           display: flex;
@@ -2870,40 +2904,6 @@ export default function AIVisibility() {
       `}
         </style>
 
-      <div
-        className="ai-vis-process-sticky"
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
-          background: '#fff',
-          borderBottom: '1px solid #E5E7EB',
-          boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
-          margin: '0 -22px 10px',
-          padding: '8px 22px 6px',
-        }}
-      >
-        <PageProcessGuide
-          compact
-          title="AI Visibility process"
-          tip={null}
-          steps={AI_VISIBILITY_PAGE_FLOW.map((s) => ({
-            ...s,
-            done:
-              s.id === 'score'
-                ? Boolean(summaryPeriod) || currentQuestionsTested > 0
-                : s.id === 'test'
-                  ? currentQuestionsTested > 0
-                  : prOutletCount > 0,
-            active: scrollFlowId === s.id,
-          }))}
-          style={{ marginBottom: 0, maxWidth: '100%' }}
-        />
-        <div style={{ fontSize: 11, color: '#64748B', marginTop: 4, lineHeight: 1.35 }}>
-          Follow 1 - 2 - 3. Score first, test questions next, Digital PR only when you want to grow mentions.
-        </div>
-      </div>
-
       <div className="ai-vis-header">
         <div>
           <div className="ai-vis-title-row">
@@ -4035,6 +4035,7 @@ export default function AIVisibility() {
       )}
 
     </div>
+    </>
   )
 }
 

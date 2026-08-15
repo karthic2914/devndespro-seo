@@ -17,9 +17,10 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
           fontSize: compact ? 10 : 12,
           fontWeight: 800,
           color: '#0F172A',
-          marginBottom: compact ? 6 : 8,
+          marginBottom: compact ? 2 : 8,
           letterSpacing: compact ? '0.02em' : undefined,
           textTransform: compact ? 'uppercase' : undefined,
+          lineHeight: 1.2,
         }}>
           {title}
         </div>

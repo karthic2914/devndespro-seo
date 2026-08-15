@@ -55,7 +55,6 @@ export default function PageProcessGuide({
       <div
         style={{
           minWidth: 0,
-          flex: 1,
           ...style,
         }}
       >
