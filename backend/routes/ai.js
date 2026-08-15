@@ -817,14 +817,56 @@ router.post('/:siteId/custom-questions', auth, verifySite, requireFeature('ai_vi
 
 router.delete('/:siteId/custom-questions/:questionId', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
   try {
-    await pool.query(
+    const { rowCount } = await pool.query(
       'DELETE FROM custom_questions WHERE id=$1 AND site_id=$2',
       [req.params.questionId, req.siteId]
     )
+    if (!rowCount) return res.status(404).json({ error: 'Question not found' })
     res.json({ deleted: true })
   } catch (e) {
     console.error('Delete custom question failed:', e.message)
     res.status(500).json({ error: 'Failed to delete question' })
+  }
+})
+
+router.patch('/:siteId/custom-questions/:questionId', auth, verifySite, requireFeature('ai_visibility_full'), async (req, res) => {
+  try {
+    const question = String(req.body?.question || '').trim()
+    if (!question) return res.status(400).json({ error: 'question is required' })
+    const { rows } = await pool.query(
+      `UPDATE custom_questions
+       SET question=$1
+       WHERE id=$2 AND site_id=$3
+       RETURNING id, question, created_at`,
+      [question, req.params.questionId, req.siteId]
+    )
+    if (!rows[0]) return res.status(404).json({ error: 'Question not found' })
+    res.json(rows[0])
+  } catch (e) {
+    console.error('Update custom question failed:', e.message)
+    res.status(500).json({ error: 'Failed to update question' })
+  }
+})
+
+// Persist edited/removed AI-generated product question sets (no AI spend).
+router.put('/:siteId/products/questions', auth, verifySite, async (req, res) => {
+  try {
+    const questionSets = Array.isArray(req.body?.questionSets) ? req.body.questionSets : null
+    if (!questionSets) return res.status(400).json({ error: 'questionSets array is required' })
+    const cleaned = questionSets
+      .map((set) => ({
+        product: String(set?.product || '').trim() || 'Product',
+        questions: Array.isArray(set?.questions)
+          ? set.questions.map((q) => String(q || '').trim()).filter(Boolean)
+          : [],
+      }))
+      .filter((set) => set.questions.length > 0)
+    await saveQuestionSets(req.siteId, cleaned)
+    const totalQuestions = cleaned.reduce((sum, q) => sum + q.questions.length, 0)
+    res.json({ questionSets: cleaned, totalQuestions, cached: true })
+  } catch (e) {
+    console.error('Save product questions failed:', e.message)
+    res.status(500).json({ error: 'Failed to save questions' })
   }
 })
 

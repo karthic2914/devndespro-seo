@@ -428,8 +428,104 @@ export default function AIVisibility() {
     try {
       await api.delete('/sites/' + siteId + '/custom-questions/' + id)
       setCustomQuestions(prev => prev.filter(q => q.id !== id))
+      return true
     } catch (e) {
-      showSnackbar('Failed to delete question', 'error')
+      showSnackbar('Failed to delete question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+      return false
+    }
+  }
+
+  function clearQuestionLocalState(questionText) {
+    const q = String(questionText || '')
+    if (!q) return
+    setQuestionStatuses(prev => prev.filter(s => s.question !== q))
+    if (questionResultsCacheRef.current?.[q]) {
+      const next = { ...questionResultsCacheRef.current }
+      delete next[q]
+      questionResultsCacheRef.current = next
+    }
+    if (selectedQuestion === q) {
+      setSelectedQuestion('')
+      setSelectedQuestionResults([])
+    }
+  }
+
+  async function handleDeleteQuestion(questionText) {
+    const q = String(questionText || '').trim()
+    if (!q) return
+    const custom = customQuestions.find(c => c.question === q)
+    const ok = window.confirm(`Delete this question?\n\n"${q.slice(0, 120)}${q.length > 120 ? '…' : ''}"`)
+    if (!ok) return
+
+    if (custom?.id) {
+      const deleted = await deleteCustomQuestion(custom.id)
+      if (!deleted) return
+    } else {
+      const nextSets = questionSets
+        .map(set => ({
+          ...set,
+          questions: (set.questions || []).filter(item => item !== q),
+        }))
+        .filter(set => (set.questions || []).length > 0)
+      try {
+        const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
+        setQuestionSets(res.data?.questionSets || nextSets)
+      } catch (e) {
+        showSnackbar('Failed to delete question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+        return
+      }
+    }
+
+    clearQuestionLocalState(q)
+    showSnackbar('Question deleted', 'success')
+  }
+
+  async function handleEditQuestion(questionText) {
+    const q = String(questionText || '').trim()
+    if (!q) return
+    const custom = customQuestions.find(c => c.question === q)
+    const next = window.prompt('Edit question', q)
+    if (next === null) return
+    const trimmed = String(next).trim()
+    if (!trimmed || trimmed === q) return
+
+    if (custom?.id) {
+      try {
+        const res = await api.patch('/sites/' + siteId + '/custom-questions/' + custom.id, { question: trimmed })
+        setCustomQuestions(prev => prev.map(c => (c.id === custom.id ? { ...c, ...res.data } : c)))
+        if (selectedQuestion === q) setSelectedQuestion(trimmed)
+        setQuestionStatuses(prev => prev.map(s => (s.question === q ? { ...s, question: trimmed } : s)))
+        if (questionResultsCacheRef.current?.[q]) {
+          const cache = { ...questionResultsCacheRef.current }
+          cache[trimmed] = cache[q]
+          delete cache[q]
+          questionResultsCacheRef.current = cache
+        }
+        showSnackbar('Question updated', 'success')
+      } catch (e) {
+        showSnackbar('Failed to update question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
+      }
+      return
+    }
+
+    const nextSets = questionSets.map(set => ({
+      ...set,
+      questions: (set.questions || []).map(item => (item === q ? trimmed : item)),
+    }))
+    try {
+      const res = await api.put('/sites/' + siteId + '/products/questions', { questionSets: nextSets })
+      setQuestionSets(res.data?.questionSets || nextSets)
+      if (selectedQuestion === q) setSelectedQuestion(trimmed)
+      setQuestionStatuses(prev => prev.map(s => (s.question === q ? { ...s, question: trimmed } : s)))
+      if (questionResultsCacheRef.current?.[q]) {
+        const cache = { ...questionResultsCacheRef.current }
+        cache[trimmed] = cache[q]
+        delete cache[q]
+        questionResultsCacheRef.current = cache
+      }
+      showSnackbar('Question updated', 'success')
+    } catch (e) {
+      showSnackbar('Failed to update question: ' + (e?.response?.data?.error || 'Unknown error'), 'error')
     }
   }
 
@@ -4003,8 +4099,10 @@ export default function AIVisibility() {
             type="button"
             className="ai-question-menu-item"
             onClick={() => {
+              const q = openQuestionMenu
               setOpenQuestionMenu(null)
               setQuestionMenuPos(null)
+              handleEditQuestion(q)
             }}
           >
             <FontAwesomeIcon
@@ -4020,8 +4118,10 @@ export default function AIVisibility() {
             type="button"
             className="ai-question-menu-item ai-question-menu-delete"
             onClick={() => {
+              const q = openQuestionMenu
               setOpenQuestionMenu(null)
               setQuestionMenuPos(null)
+              handleDeleteQuestion(q)
             }}
           >
             <FontAwesomeIcon
