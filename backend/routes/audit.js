@@ -704,12 +704,12 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
   // Skip multipage crawl rows -- they store results as { multipage:true, pages:[...] }
   // with no top-level 'checks' array, which silently produced 0 tips before this fix.
   const { rows } = await pool.query(
-    "SELECT results FROM audit_results
+    `SELECT results FROM audit_results
      WHERE site_id=$1
        AND (results->>'multipage') IS NULL
        AND COALESCE(status, 'complete') = 'complete'
      ORDER BY id DESC
-     LIMIT 1",
+     LIMIT 1`,
     [req.siteId]
   )
   if (!rows.length) return res.json({ tips: [] })
