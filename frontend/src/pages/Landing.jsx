@@ -14,6 +14,26 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../components/UI'
 import LandingHeader from '../components/LandingHeader'
+import useDocumentMeta from '../hooks/useDocumentMeta'
+
+const FAQ_ITEMS = [
+  {
+    q: 'What does the site health score measure?',
+    a: 'Site health combines on-page SEO, technical SEO, and content quality from your latest audit. Critical issues such as missing H1 headings, duplicate titles, or very thin pages pull the score down. Fixing crawl errors, metadata gaps, and thin content raises it over time.',
+  },
+  {
+    q: 'Who is DevnDespro SEO for?',
+    a: 'Marketing and growth teams at Nordic companies who need practical SEO and AI visibility insights without juggling disconnected tools. Agencies and in-house SEO owners can track projects per domain and share clear fix priorities with stakeholders.',
+  },
+  {
+    q: 'How is this different from a one-off audit PDF?',
+    a: 'Continuous monitoring of keywords, backlinks, and AI citations sits alongside re-runnable site audits. Improvements compound instead of becoming a forgotten report — verify fixes, watch spammy backlinks, and re-score health after each release.',
+  },
+  {
+    q: 'What does AI visibility mean?',
+    a: 'AI visibility tracks whether assistants like ChatGPT and Claude mention, understand, or recommend your business. Pair that with Nordic search insights so your content is ready for classic search results and answer engines.',
+  },
+]
 
 const FEATURES = [
   {
@@ -134,6 +154,13 @@ const styles = {
 export default function Landing() {
   const navigate = useNavigate()
   const [activeSection, setActiveSection] = useState('')
+
+  useDocumentMeta({
+    title: 'devndespro SEO — Site Audit, Keywords & AI Visibility',
+    description:
+      'Audit site health, track keywords, monitor backlinks and measure AI citations in one workspace. Built for Nordic teams by DevnDespro.',
+    canonical: 'https://seo.devndespro.com/',
+  })
 
   const goToLogin = () => navigate('/login')
   /* ACTIVE SECTION OBSERVER */
@@ -556,6 +583,51 @@ export default function Landing() {
             >
               {STEPS.map((step) => (
                 <StepCard key={step.number} {...step} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* FAQ — stronger content volume for SEO */}
+        <section id="faq" style={{ padding: '64px 0 40px' }}>
+          <div style={styles.container}>
+            <SectionHeader
+              eyebrow="FAQ"
+              title="Answers for teams improving search visibility"
+              description="Practical context on site health, AI citations, and how DevnDespro SEO fits Nordic growth workflows."
+            />
+            <div
+              style={{
+                maxWidth: 780,
+                margin: '0 auto',
+                display: 'grid',
+                gap: 22,
+              }}
+            >
+              {FAQ_ITEMS.map((item) => (
+                <div key={item.q}>
+                  <h3
+                    style={{
+                      margin: '0 0 8px',
+                      color: '#171923',
+                      fontSize: 18,
+                      fontWeight: 700,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {item.q}
+                  </h3>
+                  <p
+                    style={{
+                      margin: 0,
+                      color: '#5B5E68',
+                      fontSize: 15,
+                      lineHeight: 1.75,
+                    }}
+                  >
+                    {item.a}
+                  </p>
+                </div>
               ))}
             </div>
           </div>

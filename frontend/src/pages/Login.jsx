@@ -4,6 +4,7 @@ import { useGoogleLogin } from '@react-oauth/google'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
+import useDocumentMeta from '../hooks/useDocumentMeta'
 import { Logo, Card, Divider, T } from '../components/UI'
 
 export default function Login() {
@@ -13,6 +14,13 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
+
+  useDocumentMeta({
+    title: 'Sign in — DevnDespro SEO',
+    description: 'Sign in to your DevnDespro SEO workspace to run site audits, track keywords, and monitor AI visibility.',
+    canonical: 'https://seo.devndespro.com/login',
+    robots: 'noindex, nofollow',
+  })
 
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -63,7 +71,10 @@ export default function Login() {
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
             <Logo size="lg" variant="transparent" />
           </div>
-          <p style={{ fontSize: 14, color: T.text2, lineHeight: 1.6 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 750, color: T.text, margin: '0 0 8px', letterSpacing: '-0.02em' }}>
+            Sign in to DevnDespro SEO
+          </h1>
+          <p style={{ fontSize: 14, color: T.text2, lineHeight: 1.6, margin: 0 }}>
             The SEO platform that gets your website to <strong style={{ color: T.orange }}>#1 on Google</strong>
           </p>
         </div>
@@ -71,7 +82,7 @@ export default function Login() {
         <Card padding="2rem">
           <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 4 }}>
-              Sign in to your account
+              Access your account
             </div>
             <div style={{ fontSize: 13, color: T.muted }}>
               Access is restricted to authorised users only

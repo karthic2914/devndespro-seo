@@ -732,6 +732,24 @@ router.get('/:siteId/ai-visibility/score-history', auth, verifySite, async (req,
 
 const MULTIPAGE_PAGE_LIMIT = Number(process.env.AUDIT_PAGE_LIMIT) || 100
 
+const SKIP_CRAWL_PATH_PATTERNS = [
+  '/cdn-cgi/',
+  '/email-protection',
+  '/login',
+  '/signup',
+  '/register',
+  '/accept-invite',
+  '/settings',
+  '/users',
+  '/reports',
+  '/site/',
+]
+
+function shouldSkipCrawlPath(pathname) {
+  const path = String(pathname || '').toLowerCase()
+  return SKIP_CRAWL_PATH_PATTERNS.some((p) => path.includes(p))
+}
+
 function normalizeCrawlUrl(rawUrl, baseUrl) {
   try {
     const base = new URL(baseUrl)
@@ -807,7 +825,9 @@ async function discoverPageUrls(baseUrl, limit) {
             const h = new URL(loc).hostname.toLowerCase().replace(/^www\./, '')
             if (h === rootHost) {
               const normalized = normalizeCrawlUrl(loc, baseUrl)
-              if (normalized) urls.add(normalized)
+              if (normalized && !shouldSkipCrawlPath(new URL(normalized).pathname)) {
+                urls.add(normalized)
+              }
             }
           } catch {}
         }
@@ -842,15 +862,10 @@ async function discoverPageUrls(baseUrl, limit) {
             const parsed = new URL(absolute)
             const pathname = parsed.pathname.toLowerCase()
 
-            const skipPathPatterns = [
-              '/cdn-cgi/',
-              '/email-protection',
-            ]
-
-            const skipExtensions = /\\.(jpg|jpeg|png|gif|webp|avif|svg|ico|pdf|zip|rar|7z|mp4|mp3|css|js|xml|txt|woff|woff2|ttf|eot)$/i
+            const skipExtensions = /\.(jpg|jpeg|png|gif|webp|avif|svg|ico|pdf|zip|rar|7z|mp4|mp3|css|js|xml|txt|woff|woff2|ttf|eot)$/i
 
             if (
-              skipPathPatterns.some((p) => pathname.includes(p)) ||
+              shouldSkipCrawlPath(pathname) ||
               skipExtensions.test(pathname)
             ) {
               return
