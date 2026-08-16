@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -18,6 +18,8 @@ import {
   faBullseye,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
+import ScoreInfoTip from '../components/ScoreInfoTip'
+import { auditCategoryScoreKey } from '../utils/scoreHelp'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import { OVERVIEW_PAGE_FLOW } from '../constants/pageFlows'
 import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
@@ -620,7 +622,7 @@ export default function Dashboard() {
   const canRunFullAudit = Boolean(user?.is_paid || allowedAuditEmails.has(user?.email))
 
 
-  const renderCollapseHeader = (label, section, extra = null) => (
+  const renderCollapseHeader = (label, section, extra = null, scoreKey = null) => (
     <div style={{
       display: 'flex',
       alignItems: 'center',
@@ -634,8 +636,12 @@ export default function Dashboard() {
         color: T.text,
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
       }}>
         {label}
+        {scoreKey ? <ScoreInfoTip scoreKey={scoreKey} /> : null}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -893,10 +899,10 @@ export default function Dashboard() {
         {/* Top stats row */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 0 }}>
           <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop scoreKey="siteHealth" />
-          <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop />
-          <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop />
-          <StatCard label="Avg. Position"    value={gscPosition}       sub={gscSubLabel} icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop />
-          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop />
+          <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop scoreKey="gscClicks" />
+          <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop scoreKey="impressions" />
+          <StatCard label="Avg. Position"    value={gscPosition}       sub={gscSubLabel} icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop scoreKey="avgPosition" />
+          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop scoreKey="trackedKeywords" />
         </div>
 
         {/* Step 1: website fixes first on Overview */}
@@ -1401,7 +1407,8 @@ export default function Dashboard() {
                   }}
                 >
                   Open Audit
-                </Button>
+                </Button>,
+                'siteHealth'
               )}
 
               {overviewSections.siteHealth && (
@@ -1528,8 +1535,9 @@ export default function Dashboard() {
                               : auditWarningCount
                           }
                         </div>
-                        <div style={{ fontSize: 8, color: T.muted, marginTop: 4, fontWeight: 600 }}>
+                        <div style={{ fontSize: 8, color: T.muted, marginTop: 4, fontWeight: 600 }} className="score-label-with-tip">
                           warnings
+                          <ScoreInfoTip scoreKey="auditWarnings" />
                         </div>
                       </div>
 
@@ -1541,8 +1549,9 @@ export default function Dashboard() {
                               : auditPassCount
                           }
                         </div>
-                        <div style={{ fontSize: 8, color: T.muted, marginTop: 4, fontWeight: 600 }}>
+                        <div style={{ fontSize: 8, color: T.muted, marginTop: 4, fontWeight: 600 }} className="score-label-with-tip">
                           {hasMultipageAudit ? 'healthy pages' : 'passed'}
+                          <ScoreInfoTip scoreKey="healthyPages" />
                         </div>
                       </div>
                     </div>
@@ -1582,8 +1591,11 @@ export default function Dashboard() {
                           gap: 10,
                           marginBottom: 4,
                         }}>
-                          <span style={{ fontSize: 9, fontWeight: 650, color: T.text2 }}>
+                          <span style={{ fontSize: 9, fontWeight: 650, color: T.text2 }} className="score-label-with-tip">
                             {score.label}
+                            {auditCategoryScoreKey(score.label) ? (
+                              <ScoreInfoTip scoreKey={auditCategoryScoreKey(score.label)} asSpan />
+                            ) : null}
                           </span>
                           <span style={{ fontSize: 9, fontWeight: 800, color: score.color }}>
                             {score.value}/100

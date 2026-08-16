@@ -1,12 +1,16 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar } from '@fortawesome/free-solid-svg-icons'
+import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons'
+import ScoreInfoTip from '../ScoreInfoTip'
+import { auditCategoryScoreKey } from '../utils/scoreHelp'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
   'Technical SEO': faGears,
   'Content Quality': faFileLines,
   'Page Speed': faBolt,
+  'Server & Security': faShieldHalved,
+  'Advanced SEO': faChartLine,
   'AI Snippet': faRobot,
   'AEO': faBrain,
 }
@@ -108,7 +112,12 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                   <FontAwesomeIcon icon={CAT_ICONS[cat.name] || faMagnifyingGlass} style={{ color: scoreColor(cat.score), fontSize: 15 }} />
                 </div>
                 <div>
-                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }}>{cat.name}</div>
+                  <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }} className="score-label-with-tip">
+                    {cat.name}
+                    {auditCategoryScoreKey(cat.name) ? (
+                      <ScoreInfoTip scoreKey={auditCategoryScoreKey(cat.name)} asSpan />
+                    ) : null}
+                  </div>
                   <div style={{ fontSize: 18, fontWeight: 700, color: scoreColor(cat.score) }}>{cat.score}</div>
                 </div>
               </div>
@@ -117,8 +126,9 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
         )}
         <div style={{ width: '100%', borderTop: aiCategories.length > 0 ? '1px solid #F3F4F6' : 'none', paddingTop: aiCategories.length > 0 ? 14 : 0, marginTop: 4 }}>
           <div className='ai-visibility-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: '0.06em' }} className="score-label-with-tip">
               AI Engine Visibility
+              <ScoreInfoTip scoreKey="aiVisibility" asSpan />
             </div>
 
             {!isScreenshot && <label style={{ display: 'inline-flex', alignItems: 'center', gap: 10, fontSize: 12, fontWeight: 700, color: '#374151', cursor: 'pointer', whiteSpace: 'nowrap' }}>
@@ -175,7 +185,12 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                   <div style={{ width: 26, height: 26, background: bg || '#E5E7EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
                     {icon ? <FontAwesomeIcon icon={icon} style={{ color: '#fff', fontSize: 13 }} /> : '?'}
                   </div>
-                  <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }} className="score-label-with-tip">
+                    {label}
+                    {!soon && (key === 'chatgpt' || key === 'claude') ? (
+                      <ScoreInfoTip scoreKey={key} asSpan />
+                    ) : null}
+                  </span>
                   {!soon && <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginLeft: 'auto', fontSize: 10, color: '#9CA3AF' }} />}
                 </div>
                 {soon ? (
@@ -215,7 +230,10 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
         <ScoreRing score={auditData.score || 0} size={80} noAnimation={isScreenshot} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            Homepage Health Score
+            <span className="score-label-with-tip">
+              Homepage Health Score
+              <ScoreInfoTip scoreKey="homepageHealth" />
+            </span>
             <ScoreDelta change={auditData.scoreChange} />
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -256,7 +274,12 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
               />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }}>{cat.name}</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }} className="score-label-with-tip">
+                {cat.name}
+                {auditCategoryScoreKey(cat.name) ? (
+                  <ScoreInfoTip scoreKey={auditCategoryScoreKey(cat.name)} asSpan />
+                ) : null}
+              </div>
               <div style={{ fontSize: 18, fontWeight: 700, color: scoreColor(cat.score) }}>{cat.score}</div>
             </div>
           </div>
@@ -273,7 +296,10 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
               <FontAwesomeIcon icon={faBolt} style={{ color: scoreColor(auditData.speed.performance), fontSize: 15 }} />
             </div>
             <div>
-              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }}>PageSpeed</div>
+              <div style={{ fontSize: 11, color: '#9CA3AF', marginBottom: 1 }} className="score-label-with-tip">
+                PageSpeed
+                <ScoreInfoTip scoreKey="pageSpeed" asSpan />
+              </div>
               <div style={{ fontSize: 18, fontWeight: 700, color: scoreColor(auditData.speed.performance) }}>
                 {auditData.speed.performance}
               </div>
@@ -366,7 +392,12 @@ export default function AuditScoreBanner({ auditData, categories, isScreenshot =
                 <div style={{ width: 26, height: 26, background: bg || '#E5E7EB', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, flexShrink: 0 }}>
                   {icon ? <FontAwesomeIcon icon={icon} style={{ color: '#fff', fontSize: 13 }} /> : '?'}
                 </div>
-                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>{label}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }} className="score-label-with-tip">
+                  {label}
+                  {!soon && (key === 'chatgpt' || key === 'claude') ? (
+                    <ScoreInfoTip scoreKey={key} asSpan />
+                  ) : null}
+                </span>
                 {!soon && <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginLeft: 'auto', fontSize: 10, color: '#9CA3AF' }} />}
               </div>
               {soon ? (

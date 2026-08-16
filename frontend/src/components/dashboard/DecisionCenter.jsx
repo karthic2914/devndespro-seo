@@ -80,7 +80,7 @@ function MetricCard({ label, value, hint, scoreKey }) {
   )
 }
 
-function AuthorityBreakdownRow({ label, value }) {
+function AuthorityBreakdownRow({ label, value, scoreKey }) {
   const score =
     value === null || value === undefined
       ? null
@@ -99,8 +99,12 @@ function AuthorityBreakdownRow({ label, value }) {
         fontSize: 11,
         color: '#4B5563',
         fontWeight: 600,
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 5,
       }}>
         {label}
+        {scoreKey ? <ScoreInfoTip scoreKey={scoreKey} /> : null}
       </div>
 
       <div style={{
@@ -430,8 +434,13 @@ export default function DecisionCenter({
             fontWeight: 700,
             color: '#9CA3AF',
             textTransform: 'uppercase',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            justifyContent: 'flex-end',
           }}>
             Digital Growth Score
+            <ScoreInfoTip scoreKey="growthScore" />
           </div>
 
           <div style={{
@@ -559,8 +568,12 @@ export default function DecisionCenter({
                 color: '#9CA3AF',
                 fontWeight: 700,
                 textTransform: 'uppercase',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
               }}>
                 Link Score potential
+                <ScoreInfoTip scoreKey="linkScorePotential" />
               </div>
 
               <div style={{
@@ -665,16 +678,19 @@ export default function DecisionCenter({
                 <AuthorityBreakdownRow
                   label="Referring Domains"
                   value={data.breakdown.referringDomains}
+                  scoreKey="referringDomains"
                 />
 
                 <AuthorityBreakdownRow
                   label="Follow Naturality"
                   value={data.breakdown.dofollow}
+                  scoreKey="followNaturality"
                 />
 
                 <AuthorityBreakdownRow
                   label="Link Quality"
                   value={data.breakdown.backlinks}
+                  scoreKey="linkQualityBreakdown"
                 />
               </>
             ) : (

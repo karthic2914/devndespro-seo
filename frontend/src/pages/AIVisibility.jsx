@@ -3328,7 +3328,10 @@ export default function AIVisibility() {
               background: '#FFF7ED', border: '1px solid #FED7AA', flexShrink: 0,
             }}>1</span>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Score Overview</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }} className="score-label-with-tip">
+                Score Overview
+                <ScoreInfoTip scoreKey="aiVisibility" asSpan />
+              </div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {currentQuestionsTested}/{currentQuestionTotal || 0} questions tested
                 {summaryPeriod?.periodLabel ? ` · ${summaryPeriod.periodLabel}` : ''}

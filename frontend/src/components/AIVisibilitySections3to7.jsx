@@ -13,6 +13,7 @@ import {
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
+import ScoreInfoTip from './ScoreInfoTip'
 import api from '../utils/api'
 
 const ENGINE_STYLE = {
@@ -816,7 +817,10 @@ export function VisibilityKPICards({
               <div style={{ width: 28, height: 28, borderRadius: 8, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FontAwesomeIcon icon={meta.icon} style={{ color: meta.color, fontSize: 12 }} />
               </div>
-              <span style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>{meta.label}</span>
+              <span className="score-label-with-tip" style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>
+                {meta.label}
+                <ScoreInfoTip scoreKey={c.key} />
+              </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
               <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em' }}>{c.value ?? 'N/A'}</div>
@@ -855,7 +859,10 @@ export function VisibilityKPICards({
           <div style={{ width: 28, height: 28, borderRadius: 8, background: '#FFF7ED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <FontAwesomeIcon icon={faListCheck} style={{ color: '#F97316', fontSize: 12 }} />
           </div>
-          <span style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>Questions Tested</span>
+          <span className="score-label-with-tip" style={{ fontSize: 11, fontWeight: 650, color: '#475569' }}>
+            Questions Tested
+            <ScoreInfoTip scoreKey="questionsTested" />
+          </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: '#0F172A', letterSpacing: '-0.03em' }}>{safeQuestionsTested} / {totalQuestions}</div>
@@ -905,7 +912,10 @@ export function VisibilityEngineTable({ siteId }) {
   return (
     <div id="ai-vis-engine-card" style={{ ...cardStyle, minHeight: 260 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 4 }}>
-        <div style={titleStyle}>AI Visibility by Engine</div>
+        <div style={titleStyle} className="score-label-with-tip">
+          AI Visibility by Engine
+          <ScoreInfoTip scoreKey="aiVisibility" />
+        </div>
         <button
           type="button"
           onClick={() => setShowDetails(true)}

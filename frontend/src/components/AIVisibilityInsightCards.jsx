@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -11,6 +11,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
 import { Modal } from './UI'
+import ScoreInfoTip from './ScoreInfoTip'
 import api from '../utils/api'
 
 const cardStyle = {
@@ -127,7 +128,10 @@ export function VisibilityEngineTable({ siteId }) {
   return (
     <div id="ai-vis-engine-card" style={cardStyle}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={titleStyle}>AI Visibility by Engine</div>
+        <div style={titleStyle} className="score-label-with-tip">
+          AI Visibility by Engine
+          <ScoreInfoTip scoreKey="aiVisibility" />
+        </div>
         <button type="button" onClick={() => setShowDetails(true)} style={linkStyle()}>
           View details →
         </button>
