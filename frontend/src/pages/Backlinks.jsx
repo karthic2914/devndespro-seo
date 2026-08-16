@@ -11,6 +11,7 @@ import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
 import BacklinkCompetitiveHub from '../components/BacklinkCompetitiveHub'
+import LinkDeskModes from '../components/LinkDeskModes'
 import api from '../utils/api'
 import { QUALITY_META, summarizeBacklinkQuality } from '../utils/backlinkQuality'
 
@@ -443,7 +444,21 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Your link desk: pulse, tracked links, health, dead targets, source sites, phrases, and growth gaps."
+        subtitle="One workspace for link pulse, health, sources, and growth opportunities."
+      />
+
+      <LinkDeskModes
+        active={viewParam}
+        counts={{
+          tracked: backlinks.length,
+          health: qualitySummary.good + qualitySummary.ok,
+          dead: backlinks.filter((b) =>
+            b.is_broken === true ||
+            Number(b.http_status) >= 400 ||
+            String(b.verification_status || '').toLowerCase() === 'broken'
+          ).length,
+        }}
+        onChange={setDeskView}
       />
 
       <div id="bl-section-hub">

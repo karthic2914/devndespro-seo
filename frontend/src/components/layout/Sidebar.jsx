@@ -1,29 +1,16 @@
 ﻿/**
  * Sidebar - left navigation for site dashboard
  */
-import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faWandMagicSparkles, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../UI'
 import SiteFavicon from '../SiteFavicon'
 
 const NAV_ITEMS = [
   { path: '', label: 'Overview', icon: '▦', end: true },
   { path: 'keywords', label: 'Keywords', icon: '🔑' },
-  {
-    path: 'backlinks',
-    label: 'Backlinks',
-    icon: '🔗',
-    children: [
-      { view: 'pulse', label: 'Pulse' },
-      { view: 'tracked', label: 'Tracked links' },
-      { view: 'health', label: 'Link health' },
-      { view: 'dead', label: 'Dead targets' },
-      { view: 'sources', label: 'Source sites' },
-      { view: 'phrases', label: 'Link phrases' },
-      { view: 'gaps', label: 'Growth gaps' },
-    ],
-  },
+  { path: 'backlinks', label: 'Backlinks', icon: '🔗' },
   { path: 'audit', label: 'Site Audit', icon: '🔍' },
   { path: 'actions', label: 'Action Plan', icon: '✅' },
   { path: 'ai-visibility', label: 'AI Visibility', faIcon: 'wand' },
@@ -61,88 +48,6 @@ function NavItem({ to, icon, faIcon, label, end }) {
       </span>
       {label}
     </NavLink>
-  )
-}
-
-function BacklinksNavGroup({ siteId, item }) {
-  const location = useLocation()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const base = `/site/${siteId}/backlinks`
-  const onBacklinks = location.pathname.includes('/backlinks')
-  const activeView = (() => {
-    const raw = String(searchParams.get('view') || 'pulse').toLowerCase()
-    if (raw === 'overview') return 'pulse'
-    if (raw === 'gap') return 'gaps'
-    if (raw === 'all') return 'tracked'
-    if (['good', 'ok', 'risk', 'spam'].includes(raw)) return 'health'
-    return raw
-  })()
-
-  return (
-    <div style={{ marginBottom: 2 }}>
-      <button
-        type="button"
-        onClick={() => navigate(base)}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '9px 12px',
-          borderRadius: 8,
-          border: 'none',
-          cursor: 'pointer',
-          fontFamily: 'inherit',
-          textAlign: 'left',
-          color: onBacklinks ? T.orange : T.text2,
-          background: onBacklinks ? T.orangeDim : 'transparent',
-          fontSize: 13,
-          fontWeight: onBacklinks ? 600 : 400,
-          borderLeft: `2px solid ${onBacklinks ? T.orange : 'transparent'}`,
-        }}
-      >
-        <span style={{ width: 20, textAlign: 'center', fontSize: 15 }}>{item.icon}</span>
-        <span style={{ flex: 1 }}>{item.label}</span>
-        <FontAwesomeIcon
-          icon={faChevronDown}
-          style={{
-            fontSize: 10,
-            opacity: 0.7,
-            transform: onBacklinks ? 'rotate(0deg)' : 'rotate(-90deg)',
-            transition: 'transform 0.15s',
-          }}
-        />
-      </button>
-
-      {onBacklinks && (
-        <div style={{ padding: '2px 0 6px 18px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-          {item.children.map((child) => {
-            const to = child.view === 'pulse' ? base : `${base}?view=${child.view}`
-            const isActive = activeView === child.view
-
-            return (
-              <NavLink
-                key={child.view}
-                to={to}
-                style={{
-                  display: 'block',
-                  padding: '6px 10px',
-                  borderRadius: 6,
-                  fontSize: 12,
-                  fontWeight: isActive ? 700 : 500,
-                  color: isActive ? T.orange : T.muted,
-                  background: isActive ? T.orangeDim : 'transparent',
-                  textDecoration: 'none',
-                }}
-              >
-                {child.label}
-              </NavLink>
-            )
-          })}
-        </div>
-      )}
-    </div>
   )
 }
 
@@ -211,18 +116,14 @@ export default function Sidebar({ siteId, site, user, onSignOut, healthScore = n
 
       <nav style={{ flex: 1, padding: '10px 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {NAV_ITEMS.map((item) => (
-          item.children ? (
-            <BacklinksNavGroup key={item.path} siteId={siteId} item={item} />
-          ) : (
-            <NavItem
-              key={item.path}
-              to={`/site/${siteId}${item.path ? '/' + item.path : ''}`}
-              icon={item.icon}
-              faIcon={item.faIcon}
-              label={item.label}
-              end={item.end}
-            />
-          )
+          <NavItem
+            key={item.path}
+            to={`/site/${siteId}${item.path ? '/' + item.path : ''}`}
+            icon={item.icon}
+            faIcon={item.faIcon}
+            label={item.label}
+            end={item.end}
+          />
         ))}
 
         {user?.email === ADMIN_EMAIL && (
