@@ -4,9 +4,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
   faSortUp, faSortDown, faFileExport, faTrash, faEllipsisVertical,
-  faChevronLeft, faChevronRight,
+  faChevronLeft, faChevronRight, faCopy, faBan, faEnvelope,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
+import toast from '../utils/toast'
 import {
   classifyBacklink,
   getDomainRank,
@@ -15,18 +16,24 @@ import {
   summarizeBacklinkQuality,
 } from '../utils/backlinkQuality'
 
-function RowActionsMenu({ backlink, onRemove }) {
+function RowActionsMenu({ backlink, onRemove, isSpam = false }) {
   const [open, setOpen] = useState(false)
+  const [copied, setCopied] = useState('')
   const btnRef = useRef(null)
   const menuRef = useRef(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
+  const href = backlink?.url ? normalizeUrl(backlink.url) : ''
+  const host = getHostname(backlink?.url || backlink?.source_domain || backlink?.name)
+  const disavowLine = host ? `domain:${host}` : (href || '')
+
   const placeMenu = () => {
     const btn = btnRef.current
+    const menu = menuRef.current
     if (!btn) return
     const rect = btn.getBoundingClientRect()
-    const menuWidth = 200
-    const menuHeight = 96
+    const menuWidth = isSpam ? 268 : 210
+    const menuHeight = menu?.offsetHeight || (isSpam ? 280 : 100)
     const gap = 6
     let left = rect.right - menuWidth
     let top = rect.bottom + gap
@@ -35,7 +42,7 @@ function RowActionsMenu({ backlink, onRemove }) {
       left = window.innerWidth - menuWidth - 8
     }
     if (top + menuHeight > window.innerHeight - 8) {
-      top = rect.top - menuHeight - gap
+      top = Math.max(8, rect.top - menuHeight - gap)
     }
     setPos({ top, left })
   }
@@ -43,10 +50,13 @@ function RowActionsMenu({ backlink, onRemove }) {
   useLayoutEffect(() => {
     if (!open) return
     placeMenu()
-  }, [open])
+  }, [open, isSpam, copied])
 
   useEffect(() => {
-    if (!open) return
+    if (!open) {
+      setCopied('')
+      return
+    }
     const onDoc = (e) => {
       if (btnRef.current?.contains(e.target)) return
       if (menuRef.current?.contains(e.target)) return
@@ -68,17 +78,27 @@ function RowActionsMenu({ backlink, onRemove }) {
     }
   }, [open])
 
-  const href = backlink?.url ? normalizeUrl(backlink.url) : ''
+  const copyText = async (text, key, message) => {
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      toast.success(message)
+      setTimeout(() => setCopied((cur) => (cur === key ? '' : cur)), 1600)
+    } catch {
+      toast.error('Could not copy')
+    }
+  }
 
   return (
     <div className="bl-row-actions">
       <button
         ref={btnRef}
         type="button"
-        className={`bl-menu-trigger${open ? ' bl-menu-trigger--open' : ''}`}
+        className={`bl-menu-trigger${open ? ' bl-menu-trigger--open' : ''}${isSpam ? ' bl-menu-trigger--spam' : ''}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Row actions"
+        aria-label={isSpam ? 'Spam link actions' : 'Row actions'}
         onClick={(e) => {
           e.stopPropagation()
           setOpen((v) => !v)
@@ -89,41 +109,146 @@ function RowActionsMenu({ backlink, onRemove }) {
       {open && createPortal(
         <div
           ref={menuRef}
-          className="bl-action-menu"
+          className={`bl-action-menu${isSpam ? ' bl-action-menu--spam' : ''}`}
           role="menu"
-          style={{ top: pos.top, left: pos.left }}
+          style={{ top: pos.top, left: pos.left, width: isSpam ? 268 : undefined }}
         >
-          {href ? (
-            <a
-              href={href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bl-action-menu__item"
-              role="menuitem"
-              onClick={() => setOpen(false)}
-            >
-              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-              Open referring page
-            </a>
+          {isSpam ? (
+            <>
+              <div className="bl-action-menu__head">
+                <span className="bl-action-menu__eyebrow">Remove this spam link</span>
+                <span className="bl-action-menu__domain" title={host || href}>
+                  {host || 'Unknown domain'}
+                </span>
+                <span className="bl-action-menu__hint">
+                  Lives on their site — not yours. Follow these steps for this URL.
+                </span>
+              </div>
+
+              <a
+                href={href || undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`bl-action-menu__item${href ? '' : ' bl-action-menu__item--disabled'}`}
+                role="menuitem"
+                onClick={(e) => {
+                  if (!href) e.preventDefault()
+                  else setOpen(false)
+                }}
+              >
+                <span className="bl-action-menu__step">1</span>
+                <span className="bl-action-menu__item-body">
+                  <span>Open referring page</span>
+                  <span className="bl-action-menu__sub">Confirm the link is live</span>
+                </span>
+                <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="bl-action-menu__trail" />
+              </a>
+
+              <button
+                type="button"
+                className="bl-action-menu__item"
+                role="menuitem"
+                onClick={() => copyText(
+                  host || href,
+                  'domain',
+                  host ? `Copied ${host}` : 'Copied URL'
+                )}
+              >
+                <span className="bl-action-menu__step">2</span>
+                <span className="bl-action-menu__item-body">
+                  <span>{copied === 'domain' ? 'Domain copied' : 'Copy domain to contact them'}</span>
+                  <span className="bl-action-menu__sub">Ask them to delete or nofollow</span>
+                </span>
+                <FontAwesomeIcon icon={faEnvelope} className="bl-action-menu__trail" />
+              </button>
+
+              <button
+                type="button"
+                className="bl-action-menu__item"
+                role="menuitem"
+                disabled={!disavowLine}
+                onClick={() => copyText(
+                  disavowLine,
+                  'disavow',
+                  'Disavow line copied'
+                )}
+              >
+                <span className="bl-action-menu__step">3</span>
+                <span className="bl-action-menu__item-body">
+                  <span>{copied === 'disavow' ? 'Copied for disavow file' : 'Copy for Google disavow'}</span>
+                  <span className="bl-action-menu__sub">{disavowLine || 'No domain available'}</span>
+                </span>
+                <FontAwesomeIcon icon={faCopy} className="bl-action-menu__trail" />
+              </button>
+
+              <a
+                href="https://search.google.com/search-console/disavow-links"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bl-action-menu__item"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+              >
+                <span className="bl-action-menu__step">4</span>
+                <span className="bl-action-menu__item-body">
+                  <span>Open Google Disavow</span>
+                  <span className="bl-action-menu__sub">Paste the line if they won’t remove it</span>
+                </span>
+                <FontAwesomeIcon icon={faBan} className="bl-action-menu__trail" />
+              </a>
+
+              <div className="bl-action-menu__sep" role="separator" />
+              <button
+                type="button"
+                className="bl-action-menu__item bl-action-menu__item--danger"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false)
+                  onRemove?.(backlink.id)
+                }}
+              >
+                <FontAwesomeIcon icon={faTrash} />
+                <span className="bl-action-menu__item-body">
+                  <span>Remove from this list only</span>
+                  <span className="bl-action-menu__sub">Does not change your website</span>
+                </span>
+              </button>
+            </>
           ) : (
-            <span className="bl-action-menu__item bl-action-menu__item--disabled" role="menuitem">
-              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-              Open referring page
-            </span>
+            <>
+              {href ? (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bl-action-menu__item"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                >
+                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                  Open referring page
+                </a>
+              ) : (
+                <span className="bl-action-menu__item bl-action-menu__item--disabled" role="menuitem">
+                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                  Open referring page
+                </span>
+              )}
+              <div className="bl-action-menu__sep" role="separator" />
+              <button
+                type="button"
+                className="bl-action-menu__item bl-action-menu__item--danger"
+                role="menuitem"
+                onClick={() => {
+                  setOpen(false)
+                  onRemove?.(backlink.id)
+                }}
+              >
+                <FontAwesomeIcon icon={faTrash} />
+                Remove from this list
+              </button>
+            </>
           )}
-          <div className="bl-action-menu__sep" role="separator" />
-          <button
-            type="button"
-            className="bl-action-menu__item bl-action-menu__item--danger"
-            role="menuitem"
-            onClick={() => {
-              setOpen(false)
-              onRemove?.(backlink.id)
-            }}
-          >
-            <FontAwesomeIcon icon={faTrash} />
-            Remove
-          </button>
         </div>,
         document.body
       )}
@@ -568,6 +693,16 @@ export default function BacklinksTable({
         )}
       </div>
 
+      {qualityFilter === 'Spam' && sorted.length > 0 && (
+        <div className="bl-spam-guide bl-spam-guide--live" role="status">
+          <FontAwesomeIcon icon={faTriangleExclamation} />
+          <span>
+            <strong>{sorted.length} spam {sorted.length === 1 ? 'link' : 'links'}</strong>
+            {' '}— open <strong>⋯</strong> on a row for steps for that domain (open page, copy contact domain, Google disavow).
+          </span>
+        </div>
+      )}
+
       {sorted.length === 0 ? (
         <div className="bl-empty">No backlinks match these filters.</div>
       ) : (
@@ -669,7 +804,11 @@ export default function BacklinksTable({
                       </td>
 
                       <td className="bl-td-actions">
-                        <RowActionsMenu backlink={b} onRemove={onRemove} />
+                        <RowActionsMenu
+                          backlink={b}
+                          onRemove={onRemove}
+                          isSpam={qualityKey === 'spam'}
+                        />
                       </td>
                     </tr>
                   )

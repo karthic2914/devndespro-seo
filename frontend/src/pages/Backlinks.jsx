@@ -224,7 +224,7 @@ export default function Backlinks() {
   }
 
   const remove = async (id) => {
-    try { await api.delete(`/sites/${siteId}/backlinks/${id}`); toast.success('Removed'); load() }
+    try { await api.delete(`/sites/${siteId}/backlinks/${id}`); toast.success('Removed from tracking list'); load() }
     catch { toast.error('Failed to remove') }
   }
 
