@@ -621,7 +621,7 @@ export default function BacklinksTable({
                     >
                       <td className="bl-td-domain">
                         <div className="bl-domain-name">
-                          {host || b.name || '—'}
+                          <span className="bl-domain-name__host">{host || b.name || '—'}</span>
                           {qualityKey === 'spam' && (
                             <span className="bl-spam-badge">
                               <FontAwesomeIcon icon={faTriangleExclamation} />SPAM
