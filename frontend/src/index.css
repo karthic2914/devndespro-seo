@@ -1641,6 +1641,101 @@ body:has(.app-shell),
 .bl-source-badge--detected { background: rgba(37,99,235,0.10); color: #1D4ED8; }
 
 .bl-table--industry { min-width: 1080px; }
+.bl-table--compact {
+  width: 100%;
+  min-width: 0;
+  table-layout: fixed;
+}
+.bl-table--compact .bl-th-domain,
+.bl-table--compact .bl-td-domain { width: 28%; }
+.bl-table--compact .bl-td-anchor { width: 26%; }
+.bl-table--compact .bl-th-center,
+.bl-table--compact .bl-td-center { width: 9%; }
+.bl-table--compact .bl-th-actions,
+.bl-table--compact .bl-td-actions {
+  width: 148px;
+  text-align: right;
+}
+.bl-table--compact .bl-domain-name,
+.bl-table--compact .bl-page-url,
+.bl-table--compact .bl-anchor-text,
+.bl-table--compact .bl-target-url {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.bl-table--compact .bl-page-url {
+  display: block;
+  color: #64748B;
+  font-size: 11px;
+}
+.bl-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+.bl-row-meta-date {
+  font-size: 10px;
+  color: #94A3B8;
+  font-weight: 600;
+}
+.bl-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.bl-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+}
+.bl-action-btn:hover {
+  background: #F8FAFC;
+  border-color: #CBD5E1;
+  color: #111827;
+}
+.bl-action-btn--danger {
+  color: #B91C1C;
+  border-color: #FECACA;
+  background: #FEF2F2;
+}
+.bl-action-btn--danger:hover {
+  background: #FEE2E2;
+  border-color: #FCA5A5;
+  color: #991B1B;
+}
+.bl-action-btn--disabled {
+  opacity: 0.45;
+  cursor: default;
+  pointer-events: none;
+}
+.bl-table-scroll {
+  overflow-x: auto;
+  border-radius: 8px;
+}
+.bl-table-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+.bl-table-scroll::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 99px;
+}
 .bl-td-traffic,
 .bl-td-date {
   font-size: 12px;

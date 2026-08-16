@@ -2,7 +2,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
-  faSortUp, faSortDown, faFileExport, faEllipsisVertical,
+  faSortUp, faSortDown, faFileExport, faTrash,
   faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
@@ -196,7 +196,6 @@ export default function BacklinksTable({
   const [search, setSearch] = useState('')
   const [sort, setSort] = useState({ field: 'quality', dir: 'desc' })
   const [page, setPage] = useState(1)
-  const [openMenuId, setOpenMenuId] = useState(null)
 
   useEffect(() => {
     setQualityFilter(QUALITY_VIEWS[qualityView] || 'All')
@@ -214,12 +213,6 @@ export default function BacklinksTable({
     setQualityFilter('All')
     setPage(1)
   }, [searchSeedKey, searchSeed])
-
-  useEffect(() => {
-    const close = () => setOpenMenuId(null)
-    window.addEventListener('click', close)
-    return () => window.removeEventListener('click', close)
-  }, [])
 
   const toggleSort = (field) => {
     setSort(prev => prev.field === field
@@ -463,14 +456,14 @@ export default function BacklinksTable({
       ) : (
         <>
           <div className="bl-table-scroll">
-            <table className="bl-table bl-table--industry">
+            <table className="bl-table bl-table--compact">
               <thead>
                 <tr>
                   <th className="bl-th-domain" onClick={() => toggleSort('name')}>
                     Referring page <SortIcon field="name" sort={sort} />
                   </th>
                   <th onClick={() => toggleSort('anchor')}>
-                    Anchor &amp; target URL <SortIcon field="anchor" sort={sort} />
+                    Anchor <SortIcon field="anchor" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('domainRank')}>
                     DR <SortIcon field="domainRank" sort={sort} />
@@ -478,21 +471,11 @@ export default function BacklinksTable({
                   <th className="bl-th-center" onClick={() => toggleSort('quality')}>
                     Quality <SortIcon field="quality" sort={sort} />
                   </th>
-                  <th className="bl-th-center" onClick={() => toggleSort('traffic')}>
-                    Traffic <SortIcon field="traffic" sort={sort} />
-                  </th>
                   <th className="bl-th-center" onClick={() => toggleSort('type')}>
                     Type <SortIcon field="type" sort={sort} />
                   </th>
-                  <th className="bl-th-center" onClick={() => toggleSort('firstSeen')}>
-                    First seen <SortIcon field="firstSeen" sort={sort} />
-                  </th>
-                  <th className="bl-th-center" onClick={() => toggleSort('lastSeen')}>
-                    Last seen <SortIcon field="lastSeen" sort={sort} />
-                  </th>
                   <th className="bl-th-center">Status</th>
-                  <th className="bl-th-center">Source</th>
-                  <th className="bl-th-center" />
+                  <th className="bl-th-actions">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -504,6 +487,7 @@ export default function BacklinksTable({
                   const target = b.target_url
                     ? normalizeUrl(b.target_url).replace(/^https?:\/\//, '')
                     : ''
+                  const seen = formatDate(getLastSeen(b) || getFirstSeen(b))
 
                   return (
                     <tr
@@ -528,16 +512,16 @@ export default function BacklinksTable({
                           )}
                         </div>
                         {b.url && (
-                          <a
-                            href={normalizeUrl(b.url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="bl-page-url"
-                          >
+                          <div className="bl-page-url" title={normalizeUrl(b.url)}>
                             {path || getHostname(b.url)}
-                            <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-                          </a>
+                          </div>
                         )}
+                        <div className="bl-row-meta">
+                          <span className={`bl-source-badge bl-source-badge--${source.cls}`}>
+                            {source.label}
+                          </span>
+                          <span className="bl-row-meta-date">Seen {seen}</span>
+                        </div>
                       </td>
 
                       <td className="bl-td-anchor">
@@ -546,7 +530,7 @@ export default function BacklinksTable({
                         </span>
                         {target && (
                           <span className="bl-target-url" title={target}>
-                            {target.length > 55 ? `${target.slice(0, 53)}…` : target}
+                            → {target.length > 42 ? `${target.slice(0, 40)}…` : target}
                           </span>
                         )}
                       </td>
@@ -559,68 +543,39 @@ export default function BacklinksTable({
                         <QualityBadge backlink={b} />
                       </td>
 
-                      <td className="bl-td-center bl-td-traffic">
-                        {formatTraffic(getTraffic(b))}
-                      </td>
-
                       <td className="bl-td-center">
                         <TypeBadge type={b.type} />
-                      </td>
-
-                      <td className="bl-td-center bl-td-date">
-                        {formatDate(getFirstSeen(b))}
-                      </td>
-
-                      <td className="bl-td-center bl-td-date">
-                        {formatDate(getLastSeen(b))}
                       </td>
 
                       <td className="bl-td-center">
                         <StatusBadge status={b.status} id={b.id} onChange={onUpdateStatus} />
                       </td>
 
-                      <td className="bl-td-center">
-                        <span className={`bl-source-badge bl-source-badge--${source.cls}`}>
-                          {source.label}
-                        </span>
-                      </td>
-
-                      <td className="bl-td-center bl-td-actions">
-                        <div className="bl-row-menu">
+                      <td className="bl-td-actions">
+                        <div className="bl-actions">
+                          {b.url ? (
+                            <a
+                              href={normalizeUrl(b.url)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="bl-action-btn"
+                              title="Open referring page"
+                            >
+                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+                              <span>Open</span>
+                            </a>
+                          ) : (
+                            <span className="bl-action-btn bl-action-btn--disabled">Open</span>
+                          )}
                           <button
                             type="button"
-                            className="bl-menu-btn"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setOpenMenuId(prev => (prev === b.id ? null : b.id))
-                            }}
+                            className="bl-action-btn bl-action-btn--danger"
+                            title="Remove backlink"
+                            onClick={() => onRemove(b.id)}
                           >
-                            <FontAwesomeIcon icon={faEllipsisVertical} />
+                            <FontAwesomeIcon icon={faTrash} />
+                            <span>Remove</span>
                           </button>
-                          {openMenuId === b.id && (
-                            <div className="bl-menu-pop" onClick={(e) => e.stopPropagation()}>
-                              {b.url && (
-                                <a
-                                  href={normalizeUrl(b.url)}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="bl-menu-item"
-                                >
-                                  Open referring page
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                className="bl-menu-item bl-menu-item--danger"
-                                onClick={() => {
-                                  setOpenMenuId(null)
-                                  onRemove(b.id)
-                                }}
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          )}
                         </div>
                       </td>
                     </tr>
