@@ -3,6 +3,9 @@ const axios = require('axios')
 const BOT_UA =
   'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)'
 
+const BROWSER_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+
 function textWordCount(html) {
   try {
     const cheerio = require('cheerio')
@@ -17,6 +20,17 @@ function textWordCount(html) {
   } catch {
     return 0
   }
+}
+
+function looksLikeChallengePage(html) {
+  const raw = String(html || '').toLowerCase()
+  return (
+    raw.includes('cf-browser-verification') ||
+    raw.includes('just a moment') ||
+    raw.includes('attention required') ||
+    raw.includes('checking your browser') ||
+    raw.includes('_cf_chl')
+  )
 }
 
 /**
@@ -37,11 +51,16 @@ function detectSpaShell(html, wordCount) {
   return wordCount < 80 && hasRoot && hasModuleScripts
 }
 
-async function fetchStaticHtml(url, { timeout = 15000 } = {}) {
+async function fetchStaticHtml(url, { timeout = 15000, userAgent = BROWSER_UA } = {}) {
   const startedAt = Date.now()
   const res = await axios.get(url, {
     timeout,
-    headers: { 'User-Agent': BOT_UA },
+    headers: {
+      'User-Agent': userAgent,
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Cache-Control': 'no-cache',
+    },
     maxRedirects: 5,
     validateStatus: () => true,
     responseType: 'text',
@@ -95,9 +114,7 @@ async function renderWithBrowser(url, { timeout = 45000 } = {}) {
 
   try {
     const page = await browser.newPage()
-    await page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-    )
+    await page.setUserAgent(BROWSER_UA)
     await page.setViewport({ width: 1365, height: 900 })
     const response = await page.goto(url, {
       waitUntil: 'networkidle2',
@@ -131,8 +148,21 @@ async function renderWithBrowser(url, { timeout = 45000 } = {}) {
  * try headless Chrome so word count / H1 / links match what users see.
  */
 async function fetchPageHtml(url, options = {}) {
-  const staticFetch = await fetchStaticHtml(url, options)
-  const staticWords = textWordCount(staticFetch.html)
+  // Prefer a normal browser UA first — datacenter bots sometimes get empty/challenge HTML.
+  let staticFetch = await fetchStaticHtml(url, { ...options, userAgent: BROWSER_UA })
+  let staticWords = textWordCount(staticFetch.html)
+
+  if (staticWords < 50 || looksLikeChallengePage(staticFetch.html)) {
+    const retry = await fetchStaticHtml(url, { ...options, userAgent: BOT_UA }).catch(() => null)
+    if (retry) {
+      const retryWords = textWordCount(retry.html)
+      if (retryWords > staticWords) {
+        staticFetch = retry
+        staticWords = retryWords
+      }
+    }
+  }
+
   const spaShell = detectSpaShell(staticFetch.html, staticWords)
 
   if (!spaShell || options.forceStatic) {
@@ -141,7 +171,9 @@ async function fetchPageHtml(url, options = {}) {
       wordCountHint: staticWords,
       spaShell: false,
       jsRendered: false,
-      renderError: null,
+      renderError: looksLikeChallengePage(staticFetch.html)
+        ? 'Possible bot-challenge HTML returned to crawler'
+        : null,
     }
   }
 
@@ -195,4 +227,5 @@ module.exports = {
   detectSpaShell,
   textWordCount,
   BOT_UA,
+  BROWSER_UA,
 }

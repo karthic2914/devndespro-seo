@@ -80,3 +80,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>
 )
 
+// Remove crawler-only shell after React mounts so headless audits don't see duplicate H1s.
+queueMicrotask(() => {
+  const shell = document.getElementById('seo-shell')
+  if (shell) shell.remove()
+})
+

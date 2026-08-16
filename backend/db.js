@@ -70,6 +70,15 @@ async function initDB() {
       score INTEGER DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT NOW()
     );
+    ALTER TABLE audit_results ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'complete';
+    ALTER TABLE audit_results ADD COLUMN IF NOT EXISTS pages_crawled INTEGER DEFAULT 0;
+    ALTER TABLE audit_results ADD COLUMN IF NOT EXISTS pages_total INTEGER DEFAULT 0;
+    ALTER TABLE audit_results ADD COLUMN IF NOT EXISTS site_health_pct INTEGER;
+    -- Homepage audits used to omit status; latest-load filtered those out and kept stale issues.
+    UPDATE audit_results
+    SET status = 'complete'
+    WHERE status IS NULL
+      AND (results->>'multipage') IS DISTINCT FROM 'true';
     CREATE TABLE IF NOT EXISTS alerts (
       id SERIAL PRIMARY KEY,
       site_id INTEGER REFERENCES sites(id) ON DELETE CASCADE,

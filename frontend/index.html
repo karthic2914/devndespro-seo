@@ -37,7 +37,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-      /* Hide pre-React SEO shell from users (still readable by crawlers/audits). */
+      /* Hide crawler shell from users (still in HTML for audits/bots). */
       html, body { margin: 0; background: #FBFAF8; }
       #seo-shell {
         position: absolute !important;
@@ -54,95 +54,96 @@
   </head>
   <body>
     <!--
-      Crawler-visible shell: visually hidden for users, replaced when React mounts.
-      Gives static audits a real H1 + enough copy for content checks.
+      Outside #root so React never wipes it on mount.
+      Static audits/bots see H1 + copy; main.jsx removes this after React boots
+      so headless renders do not double-count H1.
     -->
-    <div id="root">
-      <main id="seo-shell" aria-hidden="true">
-        <h1>Be discovered by Google. Be recommended by AI.</h1>
-        <p>
-          DevnDespro SEO is a website SEO management platform for Nordic businesses.
-          Track keywords, monitor backlinks, run technical site audits, and measure how often
-          AI assistants cite your brand — all in one private workspace.
-        </p>
-        <p>
-          Understand how visible your business is across search engines and AI platforms,
-          then follow a clear, impact-ordered plan to improve rankings, crawl health, and
-          recommendation likelihood. Built for teams who need actionable signals, not generic checklists.
-        </p>
+    <main id="seo-shell" aria-hidden="true">
+      <h1>Be discovered by Google. Be recommended by AI.</h1>
+      <p>
+        DevnDespro SEO is a website SEO management platform for Nordic businesses.
+        Track keywords, monitor backlinks, run technical site audits, and measure how often
+        AI assistants cite your brand — all in one private workspace.
+      </p>
+      <p>
+        Understand how visible your business is across search engines and AI platforms,
+        then follow a clear, impact-ordered plan to improve rankings, crawl health, and
+        recommendation likelihood. Built for teams who need actionable signals, not generic checklists.
+      </p>
 
-        <h2>Technical SEO and site health</h2>
-        <p>
-          Find crawl errors, broken links, weak metadata, duplicate titles, missing headings,
-          and performance issues that limit search visibility. Site Audit scores on-page SEO,
-          technical SEO, and content quality so you know what to fix first.
-        </p>
-        <p>
-          Multi-page crawls discover URLs from your sitemap and internal links, then summarise
-          critical issues and warnings across the site. Re-run audits after changes to confirm
-          site health improves and thin or duplicate pages are resolved.
-        </p>
+      <h2>Technical SEO and site health</h2>
+      <p>
+        Find crawl errors, broken links, weak metadata, duplicate titles, missing headings,
+        and performance issues that limit search visibility. Site Audit scores on-page SEO,
+        technical SEO, and content quality so you know what to fix first.
+      </p>
+      <p>
+        Multi-page crawls discover URLs from your sitemap and internal links, then summarise
+        critical issues and warnings across the site. Re-run audits after changes to confirm
+        site health improves and thin or duplicate pages are resolved.
+      </p>
 
-        <h2>Keywords, backlinks and domain authority</h2>
-        <p>
-          Monitor ranking keywords, estimate traffic opportunity, and watch competitor overlap.
-          Backlink analysis highlights referring domains, spam risk, and opportunities to strengthen
-          your link profile. Domain authority and link score help you prioritise outreach and
-          disavow work when low-quality links threaten trust.
-        </p>
-        <p>
-          Connect Google Search Console for verified performance data alongside third-party SEO
-          signals. Keep projects separate by hostname so parent marketing sites and product
-          subdomains each get their own health score and link graph.
-        </p>
+      <h2>Keywords, backlinks and domain authority</h2>
+      <p>
+        Monitor ranking keywords, estimate traffic opportunity, and watch competitor overlap.
+        Backlink analysis highlights referring domains, spam risk, and opportunities to strengthen
+        your link profile. Domain authority and link score help you prioritise outreach and
+        disavow work when low-quality links threaten trust.
+      </p>
+      <p>
+        Connect Google Search Console for verified performance data alongside third-party SEO
+        signals. Keep projects separate by hostname so parent marketing sites and product
+        subdomains each get their own health score and link graph.
+      </p>
 
-        <h2>AI visibility and Nordic search</h2>
-        <p>
-          Check whether ChatGPT and Claude mention, understand, or recommend your business.
-          Combine AI citation monitoring with Nordic market insights — Norwegian search intent,
-          regional keywords, and local discovery opportunities — so your content is ready for
-          both classic SERPs and answer engines.
-        </p>
-        <p>
-          Impact-based action plans prioritise improvements by visibility impact instead of
-          forcing you through endless generic SEO tasks. Secure private workspaces keep website
-          analysis, reports, and business visibility data protected for authorised users only.
-        </p>
+      <h2>AI visibility and Nordic search</h2>
+      <p>
+        Check whether ChatGPT and Claude mention, understand, or recommend your business.
+        Combine AI citation monitoring with Nordic market insights — Norwegian search intent,
+        regional keywords, and local discovery opportunities — so your content is ready for
+        both classic SERPs and answer engines.
+      </p>
+      <p>
+        Impact-based action plans prioritise improvements by visibility impact instead of
+        forcing you through endless generic SEO tasks. Secure private workspaces keep website
+        analysis, reports, and business visibility data protected for authorised users only.
+      </p>
 
-        <h2>How it works</h2>
-        <p>
-          Add your website and select the market you want to analyse. Run the analysis to audit
-          your site, keywords, and AI visibility signals. Then improve your visibility by following
-          clear recommendations ordered by business impact. Private beta access is limited to
-          authorised early users.
-        </p>
-        <p>
-          Whether you manage a single product domain or a portfolio of brands, DevnDespro SEO
-          gives you one place to measure site health, fix technical blockers, grow organic reach,
-          and stay discoverable as search and AI recommendation patterns evolve.
-        </p>
+      <h2>How it works</h2>
+      <p>
+        Add your website and select the market you want to analyse. Run the analysis to audit
+        your site, keywords, and AI visibility signals. Then improve your visibility by following
+        clear recommendations ordered by business impact. Private beta access is limited to
+        authorised early users.
+      </p>
+      <p>
+        Whether you manage a single product domain or a portfolio of brands, DevnDespro SEO
+        gives you one place to measure site health, fix technical blockers, grow organic reach,
+        and stay discoverable as search and AI recommendation patterns evolve.
+      </p>
 
-        <h2>Frequently asked questions</h2>
-        <h3>What does the site health score measure?</h3>
-        <p>
-          Site health combines on-page SEO, technical SEO, and content quality checks from your
-          latest audit. Critical issues such as missing H1 headings or very thin pages pull the
-          score down; resolving duplicates, metadata gaps, and crawl errors raises it.
-        </p>
-        <h3>Who is DevnDespro SEO for?</h3>
-        <p>
-          Marketing and growth teams at Nordic companies who need practical SEO and AI visibility
-          insights without juggling multiple disconnected tools. Agencies and in-house SEO owners
-          can track projects per domain and share clear fix priorities with stakeholders.
-        </p>
-        <h3>How is this different from a one-off audit PDF?</h3>
-        <p>
-          Continuous monitoring of keywords, backlinks, and AI citations sits alongside re-runnable
-          site audits, so improvements compound over time instead of becoming a forgotten report.
-          You can verify fixes, watch spammy backlinks, and re-score health after each release.
-        </p>
-      </main>
-    </div>
+      <h2>Frequently asked questions</h2>
+      <h3>What does the site health score measure?</h3>
+      <p>
+        Site health combines on-page SEO, technical SEO, and content quality checks from your
+        latest audit. Critical issues such as missing H1 headings or very thin pages pull the
+        score down; resolving duplicates, metadata gaps, and crawl errors raises it.
+      </p>
+      <h3>Who is DevnDespro SEO for?</h3>
+      <p>
+        Marketing and growth teams at Nordic companies who need practical SEO and AI visibility
+        insights without juggling multiple disconnected tools. Agencies and in-house SEO owners
+        can track projects per domain and share clear fix priorities with stakeholders.
+      </p>
+      <h3>How is this different from a one-off audit PDF?</h3>
+      <p>
+        Continuous monitoring of keywords, backlinks, and AI citations sits alongside re-runnable
+        site audits, so improvements compound over time instead of becoming a forgotten report.
+        You can verify fixes, watch spammy backlinks, and re-score health after each release.
+      </p>
+    </main>
+
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

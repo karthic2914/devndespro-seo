@@ -986,7 +986,19 @@ export default function SiteAudit() {
           new CustomEvent('site-health-updated', { detail: { health: Number(r.data.score) } })
         )
       }
-      showSnackbar('Audit completed successfully!', 'success')
+      const words = Number(r?.data?.crawl?.wordCount || 0)
+      const h1Issue = (r?.data?.checks || []).find((c) => c.check === 'h1')
+      if (words < 50) {
+        showSnackbar(
+          `Audit finished but crawl saw ~${words} words (empty/blocked HTML). Deploy backend fetch fix and re-run.`,
+          'error'
+        )
+      } else {
+        showSnackbar(
+          `Audit completed — ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
+          'success'
+        )
+      }
       syncBacklinksAfterAudit()
     } catch (e) {
       setRunError(e.response?.data?.error || 'Audit failed - check the site URL is accessible')

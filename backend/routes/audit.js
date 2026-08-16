@@ -217,7 +217,8 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     if (imgNoAlt > 0) add('img_alt', 'warning', `${imgNoAlt}/${imgCount} images missing alt text`, 'Medium', 'On-Page SEO')
     else if (imgCount > 0) add('img_alt', 'pass', `All ${imgCount} images have alt text`, 'Medium', 'On-Page SEO')
 
-    // Content
+    // Content — strip non-visible nodes first (scripts inflate/confuse SPA shells)
+    $('script, style, noscript').remove()
     const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
     if (spaUnrendered && wordCount < 300) {
       add(
@@ -483,7 +484,11 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         renderError: fetched.renderError || null,
       },
     }
-    await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])
+    await pool.query(
+      `INSERT INTO audit_results (site_id, results, score, status)
+       VALUES ($1, $2, $3, 'complete')`,
+      [req.siteId, JSON.stringify(result), score]
+    )
     const aeoChecksAll = checks.filter(c => c.category === 'AI Snippet')
     const trueAeoChecks = checks.filter(c => c.category === 'AEO')
     const aeoScore = trueAeoChecks.length ? Math.round(trueAeoChecks.reduce((s, i) => s + (i.status === 'pass' ? 100 : i.status === 'warning' ? 55 : 15), 0) / trueAeoChecks.length) : 100
@@ -511,10 +516,32 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 })
 
 router.get('/:siteId/audit/latest', auth, verifySite, async (req, res) => {
-  const { rows } = await pool.query(
-    "SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited FROM audit_results ar LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id WHERE ar.site_id=$1 AND (ar.results->>'multipage') IS NULL AND ar.status = 'complete' ORDER BY ar.created_at DESC LIMIT 2",
+  // Prefer newest homepage audit. Include null status (older rows) and ignore in-progress multipage.
+  let { rows } = await pool.query(
+    `SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited
+     FROM audit_results ar
+     LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id
+     WHERE ar.site_id=$1
+       AND COALESCE(ar.results->>'multipage', 'false') <> 'true'
+       AND COALESCE(ar.status, 'complete') IN ('complete')
+       AND COALESCE(ar.status, 'complete') <> 'running'
+     ORDER BY ar.id DESC
+     LIMIT 2`,
     [req.siteId]
   )
+  if (!rows[0]) {
+    const fallback = await pool.query(
+      `SELECT ar.results, ar.score, ar.created_at, sm.chatgpt_cited, sm.claude_cited
+       FROM audit_results ar
+       LEFT JOIN seo_metrics sm ON sm.site_id = ar.site_id
+       WHERE ar.site_id=$1
+         AND COALESCE(ar.results->>'multipage', 'false') <> 'true'
+       ORDER BY ar.id DESC
+       LIMIT 2`,
+      [req.siteId]
+    )
+    rows = fallback.rows
+  }
   if (!rows[0]) return res.json(null)
   const previousScore = rows[1] ? rows[1].score : null
   const scoreChange = previousScore !== null ? rows[0].score - previousScore : null
@@ -677,7 +704,12 @@ router.get('/:siteId/ai-visibility/improvements', auth, verifySite, async (req, 
   // Skip multipage crawl rows -- they store results as { multipage:true, pages:[...] }
   // with no top-level 'checks' array, which silently produced 0 tips before this fix.
   const { rows } = await pool.query(
-    "SELECT results FROM audit_results WHERE site_id=$1 AND (results->>'multipage') IS NULL AND status = 'complete' ORDER BY id DESC LIMIT 1",
+    "SELECT results FROM audit_results
+     WHERE site_id=$1
+       AND (results->>'multipage') IS NULL
+       AND COALESCE(status, 'complete') = 'complete'
+     ORDER BY id DESC
+     LIMIT 1",
     [req.siteId]
   )
   if (!rows.length) return res.json({ tips: [] })
