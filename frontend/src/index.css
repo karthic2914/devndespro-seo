@@ -641,6 +641,83 @@ body:has(.app-shell),
 .metric-card__value { font-size: 26px; font-weight: 700; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
 .metric-card__sub   { font-size: 11px; color: var(--muted); margin-top: 4px; }
 
+/* Score ⓘ tooltips */
+.score-label-with-tip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.score-info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+.score-info-tip__btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 99px;
+  background: transparent;
+  color: #94A3B8;
+  cursor: help;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 1;
+}
+.score-info-tip__btn:hover,
+.score-info-tip--open .score-info-tip__btn,
+.score-info-tip__btn:focus-visible {
+  color: #64748B;
+  outline: none;
+}
+.score-info-tip__pop {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  z-index: 80;
+  width: min(260px, 70vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #E5E7EB;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
+  pointer-events: none;
+}
+.score-info-tip__pop::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -6px;
+  border: 6px solid transparent;
+  border-top-color: #fff;
+  filter: drop-shadow(0 1px 0 #E5E7EB);
+}
+.score-info-tip__title {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #0F172A;
+  margin-bottom: 4px;
+}
+.score-info-tip__body {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #64748B;
+}
+
 /* -- Benchmark Card -- */
 .bench-card { background: #fff; border: 1px solid var(--dark4); border-radius: var(--radius-lg); padding: 14px 18px; box-shadow: var(--shadow); }
 .bench-card__header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }

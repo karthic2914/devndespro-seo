@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import ScoreInfoTip from './ScoreInfoTip'
 // Snackbar (Toast) component for alerts
 export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClose, position = 'bottom' }) => {
   useEffect(() => {
@@ -116,13 +117,20 @@ export const MetricCard = ({ label, value, sub, accent }) => (
   </div>
 )
 
-export const StatCard = ({ label, value, sub, icon, color, trend, accentTop }) => (
+export const StatCard = ({ label, value, sub, icon, color, trend, accentTop, scoreKey }) => (
   <div
     className="stat-card"
     style={accentTop ? { borderTop: `3px solid ${color || 'var(--orange)'}` } : undefined}
   >
     <div className="stat-card__header">
-      <div className="stat-card__label">{label}</div>
+      <div className="stat-card__label">
+        {scoreKey ? (
+          <span className="score-label-with-tip">
+            {label}
+            <ScoreInfoTip scoreKey={scoreKey} />
+          </span>
+        ) : label}
+      </div>
       {icon && <div style={{ color: color || 'var(--orange)', fontSize: 13 }}>{icon}</div>}
     </div>
     <div className="stat-card__value" style={{ color: color || 'var(--text)' }}>{value}</div>

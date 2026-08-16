@@ -23,6 +23,7 @@ import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 import MultipageScoreBanner from '../components/audit/MultipageScoreBanner'
 import DecisionCenter from '../components/dashboard/DecisionCenter'
+import ScoreInfoTip from '../components/ScoreInfoTip'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
 
@@ -2755,8 +2756,9 @@ export default function SiteAudit() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10 }}>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
                   Domain Rank
+                  <ScoreInfoTip scoreKey="domainRank" />
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
@@ -2766,8 +2768,9 @@ export default function SiteAudit() {
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
                   Link Score
+                  <ScoreInfoTip scoreKey="linkScore" />
                 </div>
                 <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
                   {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>

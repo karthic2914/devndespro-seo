@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faWandMagicSparkles } from '@fortawesome/free-solid-svg-icons'
 import { Logo, T } from '../UI'
 import SiteFavicon from '../SiteFavicon'
+import ScoreInfoTip from '../ScoreInfoTip'
 
 const NAV_ITEMS = [
   { path: '', label: 'Overview', icon: '▦', end: true },
@@ -92,9 +93,12 @@ export default function Sidebar({ siteId, site, user, onSignOut, healthScore = n
                 padding: 0,
                 cursor: 'pointer',
                 fontFamily: 'inherit',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
-              Site Health {score != null ? Math.round(Number(score)) : 'N/A'}
+              Site Health <ScoreInfoTip scoreKey="siteHealth" asSpan /> {score != null ? Math.round(Number(score)) : 'N/A'}
               {score != null && '/100'}
             </button>
           </div>

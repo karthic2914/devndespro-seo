@@ -12,6 +12,7 @@ import { Logo } from '../components/UI'
 import api from '../utils/api'
 import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
+import ScoreInfoTip from './ScoreInfoTip'
 import { canUseBacklinks, canUseAiAssistant, canUseColdEmails } from '../utils/features'
 
 const NAV = [
@@ -172,7 +173,10 @@ export default function Layout() {
                   return (
                     <>
                       <div className="site-card__health-top">
-                        <span className="site-card__health-label">Site Health</span>
+                        <span className="site-card__health-label score-label-with-tip">
+                          Site Health
+                          <ScoreInfoTip scoreKey="siteHealth" asSpan />
+                        </span>
                         <span className="site-card__health-value" style={{ color: barColor }}>
                           {score != null ? score : '—'}
                           {score != null ? <span className="site-card__health-max">/100</span> : null}

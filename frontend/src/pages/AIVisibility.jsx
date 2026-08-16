@@ -19,6 +19,7 @@ import AiMediaTrustPanel from '../components/AiMediaTrustPanel'
 import { BrandFavicon } from '../components/SiteFavicon'
 import { AI_VISIBILITY_PAGE_FLOW } from '../constants/pageFlows'
 import { Modal } from '../components/UI'
+import ScoreInfoTip from '../components/ScoreInfoTip'
 import AppProcessTopBar from '../components/AppProcessTopBar'
 import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 
@@ -3021,7 +3022,10 @@ export default function AIVisibility() {
               <FontAwesomeIcon icon={faWandMagicSparkles} />
             </div>
             <h1 className="ai-vis-title">
-              AI Visibility
+              <span className="score-label-with-tip">
+                AI Visibility
+                <ScoreInfoTip scoreKey="aiVisibility" />
+              </span>
               {site && <span className="ai-vis-domain-pill">{domain}</span>}
             </h1>
           </div>

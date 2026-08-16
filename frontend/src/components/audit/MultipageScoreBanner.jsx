@@ -1,5 +1,6 @@
 ﻿import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons'
+import ScoreInfoTip from '../ScoreInfoTip'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
@@ -124,7 +125,10 @@ export default function MultipageScoreBanner({ results, history = [], onCategory
         <ScoreRing score={results.siteHealthPct || 0} size={80} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#374151', marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-            Site Health Score
+            <span className="score-label-with-tip">
+              Site Health Score
+              <ScoreInfoTip scoreKey="siteHealth" />
+            </span>
             <ScoreDelta change={scoreChange} />
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

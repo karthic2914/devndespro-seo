@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react'
+import ScoreInfoTip from '../ScoreInfoTip'
 
 function clampScore(value) {
   const number = Number(value)
@@ -23,7 +24,7 @@ function getScoreLabel(score) {
   return 'Priority'
 }
 
-function MetricCard({ label, value, hint }) {
+function MetricCard({ label, value, hint, scoreKey }) {
   const score = clampScore(value)
 
   return (
@@ -42,10 +43,12 @@ function MetricCard({ label, value, hint }) {
         textTransform: 'uppercase',
         letterSpacing: '0.05em',
         marginBottom: 5,
-      }}
-        title={hint || undefined}
-      >
+        display: 'flex',
+        alignItems: 'center',
+        gap: 5,
+      }}>
         {label}
+        {scoreKey ? <ScoreInfoTip scoreKey={scoreKey} /> : null}
       </div>
 
       <div style={{
@@ -475,24 +478,28 @@ export default function DecisionCenter({
         <MetricCard
           label="Site Health"
           value={data.siteHealth}
+          scoreKey="siteHealth"
           hint="From latest site audit"
         />
 
         <MetricCard
           label="Domain Rank"
           value={data.domainRank}
+          scoreKey="domainRank"
           hint="External · DataForSEO (DA-style, not Ahrefs/Moz)"
         />
 
         <MetricCard
           label="Link Score"
           value={data.linkScore}
+          scoreKey="linkScore"
           hint="In-app · verified backlinks"
         />
 
         <MetricCard
           label="AI Visibility"
           value={data.aiVisibility}
+          scoreKey="aiVisibility"
           hint={
             data.aiVisibilitySource === 'engines'
               ? 'ChatGPT / Claude citation rate'
@@ -611,8 +618,9 @@ export default function DecisionCenter({
                   gap: 8,
                 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
                       Domain Rank
+                      <ScoreInfoTip scoreKey="domainRank" />
                     </div>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
                       DataForSEO · not part of Link Score
@@ -637,8 +645,12 @@ export default function DecisionCenter({
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               marginBottom: 4,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
             }}>
               Link Score breakdown
+              <ScoreInfoTip scoreKey="linkScore" />
             </div>
             <div style={{
               fontSize: 10,
