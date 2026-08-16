@@ -18,6 +18,24 @@ export default function ScoreInfoTip({ scoreKey, text, title, className = '', as
   const [pos, setPos] = useState({ top: 0, left: 0, placeAbove: true })
   const wrapRef = useRef(null)
   const popRef = useRef(null)
+  const closeTimer = useRef(null)
+
+  const clearCloseTimer = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current)
+      closeTimer.current = null
+    }
+  }
+
+  const show = () => {
+    clearCloseTimer()
+    setOpen(true)
+  }
+
+  const hideSoon = () => {
+    clearCloseTimer()
+    closeTimer.current = setTimeout(() => setOpen(false), 160)
+  }
 
   const place = () => {
     const btn = wrapRef.current
@@ -46,6 +64,8 @@ export default function ScoreInfoTip({ scoreKey, text, title, className = '', as
     const id = requestAnimationFrame(() => place())
     return () => cancelAnimationFrame(id)
   }, [open, tipBody])
+
+  useEffect(() => () => clearCloseTimer(), [])
 
   useEffect(() => {
     if (!open) return
@@ -101,12 +121,13 @@ export default function ScoreInfoTip({ scoreKey, text, title, className = '', as
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
+          clearCloseTimer()
           setOpen((v) => !v)
         }}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
+        onMouseEnter={show}
+        onMouseLeave={hideSoon}
+        onFocus={show}
+        onBlur={hideSoon}
       >
         <FontAwesomeIcon icon={faCircleInfo} aria-hidden />
       </Trigger>
@@ -117,8 +138,8 @@ export default function ScoreInfoTip({ scoreKey, text, title, className = '', as
           role="tooltip"
           className={`score-info-tip__pop${pos.placeAbove ? ' score-info-tip__pop--above' : ' score-info-tip__pop--below'}`}
           style={{ top: pos.top, left: pos.left, width: pos.width }}
-          onMouseEnter={() => setOpen(true)}
-          onMouseLeave={() => setOpen(false)}
+          onMouseEnter={show}
+          onMouseLeave={hideSoon}
         >
           {tipTitle ? <span className="score-info-tip__title">{tipTitle}</span> : null}
           <span className="score-info-tip__body">{tipBody}</span>

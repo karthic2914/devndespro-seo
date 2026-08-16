@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+﻿import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -486,15 +486,15 @@ export default function Backlinks() {
         overviewContent={
           <>
       <div className="bl-metric-strip">
-        <MetricCard label="Total" value={backlinks.length} />
+        <MetricCard label="Total" value={backlinks.length} scoreKey="trackedTotal" />
         <MetricCard label="Good" value={qualitySummary.good} accent="var(--green)" scoreKey="good" />
         <MetricCard label="OK" value={qualitySummary.ok} accent="var(--amber)" scoreKey="ok" />
         <MetricCard label="Risk" value={qualitySummary.risk} accent="#c2410c" scoreKey="risk" />
         <MetricCard label="Spam" value={qualitySummary.spam} accent="var(--red)" scoreKey="spam" />
         <MetricCard label="Dofollow" value={dofollow} accent="var(--blue)" scoreKey="dofollow" />
         <MetricCard label="Live" value={live} accent="var(--blue)" scoreKey="live" />
-        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
-        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
+        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" scoreKey="estimatedBacklinks" />}
+        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" scoreKey="referringDomainsCount" />}
       </div>
 
       <Card style={{ marginBottom: 14 }}>

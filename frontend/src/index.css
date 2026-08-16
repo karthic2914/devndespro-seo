@@ -681,7 +681,7 @@ body:has(.app-shell),
   border: none;
   border-radius: 99px;
   background: transparent;
-  color: #94A3B8;
+  color: #64748B;
   cursor: help;
   display: inline-flex;
   align-items: center;
@@ -698,7 +698,7 @@ body:has(.app-shell),
 .score-info-tip__btn:hover,
 .score-info-tip--open .score-info-tip__btn,
 .score-info-tip__btn:focus-visible {
-  color: #475569;
+  color: #EA580C;
   outline: none;
 }
 .score-info-tip__pop {

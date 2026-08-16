@@ -38,6 +38,46 @@ export const SCORE_HELP = {
     body:
       'Part of Link Score: how strong your set of unique linking websites looks.',
   },
+  liveBacklinks: {
+    title: 'Live backlinks',
+    body:
+      'Count of backlinks currently counted as live for this project (from your summary / tracking data).',
+  },
+  referringDomainsCount: {
+    title: 'Referring domains',
+    body:
+      'Unique websites that link to you. More quality domains usually beat many links from the same site.',
+  },
+  brokenBacklinks: {
+    title: 'Broken',
+    body:
+      'Links that point to a dead or error page on your site. Fix or redirect the target URL to reclaim value.',
+  },
+  lostBacklinks: {
+    title: 'Lost',
+    body:
+      'Links that used to point to you but were removed or stopped counting as live.',
+  },
+  newBacklinks30d: {
+    title: 'New 30d',
+    body:
+      'Backlinks first seen in about the last 30 days.',
+  },
+  backlinkOpportunities: {
+    title: 'Opportunities',
+    body:
+      'Suggested places or gaps where you could earn new links.',
+  },
+  trackedTotal: {
+    title: 'Total tracked',
+    body:
+      'All backlink rows in your tracking list for this project (prospects + verified).',
+  },
+  estimatedBacklinks: {
+    title: 'Estimated backlinks',
+    body:
+      'Imported estimate of total backlinks for the domain. Your table below may show fewer tracked rows.',
+  },
   followNaturality: {
     title: 'Follow Naturality',
     body:

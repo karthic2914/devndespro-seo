@@ -755,12 +755,12 @@ export default function BacklinkCompetitiveHub({
               gap: 10,
               marginBottom: 12,
             }}>
-              <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} />
-              <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" />
-              <MetricCard label="Broken" value={backlinkSummary.broken || brokenCount || 0} accent="var(--red)" />
-              <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--amber)" />
-              <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" />
-              <MetricCard label="Opportunities" value={backlinkSummary.opportunities || 0} accent="var(--orange)" />
+              <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} scoreKey="liveBacklinks" />
+              <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" scoreKey="referringDomainsCount" />
+              <MetricCard label="Broken" value={backlinkSummary.broken || brokenCount || 0} accent="var(--red)" scoreKey="brokenBacklinks" />
+              <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--amber)" scoreKey="lostBacklinks" />
+              <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" scoreKey="newBacklinks30d" />
+              <MetricCard label="Opportunities" value={backlinkSummary.opportunities || 0} accent="var(--orange)" scoreKey="backlinkOpportunities" />
             </div>
           )}
           {overviewContent}
