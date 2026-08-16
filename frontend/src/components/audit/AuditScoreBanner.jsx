@@ -2,7 +2,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faMagnifyingGlass, faGears, faFileLines, faBolt, faRobot, faBrain, faWandMagicSparkles, faCommentDots, faStar, faShieldHalved, faChartLine } from '@fortawesome/free-solid-svg-icons'
 import ScoreInfoTip from '../ScoreInfoTip'
-import { auditCategoryScoreKey } from '../utils/scoreHelp'
+import { auditCategoryScoreKey } from '../../utils/scoreHelp'
 
 const CAT_ICONS = {
   'On-Page SEO': faMagnifyingGlass,
