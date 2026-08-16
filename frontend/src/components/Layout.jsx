@@ -293,7 +293,7 @@ export default function Layout() {
                         const href = child.view === 'pulse'
                           ? base
                           : `${base}?view=${child.view}`
-                        const isActive =
+                        const isCurrent =
                           child.view === 'pulse'
                             ? backlinksView === 'pulse'
                             : backlinksView === child.view
@@ -301,7 +301,11 @@ export default function Layout() {
                           <NavLink
                             key={child.view}
                             to={href}
-                            className={`nav-subitem${isActive ? ' active' : ''}`}
+                            // Avoid RR default `.active` on every same-pathname link
+                            className={() =>
+                              `nav-subitem${isCurrent ? ' nav-subitem--current' : ''}`
+                            }
+                            aria-current={isCurrent ? 'page' : undefined}
                             onClick={() => setMobileOpen(false)}
                           >
                             {child.label}
