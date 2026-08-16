@@ -1376,7 +1376,7 @@ export function VisibilityReasoningCard({ siteId, siteName, productName }) {
   }, [siteId, siteName, productName])
 
   useEffect(() => loadReasons({ force: false }), [loadReasons])
-  // Do not auto-regenerate after scans — that costs money. Cached analysis stays until forced.
+  // Do not auto-regenerate after scans - that costs money. Cached analysis stays until forced.
   useScanRefresh(() => loadReasons({ force: false }))
 
   const priorityDot = (priority) => {

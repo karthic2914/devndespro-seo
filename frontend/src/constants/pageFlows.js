@@ -1,5 +1,5 @@
 /**
- * Shared SEO workflows — vendor-neutral page + app journeys.
+ * Shared SEO workflows - vendor-neutral page + app journeys.
  * Used so users see the same process pattern everywhere.
  */
 export const APP_SEO_JOURNEY = [

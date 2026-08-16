@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -117,7 +117,7 @@ function BrokenPanel({ backlinks, onFilter }) {
       >
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         {broken.slice(0, 50).map((b) => {
-          const domain = b.source_domain || b.name || '—'
+          const domain = b.source_domain || b.name || '-'
           return (
             <button
               key={b.id}
@@ -143,7 +143,7 @@ function BrokenPanel({ backlinks, onFilter }) {
                     {domain}
                   </div>
                   <div style={{ fontSize: 11, color: '#94A3B8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {b.url || b.source_url || '—'}
+                    {b.url || b.source_url || '-'}
                   </div>
                 </div>
               </div>
@@ -585,9 +585,9 @@ function BacklinkGapPanel({ siteId, onSaved }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 8 }}>
                 <div style={{ padding: 12, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#C2410C' }}>You · {result.yourDomain}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{result.you.referringDomains ?? '—'}</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, marginTop: 4 }}>{result.you.referringDomains ?? '-'}</div>
                   <div style={{ fontSize: 11, color: '#64748B' }}>
-                    ref. domains · {result.you.backlinks ?? '—'} links · rank {result.you.rank ?? '—'}
+                    ref. domains · {result.you.backlinks ?? '-'} links · rank {result.you.rank ?? '-'}
                   </div>
                 </div>
                 {slice.map((c) => {
@@ -614,9 +614,9 @@ function BacklinkGapPanel({ siteId, onSaved }) {
                       {title && title !== summary && (
                         <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>{String(title).slice(0, 80)}</div>
                       )}
-                      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8 }}>{c.referringDomains ?? '—'}</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 8 }}>{c.referringDomains ?? '-'}</div>
                       <div style={{ fontSize: 11, color: '#64748B' }}>
-                        ref. domains · {c.backlinks ?? '—'} links · rank {c.rank ?? c.savedDr ?? '—'}
+                        ref. domains · {c.backlinks ?? '-'} links · rank {c.rank ?? c.savedDr ?? '-'}
                         {c.deltaRefDomains != null ? ` · gap ${c.deltaRefDomains > 0 ? '+' : ''}${c.deltaRefDomains}` : ''}
                       </div>
                     </div>

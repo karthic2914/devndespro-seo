@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faPlus,
@@ -332,10 +332,10 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>{row.volume || 0}</div>
                   <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700, color: row.yourPosition ? '#0F172A' : '#94A3B8' }}>
-                    {row.yourPosition ?? '—'}
+                    {row.yourPosition ?? '-'}
                   </div>
                   <div style={{ textAlign: 'right', fontSize: 12, fontWeight: 700 }}>
-                    {row.bestCompetitorPosition ?? '—'}
+                    {row.bestCompetitorPosition ?? '-'}
                   </div>
                   <div><OppPill label={row.opportunity} /></div>
                   <div style={{ textAlign: 'right' }}>

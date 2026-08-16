@@ -1,7 +1,7 @@
 /**
  * Industry vendor references for SEO features.
  * Live data today is primarily DataForSEO (+ GSC; optional Ahrefs import).
- * UX / metric design should stay aligned with this full set — not Ahrefs/Semrush only.
+ * UX / metric design should stay aligned with this full set - not Ahrefs/Semrush only.
  */
 export const SEO_VENDOR_REFERENCES = [
   {

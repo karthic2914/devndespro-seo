@@ -406,7 +406,7 @@ export default function AIVisibility() {
       })
       setQuestionSets(res.data.questionSets || [])
       if (res.data.cached) {
-        // Silent when served from cache — no spend toast.
+        // Silent when served from cache - no spend toast.
       } else {
         showSnackbar((res.data.totalQuestions || 0) + ' questions generated across ' + (res.data.questionSets || []).length + ' products', 'success')
       }

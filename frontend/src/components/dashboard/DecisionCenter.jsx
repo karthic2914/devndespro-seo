@@ -275,7 +275,7 @@ export default function DecisionCenter({
       return null
     }
 
-    // Prefer server Link Score keys (calibrated). Client keys are fallback only —
+    // Prefer server Link Score keys (calibrated). Client keys are fallback only -
     // the old client dofollow formula capped at 100 once ratio ≥ 70%.
     const breakdown = authorityBreakdown
       ? {
@@ -541,7 +541,7 @@ export default function DecisionCenter({
               color: '#9CA3AF',
               marginTop: 2,
             }}>
-              External Domain Rank vs in-app Link Score — kept separate on purpose
+              External Domain Rank vs in-app Link Score - kept separate on purpose
             </div>
           </div>
 

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -177,7 +177,7 @@ export default function Layout() {
                           <ScoreInfoTip scoreKey="siteHealth" asSpan />
                         </span>
                         <span className="site-card__health-value" style={{ color: barColor }}>
-                          {score != null ? score : '—'}
+                          {score != null ? score : '-'}
                           {score != null ? <span className="site-card__health-max">/100</span> : null}
                         </span>
                       </div>

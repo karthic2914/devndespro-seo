@@ -4,7 +4,7 @@ import AdminSettings from '../components/admin/AdminSettings'
 import UserSettings from './UserSettings'
 
 /**
- * Single "Settings" entry — backend/role decides which panel to show.
+ * Single "Settings" entry - backend/role decides which panel to show.
  * Admin → platform modules + controls
  * User → profile + preferences
  */

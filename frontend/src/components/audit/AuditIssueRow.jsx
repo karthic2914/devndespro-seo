@@ -8,7 +8,7 @@ import {
 import { T } from '../UI'
 import api from '../../utils/api'
 
-const IMPACT_POINTS = { High: '+12–18 pts', Medium: '+5–10 pts', Low: '+1–4 pts' }
+const IMPACT_POINTS = { High: '+12-18 pts', Medium: '+5-10 pts', Low: '+1-4 pts' }
 
 function issueIcon(status) {
   if (status === 'pass')    return { icon: faCircleCheck,        color: T.green }

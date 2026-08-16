@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -122,7 +122,7 @@ function RowActionsMenu({ backlink, onRemove, isSpam = false }) {
                   {host || 'Unknown domain'}
                 </span>
                 <span className="bl-action-menu__hint">
-                  Lives on their site — not yours. Follow these steps for this URL.
+                  Lives on their site - not yours. Follow these steps for this URL.
                 </span>
               </div>
 
@@ -296,7 +296,7 @@ function getTraffic(b) {
 
 function formatTraffic(n) {
   const v = Number(n || 0)
-  if (!v) return '—'
+  if (!v) return '-'
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`
   if (v >= 1_000) return `${(v / 1_000).toFixed(1).replace(/\.0$/, '')}K`
   return String(Math.round(v))
@@ -311,9 +311,9 @@ function getLastSeen(b) {
 }
 
 function formatDate(value) {
-  if (!value) return '—'
+  if (!value) return '-'
   const d = new Date(value)
-  if (Number.isNaN(d.getTime())) return '—'
+  if (Number.isNaN(d.getTime())) return '-'
   return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
@@ -699,7 +699,7 @@ export default function BacklinksTable({
           <FontAwesomeIcon icon={faTriangleExclamation} />
           <span>
             <strong>{sorted.length} spam {sorted.length === 1 ? 'link' : 'links'}</strong>
-            {' '}— open <strong>⋯</strong> on a row for steps for that domain (open page, copy contact domain, Google disavow).
+            {' '}- open <strong>⋯</strong> on a row for steps for that domain (open page, copy contact domain, Google disavow).
           </span>
         </div>
       )}
@@ -767,7 +767,7 @@ export default function BacklinksTable({
                     >
                       <td className="bl-td-domain">
                         <div className="bl-domain-name">
-                          <span className="bl-domain-name__host">{host || b.name || '—'}</span>
+                          <span className="bl-domain-name__host">{host || b.name || '-'}</span>
                           {qualityKey === 'spam' && (
                             <span className="bl-spam-badge">
                               <FontAwesomeIcon icon={faTriangleExclamation} />SPAM
@@ -830,7 +830,7 @@ export default function BacklinksTable({
 
           <div className="bl-pager">
             <span className="bl-pager-meta">
-              {pageStart}–{pageEnd} of {sorted.length}
+              {pageStart}-{pageEnd} of {sorted.length}
             </span>
             <div className="bl-pager-btns">
               <button

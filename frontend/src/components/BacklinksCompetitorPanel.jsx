@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faWandMagicSparkles, faRotate, faXmark, faChartColumn } from '@fortawesome/free-solid-svg-icons'
 import { BrandFavicon } from './SiteFavicon'
@@ -17,7 +17,7 @@ function Metric({ label, value }) {
     <div style={{ minWidth: 72 }}>
       <div style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase' }}>{label}</div>
       <div style={{ fontSize: 16, fontWeight: 800, color: '#0F172A', fontFamily: 'DM Mono, monospace' }}>
-        {value == null ? '—' : value}
+        {value == null ? '-' : value}
       </div>
     </div>
   )

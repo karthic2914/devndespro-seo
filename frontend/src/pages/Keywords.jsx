@@ -1,4 +1,4 @@
-﻿  import { useState, useEffect, useMemo } from 'react'
+  import { useState, useEffect, useMemo } from 'react'
   import { useParams } from 'react-router-dom'
   import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
   import {
@@ -45,7 +45,7 @@ import {
 
   function formatCompactNumber(n) {
     const v = Number(n)
-    if (!Number.isFinite(v) || v <= 0) return '—'
+    if (!Number.isFinite(v) || v <= 0) return '-'
     if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`
     if (v >= 1e6) return `${(v / 1e6).toFixed(1)}M`
     if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`
@@ -977,7 +977,7 @@ import {
                   <ScoreInfoTip scoreKey="keywordResearch" asSpan />
                 </span>
               }
-              subtitle="Discover volume, difficulty, intent, trends, and related keywords — then add the best ones to your track list."
+              subtitle="Discover volume, difficulty, intent, trends, and related keywords - then add the best ones to your track list."
               icon={<FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />}
               defaultOpen
             >
@@ -1108,9 +1108,9 @@ import {
                     {[
                       { label: 'Volume', value: formatCompactNumber(dfsOverview.volume) },
                       { label: 'CPC', value: `$${Number(dfsOverview.cpc || 0).toFixed(2)}` },
-                      { label: 'Competition', value: dfsOverview.competition != null ? Number(dfsOverview.competition).toFixed(2) : '—' },
-                      { label: 'KD', value: dfsOverview.difficultyScore ?? '—' },
-                      { label: 'Intent', value: dfsOverview.intent || '—' },
+                      { label: 'Competition', value: dfsOverview.competition != null ? Number(dfsOverview.competition).toFixed(2) : '-' },
+                      { label: 'KD', value: dfsOverview.difficultyScore ?? '-' },
+                      { label: 'Intent', value: dfsOverview.intent || '-' },
                       { label: 'Results', value: formatCompactNumber(dfsOverview.resultsCount) },
                     ].map((m) => (
                       <div key={m.label} style={{
@@ -1357,12 +1357,12 @@ import {
                           {formatCompactNumber(s.resultsCount)}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: T.text2 }}>
-                          {s.difficultyScore ?? '—'}
+                          {s.difficultyScore ?? '-'}
                         </div>
                         <div style={{ fontSize: 12, color: T.text2 }}>${Number(s.cpc || 0).toFixed(2)}</div>
                         {researchTab === 'related' && (
                           <div style={{ fontSize: 12, fontWeight: 700, color: T.text2 }}>
-                            {s.relatedness != null ? `${Math.round(Number(s.relatedness) * (Number(s.relatedness) <= 1 ? 100 : 1))}%` : '—'}
+                            {s.relatedness != null ? `${Math.round(Number(s.relatedness) * (Number(s.relatedness) <= 1 ? 100 : 1))}%` : '-'}
                           </div>
                         )}
                         {showAiOverview && (
@@ -1375,7 +1375,7 @@ import {
                               ) : aio?.error ? (
                                 <span style={{ fontSize: 11, color: '#DC2626' }} title={aio.error}>Error</span>
                               ) : aio == null ? (
-                                <span style={{ fontSize: 11, color: T.muted }}>—</span>
+                                <span style={{ fontSize: 11, color: T.muted }}>-</span>
                               ) : aio.hasAiOverview ? (
                                 <span style={{
                                   fontSize: 11, fontWeight: 800, color: '#6D28D9', background: '#EDE9FE',
@@ -1415,7 +1415,7 @@ import {
                               ) : aio?.hasAiOverview ? (
                                 <span style={{ fontSize: 11, color: T.muted }}>No citations returned</span>
                               ) : aio == null ? (
-                                <span style={{ fontSize: 11, color: T.muted }}>—</span>
+                                <span style={{ fontSize: 11, color: T.muted }}>-</span>
                               ) : (
                                 <span style={{ fontSize: 11, color: T.muted }}>No AI overview</span>
                               )}

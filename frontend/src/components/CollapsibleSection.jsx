@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 
 /**
- * Expand / collapse block — icon control on the right (up = collapse, down = expand).
+ * Expand / collapse block - icon control on the right (up = collapse, down = expand).
  */
 export default function CollapsibleSection({
   title,

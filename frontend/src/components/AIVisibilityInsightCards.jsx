@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -226,7 +226,7 @@ export function VisibilityEngineTable({ siteId }) {
               </div>
               <div style={{ textAlign: 'right', minWidth: 78 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#0F172A' }}>
-                  {hasData ? `${rate}%` : '—'}
+                  {hasData ? `${rate}%` : '-'}
                 </div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: bestRank ? '#16A34A' : '#94A3B8' }}>
                   {statusLabel}
@@ -594,7 +594,7 @@ export function VisibilityCompetitorsPanel({ siteId, siteName = '' }) {
           <div style={{ background: '#FFF7ED', borderRadius: 9, padding: '8px 10px', border: '1px solid #FED7AA' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#C2410C', textTransform: 'uppercase' }}>Leader</div>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#9A3412', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {leader?.name || '—'} · {leader?.visibilityScore ?? 0}%
+              {leader?.name || '-'} · {leader?.visibilityScore ?? 0}%
             </div>
           </div>
         </div>

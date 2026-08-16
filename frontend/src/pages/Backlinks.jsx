@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -597,7 +597,7 @@ export default function Backlinks() {
                   <label htmlFor="bl-dr">DR</label>
                   <input
                     id="bl-dr"
-                    placeholder="0–100"
+                    placeholder="0-100"
                     value={form.dr}
                     type="number"
                     min="0"

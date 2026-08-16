@@ -1,5 +1,5 @@
 /**
- * Digital PR for AI visibility — industry-style media pipeline.
+ * Digital PR for AI visibility - industry-style media pipeline.
  * Discover → Shortlist → Outreach → Track (published / AI cited)
  */
 import { useEffect, useMemo, useState } from 'react'
@@ -480,7 +480,7 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl, onOutletC
                       ) : null}
                     </td>
                     <td style={{ padding: '12px', borderBottom: `1px solid ${T.border}`, verticalAlign: 'top', maxWidth: 220 }}>
-                      <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.4 }}>{o.topic || '—'}</div>
+                      <div style={{ fontSize: 12, color: T.text2, lineHeight: 1.4 }}>{o.topic || '-'}</div>
                       {o.pitch ? (
                         <div style={{ fontSize: 11, color: '#9A3412', marginTop: 6, lineHeight: 1.4 }}>
                           Pitch: {o.pitch}

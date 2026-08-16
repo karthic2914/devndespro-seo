@@ -28,7 +28,7 @@ export default function useProcessScrollSpy(steps = [], deps = []) {
     if (!sectionSteps.length) return undefined
 
     const update = () => {
-      // Sticky process bar + small buffer — do NOT use a deep "reading zone"
+      // Sticky process bar + small buffer - do NOT use a deep "reading zone"
       // or mid-page markers (e.g. sidebar) will jump the active step early.
       const stickyLine = 96
       let current = sectionSteps[0].stepId

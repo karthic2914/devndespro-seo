@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -610,7 +610,7 @@ export default function Actions() {
               color: '#EA580C',
             }}>
               <FontAwesomeIcon icon={faWandMagicSparkles} />
-              AI-generated guidance — you still apply the change on your site
+              AI-generated guidance - you still apply the change on your site
             </div>
 
             {aiFix?.why ? (

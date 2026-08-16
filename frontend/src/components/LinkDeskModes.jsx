@@ -55,7 +55,7 @@ export const LINK_DESK_MODES = [
 ]
 
 /**
- * In-page mode switcher — not a sidebar tree (avoids Ahrefs-style nav).
+ * In-page mode switcher - not a sidebar tree (avoids Ahrefs-style nav).
  */
 export default function LinkDeskModes({ active = 'pulse', counts = {}, onChange }) {
   return (

@@ -215,16 +215,16 @@ export default function Users() {
                     )}
                   </div>
                   <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
-                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '-'}
                   </div>
                   <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
-                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '-'}
                   </div>
                   <div style={{ fontSize: 12, color: plan === 'pro' || plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
-                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '—'}
+                    {plan === 'pro' || plan === 'agency' || isAdmin ? 'On' : '-'}
                   </div>
                   <div style={{ fontSize: 12, color: plan === 'agency' || isAdmin ? '#15803D' : T.muted, fontWeight: 650 }}>
-                    {plan === 'agency' || isAdmin ? 'On' : '—'}
+                    {plan === 'agency' || isAdmin ? 'On' : '-'}
                   </div>
                 </div>
               )

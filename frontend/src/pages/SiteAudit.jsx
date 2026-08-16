@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -789,7 +789,7 @@ export default function SiteAudit() {
       if (siteRes?.data?.authority_score !== undefined) setAuthorityScore(siteRes.data.authority_score)
       if (siteRes?.data?.authority_updated_at) setAuthorityUpdatedAt(siteRes.data.authority_updated_at)
 
-      // Only trust an explicit Domain Rank fetch — never fall back to
+      // Only trust an explicit Domain Rank fetch - never fall back to
       // default seo_metrics.dr=0 (that made the UI show 0 before any refresh).
       const hasFetchedDomainRank = Boolean(
         siteRes?.data?.domain_rank_updated_at ||
@@ -2768,7 +2768,7 @@ export default function SiteAudit() {
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  External authority · 0–100
+                  External authority · 0-100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -1325,7 +1325,7 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Step 3: Grow — must sit in the left column after Keywords so scroll-spy order is correct */}
+            {/* Step 3: Grow - must sit in the left column after Keywords so scroll-spy order is correct */}
             <Card
               id="overview-section-grow"
               padding="0"
