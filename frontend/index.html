@@ -36,14 +36,29 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      /* Hide pre-React SEO shell from users (still readable by crawlers/audits). */
+      html, body { margin: 0; background: #FBFAF8; }
+      #seo-shell {
+        position: absolute !important;
+        width: 1px !important;
+        height: 1px !important;
+        padding: 0 !important;
+        margin: -1px !important;
+        overflow: hidden !important;
+        clip: rect(0, 0, 0, 0) !important;
+        white-space: nowrap !important;
+        border: 0 !important;
+      }
+    </style>
   </head>
   <body>
     <!--
-      Crawler-visible shell: replaced when React mounts.
-      Gives static audits (and bots without JS) a real H1 + enough copy for content checks.
+      Crawler-visible shell: visually hidden for users, replaced when React mounts.
+      Gives static audits a real H1 + enough copy for content checks.
     -->
     <div id="root">
-      <main>
+      <main id="seo-shell" aria-hidden="true">
         <h1>Be discovered by Google. Be recommended by AI.</h1>
         <p>
           DevnDespro SEO is a website SEO management platform for Nordic businesses.
