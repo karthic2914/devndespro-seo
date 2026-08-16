@@ -1524,6 +1524,24 @@ body:has(.app-shell),
   white-space: nowrap;
 }
 .bl-export-btn:hover { background: var(--dark3); color: var(--text); }
+.bl-export-btn--disavow {
+  border-color: #FECACA;
+  background: #FEF2F2;
+  color: #991B1B;
+  font-weight: 700;
+}
+.bl-export-btn--disavow:hover:not(:disabled) {
+  background: #FEE2E2;
+  border-color: #F87171;
+  color: #7F1D1D;
+}
+.bl-export-btn--disavow:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bl-export-btn--disavow svg {
+  color: #DC2626;
+}
 
 /* Count row */
 .bl-count-row {
@@ -1553,10 +1571,47 @@ body:has(.app-shell),
   line-height: 1.45;
   color: #7F1D1D;
 }
-.bl-spam-guide--live svg {
+.bl-spam-guide--live > svg {
   margin-top: 2px;
   flex-shrink: 0;
   color: #DC2626;
+}
+.bl-spam-guide__body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.bl-spam-disavow-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid #FECACA;
+  border-radius: 8px;
+  background: #fff;
+  color: #991B1B;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+.bl-spam-disavow-btn:hover:not(:disabled) {
+  background: #FEE2E2;
+  border-color: #F87171;
+  color: #7F1D1D;
+}
+.bl-spam-disavow-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.bl-spam-disavow-btn svg {
+  color: #DC2626;
+  flex-shrink: 0;
 }
 .bl-spam-guide__title {
   display: flex;

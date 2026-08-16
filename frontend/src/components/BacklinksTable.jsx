@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
+﻿import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -594,6 +594,46 @@ export default function BacklinksTable({
     URL.revokeObjectURL(url)
   }
 
+  const spamDisavowDomains = useMemo(() => {
+    const seen = new Set()
+    const domains = []
+    for (const b of backlinks) {
+      if (classifyBacklink(b) !== 'spam') continue
+      const host = getHostname(b.url || b.source_domain || b.name)
+      if (!host) continue
+      const key = host.toLowerCase()
+      if (seen.has(key)) continue
+      seen.add(key)
+      domains.push(host)
+    }
+    return domains.sort((a, b) => a.localeCompare(b))
+  }, [backlinks])
+
+  const exportSpamDisavow = () => {
+    if (!spamDisavowDomains.length) {
+      toast.error('No spam domains to export')
+      return
+    }
+    const body = [
+      '# Google Disavow file - spam domains from DevnDespro SEO',
+      `# Generated ${new Date().toISOString().slice(0, 10)}`,
+      `# ${spamDisavowDomains.length} unique domain${spamDisavowDomains.length === 1 ? '' : 's'}`,
+      '',
+      ...spamDisavowDomains.map((d) => `domain:${d}`),
+      '',
+    ].join('\n')
+    const blob = new Blob([body], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'disavow-spam-domains.txt'
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success(
+      `Exported ${spamDisavowDomains.length} domain${spamDisavowDomains.length === 1 ? '' : 's'} for Google Disavow`
+    )
+  }
+
   const dofollow = backlinks.filter(b => (b.type || 'dofollow') === 'dofollow').length
   const nofollow = backlinks.filter(b => b.type === 'nofollow').length
   const newCount = backlinks.filter(isNewBacklink).length
@@ -667,9 +707,28 @@ export default function BacklinksTable({
             <option>Pending</option>
             <option>Live</option>
           </select>
-          <button className="bl-export-btn" onClick={exportCsv} title="Export CSV">
+          <button
+            type="button"
+            className="bl-export-btn"
+            onClick={exportCsv}
+            title="Download backlinks.csv"
+          >
             <FontAwesomeIcon icon={faFileExport} />
-            <span>Export</span>
+            <span>Export CSV</span>
+          </button>
+          <button
+            type="button"
+            className="bl-export-btn bl-export-btn--disavow"
+            onClick={exportSpamDisavow}
+            disabled={!spamDisavowDomains.length}
+            title={
+              spamDisavowDomains.length
+                ? `Download disavow-spam-domains.txt (${spamDisavowDomains.length} unique spam domains)`
+                : 'No spam domains to export'
+            }
+          >
+            <FontAwesomeIcon icon={faBan} />
+            <span>Export disavow .txt</span>
           </button>
         </div>
       </div>
@@ -697,10 +756,28 @@ export default function BacklinksTable({
       {qualityFilter === 'Spam' && sorted.length > 0 && (
         <div className="bl-spam-guide bl-spam-guide--live" role="status">
           <FontAwesomeIcon icon={faTriangleExclamation} />
-          <span>
-            <strong>{sorted.length} spam {sorted.length === 1 ? 'link' : 'links'}</strong>
-            {' '}- open <strong>⋯</strong> on a row for steps for that domain (open page, copy contact domain, Google disavow).
-          </span>
+          <div className="bl-spam-guide__body">
+            <span>
+              <strong>{sorted.length} spam {sorted.length === 1 ? 'link' : 'links'}</strong>
+              {spamDisavowDomains.length > 0 && (
+                <>
+                  {' '}· <strong>{spamDisavowDomains.length}</strong> unique
+                  {' '}{spamDisavowDomains.length === 1 ? 'domain' : 'domains'}
+                </>
+              )}
+              {' '}- open <strong>⋯</strong> on a row for steps for that domain, or export all for Google Disavow.
+            </span>
+            <button
+              type="button"
+              className="bl-spam-disavow-btn"
+              onClick={exportSpamDisavow}
+              disabled={!spamDisavowDomains.length}
+              title="Download a plain-text file for Google Search Console Disavow"
+            >
+              <FontAwesomeIcon icon={faBan} />
+              <span>Select all Spam → Export disavow-ready file</span>
+            </button>
+          </div>
         </div>
       )}
 
