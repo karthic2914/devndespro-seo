@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -17,9 +17,9 @@ import { canUseBacklinks, canUseAiAssistant, canUseColdEmails } from '../utils/f
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
+  { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'keywords',      label: 'Keywords',      icon: faKey },
   { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks' },
-  { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
   // Hidden for now - re-enable by removing `hidden: true` (Admin Modules also controls visibility)
   { to: 'ai',            label: 'AI Assistant',  icon: faRobot, feature: 'ai_assistant', module: 'ai_assistant', hidden: true },

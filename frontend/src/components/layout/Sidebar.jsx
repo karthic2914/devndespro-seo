@@ -10,9 +10,9 @@ import ScoreInfoTip from '../ScoreInfoTip'
 
 const NAV_ITEMS = [
   { path: '', label: 'Overview', icon: '▦', end: true },
+  { path: 'audit', label: 'Site Audit', icon: '🔍' },
   { path: 'keywords', label: 'Keywords', icon: '🔑' },
   { path: 'backlinks', label: 'Backlinks', icon: '🔗' },
-  { path: 'audit', label: 'Site Audit', icon: '🔍' },
   { path: 'actions', label: 'Action Plan', icon: '✅' },
   { path: 'ai-visibility', label: 'AI Visibility', faIcon: 'wand' },
   { path: 'competitors', label: 'Competitors', icon: '⚔️' },

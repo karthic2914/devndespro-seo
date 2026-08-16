@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
   faSortUp, faSortDown, faFileExport, faTrash, faEllipsisVertical,
-  faChevronLeft, faChevronRight, faCopy, faBan, faEnvelope,
+  faChevronLeft, faChevronRight, faChevronDown, faChevronUp, faCopy, faBan, faEnvelope,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import toast from '../utils/toast'
@@ -444,6 +444,21 @@ export default function BacklinksTable({
   const [page, setPage] = useState(1)
   const [disavowStatus, setDisavowStatus] = useState(null)
   const [disavowBusy, setDisavowBusy] = useState(false)
+  const [spamGuideOpen, setSpamGuideOpen] = useState(() => {
+    try {
+      const key = `bl-spam-guide-open:${siteId || 'x'}`
+      const raw = localStorage.getItem(key)
+      if (raw === '0') return false
+      if (raw === '1') return true
+    } catch { /* ignore */ }
+    return true
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`bl-spam-guide-open:${siteId || 'x'}`, spamGuideOpen ? '1' : '0')
+    } catch { /* ignore */ }
+  }, [spamGuideOpen, siteId])
 
   useEffect(() => {
     setQualityFilter(QUALITY_VIEWS[qualityView] || 'All')
@@ -814,144 +829,172 @@ export default function BacklinksTable({
       </div>
 
       {qualityFilter === 'Spam' && sorted.length > 0 && (
-        <div className="bl-spam-guide bl-spam-guide--live" role="region" aria-label="How to disavow spam links">
-          <FontAwesomeIcon icon={faTriangleExclamation} />
-          <div className="bl-spam-guide__body">
-            <div className="bl-spam-guide__title">
-              How to remove spam links (Google Disavow)
-            </div>
-            <p className="bl-spam-guide__intro">
-              Removing a row here only clears your tracking list. To tell Google to ignore these links, export the file and upload it in Search Console.
-            </p>
-            <ol className="bl-spam-guide__steps">
-              <li>
-                Click <strong>Select all Spam → Export disavow-ready file</strong> below (downloads <code>disavow-spam-domains.txt</code>).
-              </li>
-              <li>
-                Open{' '}
+        <div
+          className={`bl-spam-guide bl-spam-guide--live${spamGuideOpen ? '' : ' bl-spam-guide--collapsed'}`}
+          role="region"
+          aria-label="How to disavow spam links"
+        >
+          <div className="bl-spam-guide__head">
+            <FontAwesomeIcon icon={faTriangleExclamation} className="bl-spam-guide__warn" />
+            <button
+              type="button"
+              className="bl-spam-guide__toggle"
+              onClick={() => setSpamGuideOpen((v) => !v)}
+              aria-expanded={spamGuideOpen}
+              aria-controls="bl-spam-guide-panel"
+            >
+              <span className="bl-spam-guide__title">
+                How to remove spam links (Google Disavow)
+                {!spamGuideOpen && disavowStatus?.phase === 'waiting' && (
+                  <span className="bl-spam-guide__badge">
+                    {disavowStatus.daysLeft}d left
+                  </span>
+                )}
+                {!spamGuideOpen && disavowStatus?.phase === 'ready' && (
+                  <span className="bl-spam-guide__badge bl-spam-guide__badge--ready">Ready to check</span>
+                )}
+              </span>
+              <span className="bl-spam-guide__chevron" title={spamGuideOpen ? 'Collapse' : 'Expand'}>
+                <FontAwesomeIcon icon={spamGuideOpen ? faChevronUp : faChevronDown} />
+              </span>
+            </button>
+          </div>
+
+          {spamGuideOpen && (
+            <div className="bl-spam-guide__body" id="bl-spam-guide-panel">
+              <p className="bl-spam-guide__intro">
+                Removing a row here only clears your tracking list. To tell Google to ignore these links, export the file and upload it in Search Console.
+              </p>
+              <ol className="bl-spam-guide__steps">
+                <li>
+                  Click <strong>Select all Spam → Export disavow-ready file</strong> below (downloads <code>disavow-spam-domains.txt</code>).
+                </li>
+                <li>
+                  Open{' '}
+                  <a
+                    href="https://search.google.com/search-console/disavow-links"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    search.google.com/search-console/disavow-links
+                  </a>
+                  {' '}and sign in with the Google account that owns the site.
+                </li>
+                <li>Select your property (e.g. <code>https://www.yoursite.com/</code>).</li>
+                <li>Click <strong>Upload disavow list</strong> (or <strong>Replace</strong> if you already have one) and choose the <code>.txt</code> file — not a CSV.</li>
+                <li>Confirm. Google may take days or weeks to process; this is normal.</li>
+                <li>
+                  Then go to <strong>Site Audit</strong> and <strong>re-run</strong> the scan so Domain Rank / Link Score and backlink data refresh in this app.
+                </li>
+              </ol>
+              <p className="bl-spam-guide__note">
+                Prefer asking the site owner to remove the link first. Disavow is an advanced last step.
+                {' '}You have <strong>{sorted.length}</strong> spam {sorted.length === 1 ? 'link' : 'links'}
+                {spamDisavowDomains.length > 0 && (
+                  <> · <strong>{spamDisavowDomains.length}</strong> unique {spamDisavowDomains.length === 1 ? 'domain' : 'domains'}</>
+                )}.
+              </p>
+              <div className="bl-spam-guide__actions">
+                <button
+                  type="button"
+                  className="bl-spam-disavow-btn"
+                  onClick={exportSpamDisavow}
+                  disabled={!spamDisavowDomains.length}
+                  title="Download a plain-text file for Google Search Console Disavow"
+                >
+                  <FontAwesomeIcon icon={faBan} />
+                  <span>Select all Spam → Export disavow-ready file</span>
+                </button>
                 <a
+                  className="bl-spam-disavow-link"
                   href="https://search.google.com/search-console/disavow-links"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  search.google.com/search-console/disavow-links
+                  Open Google Disavow
+                  <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
                 </a>
-                {' '}and sign in with the Google account that owns the site.
-              </li>
-              <li>Select your property (e.g. <code>https://www.yoursite.com/</code>).</li>
-              <li>Click <strong>Upload disavow list</strong> (or <strong>Replace</strong> if you already have one) and choose the <code>.txt</code> file — not a CSV.</li>
-              <li>Confirm. Google may take days or weeks to process; this is normal.</li>
-              <li>
-                Then go to <strong>Site Audit</strong> and <strong>re-run</strong> the scan so Domain Rank / Link Score and backlink data refresh in this app.
-              </li>
-            </ol>
-            <p className="bl-spam-guide__note">
-              Prefer asking the site owner to remove the link first. Disavow is an advanced last step.
-              {' '}You have <strong>{sorted.length}</strong> spam {sorted.length === 1 ? 'link' : 'links'}
-              {spamDisavowDomains.length > 0 && (
-                <> · <strong>{spamDisavowDomains.length}</strong> unique {spamDisavowDomains.length === 1 ? 'domain' : 'domains'}</>
-              )}.
-            </p>
-            <div className="bl-spam-guide__actions">
-              <button
-                type="button"
-                className="bl-spam-disavow-btn"
-                onClick={exportSpamDisavow}
-                disabled={!spamDisavowDomains.length}
-                title="Download a plain-text file for Google Search Console Disavow"
-              >
-                <FontAwesomeIcon icon={faBan} />
-                <span>Select all Spam → Export disavow-ready file</span>
-              </button>
-              <a
-                className="bl-spam-disavow-link"
-                href="https://search.google.com/search-console/disavow-links"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open Google Disavow
-                <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-              </a>
-            </div>
+              </div>
 
-            <div className={`bl-disavow-track bl-disavow-track--${disavowStatus?.phase || 'none'}`}>
-              <div className="bl-disavow-track__label">Track progress in this app</div>
-              <p className="bl-disavow-track__msg">
-                Google does not notify us when processing finishes. After you upload the file, mark it here — we wait ~21 days, then tell you to check Search Console and re-run Site Audit.
-              </p>
-              {disavowStatus?.phase === 'waiting' && (
-                <p className="bl-disavow-track__status">
-                  Uploaded {disavowStatus.submittedAt ? new Date(disavowStatus.submittedAt).toLocaleDateString() : ''}
-                  {disavowStatus.domainCount > 0 && <> · {disavowStatus.domainCount} domains</>}
-                  {' '}· check again in about <strong>{disavowStatus.daysLeft}</strong> day{disavowStatus.daysLeft === 1 ? '' : 's'}
-                  {disavowStatus.checkAfterAt && (
-                    <> (on {new Date(disavowStatus.checkAfterAt).toLocaleDateString()})</>
-                  )}
+              <div className={`bl-disavow-track bl-disavow-track--${disavowStatus?.phase || 'none'}`}>
+                <div className="bl-disavow-track__label">Track progress in this app</div>
+                <p className="bl-disavow-track__msg">
+                  Google does not notify us when processing finishes. After you upload the file, mark it here — we wait ~21 days, then tell you to check Search Console and re-run Site Audit.
                 </p>
-              )}
-              {disavowStatus?.phase === 'ready' && (
-                <p className="bl-disavow-track__status bl-disavow-track__status--ready">
-                  Wait period is over. Open Google Disavow to confirm, then re-run Site Audit.
-                </p>
-              )}
-              {disavowStatus?.phase === 'checked' && (
-                <p className="bl-disavow-track__status">
-                  Last checked {disavowStatus.checkedAt ? new Date(disavowStatus.checkedAt).toLocaleDateString() : ''}.
-                  {' '}Submit again if you export a new spam list.
-                </p>
-              )}
-              <div className="bl-spam-guide__actions">
-                {(disavowStatus?.phase === 'none' || !disavowStatus?.phase) && (
-                  <button
-                    type="button"
-                    className="bl-spam-disavow-btn"
-                    onClick={markDisavowUploaded}
-                    disabled={disavowBusy || !siteId}
-                  >
-                    I uploaded the .txt to Google — start 21-day timer
-                  </button>
-                )}
                 {disavowStatus?.phase === 'waiting' && (
-                  <button
-                    type="button"
-                    className="bl-spam-disavow-link"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    onClick={resetDisavowTracker}
-                    disabled={disavowBusy}
-                  >
-                    Reset tracker
-                  </button>
+                  <p className="bl-disavow-track__status">
+                    Uploaded {disavowStatus.submittedAt ? new Date(disavowStatus.submittedAt).toLocaleDateString() : ''}
+                    {disavowStatus.domainCount > 0 && <> · {disavowStatus.domainCount} domains</>}
+                    {' '}· check again in about <strong>{disavowStatus.daysLeft}</strong> day{disavowStatus.daysLeft === 1 ? '' : 's'}
+                    {disavowStatus.checkAfterAt && (
+                      <> (on {new Date(disavowStatus.checkAfterAt).toLocaleDateString()})</>
+                    )}
+                  </p>
                 )}
                 {disavowStatus?.phase === 'ready' && (
-                  <>
-                    {siteId ? (
-                      <Link className="bl-spam-disavow-btn" to={`/site/${siteId}/audit`}>
-                        Go to Site Audit → re-run
-                      </Link>
-                    ) : null}
+                  <p className="bl-disavow-track__status bl-disavow-track__status--ready">
+                    Wait period is over. Open Google Disavow to confirm, then re-run Site Audit.
+                  </p>
+                )}
+                {disavowStatus?.phase === 'checked' && (
+                  <p className="bl-disavow-track__status">
+                    Last checked {disavowStatus.checkedAt ? new Date(disavowStatus.checkedAt).toLocaleDateString() : ''}.
+                    {' '}Submit again if you export a new spam list.
+                  </p>
+                )}
+                <div className="bl-spam-guide__actions">
+                  {(disavowStatus?.phase === 'none' || !disavowStatus?.phase) && (
                     <button
                       type="button"
                       className="bl-spam-disavow-btn"
-                      onClick={markDisavowChecked}
+                      onClick={markDisavowUploaded}
+                      disabled={disavowBusy || !siteId}
+                    >
+                      I uploaded the .txt to Google — start 21-day timer
+                    </button>
+                  )}
+                  {disavowStatus?.phase === 'waiting' && (
+                    <button
+                      type="button"
+                      className="bl-spam-disavow-link"
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      onClick={resetDisavowTracker}
                       disabled={disavowBusy}
                     >
-                      Mark as checked
+                      Reset tracker
                     </button>
-                  </>
-                )}
-                {disavowStatus?.phase === 'checked' && (
-                  <button
-                    type="button"
-                    className="bl-spam-disavow-btn"
-                    onClick={markDisavowUploaded}
-                    disabled={disavowBusy}
-                  >
-                    Start new disavow timer
-                  </button>
-                )}
+                  )}
+                  {disavowStatus?.phase === 'ready' && (
+                    <>
+                      {siteId ? (
+                        <Link className="bl-spam-disavow-btn" to={`/site/${siteId}/audit`}>
+                          Go to Site Audit → re-run
+                        </Link>
+                      ) : null}
+                      <button
+                        type="button"
+                        className="bl-spam-disavow-btn"
+                        onClick={markDisavowChecked}
+                        disabled={disavowBusy}
+                      >
+                        Mark as checked
+                      </button>
+                    </>
+                  )}
+                  {disavowStatus?.phase === 'checked' && (
+                    <button
+                      type="button"
+                      className="bl-spam-disavow-btn"
+                      onClick={markDisavowUploaded}
+                      disabled={disavowBusy}
+                    >
+                      Start new disavow timer
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 

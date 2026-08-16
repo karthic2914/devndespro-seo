@@ -1,4 +1,5 @@
-﻿import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -697,12 +698,35 @@ export default function SiteAudit() {
     }
   }, [siteId])
   const [showAuditMenu, setShowAuditMenu] = useState(false)
+  const auditMenuAnchorRef = useRef(null)
+  const [auditMenuPos, setAuditMenuPos] = useState({ top: 0, left: 0, width: 260 })
   const [multipageStatus, setMultipageStatus] = useState(null)
   const [multipageProgress, setMultipageProgress] = useState(null)
   
   const [currentAuditRunId, setCurrentAuditRunId] = useState(null)
   const cancelPollingRef = useRef(false)
   const multipagePollFailuresRef = useRef(0)
+
+  useLayoutEffect(() => {
+    if (!showAuditMenu) return
+    const place = () => {
+      const el = auditMenuAnchorRef.current
+      if (!el) return
+      const rect = el.getBoundingClientRect()
+      const width = Math.min(280, window.innerWidth - 16)
+      let left = rect.right - width
+      left = Math.max(8, Math.min(left, window.innerWidth - width - 8))
+      setAuditMenuPos({ top: rect.bottom + 6, left, width })
+    }
+    place()
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true)
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [showAuditMenu])
+
   const [multipageResults, setMultipageResults] = useState(null)
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
@@ -1898,7 +1922,7 @@ export default function SiteAudit() {
             <FontAwesomeIcon icon={faEnvelope} style={{ marginRight: 6 }} />
             <span className='btn-label'>Send summary email</span>
           </Button>
-          <div style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
+          <div className="overview-audit-split" ref={auditMenuAnchorRef} style={{ display: 'flex', alignItems: 'stretch', gap: 0, position: 'relative' }}>
             <Button variant="primary" size="sm" onClick={rerunCompleteAudit} disabled={running || exporting || multipageStatus === 'running'} style={{ borderTopRightRadius: 0, borderBottomRightRadius: 0 }}>
               <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6, animation: running ? 'spin 1s linear infinite' : 'none' }} /><span className='btn-label'>{running ? 'Scanning...' : 'Re-run Audit'}</span>
             </Button>
@@ -1906,14 +1930,23 @@ export default function SiteAudit() {
               <FontAwesomeIcon icon={faChevronDown} />
             </Button>
 
-            {showAuditMenu && (
+            {showAuditMenu && createPortal(
               <>
-                <div onClick={() => setShowAuditMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 30 }} />
-                <div style={{
-                  position: 'absolute', top: '100%', right: 0, marginTop: 6,
-                  background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.12)', minWidth: 240, zIndex: 40, overflow: 'hidden',
-                }}>
+                <div className="overview-audit-menu-backdrop" onClick={() => setShowAuditMenu(false)} />
+                <div
+                  className="overview-audit-menu"
+                  style={{
+                    position: 'fixed',
+                    top: auditMenuPos.top,
+                    left: auditMenuPos.left,
+                    width: auditMenuPos.width,
+                    background: '#fff',
+                    border: '1px solid #E5E7EB',
+                    borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                    overflow: 'hidden',
+                  }}
+                >
                   <button
                     onClick={() => { setShowAuditMenu(false); runAudit() }}
                     style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', borderBottom: '1px solid #F3F4F6', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
@@ -1936,7 +1969,8 @@ export default function SiteAudit() {
                     <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - a few minutes</div>
                   </button>
                 </div>
-              </>
+              </>,
+              document.body
             )}
           </div>
           {!!shareMsg && (
