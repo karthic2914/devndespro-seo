@@ -352,9 +352,9 @@ export default function BacklinksInsightPanels({
         </div>
       </div>
 
-      <div style={panelStyle}>
+      <div id="bl-source-sites" style={{ ...panelStyle, scrollMarginTop: 88 }}>
         <PanelHeader
-          title="Top referring domains"
+          title="Source sites"
           actionLabel={domainLimit <= 5 ? 'View all →' : 'Show less'}
           onAction={() => setDomainLimit(v => (v <= 5 ? 15 : 5))}
         />
@@ -399,14 +399,14 @@ export default function BacklinksInsightPanels({
         ))}
       </div>
 
-      <div style={panelStyle}>
+      <div id="bl-link-phrases" style={{ ...panelStyle, scrollMarginTop: 88 }}>
         <PanelHeader
-          title="Top anchors"
+          title="Link phrases"
           actionLabel={anchorLimit <= 5 ? 'View all →' : 'Show less'}
           onAction={() => setAnchorLimit(v => (v <= 5 ? 15 : 5))}
         />
         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1.6fr) 54px 54px', gap: 6, fontSize: 10, fontWeight: 700, color: '#94A3B8', marginBottom: 6, textTransform: 'uppercase' }}>
-          <span>Anchor</span>
+          <span>Phrase</span>
           <span style={{ textAlign: 'center' }}>Links</span>
           <span style={{ textAlign: 'center' }}>Domains</span>
         </div>

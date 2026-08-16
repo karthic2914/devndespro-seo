@@ -6,15 +6,15 @@ import {
   faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
+import {
+  classifyBacklink,
+  getDomainRank,
+  getQualityScore,
+  QUALITY_META,
+  summarizeBacklinkQuality,
+} from '../utils/backlinkQuality'
 
 const PAGE_SIZE = 5
-
-const SPAM_TLDS = new Set([
-  'xyz','party','icu','top','click','link','online','site','website','space',
-  'agency','club','buzz','win','bid','loan','review','trade','stream',
-  'gdn','gq','tk','ml','cf','ga','racing','date','download','accountant',
-  'faith','science','work','men','cricket','webcam','ninja','rest','pw',
-])
 
 function normalizeUrl(raw) {
   const v = String(raw || '').trim()
@@ -37,16 +37,6 @@ function getPathDisplay(raw) {
   } catch {
     return ''
   }
-}
-
-function isSpam(b) {
-  const tld = getHostname(b.url || b.name || '').split('.').pop().toLowerCase()
-  const dr = Number(b.dr || 0)
-  return SPAM_TLDS.has(tld) || (dr > 0 && dr < 10 && b.type === 'nofollow')
-}
-
-function getDomainRank(b) {
-  return Number(b?.provider_rank || b?.dr || 0)
 }
 
 function getTraffic(b) {
@@ -85,16 +75,18 @@ function formatDate(value) {
 }
 
 function isNewBacklink(b) {
-  if (b.is_new === true) return true
-  const seen = getFirstSeen(b)
-  if (!seen) return false
-  const d = new Date(seen)
-  if (Number.isNaN(d.getTime())) return false
-  return Date.now() - d.getTime() <= 30 * 24 * 60 * 60 * 1000
+  const first = getFirstSeen(b)
+  if (!first) return false
+  const age = Date.now() - new Date(first).getTime()
+  return age >= 0 && age <= 30 * 24 * 60 * 60 * 1000
 }
 
 function isLostBacklink(b) {
-  return b.is_lost === true || String(b.status || '').toLowerCase() === 'lost'
+  return (
+    b.is_lost === true ||
+    String(b.status || '').toLowerCase() === 'lost' ||
+    String(b.verification_status || '').toLowerCase() === 'lost'
+  )
 }
 
 function TypeBadge({ type }) {
@@ -141,6 +133,22 @@ function DrBadge({ dr }) {
   )
 }
 
+function QualityBadge({ backlink }) {
+  const key = classifyBacklink(backlink)
+  const meta = QUALITY_META[key]
+  const score = getQualityScore(backlink)
+  return (
+    <span
+      className="bl-quality-badge"
+      title={meta.hint}
+      style={{ background: meta.bg, color: meta.color }}
+    >
+      {meta.label}
+      <span className="bl-quality-score">{score}</span>
+    </span>
+  )
+}
+
 function SortIcon({ field, sort }) {
   if (sort.field !== field) return <FontAwesomeIcon icon={faSort} className="bl-sort-icon" />
   return <FontAwesomeIcon icon={sort.dir === 'asc' ? faSortUp : faSortDown} className="bl-sort-icon bl-sort-icon--active" />
@@ -159,6 +167,14 @@ function sourceConfig(source, isAdmin) {
   return { cls: 'manual', label: 'Manual' }
 }
 
+const QUALITY_VIEWS = {
+  all: 'All',
+  good: 'Good',
+  ok: 'OK',
+  risk: 'Risk',
+  spam: 'Spam',
+}
+
 export default function BacklinksTable({
   backlinks,
   loading,
@@ -166,23 +182,36 @@ export default function BacklinksTable({
   onRemove,
   searchSeed = '',
   searchSeedKey = 0,
+  qualityView = 'all',
+  typeLens = 'All',
+  onQualityViewChange,
 }) {
   const { user } = useAuth()
   const isAdmin = Number(user?.id) === 1
-  const [typeFilter, setTypeFilter] = useState('All') // All | Dofollow | Nofollow | New | Lost
+  const [typeFilter, setTypeFilter] = useState(typeLens || 'All')
   const [statusFilter, setStatusFilter] = useState('All')
-  const [spamFilter, setSpamFilter] = useState('All') // All | Clean | Spam
+  const [qualityFilter, setQualityFilter] = useState(
+    QUALITY_VIEWS[qualityView] || 'All'
+  )
   const [search, setSearch] = useState('')
-  const [sort, setSort] = useState({ field: 'domainRank', dir: 'desc' })
+  const [sort, setSort] = useState({ field: 'quality', dir: 'desc' })
   const [page, setPage] = useState(1)
   const [openMenuId, setOpenMenuId] = useState(null)
+
+  useEffect(() => {
+    setQualityFilter(QUALITY_VIEWS[qualityView] || 'All')
+  }, [qualityView])
+
+  useEffect(() => {
+    setTypeFilter(typeLens || 'All')
+  }, [typeLens])
 
   useEffect(() => {
     if (!searchSeedKey) return
     setSearch(searchSeed || '')
     setTypeFilter('All')
     setStatusFilter('All')
-    setSpamFilter('All')
+    setQualityFilter('All')
     setPage(1)
   }, [searchSeedKey, searchSeed])
 
@@ -196,6 +225,19 @@ export default function BacklinksTable({
     setSort(prev => prev.field === field
       ? { field, dir: prev.dir === 'asc' ? 'desc' : 'asc' }
       : { field, dir: 'desc' })
+  }
+
+  const setQuality = (key) => {
+    setQualityFilter(key)
+    if (typeof onQualityViewChange === 'function') {
+      const view =
+        key === 'Good' ? 'good'
+          : key === 'OK' ? 'ok'
+            : key === 'Risk' ? 'risk'
+              : key === 'Spam' ? 'spam'
+                : 'all'
+      onQualityViewChange(view)
+    }
   }
 
   const filtered = useMemo(() => {
@@ -214,15 +256,20 @@ export default function BacklinksTable({
         if (!broken) return false
       }
       if (statusFilter !== 'All' && b.status !== statusFilter) return false
-      if (spamFilter === 'Spam' && !isSpam(b)) return false
-      if (spamFilter === 'Clean' && isSpam(b)) return false
+
+      const bucket = classifyBacklink(b)
+      if (qualityFilter === 'Good' && bucket !== 'good') return false
+      if (qualityFilter === 'OK' && bucket !== 'ok') return false
+      if (qualityFilter === 'Risk' && bucket !== 'risk') return false
+      if (qualityFilter === 'Spam' && bucket !== 'spam') return false
+
       if (q) {
         const hay = `${b.name || ''} ${b.url || ''} ${b.source_domain || ''} ${b.anchor || ''} ${b.target_url || ''}`.toLowerCase()
         if (!hay.includes(q)) return false
       }
       return true
     })
-  }, [backlinks, typeFilter, statusFilter, spamFilter, search])
+  }, [backlinks, typeFilter, statusFilter, qualityFilter, search])
 
   const sorted = useMemo(() => {
     const { field, dir } = sort
@@ -232,6 +279,9 @@ export default function BacklinksTable({
       if (field === 'dr' || field === 'domainRank') {
         av = getDomainRank(a)
         bv = getDomainRank(b)
+      } else if (field === 'quality') {
+        av = getQualityScore(a)
+        bv = getQualityScore(b)
       } else if (field === 'traffic') {
         av = getTraffic(a)
         bv = getTraffic(b)
@@ -256,7 +306,7 @@ export default function BacklinksTable({
 
   useEffect(() => {
     setPage(1)
-  }, [typeFilter, statusFilter, spamFilter, search, sort])
+  }, [typeFilter, statusFilter, qualityFilter, search, sort])
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
@@ -271,28 +321,40 @@ export default function BacklinksTable({
     return Array.from({ length: maxButtons }, (_, i) => start + i)
   }, [totalPages, safePage])
 
+  const qualitySummary = useMemo(
+    () => summarizeBacklinkQuality(backlinks),
+    [backlinks]
+  )
+
   const exportCsv = () => {
     const headers = [
-      'Referring Page', 'URL', 'Anchor', 'Target', 'DR', 'Traffic',
-      'Type', 'First Seen', 'Last Seen', 'Status', 'Source',
+      'Referring Page', 'URL', 'Anchor', 'Target', 'DR', 'Quality', 'Quality Label',
+      'Traffic', 'Type', 'First Seen', 'Last Seen', 'Status', 'Source',
     ]
     const rows = sorted.map(b => [
-      b.name || getHostname(b.url),
-      b.url,
-      b.anchor,
-      b.target_url,
+      getHostname(b.url || b.source_domain || b.name),
+      b.url || '',
+      b.anchor || '',
+      b.target_url || '',
       getDomainRank(b),
+      getQualityScore(b),
+      QUALITY_META[classifyBacklink(b)].label,
       getTraffic(b),
       b.type || 'dofollow',
-      formatDate(getFirstSeen(b)),
-      formatDate(getLastSeen(b)),
-      b.status,
-      sourceConfig(b.source, isAdmin).label,
+      getFirstSeen(b) || '',
+      getLastSeen(b) || '',
+      b.status || '',
+      b.source || 'manual',
     ])
-    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
+    const csv = [headers, ...rows]
+      .map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+      .join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a'); a.href = url; a.download = 'backlinks.csv'; a.click()
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'backlinks.csv'
+    a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -305,7 +367,6 @@ export default function BacklinksTable({
     Number(b.http_status) >= 400 ||
     String(b.verification_status || '').toLowerCase() === 'broken'
   ).length
-  const spam = backlinks.filter(b => isSpam(b)).length
 
   if (loading) return <div className="bl-empty">Loading…</div>
 
@@ -314,7 +375,28 @@ export default function BacklinksTable({
       <div className="bl-topbar">
         <div className="bl-tabs">
           {[
-            { key: 'All', label: 'All', count: backlinks.length },
+            { key: 'All', label: 'All', count: qualitySummary.total },
+            { key: 'Good', label: 'Good', count: qualitySummary.good, tone: 'good' },
+            { key: 'OK', label: 'OK', count: qualitySummary.ok, tone: 'ok' },
+            { key: 'Risk', label: 'Risk', count: qualitySummary.risk, tone: 'risk' },
+            { key: 'Spam', label: 'Spam', count: qualitySummary.spam, tone: 'spam' },
+          ].map(t => (
+            <button
+              key={t.key}
+              className={`bl-tab${qualityFilter === t.key ? ' bl-tab--active' : ''}${t.tone === 'spam' ? ' bl-tab--red' : ''}${t.tone === 'good' ? ' bl-tab--good' : ''}${t.tone === 'risk' ? ' bl-tab--risk' : ''}`}
+              onClick={() => setQuality(t.key)}
+            >
+              {t.key === 'Spam' && (
+                <FontAwesomeIcon icon={faTriangleExclamation} style={{ marginRight: 4 }} />
+              )}
+              {t.label}
+              <span className={`bl-tab-count${t.tone === 'spam' ? ' bl-tab-count--red' : ''}`}>
+                {t.count}
+              </span>
+            </button>
+          ))}
+          <span className="bl-tab-sep" />
+          {[
             { key: 'Dofollow', label: 'Dofollow', count: dofollow },
             { key: 'Nofollow', label: 'Nofollow', count: nofollow },
             { key: 'New', label: 'New', count: newCount },
@@ -324,21 +406,12 @@ export default function BacklinksTable({
             <button
               key={t.key}
               className={`bl-tab${typeFilter === t.key ? ' bl-tab--active' : ''}`}
-              onClick={() => setTypeFilter(t.key)}
+              onClick={() => setTypeFilter(prev => (prev === t.key ? 'All' : t.key))}
             >
               {t.label}
               <span className="bl-tab-count">{t.count}</span>
             </button>
           ))}
-          <span className="bl-tab-sep" />
-          <button
-            className={`bl-tab bl-tab--spam${spamFilter === 'Spam' ? ' bl-tab--active' : ''} bl-tab--red`}
-            onClick={() => setSpamFilter(prev => (prev === 'Spam' ? 'All' : 'Spam'))}
-          >
-            <FontAwesomeIcon icon={faTriangleExclamation} style={{ marginRight: 4 }} />
-            Spam
-            <span className="bl-tab-count bl-tab-count--red">{spam}</span>
-          </button>
         </div>
 
         <div className="bl-toolbar">
@@ -366,15 +439,18 @@ export default function BacklinksTable({
       </div>
 
       <div className="bl-count-row">
-        <span className="bl-count">All backlinks {sorted.length}</span>
-        {(search || typeFilter !== 'All' || statusFilter !== 'All' || spamFilter !== 'All') && (
+        <span className="bl-count">
+          {qualityFilter === 'All' ? 'All backlinks' : `${qualityFilter} backlinks`}{' '}
+          {sorted.length}
+        </span>
+        {(search || typeFilter !== 'All' || statusFilter !== 'All' || qualityFilter !== 'All') && (
           <button
             className="bl-clear"
             onClick={() => {
               setSearch('')
               setTypeFilter('All')
               setStatusFilter('All')
-              setSpamFilter('All')
+              setQuality('All')
             }}
           >
             Clear filters
@@ -383,7 +459,7 @@ export default function BacklinksTable({
       </div>
 
       {sorted.length === 0 ? (
-        <div className="bl-empty">No backlinks match your filters.</div>
+        <div className="bl-empty">No backlinks match these filters.</div>
       ) : (
         <>
           <div className="bl-table-scroll">
@@ -398,6 +474,9 @@ export default function BacklinksTable({
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('domainRank')}>
                     DR <SortIcon field="domainRank" sort={sort} />
+                  </th>
+                  <th className="bl-th-center" onClick={() => toggleSort('quality')}>
+                    Quality <SortIcon field="quality" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('traffic')}>
                     Traffic <SortIcon field="traffic" sort={sort} />
@@ -418,7 +497,7 @@ export default function BacklinksTable({
               </thead>
               <tbody>
                 {pageRows.map(b => {
-                  const spamRow = isSpam(b)
+                  const qualityKey = classifyBacklink(b)
                   const source = sourceConfig(b.source, isAdmin)
                   const host = getHostname(b.url || b.source_domain || b.name)
                   const path = getPathDisplay(b.url)
@@ -427,11 +506,22 @@ export default function BacklinksTable({
                     : ''
 
                   return (
-                    <tr key={b.id} className={spamRow ? 'bl-row-spam' : ''}>
+                    <tr
+                      key={b.id}
+                      className={
+                        qualityKey === 'spam'
+                          ? 'bl-row-spam'
+                          : qualityKey === 'risk'
+                            ? 'bl-row-risk'
+                            : qualityKey === 'good'
+                              ? 'bl-row-good'
+                              : ''
+                      }
+                    >
                       <td className="bl-td-domain">
                         <div className="bl-domain-name">
                           {host || b.name || '—'}
-                          {spamRow && (
+                          {qualityKey === 'spam' && (
                             <span className="bl-spam-badge">
                               <FontAwesomeIcon icon={faTriangleExclamation} />SPAM
                             </span>
@@ -465,6 +555,10 @@ export default function BacklinksTable({
                         <DrBadge dr={getDomainRank(b)} />
                       </td>
 
+                      <td className="bl-td-center">
+                        <QualityBadge backlink={b} />
+                      </td>
+
                       <td className="bl-td-center bl-td-traffic">
                         {formatTraffic(getTraffic(b))}
                       </td>
@@ -491,12 +585,11 @@ export default function BacklinksTable({
                         </span>
                       </td>
 
-                      <td className="bl-td-action">
+                      <td className="bl-td-center bl-td-actions">
                         <div className="bl-row-menu">
                           <button
                             type="button"
                             className="bl-menu-btn"
-                            aria-label="Actions"
                             onClick={(e) => {
                               e.stopPropagation()
                               setOpenMenuId(prev => (prev === b.id ? null : b.id))
@@ -505,10 +598,20 @@ export default function BacklinksTable({
                             <FontAwesomeIcon icon={faEllipsisVertical} />
                           </button>
                           {openMenuId === b.id && (
-                            <div className="bl-row-menu-pop" onClick={e => e.stopPropagation()}>
+                            <div className="bl-menu-pop" onClick={(e) => e.stopPropagation()}>
+                              {b.url && (
+                                <a
+                                  href={normalizeUrl(b.url)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bl-menu-item"
+                                >
+                                  Open referring page
+                                </a>
+                              )}
                               <button
                                 type="button"
-                                className="bl-row-menu-item bl-row-menu-item--danger"
+                                className="bl-menu-item bl-menu-item--danger"
                                 onClick={() => {
                                   setOpenMenuId(null)
                                   onRemove(b.id)
@@ -527,17 +630,16 @@ export default function BacklinksTable({
             </table>
           </div>
 
-          <div className="bl-pagination">
-            <span className="bl-pagination-meta">
-              Showing {pageStart} to {pageEnd} of {sorted.length} backlinks
+          <div className="bl-pager">
+            <span className="bl-pager-meta">
+              {pageStart}–{pageEnd} of {sorted.length}
             </span>
-            <div className="bl-pagination-controls">
+            <div className="bl-pager-btns">
               <button
                 type="button"
-                className="bl-page-btn"
+                className="bl-pager-btn"
                 disabled={safePage <= 1}
                 onClick={() => setPage(p => Math.max(1, p - 1))}
-                aria-label="Previous page"
               >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
@@ -545,7 +647,7 @@ export default function BacklinksTable({
                 <button
                   key={n}
                   type="button"
-                  className={`bl-page-btn${n === safePage ? ' bl-page-btn--active' : ''}`}
+                  className={`bl-pager-btn${n === safePage ? ' bl-pager-btn--active' : ''}`}
                   onClick={() => setPage(n)}
                 >
                   {n}
@@ -553,14 +655,12 @@ export default function BacklinksTable({
               ))}
               <button
                 type="button"
-                className="bl-page-btn"
+                className="bl-pager-btn"
                 disabled={safePage >= totalPages}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                aria-label="Next page"
               >
                 <FontAwesomeIcon icon={faChevronRight} />
               </button>
-              <span className="bl-page-size">{PAGE_SIZE} / page</span>
             </div>
           </div>
         </>

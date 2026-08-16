@@ -1,5 +1,5 @@
-﻿import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+﻿import { useState, useEffect, useMemo } from 'react'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar, faLock } from '@fortawesome/free-solid-svg-icons'
@@ -12,12 +12,30 @@ import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
 import BacklinkCompetitiveHub from '../components/BacklinkCompetitiveHub'
 import api from '../utils/api'
+import { QUALITY_META, summarizeBacklinkQuality } from '../utils/backlinkQuality'
 
 export default function Backlinks() {
   const { siteId } = useParams()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const canDiscover = user?.is_paid || user?.id === 1
+  const viewParam = (() => {
+    const raw = String(searchParams.get('view') || 'pulse').toLowerCase()
+    if (raw === 'overview') return 'pulse'
+    if (raw === 'all') return 'tracked'
+    if (raw === 'gap') return 'gaps'
+    if (['good', 'ok', 'risk', 'spam'].includes(raw)) return 'health'
+    return raw
+  })()
+  const qualityView = (() => {
+    const raw = String(searchParams.get('view') || '').toLowerCase()
+    if (['good', 'ok', 'risk', 'spam'].includes(raw)) return raw
+    if (viewParam === 'health') return 'all'
+    if (viewParam === 'tracked') return 'all'
+    return 'all'
+  })()
+  const typeLens = viewParam === 'dead' ? 'Broken' : 'All'
   const [backlinks, setBacklinks] = useState([])
   const [loading, setLoading] = useState(true)
   const [form, setForm] = useState({ name: '', dr: '', status: 'Todo', url: '', anchor: '', type: 'dofollow' })
@@ -40,8 +58,51 @@ export default function Backlinks() {
   const [importingCsv, setImportingCsv] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [quickDiscovering, setQuickDiscovering] = useState(false)
-  const [toolTab, setToolTab] = useState('overview')
+  const [toolTab, setToolTab] = useState(viewParam === 'gaps' ? 'gap' : 'overview')
   const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(BACKLINKS_PAGE_FLOW, [loading, backlinks.length, toolTab])
+
+  useEffect(() => {
+    if (viewParam === 'gaps') {
+      setToolTab('gap')
+      return
+    }
+
+    setToolTab('overview')
+
+    const scrollTo = (id) => {
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }, 80)
+    }
+
+    if (viewParam === 'tracked' || viewParam === 'health' || viewParam === 'dead') {
+      scrollTo('all-backlinks')
+      return
+    }
+    if (viewParam === 'sources') {
+      scrollTo('bl-source-sites')
+      return
+    }
+    if (viewParam === 'phrases') {
+      scrollTo('bl-link-phrases')
+      return
+    }
+    if (viewParam === 'pulse') {
+      scrollTo('bl-section-hub')
+    }
+  }, [viewParam])
+
+  const setDeskView = (view) => {
+    const next = new URLSearchParams(searchParams)
+    if (!view || view === 'pulse') next.delete('view')
+    else next.set('view', view)
+    setSearchParams(next, { replace: true })
+  }
+
+  const qualitySummary = useMemo(
+    () => summarizeBacklinkQuality(backlinks),
+    [backlinks]
+  )
 
   const load = () =>
     Promise.all([
@@ -308,8 +369,6 @@ export default function Backlinks() {
   }
 
   const live     = backlinks.filter(b => b.status === 'Live').length
-  const pending  = backlinks.filter(b => b.status === 'Pending').length
-  const todo     = backlinks.filter(b => b.status === 'Todo').length
   const dofollow = backlinks.filter(b => (b.type || 'dofollow') === 'dofollow').length
   const ahrefsBacklinks = Number(integrations?.ahrefs?.latest?.backlinks || 0)
   const ahrefsRefDomains = Number(integrations?.ahrefs?.latest?.ref_domains || 0)
@@ -384,7 +443,7 @@ export default function Backlinks() {
 
       <PageHeader
         title="Backlinks"
-        subtitle="Broken links, referring domains, backlink gap, and live tracking - aligned with Moz, Majestic, Ahrefs, Semrush and industry standards (live data via DataForSEO)."
+        subtitle="Your link desk: pulse, tracked links, health, dead targets, source sites, phrases, and growth gaps."
       />
 
       <div id="bl-section-hub">
@@ -393,10 +452,15 @@ export default function Backlinks() {
         backlinks={backlinks}
         backlinkSummary={backlinkSummary}
         activeTab={toolTab}
-        onTabChange={setToolTab}
+        onTabChange={(tab) => {
+          setToolTab(tab)
+          if (tab === 'gap') setDeskView('gaps')
+          else if (viewParam === 'gaps') setDeskView('pulse')
+        }}
         onReload={load}
         onFilterDomain={(domain) => {
           setToolTab('overview')
+          setDeskView('tracked')
           setTableSearchSeed(domain)
           setTableSearchSeedKey(k => k + 1)
           setTimeout(() => {
@@ -407,10 +471,12 @@ export default function Backlinks() {
           <>
       <div className="bl-metric-strip">
         <MetricCard label="Total" value={backlinks.length} />
-        <MetricCard label="Dofollow" value={dofollow} accent="var(--green)" />
+        <MetricCard label="Good" value={qualitySummary.good} accent="var(--green)" />
+        <MetricCard label="OK" value={qualitySummary.ok} accent="var(--amber)" />
+        <MetricCard label="Risk" value={qualitySummary.risk} accent="#c2410c" />
+        <MetricCard label="Spam" value={qualitySummary.spam} accent="var(--red)" />
+        <MetricCard label="Dofollow" value={dofollow} accent="var(--blue)" />
         <MetricCard label="Live" value={live} accent="var(--blue)" />
-        <MetricCard label="Pending" value={pending} accent="var(--amber)" />
-        <MetricCard label="To do" value={todo} accent="var(--red)" />
         {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
         {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
       </div>
@@ -605,6 +671,25 @@ export default function Backlinks() {
       {/* All backlinks table - 10 per page */}
       <div id="all-backlinks">
         <Card style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>
+              {viewParam === 'dead'
+                ? 'Dead targets'
+                : viewParam === 'health'
+                  ? 'Link health'
+                  : 'Tracked links'}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
+              Grade each link as Good / OK / Risk / Spam from quality + DR signals.
+              {' · '}
+              {Object.entries(QUALITY_META).map(([k, meta], i) => (
+                <span key={k}>
+                  {i > 0 ? ' · ' : ''}
+                  <strong style={{ color: meta.color }}>{meta.label}</strong>
+                </span>
+              ))}
+            </div>
+          </div>
           <BacklinksTable
             backlinks={backlinks}
             loading={loading}
@@ -612,6 +697,12 @@ export default function Backlinks() {
             onRemove={remove}
             searchSeed={tableSearchSeed}
             searchSeedKey={tableSearchSeedKey}
+            qualityView={qualityView}
+            typeLens={typeLens}
+            onQualityViewChange={(q) => {
+              if (q === 'all') setDeskView(viewParam === 'dead' ? 'dead' : 'health')
+              else setDeskView(q)
+            }}
           />
         </Card>
       </div>

@@ -1,12 +1,12 @@
 ﻿import { useState, useEffect } from 'react'
-import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChartSimple, faKey, faLink, faMagnifyingGlass, faListCheck,
   faRobot, faWandMagicSparkles, faUsers, faChevronLeft, faChevronRight,
   faArrowLeft, faRightFromBracket, faBell, faPlug, faEnvelope,
-  faPaperPlane, faUserGroup, faLock,
+  faPaperPlane, faUserGroup, faLock, faChevronDown,
 } from '@fortawesome/free-solid-svg-icons'
 import { Logo } from '../components/UI'
 import api from '../utils/api'
@@ -14,10 +14,21 @@ import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
 import { canUseBacklinks, canUseAiAssistant, canUseColdEmails } from '../utils/features'
 
+// Original IA — useful coverage without mirroring Ahrefs/Semrush submenu wording.
+const BACKLINK_SUBNAV = [
+  { view: 'pulse', label: 'Pulse' },
+  { view: 'tracked', label: 'Tracked links' },
+  { view: 'health', label: 'Link health' },
+  { view: 'dead', label: 'Dead targets' },
+  { view: 'sources', label: 'Source sites' },
+  { view: 'phrases', label: 'Link phrases' },
+  { view: 'gaps', label: 'Growth gaps' },
+]
+
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
   { to: 'keywords',      label: 'Keywords',      icon: faKey },
-  { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks' },
+  { to: 'backlinks',     label: 'Backlinks',     icon: faLink, feature: 'backlinks', module: 'backlinks', children: BACKLINK_SUBNAV },
   { to: 'audit',         label: 'Site Audit',    icon: faMagnifyingGlass },
   { to: 'actions',       label: 'Action Plan',   icon: faListCheck },
   // Hidden for now - re-enable by removing `hidden: true` (Admin Modules also controls visibility)
@@ -35,6 +46,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const { siteId } = useParams()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   // Process pages render AppProcessTopBar (process + compact usage) themselves
   const pageKey = (() => {
     const m = location.pathname.match(/\/site\/[^/]+(?:\/([^/]+))?\/?$/)
@@ -50,6 +62,16 @@ export default function Layout() {
     'competitors',
   ])
   const hideGlobalUsageBar = pageKey !== null && PROCESS_TOPBAR_PAGES.has(pageKey)
+  const backlinksView = (() => {
+    const raw = String(searchParams.get('view') || 'pulse').toLowerCase()
+    // Legacy aliases from earlier submenu labels
+    if (raw === 'overview') return 'pulse'
+    if (raw === 'all') return 'tracked'
+    if (['good', 'ok', 'risk', 'spam'].includes(raw)) return 'health'
+    if (raw === 'gap') return 'gaps'
+    return raw
+  })()
+  const onBacklinksPage = String(location.pathname || '').includes('/backlinks')
   const [site, setSite] = useState(null)
   const [siteHealth, setSiteHealth] = useState(null)
   const [collapsed, setCollapsed] = useState(false)
@@ -202,7 +224,7 @@ export default function Layout() {
         )}
 
         <nav className="sidebar__nav">
-          {visibleNav.map(({ to, label, icon, end, feature }) => {
+          {visibleNav.map(({ to, label, icon, end, feature, children }) => {
             if (to === 'cold-emails' && Number(site?.user_id) !== Number(user?.id)) {
               return null
             }
@@ -233,6 +255,61 @@ export default function Layout() {
                     </>
                   )}
                   {collapsed && <span className="nav-tooltip">{label} (Locked)</span>}
+                </div>
+              )
+            }
+
+            if (children?.length) {
+              const base = `/site/${siteId}/${to}`
+              return (
+                <div key={to} className="nav-group">
+                  <NavLink
+                    to={base}
+                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    <span className="nav-item__icon">
+                      <FontAwesomeIcon icon={icon} />
+                    </span>
+                    {!collapsed && (
+                      <>
+                        <span style={{ flex: 1 }}>{label}</span>
+                        <FontAwesomeIcon
+                          icon={faChevronDown}
+                          style={{
+                            fontSize: 10,
+                            opacity: 0.65,
+                            transform: onBacklinksPage ? 'rotate(0deg)' : 'rotate(-90deg)',
+                            transition: 'transform 0.15s',
+                          }}
+                        />
+                      </>
+                    )}
+                    {collapsed && <span className="nav-tooltip">{label}</span>}
+                  </NavLink>
+                  {!collapsed && onBacklinksPage && (
+                    <div className="nav-sub">
+                      {children.map((child) => {
+                        const href = child.view === 'pulse'
+                          ? base
+                          : `${base}?view=${child.view}`
+                        const isActive =
+                          child.view === 'pulse'
+                            ? backlinksView === 'pulse'
+                            : backlinksView === child.view
+                        return (
+                          <NavLink
+                            key={child.view}
+                            to={href}
+                            className={`nav-subitem${isActive ? ' active' : ''}`}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            {child.label}
+                          </NavLink>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
               )
             }
