@@ -109,9 +109,16 @@ export const SectionLabel = ({ children, action }) => (
   </div>
 )
 
-export const MetricCard = ({ label, value, sub, accent }) => (
+export const MetricCard = ({ label, value, sub, accent, scoreKey }) => (
   <div className="metric-card">
-    <div className="metric-card__label">{label}</div>
+    <div className="metric-card__label">
+      {scoreKey ? (
+        <span className="score-label-with-tip">
+          {label}
+          <ScoreInfoTip scoreKey={scoreKey} />
+        </span>
+      ) : label}
+    </div>
     <div className="metric-card__value" style={{ color: accent || 'var(--text)' }}>{value}</div>
     {sub && <div className="metric-card__sub">{sub}</div>}
   </div>

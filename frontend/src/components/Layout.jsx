@@ -157,7 +157,6 @@ export default function Layout() {
               <button
                 type="button"
                 className="site-card__health"
-                title="Site Health from your latest audit. Click to open Site Audit."
                 onClick={() => navigate(`/site/${siteId}/audit`)}
               >
                 {(() => {

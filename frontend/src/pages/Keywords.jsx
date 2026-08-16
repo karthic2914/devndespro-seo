@@ -971,15 +971,15 @@ import {
           <div id="kw-section-research" style={{ scrollMarginTop: 72 }}>
           <Card padding="1.25rem">
             <CollapsibleSection
-              title="Keyword Research"
-              subtitle="Industry-standard discovery: volume, KD, CPC, intent, trend, results, SERP - aligned with Moz / Ahrefs / SE Ranking / Semrush / Serpstat patterns via DataForSEO."
-              icon={<FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />}
-              defaultOpen
-              right={
-                <span style={{ fontSize: 11, background: T.orangeDim, color: T.orange, padding: '2px 8px', borderRadius: 99, fontWeight: 700 }}>
-                  Multi-vendor · DataForSEO
+              title={
+                <span className="score-label-with-tip">
+                  Keyword Research
+                  <ScoreInfoTip scoreKey="keywordResearch" asSpan />
                 </span>
               }
+              subtitle="Discover volume, difficulty, intent, trends, and related keywords — then add the best ones to your track list."
+              icon={<FontAwesomeIcon icon={faMagnifyingGlass} style={{ color: T.orange }} />}
+              defaultOpen
             >
             {dfsMeta?.locationName && (
               <div style={{ fontSize: 11, color: T.muted, marginBottom: 8 }}>
@@ -1470,7 +1470,7 @@ import {
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
               AI Suggestions are creative ideas from Claude (estimated volume) Ã¢â‚¬â€ not live ranking data.
-              Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real GSC / DataForSEO inventory.
+              Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real search / project inventory.
             </div>
 
             {aiSuggestions.length > 0 && (

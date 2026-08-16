@@ -84,7 +84,6 @@ export default function Sidebar({ siteId, site, user, onSignOut, healthScore = n
             <button
               type="button"
               onClick={() => navigate(`/site/${siteId}/audit`)}
-              title="Site Health from your latest audit"
               style={{
                 fontSize: 10,
                 color: T.muted,
@@ -98,7 +97,12 @@ export default function Sidebar({ siteId, site, user, onSignOut, healthScore = n
                 gap: 4,
               }}
             >
-              Site Health <ScoreInfoTip scoreKey="siteHealth" asSpan /> {score != null ? Math.round(Number(score)) : 'N/A'}
+              <span className="score-label-with-tip">
+                Site Health
+                <ScoreInfoTip scoreKey="siteHealth" asSpan />
+              </span>
+              {' '}
+              {score != null ? Math.round(Number(score)) : 'N/A'}
               {score != null && '/100'}
             </button>
           </div>

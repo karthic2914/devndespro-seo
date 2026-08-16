@@ -9,6 +9,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { Card, OrangeBtn, GhostBtn } from './UI'
 import CollapsibleSection from './CollapsibleSection'
+import ScoreInfoTip from './ScoreInfoTip'
 import api from '../utils/api'
 import toast from '../utils/toast'
 
@@ -157,7 +158,12 @@ export default function KeywordGapPanel({ siteId, onAdded }) {
   return (
     <Card style={{ marginBottom: 16 }}>
       <CollapsibleSection
-        title="Keyword gap"
+        title={
+          <span className="score-label-with-tip">
+            Keyword gap
+            <ScoreInfoTip scoreKey="keywordGap" asSpan />
+          </span>
+        }
         subtitle="Find keywords competitors rank for that you don’t - content and SEO opportunities."
         icon={<FontAwesomeIcon icon={faChartLine} style={{ color: '#EA580C' }} />}
         defaultOpen

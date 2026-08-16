@@ -487,12 +487,12 @@ export default function Backlinks() {
           <>
       <div className="bl-metric-strip">
         <MetricCard label="Total" value={backlinks.length} />
-        <MetricCard label="Good" value={qualitySummary.good} accent="var(--green)" />
-        <MetricCard label="OK" value={qualitySummary.ok} accent="var(--amber)" />
-        <MetricCard label="Risk" value={qualitySummary.risk} accent="#c2410c" />
-        <MetricCard label="Spam" value={qualitySummary.spam} accent="var(--red)" />
-        <MetricCard label="Dofollow" value={dofollow} accent="var(--blue)" />
-        <MetricCard label="Live" value={live} accent="var(--blue)" />
+        <MetricCard label="Good" value={qualitySummary.good} accent="var(--green)" scoreKey="good" />
+        <MetricCard label="OK" value={qualitySummary.ok} accent="var(--amber)" scoreKey="ok" />
+        <MetricCard label="Risk" value={qualitySummary.risk} accent="#c2410c" scoreKey="risk" />
+        <MetricCard label="Spam" value={qualitySummary.spam} accent="var(--red)" scoreKey="spam" />
+        <MetricCard label="Dofollow" value={dofollow} accent="var(--blue)" scoreKey="dofollow" />
+        <MetricCard label="Live" value={live} accent="var(--blue)" scoreKey="live" />
         {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" />}
         {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" />}
       </div>
