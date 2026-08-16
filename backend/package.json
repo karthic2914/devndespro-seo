@@ -21,6 +21,7 @@
     "openai": "^6.39.1",
     "pdfkit": "^0.19.1",
     "pg": "^8.11.3",
+    "puppeteer": "^23.11.1",
     "stripe": "^22.5.0"
   },
   "devDependencies": {

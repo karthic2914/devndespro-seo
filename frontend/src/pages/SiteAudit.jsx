@@ -981,6 +981,11 @@ export default function SiteAudit() {
     try {
       const r = await api.post(`/sites/${siteId}/audit/run`)
       setAuditData(r.data); setActiveTab('all'); setExpandedIdx(null)
+      if (r?.data?.score != null) {
+        window.dispatchEvent(
+          new CustomEvent('site-health-updated', { detail: { health: Number(r.data.score) } })
+        )
+      }
       showSnackbar('Audit completed successfully!', 'success')
       syncBacklinksAfterAudit()
     } catch (e) {
@@ -1082,6 +1087,13 @@ export default function SiteAudit() {
         setMultipageStatus('complete')
         setCurrentAuditRunId(null)
         setMultipageResults(data.results)
+
+        const health = Number(data.siteHealthPct ?? data.results?.siteHealthPct)
+        if (Number.isFinite(health) && health > 0) {
+          window.dispatchEvent(
+            new CustomEvent('site-health-updated', { detail: { health } })
+          )
+        }
 
         showSnackbar('Full site audit completed!', 'success')
 

@@ -68,31 +68,40 @@ export default function Layout() {
   useEffect(() => {
     const stored = localStorage.getItem('activeSite')
     if (stored) setSite(JSON.parse(stored))
+    setSiteHealth(null)
 
     api.get(`/sites/${siteId}`)
       .then((r) => {
-        if (r.data) {
-          setSite(r.data)
-          if (r.data.health != null) setSiteHealth(Number(r.data.health))
-        }
+        if (r.data) setSite(r.data)
       })
       .catch(() => {})
 
-    // Prefer full-site audit health when available (same source as Overview)
+    // Same priority as Decision Center: multipage (if real) → latest homepage audit → metrics
     Promise.all([
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
+      api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
       api.get(`/sites/${siteId}/metrics`).catch(() => null),
-    ]).then(([mpRes, metricsRes]) => {
+    ]).then(([mpRes, latestRes, metricsRes]) => {
       const mp = mpRes?.data
-      const mpHealth = mp?.status === 'complete'
+      const mpOk = mp?.status === 'complete'
+      const mpHealth = mpOk
         ? Number(mp.site_health_pct ?? mp.results?.siteHealthPct)
         : NaN
-      if (Number.isFinite(mpHealth)) {
-        setSiteHealth(mpHealth)
-        return
-      }
-      const mHealth = Number(metricsRes?.data?.health)
-      if (Number.isFinite(mHealth)) setSiteHealth(mHealth)
+      const latestScore = Number(latestRes?.data?.score)
+      const metricsHealth = Number(
+        metricsRes?.data?.health ?? metricsRes?.data?.health
+      )
+
+      let next = null
+      // Prefer multipage only when it has a meaningful score (avoid empty SPA multipage = 0 wiping real audit)
+      if (mpOk && Number.isFinite(mpHealth) && mpHealth > 0) next = mpHealth
+      else if (Number.isFinite(latestScore) && latestScore > 0) next = latestScore
+      else if (Number.isFinite(metricsHealth) && metricsHealth > 0) next = metricsHealth
+      else if (mpOk && Number.isFinite(mpHealth)) next = mpHealth
+      else if (Number.isFinite(latestScore)) next = latestScore
+      else if (Number.isFinite(metricsHealth)) next = metricsHealth
+
+      if (next != null) setSiteHealth(next)
     })
 
     api.get(`/sites/${siteId}/alerts`)

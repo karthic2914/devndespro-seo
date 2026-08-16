@@ -3,6 +3,7 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 const { pool, anthropic } = require('../clients')
 const { auth, verifySite } = require('../middleware')
+const { fetchPageHtml } = require('../utils/pageFetcher')
 
 const router = express.Router()
 
@@ -11,23 +12,37 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
   const url = s[0].url
   try {
     const crawlStartedAt = Date.now()
-    const crawlRes = await axios.get(url, {
-      timeout: 15000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
-      maxRedirects: 5,
-    })
-    const html = typeof crawlRes.data === 'string' ? crawlRes.data : String(crawlRes.data || '')
+    const fetched = await fetchPageHtml(url, { timeout: 20000 })
+    const html = fetched.html || ''
     const $ = cheerio.load(html)
     const checks = []
     const add = (check, status, message, impact, category) =>
       checks.push({ check, status, message, impact, category })
 
-    const finalUrl = crawlRes?.request?.res?.responseUrl || url
-    const responseTimeMs = Date.now() - crawlStartedAt
-    const statusCode = Number(crawlRes.status || 0)
-    const headerLength = Number(crawlRes.headers?.['content-length'])
+    const finalUrl = fetched.finalUrl || url
+    const responseTimeMs = fetched.responseTimeMs || (Date.now() - crawlStartedAt)
+    const statusCode = Number(fetched.statusCode || 0)
+    const headerLength = Number(fetched.headers?.['content-length'])
     const fileSizeBytes = Number.isFinite(headerLength) && headerLength > 0 ? headerLength : Buffer.byteLength(html, 'utf8')
     const language = ($('html').attr('lang') || '').trim() || null
+
+    if (fetched.spaShell && fetched.jsRendered) {
+      add(
+        'spa_js_render',
+        'pass',
+        'JavaScript SPA detected - content was captured after headless Chrome render (not the empty shell)',
+        'High',
+        'Technical SEO'
+      )
+    } else if (fetched.spaShell && !fetched.jsRendered) {
+      add(
+        'spa_js_render',
+        'warning',
+        `JavaScript SPA shell detected (React/Vite-style). Static crawl saw almost no text${fetched.renderError ? ` (${fetched.renderError})` : ''}. Install puppeteer on the server or use SSR/prerender so search & AI bots see real content.`,
+        'High',
+        'Technical SEO'
+      )
+    }
 
     const rootHost = (() => {
       try { return new URL(finalUrl).hostname.toLowerCase().replace(/^www\./, '') } catch { return '' }
@@ -179,8 +194,18 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
     else add('meta_desc', 'pass', 'Meta description: good length', 'High', 'On-Page SEO')
 
     const h1s = $('h1')
-    if (h1s.length === 0) add('h1', 'error', 'No H1 heading found on page', 'High', 'On-Page SEO')
-    else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found - keep only one`, 'Medium', 'On-Page SEO')
+    const spaUnrendered = Boolean(fetched.spaShell && !fetched.jsRendered)
+    if (h1s.length === 0) {
+      add(
+        'h1',
+        spaUnrendered ? 'warning' : 'error',
+        spaUnrendered
+          ? 'No H1 in the HTML shell - may appear after JavaScript loads (SPA). Use SSR/prerender or enable headless render.'
+          : 'No H1 heading found on page',
+        'High',
+        'On-Page SEO'
+      )
+    } else if (h1s.length > 1) add('h1', 'warning', `${h1s.length} H1 tags found - keep only one`, 'Medium', 'On-Page SEO')
     else add('h1', 'pass', `H1: "${h1s.first().text().trim().substring(0,55)}"`, 'High', 'On-Page SEO')
 
     const ogTitle = $('meta[property="og:title"]').attr('content') || ''
@@ -194,7 +219,15 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
 
     // Content
     const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
-    if (wordCount < 300) add('content', 'error', `Very low word count: ~${wordCount} words (aim 500+)`, 'High', 'Content Quality')
+    if (spaUnrendered && wordCount < 300) {
+      add(
+        'content',
+        'warning',
+        `Word count ~${wordCount} from HTML shell only - real React/SPA content may load in the browser. Enable headless render or SSR so audits & AI bots see full text.`,
+        'High',
+        'Content Quality'
+      )
+    } else if (wordCount < 300) add('content', 'error', `Very low word count: ~${wordCount} words (aim 500+)`, 'High', 'Content Quality')
     else if (wordCount < 700) add('content', 'warning', `Low word count: ~${wordCount} words (aim 800+ for ranking)`, 'Medium', 'Content Quality')
     else add('content', 'pass', `Good content volume: ~${wordCount} words`, 'Medium', 'Content Quality')
 
@@ -445,6 +478,9 @@ router.post('/:siteId/audit/run', auth, verifySite, async (req, res) => {
         internalLinks,
         externalLinks,
         robots,
+        spaShell: Boolean(fetched.spaShell),
+        jsRendered: Boolean(fetched.jsRendered),
+        renderError: fetched.renderError || null,
       },
     }
     await pool.query('INSERT INTO audit_results (site_id, results, score) VALUES ($1,$2,$3)', [req.siteId, JSON.stringify(result), score])
@@ -843,25 +879,32 @@ async function discoverPageUrls(baseUrl, limit) {
 async function crawlSinglePageLite(pageUrl) {
   try {
     const startedAt = Date.now()
-    const res = await axios.get(pageUrl, {
-      timeout: 12000,
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SEOAuditBot/1.0; +https://devndespro.com)' },
-      maxRedirects: 5,
-      validateStatus: () => true,
-    })
-    const responseTimeMs = Date.now() - startedAt
-    const html = typeof res.data === 'string' ? res.data : String(res.data || '')
+    const fetched = await fetchPageHtml(pageUrl, { timeout: 20000 })
+    const responseTimeMs = fetched.responseTimeMs || (Date.now() - startedAt)
+    const html = fetched.html || ''
     const $ = cheerio.load(html)
     const title = $('title').text().trim() || null
     const metaDescription = $('meta[name="description"]').attr('content') || null
     const h1 = $('h1').first().text().trim() || null
     const canonical = $('link[rel="canonical"]').attr('href') || null
     const wordCount = $('body').text().replace(/\s+/g, ' ').trim().split(' ').filter(Boolean).length
+    const spaUnrendered = Boolean(fetched.spaShell && !fetched.jsRendered)
 
     const liteChecks = []
 
     const addLiteCheck = (check, status, message, category = 'On-Page SEO') => {
       liteChecks.push({ check, status, message, category })
+    }
+
+    if (fetched.spaShell && fetched.jsRendered) {
+      addLiteCheck('spa_js_render', 'pass', 'JS SPA rendered via headless Chrome', 'Technical SEO')
+    } else if (fetched.spaShell) {
+      addLiteCheck(
+        'spa_js_render',
+        'warning',
+        `SPA shell - content may be incomplete${fetched.renderError ? `: ${fetched.renderError}` : ''}`,
+        'Technical SEO'
+      )
     }
 
     // Title
@@ -884,7 +927,11 @@ async function crawlSinglePageLite(pageUrl) {
 
     // H1
     if (!h1) {
-      addLiteCheck('h1', 'error', 'Missing H1 heading')
+      addLiteCheck(
+        'h1',
+        spaUnrendered ? 'warning' : 'error',
+        spaUnrendered ? 'Missing H1 in HTML shell (SPA?)' : 'Missing H1 heading'
+      )
     } else {
       addLiteCheck('h1', 'pass', 'H1 found')
     }
@@ -897,7 +944,9 @@ async function crawlSinglePageLite(pageUrl) {
     }
 
     // Content volume
-    if (wordCount < 300) {
+    if (spaUnrendered && wordCount < 300) {
+      addLiteCheck('content', 'warning', `Low word count in shell (~${wordCount}) - may need JS render / SSR`, 'Content Quality')
+    } else if (wordCount < 300) {
       addLiteCheck('content', 'error', 'Very low word count', 'Content Quality')
     } else if (wordCount < 700) {
       addLiteCheck('content', 'warning', 'Low word count', 'Content Quality')
@@ -909,13 +958,15 @@ async function crawlSinglePageLite(pageUrl) {
     const warningCount = liteChecks.filter(c => c.status === 'warning').length
     return {
       url: pageUrl,
-      statusCode: res.status,
+      statusCode: fetched.statusCode,
       title,
       metaDescription,
       h1,
       canonical,
       wordCount,
       responseTimeMs,
+      spaShell: Boolean(fetched.spaShell),
+      jsRendered: Boolean(fetched.jsRendered),
       checks: liteChecks,
       errorCount,
       warningCount,
