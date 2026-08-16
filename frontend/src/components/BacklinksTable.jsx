@@ -1,8 +1,9 @@
-﻿import { useState, useMemo, useEffect } from 'react'
+﻿import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowUpRightFromSquare, faTriangleExclamation, faSort,
-  faSortUp, faSortDown, faFileExport, faTrash,
+  faSortUp, faSortDown, faFileExport, faTrash, faEllipsisVertical,
   faChevronLeft, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
@@ -13,6 +14,122 @@ import {
   QUALITY_META,
   summarizeBacklinkQuality,
 } from '../utils/backlinkQuality'
+
+function RowActionsMenu({ backlink, onRemove }) {
+  const [open, setOpen] = useState(false)
+  const btnRef = useRef(null)
+  const menuRef = useRef(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  const placeMenu = () => {
+    const btn = btnRef.current
+    if (!btn) return
+    const rect = btn.getBoundingClientRect()
+    const menuWidth = 200
+    const menuHeight = 96
+    const gap = 6
+    let left = rect.right - menuWidth
+    let top = rect.bottom + gap
+    if (left < 8) left = 8
+    if (left + menuWidth > window.innerWidth - 8) {
+      left = window.innerWidth - menuWidth - 8
+    }
+    if (top + menuHeight > window.innerHeight - 8) {
+      top = rect.top - menuHeight - gap
+    }
+    setPos({ top, left })
+  }
+
+  useLayoutEffect(() => {
+    if (!open) return
+    placeMenu()
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e) => {
+      if (btnRef.current?.contains(e.target)) return
+      if (menuRef.current?.contains(e.target)) return
+      setOpen(false)
+    }
+    const onScroll = () => setOpen(false)
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    window.addEventListener('resize', onScroll)
+    window.addEventListener('scroll', onScroll, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('scroll', onScroll, true)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const href = backlink?.url ? normalizeUrl(backlink.url) : ''
+
+  return (
+    <div className="bl-row-actions">
+      <button
+        ref={btnRef}
+        type="button"
+        className={`bl-menu-trigger${open ? ' bl-menu-trigger--open' : ''}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label="Row actions"
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+      >
+        <FontAwesomeIcon icon={faEllipsisVertical} />
+      </button>
+      {open && createPortal(
+        <div
+          ref={menuRef}
+          className="bl-action-menu"
+          role="menu"
+          style={{ top: pos.top, left: pos.left }}
+        >
+          {href ? (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bl-action-menu__item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
+              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+              Open referring page
+            </a>
+          ) : (
+            <span className="bl-action-menu__item bl-action-menu__item--disabled" role="menuitem">
+              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
+              Open referring page
+            </span>
+          )}
+          <div className="bl-action-menu__sep" role="separator" />
+          <button
+            type="button"
+            className="bl-action-menu__item bl-action-menu__item--danger"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false)
+              onRemove?.(backlink.id)
+            }}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+            Remove
+          </button>
+        </div>,
+        document.body
+      )}
+    </div>
+  )
+}
 
 const PAGE_SIZE = 5
 
@@ -552,31 +669,7 @@ export default function BacklinksTable({
                       </td>
 
                       <td className="bl-td-actions">
-                        <div className="bl-actions">
-                          {b.url ? (
-                            <a
-                              href={normalizeUrl(b.url)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="bl-action-btn"
-                              title="Open referring page"
-                            >
-                              <FontAwesomeIcon icon={faArrowUpRightFromSquare} />
-                              <span>Open</span>
-                            </a>
-                          ) : (
-                            <span className="bl-action-btn bl-action-btn--disabled">Open</span>
-                          )}
-                          <button
-                            type="button"
-                            className="bl-action-btn bl-action-btn--danger"
-                            title="Remove backlink"
-                            onClick={() => onRemove(b.id)}
-                          >
-                            <FontAwesomeIcon icon={faTrash} />
-                            <span>Remove</span>
-                          </button>
-                        </div>
+                        <RowActionsMenu backlink={b} onRemove={onRemove} />
                       </td>
                     </tr>
                   )
