@@ -146,7 +146,8 @@ const ensureBacklinkIntelligenceSchema = async () => {
       ADD COLUMN IF NOT EXISTS authority_breakdown JSONB DEFAULT '{}'::jsonb,
       ADD COLUMN IF NOT EXISTS domain_rank INTEGER,
       ADD COLUMN IF NOT EXISTS domain_rank_updated_at TIMESTAMPTZ,
-      ADD COLUMN IF NOT EXISTS domain_rank_meta JSONB DEFAULT '{}'::jsonb
+      ADD COLUMN IF NOT EXISTS domain_rank_meta JSONB DEFAULT '{}'::jsonb,
+      ADD COLUMN IF NOT EXISTS disavow_tracker JSONB DEFAULT '{}'::jsonb
   `)
 backlinkSchemaReady = true
 }
@@ -1808,6 +1809,119 @@ router.delete('/:siteId/backlink-opportunities/:id', auth, verifySite, async (re
   )
 
   res.json({ ok: true })
+})
+
+const DEFAULT_DISAVOW_WAIT_DAYS = 21
+
+function enrichDisavowTracker(raw = {}) {
+  const submittedAt = raw.submittedAt || null
+  const checkAfterDays = Math.max(
+    1,
+    Math.min(90, Number(raw.checkAfterDays || DEFAULT_DISAVOW_WAIT_DAYS))
+  )
+  const checkAfterAt =
+    raw.checkAfterAt ||
+    (submittedAt
+      ? new Date(
+          new Date(submittedAt).getTime() + checkAfterDays * 24 * 60 * 60 * 1000
+        ).toISOString()
+      : null)
+  const checkedAt = raw.checkedAt || null
+  const now = Date.now()
+  let phase = 'none'
+  let daysLeft = null
+
+  if (checkedAt) {
+    phase = 'checked'
+  } else if (submittedAt && checkAfterAt) {
+    const leftMs = new Date(checkAfterAt).getTime() - now
+    daysLeft = Math.ceil(leftMs / (24 * 60 * 60 * 1000))
+    phase = leftMs <= 0 ? 'ready' : 'waiting'
+  }
+
+  return {
+    submittedAt,
+    checkAfterDays,
+    checkAfterAt,
+    checkedAt,
+    domainCount: Number(raw.domainCount || 0) || 0,
+    fileName: raw.fileName || 'disavow-spam-domains.txt',
+    note: raw.note || '',
+    phase,
+    daysLeft: phase === 'waiting' ? Math.max(0, daysLeft) : daysLeft,
+    canCheck: phase === 'ready',
+    message:
+      phase === 'none'
+        ? 'Not marked as uploaded to Google yet.'
+        : phase === 'waiting'
+          ? `Waiting for Google (~${Math.max(0, daysLeft)} day${Math.max(0, daysLeft) === 1 ? '' : 's'} left). Then re-check in Search Console and re-run Site Audit.`
+          : phase === 'ready'
+            ? 'Wait period is over. Check Google Disavow status, then re-run Site Audit.'
+            : 'Marked as checked. You can submit a new list anytime if spam changes.',
+  }
+}
+
+router.get('/:siteId/backlinks/disavow-status', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+  const { rows } = await pool.query(
+    'SELECT disavow_tracker FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+  res.json(enrichDisavowTracker(rows[0]?.disavow_tracker || {}))
+})
+
+router.post('/:siteId/backlinks/disavow-status', auth, verifySite, async (req, res) => {
+  await ensureBacklinkIntelligenceSchema()
+
+  const action = String(req.body?.action || 'submit').toLowerCase()
+  const { rows: existing } = await pool.query(
+    'SELECT disavow_tracker FROM sites WHERE id=$1',
+    [req.siteId]
+  )
+  const prev = existing[0]?.disavow_tracker || {}
+
+  let next = { ...prev }
+
+  if (action === 'clear' || action === 'reset') {
+    next = {}
+  } else if (action === 'checked' || action === 'check') {
+    if (!prev.submittedAt) {
+      return res.status(400).json({ error: 'Mark as uploaded to Google first' })
+    }
+    next = {
+      ...prev,
+      checkedAt: new Date().toISOString(),
+      note: String(req.body?.note || prev.note || '').slice(0, 500),
+    }
+  } else {
+    // submit / uploaded
+    const checkAfterDays = Math.max(
+      1,
+      Math.min(90, Number(req.body?.checkAfterDays || prev.checkAfterDays || DEFAULT_DISAVOW_WAIT_DAYS))
+    )
+    const submittedAt = new Date().toISOString()
+    next = {
+      submittedAt,
+      checkAfterDays,
+      checkAfterAt: new Date(
+        Date.now() + checkAfterDays * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      checkedAt: null,
+      domainCount: Number(req.body?.domainCount || prev.domainCount || 0) || 0,
+      fileName: String(req.body?.fileName || 'disavow-spam-domains.txt').slice(0, 120),
+      note: String(req.body?.note || '').slice(0, 500),
+    }
+  }
+
+  const { rows } = await pool.query(
+    `UPDATE sites
+     SET disavow_tracker = $1::jsonb
+     WHERE id = $2
+     RETURNING disavow_tracker`,
+    [JSON.stringify(next), req.siteId]
+  )
+
+  res.json(enrichDisavowTracker(rows[0]?.disavow_tracker || next))
 })
 
 router.get('/:siteId/backlinks/summary', auth, verifySite, async (req, res) => {

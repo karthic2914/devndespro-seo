@@ -60,6 +60,7 @@ export default function Backlinks() {
   const [importingCsv, setImportingCsv] = useState(false)
   const [importResult, setImportResult] = useState(null)
   const [quickDiscovering, setQuickDiscovering] = useState(false)
+  const [rescanning, setRescanning] = useState(false)
   const [toolTab, setToolTab] = useState(viewParam === 'gaps' ? 'gap' : 'overview')
   const [scrollFlowId, setScrollFlowId] = useProcessScrollSpy(BACKLINKS_PAGE_FLOW, [loading, backlinks.length, toolTab])
 
@@ -321,6 +322,32 @@ export default function Backlinks() {
 
     setQuickDiscovering(false)
   }
+
+  const rescanBacklinks = async () => {
+    if (!backlinks.length) {
+      toast('Add or discover backlinks first', { icon: 'i' })
+      return
+    }
+    setRescanning(true)
+    try {
+      const { data } = await api.post(`/sites/${siteId}/backlinks/verify-all`, {
+        limit: Math.min(200, Math.max(50, backlinks.length)),
+      })
+      const s = data?.summary || {}
+      toast.success(
+        `Re-scanned ${s.checked || 0}: ${s.live || 0} live, ${s.lost || 0} lost, ${s.broken || 0} broken`
+      )
+      await load()
+    } catch (e) {
+      toast.error(
+        e.response?.data?.detail ||
+        e.response?.data?.error ||
+        'Re-scan failed'
+      )
+    }
+    setRescanning(false)
+  }
+
   const loadAiOpportunities = async () => {
     setLoadingOpps(true)
     try {
@@ -530,6 +557,17 @@ export default function Backlinks() {
                     : <><FontAwesomeIcon icon={faSpider} style={{ marginRight: 6 }} />Discover</>
                 }
               </GhostBtn>
+              <GhostBtn
+                onClick={rescanBacklinks}
+                disabled={rescanning || !backlinks.length}
+                title="Re-check tracked referring pages (live / lost / broken)"
+                style={{ height: 36 }}
+              >
+                {rescanning
+                  ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Re-scanning...</>
+                  : <><FontAwesomeIcon icon={faRotate} style={{ marginRight: 6 }} />Re-scan</>
+                }
+              </GhostBtn>
               <GhostBtn onClick={loadAiOpportunities} style={{ height: 36 }}>
                 {loadingOpps
                   ? <><FontAwesomeIcon icon={faRotate} spin style={{ marginRight: 6 }} />Finding...</>
@@ -707,6 +745,7 @@ export default function Backlinks() {
             </div>
           </div>
           <BacklinksTable
+            siteId={siteId}
             backlinks={backlinks}
             loading={loading}
             onUpdateStatus={updateStatus}

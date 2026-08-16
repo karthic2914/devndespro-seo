@@ -1580,9 +1580,25 @@ body:has(.app-shell),
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
   flex: 1;
+}
+.bl-spam-guide__intro {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #7F1D1D;
+}
+.bl-spam-guide__intro + .bl-spam-guide__steps {
+  margin-top: 2px;
+}
+.bl-spam-guide__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
 }
 .bl-spam-disavow-btn {
   display: inline-flex;
@@ -1613,6 +1629,18 @@ body:has(.app-shell),
   color: #DC2626;
   flex-shrink: 0;
 }
+.bl-spam-disavow-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #B91C1C;
+  text-decoration: underline;
+}
+.bl-spam-disavow-link:hover {
+  color: #7F1D1D;
+}
 .bl-spam-guide__title {
   display: flex;
   align-items: center;
@@ -1620,10 +1648,10 @@ body:has(.app-shell),
   font-size: 13px;
   font-weight: 750;
   color: #991B1B;
-  margin-bottom: 8px;
+  margin: 0;
 }
 .bl-spam-guide__steps {
-  margin: 0 0 8px;
+  margin: 0;
   padding-left: 18px;
   color: #7F1D1D;
   font-size: 12px;
@@ -1635,12 +1663,65 @@ body:has(.app-shell),
   font-weight: 700;
   text-decoration: underline;
 }
+.bl-spam-guide__steps code {
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
 .bl-spam-guide__note {
   margin: 0;
   font-size: 11px;
   line-height: 1.45;
   color: #9F1239;
-  opacity: 0.9;
+  opacity: 0.95;
+}
+.bl-disavow-track {
+  width: 100%;
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px dashed #FECACA;
+  background: rgba(255, 255, 255, 0.65);
+  box-sizing: border-box;
+}
+.bl-disavow-track--waiting {
+  border-style: solid;
+  border-color: #FCD34D;
+  background: #FFFBEB;
+}
+.bl-disavow-track--ready {
+  border-style: solid;
+  border-color: #86EFAC;
+  background: #F0FDF4;
+}
+.bl-disavow-track__label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #991B1B;
+  margin-bottom: 4px;
+}
+.bl-disavow-track--waiting .bl-disavow-track__label { color: #92400E; }
+.bl-disavow-track--ready .bl-disavow-track__label { color: #166534; }
+.bl-disavow-track__msg {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: #7F1D1D;
+}
+.bl-disavow-track--waiting .bl-disavow-track__msg,
+.bl-disavow-track--ready .bl-disavow-track__msg { color: #57534E; }
+.bl-disavow-track__status {
+  margin: 0 0 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #7F1D1D;
+  font-weight: 600;
+}
+.bl-disavow-track__status--ready { color: #166534; }
+a.bl-spam-disavow-btn {
+  text-decoration: none;
 }
 
 /* Pagination - 10 rows per page */

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+﻿import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -958,6 +958,7 @@ export default function SiteAudit() {
       const r = await api.post(`/sites/${siteId}/audit/run`)
       setAuditData(r.data); setActiveTab('all'); setExpandedIdx(null)
       showSnackbar('Audit completed successfully!', 'success')
+      syncBacklinksAfterAudit()
     } catch (e) {
       setRunError(e.response?.data?.error || 'Audit failed - check the site URL is accessible')
     }
@@ -1012,6 +1013,7 @@ export default function SiteAudit() {
       } else {
         showSnackbar('Audit completed successfully!', 'success')
       }
+      syncBacklinksAfterAudit()
     } catch (e) {
       const message =
         e.response?.data?.error ||
@@ -1660,6 +1662,54 @@ export default function SiteAudit() {
       showSnackbar('Failed to update authority score', 'error')
     }
     setRefreshingAuthority(false)
+  }
+
+  /** After an audit: sync/re-check backlinks so Backlinks page + Domain Rank / Link Score stay in sync. */
+  async function syncBacklinksAfterAudit() {
+    const canSyncBacklinks = Boolean(user?.is_paid || user?.id === 1)
+    try {
+      if (canSyncBacklinks) {
+        const sync = await api.post(`/sites/${siteId}/backlinks/dataforseo-sync`, {
+          limit: 500,
+          verifyLimit: 25,
+        })
+        const received = Number(sync?.data?.received || 0)
+        if (received > 0) {
+          showSnackbar(`Also synced ${received} backlink record${received === 1 ? '' : 's'}`, 'success')
+        }
+      } else {
+        await api.post(`/sites/${siteId}/backlinks/verify-all`, { limit: 50 }).catch(() => null)
+      }
+    } catch (err) {
+      console.warn(
+        'Backlink sync after audit failed:',
+        err?.response?.data?.detail || err?.message || err
+      )
+    }
+
+    try {
+      const r = await api.post(`/sites/${siteId}/authority-score`)
+      if (r?.data?.authority_score != null) {
+        setAuthorityScore(r.data.authority_score ?? r.data.link_score)
+      }
+      if (r?.data?.authority_updated_at) setAuthorityUpdatedAt(r.data.authority_updated_at)
+      if (r?.data) {
+        setAuthorityDetails((prev) => ({
+          ...(prev || {}),
+          ...r.data,
+          breakdown: {
+            ...(prev?.breakdown || {}),
+            ...(r.data.breakdown || {}),
+          },
+        }))
+      }
+      if (r?.data?.domain_rank != null) setDomainRank(Number(r.data.domain_rank))
+    } catch (err) {
+      console.warn(
+        'Authority refresh after audit failed:',
+        err?.response?.data?.detail || err?.message || err
+      )
+    }
   }
 
   async function sendSummaryEmail() {
