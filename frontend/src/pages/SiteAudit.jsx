@@ -2534,9 +2534,13 @@ export default function SiteAudit() {
               color: '#6B7280',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 5,
             }}
           >
             AI Visibility
+            <ScoreInfoTip scoreKey="aiVisibility" asSpan />
           </span>
 
           <FontAwesomeIcon
@@ -2746,7 +2750,7 @@ export default function SiteAudit() {
                   Domain Authority
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2, maxWidth: 360 }}>
-                  Domain Rank is an external DataForSEO score (DA-style; can look like Ahrefs DR, but is not Ahrefs). Link Score is our own composite from verified backlinks.
+                  Domain Rank is an external domain authority score. Link Score is our own composite from verified backlinks.
                 </div>
               </div>
               <Button variant="ghost" size="sm" onClick={refreshAuthorityScore} disabled={refreshingAuthority}>
@@ -2763,8 +2767,8 @@ export default function SiteAudit() {
                 <div style={{ fontSize: 28, fontWeight: 800, color: '#111827' }}>
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
-                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }} title="Pulled from DataForSEO backlinks/summary rank (0–100). Not Moz DA or Ahrefs DR API — values can look similar to Ahrefs DR.">
-                  Via DataForSEO · not Ahrefs/Moz
+                <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                  External authority · 0–100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>

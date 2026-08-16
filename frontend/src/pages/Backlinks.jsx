@@ -12,6 +12,7 @@ import BacklinksTable from '../components/BacklinksTable'
 import BacklinksInsightPanels from '../components/BacklinksInsightPanels'
 import BacklinkCompetitiveHub from '../components/BacklinkCompetitiveHub'
 import LinkDeskModes from '../components/LinkDeskModes'
+import ScoreInfoTip from '../components/ScoreInfoTip'
 import api from '../utils/api'
 import { QUALITY_META, summarizeBacklinkQuality } from '../utils/backlinkQuality'
 
@@ -738,7 +739,12 @@ export default function Backlinks() {
                   <div style={{ fontSize: 11, color: 'var(--muted)' }}>{b.anchor || 'No anchor text'} • {b.type || 'dofollow'}</div>
                 </div>
                 <div style={{ fontSize: 11, color: 'var(--text2)', textAlign: 'right' }}>
-                  <div>Domain Rank <strong>{Number(b.provider_rank || b.dr || 0)}</strong></div>
+                  <div className="score-label-with-tip" style={{ justifyContent: 'flex-end' }}>
+                    Domain Rank
+                    <ScoreInfoTip scoreKey="domainRank" />
+                    {' '}
+                    <strong>{Number(b.provider_rank || b.dr || 0)}</strong>
+                  </div>
                   <div>{b.status}</div>
                 </div>
               </div>

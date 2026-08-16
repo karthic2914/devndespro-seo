@@ -486,7 +486,7 @@ export default function DecisionCenter({
           label="Domain Rank"
           value={data.domainRank}
           scoreKey="domainRank"
-          hint="External · DataForSEO (DA-style, not Ahrefs/Moz)"
+          hint="External domain authority · separate from Link Score"
         />
 
         <MetricCard
@@ -502,7 +502,7 @@ export default function DecisionCenter({
           scoreKey="aiVisibility"
           hint={
             data.aiVisibilitySource === 'engines'
-              ? 'ChatGPT / Claude citation rate'
+              ? 'From AI engine citation tests'
               : data.aiVisibilitySource === 'mixed'
                 ? 'Engines + AI Snippet / AEO'
                 : data.aiVisibilitySource === 'audit'
@@ -541,7 +541,7 @@ export default function DecisionCenter({
               color: '#9CA3AF',
               marginTop: 2,
             }}>
-              External Domain Rank vs in-app Link Score components — kept separate on purpose
+              External Domain Rank vs in-app Link Score — kept separate on purpose
             </div>
           </div>
 
@@ -623,7 +623,7 @@ export default function DecisionCenter({
                       <ScoreInfoTip scoreKey="domainRank" />
                     </div>
                     <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2 }}>
-                      DataForSEO · not part of Link Score
+                      External · not part of Link Score
                     </div>
                   </div>
                   <div style={{

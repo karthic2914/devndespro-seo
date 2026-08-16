@@ -8,6 +8,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import toast from '../utils/toast'
+import ScoreInfoTip from './ScoreInfoTip'
 import {
   classifyBacklink,
   getDomainRank,
@@ -382,7 +383,7 @@ function QualityBadge({ backlink }) {
   return (
     <span
       className="bl-quality-badge"
-      title={meta.hint}
+      title={`${meta.hint}. Score reflects our quality model for this link.`}
       style={{ background: meta.bg, color: meta.color }}
     >
       {meta.label}
@@ -718,10 +719,20 @@ export default function BacklinksTable({
                     Anchor <SortIcon field="anchor" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('domainRank')}>
-                    DR <SortIcon field="domainRank" sort={sort} />
+                    <span className="score-label-with-tip">
+                      DR
+                      <ScoreInfoTip scoreKey="dr" asSpan />
+                    </span>
+                    {' '}
+                    <SortIcon field="domainRank" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('quality')}>
-                    Quality <SortIcon field="quality" sort={sort} />
+                    <span className="score-label-with-tip">
+                      Quality
+                      <ScoreInfoTip scoreKey="quality" asSpan />
+                    </span>
+                    {' '}
+                    <SortIcon field="quality" sort={sort} />
                   </th>
                   <th className="bl-th-center" onClick={() => toggleSort('type')}>
                     Type <SortIcon field="type" sort={sort} />

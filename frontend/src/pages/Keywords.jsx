@@ -12,13 +12,14 @@
   import CollapsibleSection from '../components/CollapsibleSection'
   import { KEYWORDS_PAGE_FLOW } from '../constants/pageFlows'
   import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
-  import api from '../utils/api'
-  import toast from '../utils/toast'
-  import {
-    resolveRankMovement,
-    formatRankMovementDisplay,
-    formatRankPositionLabel,
-  } from '../utils/rankMovement'
+import api from '../utils/api'
+import toast from '../utils/toast'
+import ScoreInfoTip from '../components/ScoreInfoTip'
+import {
+  resolveRankMovement,
+  formatRankMovementDisplay,
+  formatRankPositionLabel,
+} from '../utils/rankMovement'
 
   const ENGINES = [
     { value: 'google', label: 'Google' },
@@ -891,14 +892,17 @@
               {discoveryOpen && (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 12 }}>
                   {[
-                    { title: 'Google visibility', items: discovery.alreadyRanking || [], mode: 'tracked' },
-                    { title: 'Good to have', items: discovery.goodToHave || [], mode: 'add' },
-                    { title: 'How to get them', items: discovery.howToGetThem || [], mode: 'how' },
+                    { title: 'Google visibility', items: discovery.alreadyRanking || [], mode: 'tracked', tipKey: 'googleVisibility' },
+                    { title: 'Good to have', items: discovery.goodToHave || [], mode: 'add', tipKey: 'goodToHave' },
+                    { title: 'How to get them', items: discovery.howToGetThem || [], mode: 'how', tipKey: 'howToGetThem' },
                   ].map((bucket) => (
                     <div key={bucket.title} style={{ border: `1px solid ${T.border}`, borderRadius: 10, overflow: 'hidden' }}>
-                      <div style={{ padding: '8px 10px', background: T.surface2, borderBottom: `1px solid ${T.border}`, fontSize: 12, fontWeight: 800, color: T.text }}>
-                        {bucket.title}
-                        <span style={{ marginLeft: 6, color: T.orange }}>{bucket.items.length}</span>
+                      <div style={{ padding: '8px 10px', background: T.surface2, borderBottom: `1px solid ${T.border}`, fontSize: 12, fontWeight: 800, color: T.text, display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span className="score-label-with-tip">
+                          {bucket.title}
+                          <ScoreInfoTip scoreKey={bucket.tipKey} />
+                        </span>
+                        <span style={{ color: T.orange }}>{bucket.items.length}</span>
                       </div>
                       <div style={{ maxHeight: 220, overflowY: 'auto' }}>
                         {bucket.items.length === 0 ? (
