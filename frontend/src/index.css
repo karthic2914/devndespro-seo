@@ -2757,23 +2757,17 @@ a.bl-spam-disavow-btn {
   background: #FFF2E8;
   color: #FF6A00;
   font-weight: 650;
+  border-left-color: transparent;
 }
 
 .sidebar .nav-item.active::before {
-  content: "";
-  position: absolute;
-  left: -8px;
-  top: 9px;
-  bottom: 9px;
-  width: 3px;
-  border-radius: 0 4px 4px 0;
-  background: #FF6A00;
+  content: none;
+  display: none;
 }
 
 .sidebar .nav-group__row .nav-item--parent.active::before {
-  left: 0;
-  top: 8px;
-  bottom: 8px;
+  content: none;
+  display: none;
 }
 
 .sidebar__footer {
