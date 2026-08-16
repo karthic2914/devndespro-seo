@@ -263,9 +263,11 @@ body,
 }
 
 .landing-hero-grid > div:last-child {
-  transform: scale(1.04);
-  transform-origin: center;
+  position: relative;
+  transform: none;
+  transform-origin: center right;
   isolation: isolate;
+  max-width: 100%;
 }
 
 .landing-hero-grid > div:last-child::before {
@@ -832,11 +834,18 @@ body {
   padding-top: 72px;
 }
 
+/* Let hero glows bleed into side margins; clip only at the page edge */
 .premium-landing-page main,
 .premium-landing-page section {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  overflow-x: visible;
+}
+
+.premium-landing-page section > div {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: visible;
 }
 
 /* Sticky premium header */
@@ -1447,8 +1456,8 @@ body,
 .premium-landing-page section,
 .premium-landing-page section > div {
   max-width: 100%;
-  overflow-x: hidden;
   box-sizing: border-box;
+  overflow-x: visible;
 }
 
 .landing-hero-grid,

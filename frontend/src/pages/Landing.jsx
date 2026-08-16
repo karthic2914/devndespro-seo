@@ -201,12 +201,26 @@ export default function Landing() {
         style={{
           position: 'absolute',
           top: -220,
-          right: -160,
-          width: 620,
-          height: 620,
+          right: -80,
+          width: 720,
+          height: 720,
           borderRadius: '50%',
           background:
             'radial-gradient(circle, rgba(255,213,192,0.72) 0%, rgba(255,240,230,0.35) 42%, transparent 72%)',
+          pointerEvents: 'none',
+        }}
+      />
+
+      <div
+        style={{
+          position: 'absolute',
+          top: 160,
+          right: 'max(0px, calc((100% - 1180px) / 2 - 120px))',
+          width: 520,
+          height: 520,
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(234,106,59,0.16) 0%, rgba(82,70,217,0.10) 40%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -237,7 +251,7 @@ export default function Landing() {
               className="landing-hero-grid"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(min(620px, 100%), 1.05fr) minmax(min(560px, 100%), 0.95fr)',
+                gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
                 gap: 58,
                 alignItems: 'center',
               }}
