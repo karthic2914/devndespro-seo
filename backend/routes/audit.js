@@ -570,12 +570,120 @@ router.get('/:siteId/audit/latest', auth, verifySite, async (req, res) => {
   res.json({ ...rows[0].results, score: rows[0].score, previousScore, scoreChange, changedChecks, scannedAt: rows[0].created_at, chatgptScore: rows[0].chatgpt_cited, claudeScore: rows[0].claude_cited })
 })
 
+function extractAnthropicText(response) {
+  const blocks = Array.isArray(response?.content) ? response.content : []
+  return blocks
+    .map((block) => {
+      if (!block) return ''
+      if (typeof block === 'string') return block
+      if (typeof block.text === 'string') return block.text
+      if (typeof block.content === 'string') return block.content
+      return ''
+    })
+    .filter(Boolean)
+    .join('\n')
+    .trim()
+}
+
+function parseAiFixJson(rawText = '') {
+  const cleaned = String(rawText)
+    .replace(/```json/gi, '```')
+    .replace(/```/g, '')
+    .trim()
+
+  if (!cleaned) return null
+
+  try {
+    const parsed = JSON.parse(cleaned)
+    if (parsed && typeof parsed === 'object') return parsed
+  } catch (_) {
+    // fall through and try to extract the first JSON object
+  }
+
+  const start = cleaned.indexOf('{')
+  const end = cleaned.lastIndexOf('}')
+  if (start >= 0 && end > start) {
+    try {
+      const parsed = JSON.parse(cleaned.slice(start, end + 1))
+      if (parsed && typeof parsed === 'object') return parsed
+    } catch (_) {
+      return null
+    }
+  }
+
+  return null
+}
+
+function hasUsableAiFix(fix) {
+  if (!fix || typeof fix !== 'object') return false
+  return Boolean(
+    fix.why ||
+    fix.fix ||
+    fix.before ||
+    fix.after ||
+    fix.timeToFix ||
+    fix.priorityNote
+  )
+}
+
+function fallbackAiFix(issue = {}, siteUrl = '') {
+  const message = String(issue.message || '')
+  const check = String(issue.check || '')
+  const host = (() => {
+    try { return new URL(siteUrl).hostname.replace(/^www\./, '') } catch { return siteUrl || 'your-site.com' }
+  })()
+
+  if (check === 'aeo_bing_index' || /indexed on Bing/i.test(message)) {
+    return {
+      why: 'ChatGPT and other AI systems lean on Bing’s index. If Bing cannot find your site, AI citation chances drop.',
+      fix: [
+        '1. Create/verify a Bing Webmaster Tools account for this domain.',
+        `2. Submit sitemap: https://${host}/sitemap.xml`,
+        '3. Use URL Inspection / Submit URL for the homepage and key landing pages.',
+        '4. Wait 3–14 days, then re-run this audit.',
+        '5. Optional: confirm robots.txt allows Bingbot and that key pages return 200.',
+      ].join('\n'),
+      before: 'Bing search shows little/no indexed coverage for the domain.',
+      after: 'Bing Webmaster Tools shows submitted sitemap + indexed pages growing.',
+      timeToFix: '15–30 minutes setup, then 3–14 days for indexing',
+      priorityNote: 'High impact for AI visibility even if Google indexing is already fine.',
+    }
+  }
+
+  if (check === 'aeo_reviews' || /Trustpilot|G2/i.test(message)) {
+    return {
+      why: 'AI systems use third-party reviews as trust signals when deciding what brands to mention.',
+      fix: [
+        '1. Create business profiles on Trustpilot and/or G2.',
+        '2. Claim/verify the listing and add website + company details.',
+        '3. Collect a few genuine reviews.',
+        '4. Link the profiles from your site footer/about page.',
+      ].join('\n'),
+      before: 'No trustworthy review-platform presence found.',
+      after: 'Verified Trustpilot/G2 profiles with real reviews linked from the site.',
+      timeToFix: '1–2 hours setup + ongoing review collection',
+      priorityNote: 'Strong trust signal for both humans and AI engines.',
+    }
+  }
+
+  return {
+    why: message || 'This issue can reduce SEO or AI visibility.',
+    fix: `Review this issue for ${siteUrl || 'your site'} and apply the recommended on-page/technical change, then re-run the audit.`,
+    before: 'Issue currently failing in the audit.',
+    after: 'Issue passes after the fix is deployed and re-checked.',
+    timeToFix: '15–60 minutes',
+    priorityNote: 'Re-run Site Audit after deploying the change.',
+  }
+}
+
 router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {
   const { issue, siteUrl } = req.body
   if (!issue || !siteUrl) return res.status(400).json({ error: 'issue and siteUrl required' })
+  if (!anthropic) return res.status(500).json({ error: 'ANTHROPIC_API_KEY is not configured' })
+
   try {
     const response = await anthropic.messages.create({
-      model: 'claude-sonnet-5',
+      model: process.env.ANTHROPIC_AUDIT_MODEL || 'claude-sonnet-5',
       max_tokens: 1000,
       system: `You are an expert SEO engineer. Given an SEO issue, provide:
 1. A 1-sentence plain-English explanation of WHY it matters for rankings
@@ -583,7 +691,7 @@ router.post('/:siteId/audit/ai-fix', auth, verifySite, async (req, res) => {
 3. A "Before" and "After" example if applicable
 4. Estimated time to fix
 
-Respond in JSON only, no markdown:
+Respond in JSON only, no markdown fences:
 {
   "why": "...",
   "fix": "...",
@@ -594,12 +702,33 @@ Respond in JSON only, no markdown:
 }`,
       messages: [{
         role: 'user',
-        content: `Site: ${siteUrl}\nIssue: ${issue.message}\nCategory: ${issue.category}\nImpact: ${issue.impact}\nStatus: ${issue.status}`
+        content: `Site: ${siteUrl}\nIssue: ${issue.message}\nCheck: ${issue.check || ''}\nCategory: ${issue.category || ''}\nImpact: ${issue.impact}\nStatus: ${issue.status}`
       }]
     })
-    const text = response.content?.[0]?.text || '{}'
-    try { res.json(JSON.parse(text)) } catch { res.json({ fix: text }) }
-  } catch (e) { console.error(e); res.status(500).json({ error: 'AI error' }) }
+
+    const text = extractAnthropicText(response)
+    const parsed = parseAiFixJson(text)
+    const merged = parsed && typeof parsed === 'object'
+      ? parsed
+      : (text ? { fix: text } : null)
+
+    if (hasUsableAiFix(merged)) {
+      return res.json(merged)
+    }
+
+    console.warn('audit/ai-fix empty model response:', {
+      check: issue.check,
+      preview: String(text || '').slice(0, 200),
+    })
+    return res.json(fallbackAiFix(issue, siteUrl))
+  } catch (e) {
+    console.error('audit/ai-fix error:', e?.message || e)
+    // Still return a useful recommendation so the UI is never blank.
+    return res.json({
+      ...fallbackAiFix(issue, siteUrl),
+      priorityNote: `AI generation failed (${e?.message || 'AI error'}). Showing a standard fix instead.`,
+    })
+  }
 })
 
 

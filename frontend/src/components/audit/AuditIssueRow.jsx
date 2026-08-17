@@ -45,33 +45,67 @@ function statusBadge(status) {
 }
 
 async function fetchAIFix(issue, siteUrl, siteId) {
+  if (!siteId) {
+    throw new Error('Missing site id')
+  }
+  if (!siteUrl) {
+    throw new Error('Missing site URL')
+  }
   const { data } = await api.post(`/sites/${siteId}/audit/ai-fix`, { issue, siteUrl })
   return data
+}
+
+function hasUsableFix(fix) {
+  if (!fix || typeof fix !== 'object') return false
+  return Boolean(
+    fix.why ||
+    fix.fix ||
+    fix.before ||
+    fix.after ||
+    fix.timeToFix ||
+    fix.priorityNote
+  )
 }
 
 export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onToggle }) {
   const [aiFix, setAiFix] = useState(null)
   const [loadingFix, setLoadingFix] = useState(false)
+  const [fixError, setFixError] = useState('')
   const [marked, setMarked] = useState(false)
   const [copied, setCopied] = useState(false)
   const { icon, color } = issueIcon(issue.status)
   const statusStyle = statusBadge(issue.status)
 
-  async function getAIFix() {
-    if (aiFix) return
+  async function getAIFix({ force = false } = {}) {
+    if (loadingFix) return
+    if (!force && hasUsableFix(aiFix)) return
+
     setLoadingFix(true)
+    setFixError('')
     try {
       const result = await fetchAIFix(issue, siteUrl, siteId)
+      if (!hasUsableFix(result)) {
+        setAiFix(null)
+        setFixError('AI returned an empty recommendation. Please try again.')
+        return
+      }
       setAiFix(result)
     } catch (e) {
-      setAiFix({ fix: 'Could not generate fix. Please try again.' })
+      const message =
+        e?.response?.data?.error ||
+        e?.message ||
+        'Could not generate fix. Please try again.'
+      setAiFix(null)
+      setFixError(message)
+    } finally {
+      setLoadingFix(false)
     }
-    setLoadingFix(false)
   }
 
   function handleExpand() {
+    const willExpand = !expanded
     onToggle()
-    if (!expanded) getAIFix()
+    if (willExpand) getAIFix()
   }
 
   function copyFix() {
@@ -180,12 +214,30 @@ export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onTogg
               padding: '10px 14px', background: '#F9FAFB', borderBottom: '1px solid #E5E7EB',
             }}>
               <FontAwesomeIcon icon={faRobot} style={{ color: '#7C3AED', fontSize: 13 }} />
-              <span style={{ fontSize: 12, fontWeight: 600, color: '#374151' }}>AI-Generated Fix</span>
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#374151', flex: 1 }}>AI-Generated Fix</span>
               {loadingFix && (
                 <span style={{ fontSize: 11, color: '#9CA3AF', marginLeft: 4 }}>
                   <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 4, animation: 'pulse 1s infinite' }} />
                   Generating...
                 </span>
+              )}
+              {!loadingFix && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    getAIFix({ force: true })
+                  }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    background: '#F5F3FF', border: '1px solid #DDD6FE',
+                    borderRadius: 6, padding: '4px 10px', cursor: 'pointer',
+                    fontSize: 11, fontWeight: 600, color: '#7C3AED', fontFamily: 'inherit',
+                  }}
+                >
+                  <FontAwesomeIcon icon={faWandMagicSparkles} style={{ fontSize: 10 }} />
+                  {hasUsableFix(aiFix) ? 'Regenerate' : 'Generate fix'}
+                </button>
               )}
             </div>
 
@@ -201,7 +253,19 @@ export default function AuditIssueRow({ issue, siteId, siteUrl, expanded, onTogg
               </div>
             )}
 
-            {aiFix && !loadingFix && (
+            {!loadingFix && fixError && (
+              <div style={{ padding: '14px', fontSize: 13, color: '#B91C1C', lineHeight: 1.5 }}>
+                {fixError}
+              </div>
+            )}
+
+            {!loadingFix && !fixError && !hasUsableFix(aiFix) && (
+              <div style={{ padding: '14px', fontSize: 13, color: '#6B7280', lineHeight: 1.5 }}>
+                No recommendation yet. Click <strong>Generate fix</strong> to create one.
+              </div>
+            )}
+
+            {hasUsableFix(aiFix) && !loadingFix && (
               <div style={{ padding: '14px' }}>
 
                 {/* Why it matters */}
