@@ -117,14 +117,18 @@ export default function PricingPage() {
   useLayoutEffect(() => {
     if (!regionOpen || !triggerRef.current) return undefined
     const updatePos = () => {
-      const rect = triggerRef.current.getBoundingClientRect()
+      // Anchor under the full wrap (trigger + hint) so the menu does not cover the FX caption.
+      const anchor = regionMenuRef.current || triggerRef.current
+      const rect = anchor.getBoundingClientRect()
       const width = Math.max(rect.width, 240)
       const estimatedHeight = 260
+      const gap = 6
       const spaceBelow = window.innerHeight - rect.bottom - 12
       const openUp = spaceBelow < estimatedHeight && rect.top > spaceBelow
+      const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))
       setMenuPos({
-        top: openUp ? Math.max(8, rect.top - estimatedHeight - 8) : rect.bottom + 8,
-        left: Math.min(rect.left, window.innerWidth - width - 12),
+        top: openUp ? Math.max(8, rect.top - estimatedHeight - gap) : rect.bottom + gap,
+        left,
         width,
       })
     }
@@ -236,6 +240,7 @@ export default function PricingPage() {
                     className={`mkt-select-trigger${regionOpen ? ' is-open' : ''}`}
                     aria-haspopup="listbox"
                     aria-expanded={regionOpen}
+                    aria-controls="pricing-region-listbox"
                     aria-labelledby="pricing-region-label"
                     onClick={() => setRegionOpen((v) => !v)}
                   >
@@ -245,7 +250,7 @@ export default function PricingPage() {
                     <FontAwesomeIcon icon={faChevronDown} className="mkt-select-icon" />
                   </button>
                 </div>
-                <p className="mkt-select-hint">
+                <p className={`mkt-select-hint${regionOpen ? ' is-hidden' : ''}`}>
                   {ratesStatus === 'live' && ratesDate
                     ? `Live ECB rates · updated ${ratesDate}`
                     : ratesStatus === 'loading'
@@ -257,6 +262,7 @@ export default function PricingPage() {
               {regionOpen &&
                 createPortal(
                   <ul
+                    id="pricing-region-listbox"
                     className="mkt-select-menu mkt-select-menu--portal"
                     role="listbox"
                     aria-labelledby="pricing-region-label"
@@ -267,16 +273,21 @@ export default function PricingPage() {
                     }}
                   >
                     {PRICING_REGIONS.map((r) => (
-                      <li key={r.id} role="option" aria-selected={r.id === regionId}>
+                      <li key={r.id} role="presentation">
                         <button
                           type="button"
+                          role="option"
+                          aria-selected={r.id === regionId}
                           className={`mkt-select-option${r.id === regionId ? ' is-selected' : ''}`}
                           onClick={() => {
                             setRegionId(r.id)
                             setRegionOpen(false)
                           }}
                         >
-                          {r.flag} {r.label} ({r.currency})
+                          <span>
+                            {r.flag} {r.label} ({r.currency})
+                          </span>
+                          {r.id === regionId ? <span className="mkt-select-check" aria-hidden>✓</span> : null}
                         </button>
                       </li>
                     ))}
