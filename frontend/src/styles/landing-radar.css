@@ -315,9 +315,10 @@
   position: relative;
   aspect-ratio: 1 / 1;
   min-height: 500px;
-  border: 1px solid rgba(79, 140, 255, 0.22);
+  border: 1px solid rgba(124, 92, 252, 0.22);
   border-radius: 28px;
-  background: radial-gradient(circle at 50% 50%, #EEF5FF 0%, #F2EFFF 48%, #FFFFFF 78%);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(124, 92, 252, 0.12) 0%, rgba(79, 140, 255, 0.08) 38%, #F7F8FF 68%, #FFFFFF 100%);
   box-shadow: var(--dd-shadow);
   overflow: hidden;
 }
@@ -326,7 +327,7 @@
   content: '';
   position: absolute;
   inset: 16px;
-  border: 1px solid rgba(79, 140, 255, 0.12);
+  border: 1px solid rgba(124, 92, 252, 0.16);
   border-radius: 22px;
   pointer-events: none;
 }
@@ -339,13 +340,15 @@
   right: 24px;
   display: flex;
   justify-content: space-between;
-  font-size: 10px;
-  color: var(--dd-muted);
+  font-size: 11px;
+  font-weight: 600;
+  color: #667085;
   letter-spacing: 0.08em;
 }
 
 .dd-landing .dd-live {
   color: var(--dd-teal);
+  font-weight: 700;
 }
 
 .dd-landing .dd-radar {
@@ -356,42 +359,45 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(79, 140, 255, 0.22);
+  border: 2px solid rgba(124, 92, 252, 0.38);
+  box-shadow: inset 0 0 0 1px rgba(79, 140, 255, 0.12);
 }
 
 .dd-landing .dd-ring {
   position: absolute;
   inset: 12.5%;
-  border: 1px solid rgba(79, 140, 255, 0.16);
+  border: 1.5px solid rgba(124, 92, 252, 0.28);
   border-radius: 50%;
 }
 
 .dd-landing .dd-ring.r2 {
   inset: 25%;
+  border-color: rgba(79, 140, 255, 0.30);
 }
 
 .dd-landing .dd-ring.r3 {
   inset: 37.5%;
+  border-color: rgba(56, 198, 232, 0.32);
 }
 
 .dd-landing .dd-axis-x,
 .dd-landing .dd-axis-y {
   position: absolute;
-  background: rgba(79, 140, 255, 0.14);
+  background: rgba(124, 92, 252, 0.28);
 }
 
 .dd-landing .dd-axis-x {
   left: 0;
   right: 0;
   top: 50%;
-  height: 1px;
+  height: 1.5px;
 }
 
 .dd-landing .dd-axis-y {
   top: 0;
   bottom: 0;
   left: 50%;
-  width: 1px;
+  width: 1.5px;
 }
 
 .dd-landing .dd-sweep {
@@ -399,11 +405,12 @@
   left: 50%;
   top: 50%;
   width: 50%;
-  height: 2px;
+  height: 3px;
   transform-origin: left center;
-  background: linear-gradient(90deg, var(--dd-amber), transparent);
-  box-shadow: 0 0 12px rgba(124, 92, 252, 0.35);
+  background: linear-gradient(90deg, #7C5CFC 0%, #4F8CFF 45%, transparent 100%);
+  box-shadow: 0 0 16px rgba(124, 92, 252, 0.55), 0 0 4px rgba(79, 140, 255, 0.4);
   animation: dd-sweep 5s linear infinite;
+  border-radius: 2px;
 }
 
 .dd-landing .dd-sweep::after {
@@ -413,7 +420,7 @@
   top: -170px;
   width: 170px;
   height: 170px;
-  background: conic-gradient(from 225deg, rgba(124, 92, 252, 0.14), transparent 70deg);
+  background: conic-gradient(from 225deg, rgba(124, 92, 252, 0.28), rgba(56, 198, 232, 0.08), transparent 75deg);
   transform-origin: 100% 100%;
 }
 
@@ -427,42 +434,53 @@
   position: absolute;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font: 500 10px 'JetBrains Mono', monospace;
-  color: var(--dd-muted);
+  gap: 7px;
+  font: 650 11px 'JetBrains Mono', monospace;
+  color: #42526B;
+  letter-spacing: 0.04em;
   z-index: 5;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .dd-landing .dd-node::before {
   content: '';
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: #98A2B3;
-  opacity: 0.65;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 0 0 1px rgba(37, 50, 74, 0.12);
+  opacity: 1;
+}
+
+.dd-landing .dd-node.active {
+  color: #25324A;
 }
 
 .dd-landing .dd-node.active::before {
   background: var(--dd-teal);
   opacity: 1;
-  box-shadow: 0 0 12px rgba(34, 181, 115, 0.45);
+  box-shadow: 0 0 0 2px rgba(34, 181, 115, 0.2), 0 0 14px rgba(34, 181, 115, 0.55);
   animation: dd-pulse 2s ease-in-out infinite;
 }
 
 .dd-landing .dd-node.you {
-  color: var(--dd-amber);
+  color: #7C5CFC;
+  font-weight: 700;
 }
 
 .dd-landing .dd-node.you::before {
-  background: var(--dd-amber);
-  box-shadow: 0 0 14px rgba(124, 92, 252, 0.45);
+  width: 11px;
+  height: 11px;
+  background: #7C5CFC;
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.22), 0 0 16px rgba(124, 92, 252, 0.55);
   opacity: 1;
 }
 
 @keyframes dd-pulse {
   50% {
-    opacity: 0.35;
-    transform: scale(0.8);
+    opacity: 0.55;
+    transform: scale(0.85);
   }
 }
 
@@ -495,14 +513,16 @@
 }
 
 .dd-landing .dd-radar-score strong {
-  font: 500 34px 'JetBrains Mono', monospace;
-  color: var(--dd-purple);
+  font: 700 36px 'JetBrains Mono', monospace;
+  color: #7C5CFC;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .dd-landing .dd-radar-score span {
   display: block;
-  color: var(--dd-muted);
-  font-size: 10px;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 650;
   letter-spacing: 0.08em;
   margin-top: 4px;
 }
