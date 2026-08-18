@@ -196,7 +196,7 @@ export default function PricingPage() {
   }
 
   return (
-    <MarketingLayout activePath="/pricing">
+    <MarketingLayout>
       <article className="mkt-page">
         <section className="mkt-hero" style={{ minHeight: 'auto' }}>
           <div className="mkt-container">

@@ -96,14 +96,28 @@
   display: flex;
   align-items: center;
   gap: 30px;
-  color: #707d94;
   font-size: 14px;
   font-weight: 650;
 }
 
-.dd-landing .dd-nav-links a:hover,
-.dd-landing .dd-nav-links a.is-active {
+.dd-landing .dd-nav-links a,
+.dd-landing .dd-nav-links a:link,
+.dd-landing .dd-nav-links a:visited {
+  color: #707d94;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.dd-landing .dd-nav-links a:hover {
+  color: var(--dd-ink);
+}
+
+.dd-landing .dd-nav-links a.is-active,
+.dd-landing .dd-nav-links a.is-active:visited {
   color: var(--dd-brand);
+  border-bottom-color: var(--dd-brand);
+  font-weight: 800;
 }
 
 .dd-landing .dd-nav-actions {
@@ -177,7 +191,8 @@
   display: block;
 }
 
-.dd-landing .dd-mobile-menu a {
+.dd-landing .dd-mobile-menu a,
+.dd-landing .dd-mobile-menu a:visited {
   display: block;
   padding: 12px 0;
   color: #707d94;
@@ -187,6 +202,7 @@
 }
 
 .dd-landing .dd-mobile-menu a.is-active,
+.dd-landing .dd-mobile-menu a.is-active:visited,
 .dd-landing .dd-mobile-menu a:hover {
   color: var(--dd-brand);
 }

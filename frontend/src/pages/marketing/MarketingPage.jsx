@@ -58,7 +58,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
   })
 
   return (
-    <MarketingLayout activePath={page.path}>
+    <MarketingLayout>
       <article className="mkt-page">
         <section className="mkt-hero">
           <div className="mkt-container">

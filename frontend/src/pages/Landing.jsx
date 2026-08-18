@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
 import { PRIMARY_MARKETING_NAV } from '../data/marketingPages'
@@ -69,7 +69,6 @@ const ISSUE_ROWS = [
 
 export default function Landing() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
   const closeMenu = () => setMenuOpen(false)
@@ -91,13 +90,14 @@ export default function Landing() {
 
           <div className="dd-nav-links">
             {PRIMARY_MARKETING_NAV.map((item) => (
-              <Link
+              <NavLink
                 key={item.to}
                 to={item.to}
-                className={location.pathname === item.to ? 'is-active' : undefined}
+                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+                end
               >
                 {item.label}
-              </Link>
+              </NavLink>
             ))}
           </div>
 
@@ -122,9 +122,15 @@ export default function Landing() {
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {PRIMARY_MARKETING_NAV.map((item) => (
-            <Link key={item.to} to={item.to} onClick={closeMenu}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+              end
+              onClick={closeMenu}
+            >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
           <button
             type="button"

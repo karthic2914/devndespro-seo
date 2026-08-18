@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { MARKETING_NAV, PRIMARY_MARKETING_NAV } from '../../data/marketingPages'
 import BackToTop from './BackToTop'
 import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
-export default function MarketingLayout({ children, activePath = '' }) {
+export default function MarketingLayout({ children }) {
   const navigate = useNavigate()
-  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
-  const path = activePath || location.pathname
 
   return (
     <div className="dd-landing">
@@ -26,13 +24,14 @@ export default function MarketingLayout({ children, activePath = '' }) {
 
           <div className="dd-nav-links">
             {PRIMARY_MARKETING_NAV.map((item) => (
-              <Link
+              <NavLink
                 key={item.to}
                 to={item.to}
-                className={path === item.to ? 'is-active' : undefined}
+                end
+                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
               >
                 {item.label}
-              </Link>
+              </NavLink>
             ))}
           </div>
 
@@ -57,14 +56,15 @@ export default function MarketingLayout({ children, activePath = '' }) {
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {PRIMARY_MARKETING_NAV.map((item) => (
-            <Link
+            <NavLink
               key={item.to}
               to={item.to}
-              className={path === item.to ? 'is-active' : undefined}
+              end
+              className={({ isActive }) => (isActive ? 'is-active' : undefined)}
               onClick={() => setMenuOpen(false)}
             >
               {item.label}
-            </Link>
+            </NavLink>
           ))}
           <button
             type="button"
