@@ -328,44 +328,26 @@ export const MARKETING_PAGES = {
 
   pricing: {
     path: '/pricing',
-    title: 'Pricing — DevnDespro SEO Plans',
+    title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
     description:
-      'Simple pricing for DevnDespro SEO. Private beta access for authorised teams — site audits, keywords, backlinks and AI visibility in one workspace.',
-    h1: 'Pricing built for focused SEO teams',
+      'Simple DevnDespro SEO plans: Launch, Accelerate and Command. Switch currency for Norway, Europe, India, USA and UK with live exchange rates.',
+    h1: 'Plans that stay affordable as you grow',
     eyebrow: 'PRICING',
     intro:
-      'DevnDespro SEO is currently offered through private beta and plan-based workspace access. Get Site Audit, project workspaces and optional modules for keywords, backlinks and AI visibility — without enterprise bloat.',
+      'Three clear packages — Launch (Basic), Accelerate (Advanced) and Command (Business) — with prices shown in your currency using live exchange rates.',
     sections: [
       {
-        h2: 'What you get in the workspace',
+        h2: 'Launch, Accelerate and Command',
         body: [
-          'Core Site Audit and Site Health scoring, project-based hostname tracking, Action Plan sync and integrations such as Google Search Console when connected.',
-          'Optional modules unlock keyword tracking, backlink monitoring and AI visibility depending on your plan and admin feature flags.',
-        ],
-      },
-      {
-        h2: 'Private beta access',
-        body: [
-          'Access is restricted to authorised users during private beta. Request access from the DevnDespro team, then sign in with your approved email or Google account.',
-          'We keep the product opinionated and calm — fewer vanity charts, more signals you can act on this week.',
-        ],
-      },
-      {
-        h2: 'Talk to us about your team',
-        body: [
-          'Agencies and in-house teams often need multiple projects, controlled user invites and clear reporting. Tell us how many domains you manage and which modules you need first.',
-          'Start with a free audit mindset: prove Site Health value, then expand into keywords, links and AI citations.',
+          'Launch covers core Site Audit and visibility basics. Accelerate adds full AI scans, backlinks and keyword pro tools. Command unlocks team workflows and cold email for business and agency use.',
+          'Open /pricing in the product site to switch Norway, Europe, India, USA or UK and see converted monthly rates.',
         ],
       },
     ],
     faqs: [
       {
-        q: 'Is there a free trial?',
-        a: 'Private beta seats are granted by invitation. Contact DevnDespro to see if your team qualifies for early access.',
-      },
-      {
-        q: 'Can I change modules later?',
-        a: 'Yes. Admins can adjust feature access as your workflow matures — start lean, add depth when it pays off.',
+        q: 'Which currency is the source price?',
+        a: 'Plans are priced in NOK and converted live for EUR, INR, USD and GBP.',
       },
     ],
   },

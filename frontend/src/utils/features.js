@@ -1,10 +1,10 @@
 export const PLAN_META = {
   free: {
     id: 'free',
-    label: 'Free',
+    label: 'Launch',
     blurb: 'Core SEO basics for getting started.',
-    priceNok: 0,
-    priceLabel: '0 kr',
+    priceNok: 99,
+    priceLabel: 'from 99 kr/mo',
     bullets: [
       'Keywords basic (view & track)',
       'Overview & Site Audit',
@@ -14,12 +14,12 @@ export const PLAN_META = {
   },
   pro: {
     id: 'pro',
-    label: 'Pro',
+    label: 'Accelerate',
     blurb: 'Growth tools for link building and AI.',
     priceNok: 199,
     priceLabel: '199 kr/mo',
     bullets: [
-      'Everything in Free',
+      'Everything in Launch',
       'Full AI Visibility (scans, engines, recommendations)',
       'Backlinks',
       'AI Assistant',
@@ -28,12 +28,12 @@ export const PLAN_META = {
   },
   agency: {
     id: 'agency',
-    label: 'Agency',
+    label: 'Command',
     blurb: 'Full suite for client and outreach work.',
-    priceNok: 499,
-    priceLabel: '499 kr/mo',
+    priceNok: 399,
+    priceLabel: '399 kr/mo',
     bullets: [
-      'Everything in Pro',
+      'Everything in Accelerate',
       'Cold Email outreach',
       'Team-ready access',
     ],

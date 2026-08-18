@@ -7,6 +7,7 @@ import { canUseBacklinks, canUseKeywords, canUseAiAssistant, canUseColdEmails } 
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import MarketingPage from './pages/marketing/MarketingPage'
+import PricingPage from './pages/marketing/PricingPage'
 import Sites from './pages/Sites'
 import Dashboard from './pages/Dashboard'
 import Keywords from './pages/Keywords'
@@ -209,7 +210,7 @@ export default function App() {
           <Route path="/seo-audit" element={<MarketingPage />} />
           <Route path="/keyword-tracking" element={<MarketingPage />} />
           <Route path="/backlink-monitoring" element={<MarketingPage />} />
-          <Route path="/pricing" element={<MarketingPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
           <Route path="/about" element={<MarketingPage />} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
