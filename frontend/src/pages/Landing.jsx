@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
@@ -6,23 +6,6 @@ import { PRIMARY_MARKETING_NAV } from '../data/marketingPages'
 import '../styles/landing-radar.css'
 
 const LOGO_SRC = '/images/devndespro_seo_transparent.png'
-
-function navTarget(item) {
-  if (item.to) return item.to
-  return { pathname: '/', hash: item.hash }
-}
-
-function NavItem({ item, onClick, active }) {
-  return (
-    <Link
-      to={navTarget(item)}
-      className={active ? 'is-active' : undefined}
-      onClick={onClick}
-    >
-      {item.label}
-    </Link>
-  )
-}
 
 const FEATURES = [
   {
@@ -84,13 +67,6 @@ const ISSUE_ROWS = [
   { title: 'Improve internal linking', cat: 'Technical SEO' },
 ]
 
-function scrollToHash(hash) {
-  if (!hash) return
-  const id = hash.replace(/^#/, '')
-  const el = document.getElementById(id)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
-}
-
 export default function Landing() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -98,20 +74,12 @@ export default function Landing() {
   const goLogin = () => navigate('/login')
   const closeMenu = () => setMenuOpen(false)
 
-  useEffect(() => {
-    if (!location.hash) return
-    const t = window.setTimeout(() => scrollToHash(location.hash), 50)
-    return () => window.clearTimeout(t)
-  }, [location.hash, location.key])
-
   useDocumentMeta({
     title: 'DevnDespro Visibility | SEO & AI Discovery Platform',
     description:
       'DevnDespro Visibility brings technical SEO, keyword intelligence, backlinks and AI discovery into one focused workspace.',
     canonical: 'https://seo.devndespro.com/',
   })
-
-  const activeHash = (location.hash || '#top').replace(/^#/, '')
 
   return (
     <div className="dd-landing">
@@ -123,11 +91,13 @@ export default function Landing() {
 
           <div className="dd-nav-links">
             {PRIMARY_MARKETING_NAV.map((item) => (
-              <NavItem
-                key={item.label}
-                item={item}
-                active={item.to ? false : item.hash === activeHash}
-              />
+              <Link
+                key={item.to}
+                to={item.to}
+                className={location.pathname === item.to ? 'is-active' : undefined}
+              >
+                {item.label}
+              </Link>
             ))}
           </div>
 
@@ -152,7 +122,9 @@ export default function Landing() {
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {PRIMARY_MARKETING_NAV.map((item) => (
-            <NavItem key={item.label} item={item} onClick={closeMenu} />
+            <Link key={item.to} to={item.to} onClick={closeMenu}>
+              {item.label}
+            </Link>
           ))}
           <button
             type="button"
@@ -190,9 +162,9 @@ export default function Landing() {
                 <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
                   Analyse your website →
                 </button>
-                <a className="dd-btn dd-btn-secondary" href="#product">
+                <Link className="dd-btn dd-btn-secondary" to="/platform">
                   See the product
-                </a>
+                </Link>
               </div>
 
               <div className="dd-hero-proof">

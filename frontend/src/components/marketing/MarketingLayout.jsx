@@ -5,21 +5,12 @@ import BackToTop from './BackToTop'
 import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
-function navTo(item) {
-  if (item.to) return item.to
-  return { pathname: '/', hash: item.hash }
-}
-
-function isNavActive(item, activePath, pathname) {
-  if (item.to === '/pricing') return activePath === '/pricing' || pathname === '/pricing'
-  return false
-}
-
 export default function MarketingLayout({ children, activePath = '' }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
+  const path = activePath || location.pathname
 
   return (
     <div className="dd-landing">
@@ -36,9 +27,9 @@ export default function MarketingLayout({ children, activePath = '' }) {
           <div className="dd-nav-links">
             {PRIMARY_MARKETING_NAV.map((item) => (
               <Link
-                key={item.label}
-                to={navTo(item)}
-                className={isNavActive(item, activePath, location.pathname) ? 'is-active' : undefined}
+                key={item.to}
+                to={item.to}
+                className={path === item.to ? 'is-active' : undefined}
               >
                 {item.label}
               </Link>
@@ -67,9 +58,9 @@ export default function MarketingLayout({ children, activePath = '' }) {
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {PRIMARY_MARKETING_NAV.map((item) => (
             <Link
-              key={item.label}
-              to={navTo(item)}
-              className={isNavActive(item, activePath, location.pathname) ? 'is-active' : undefined}
+              key={item.to}
+              to={item.to}
+              className={path === item.to ? 'is-active' : undefined}
               onClick={() => setMenuOpen(false)}
             >
               {item.label}

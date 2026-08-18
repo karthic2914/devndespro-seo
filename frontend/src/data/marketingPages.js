@@ -1,11 +1,11 @@
 /** Shared copy for public marketing routes (React + static crawl shells). */
 
-/** Top nav: home sections + pricing page only (same on landing and marketing). */
+/** Top nav: dedicated marketing routes (same URLs on landing and inner pages). */
 export const PRIMARY_MARKETING_NAV = [
-  { label: 'Platform', hash: 'top' },
-  { label: 'Features', hash: 'features' },
-  { label: 'Product', hash: 'product' },
-  { label: 'How it works', hash: 'how' },
+  { label: 'Platform', to: '/platform' },
+  { label: 'Features', to: '/features' },
+  { label: 'AI Visibility', to: '/ai-visibility' },
+  { label: 'How it works', to: '/how-it-works' },
   { label: 'Pricing', to: '/pricing' },
 ]
 
