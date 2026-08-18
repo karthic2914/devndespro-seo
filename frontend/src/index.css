@@ -24,49 +24,63 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Brand palette — DevnDespro light */
-  --bg: #f6f8fc;
-  --panel: #ffffff;
-  --panel-2: #ffffff;
-  --panel-3: #f8f9fc;
-  --brand-text: #0b1f3a;
-  --brand-muted: #7d8ba3;
-  --brand-amber: #ff5a1f;
-  --brand-teal: #10a958;
-  --brand-purple: #5b46e8;
-  --brand-blue: #3267f5;
-  --brand-line: #e3e8f1;
-  --brand-line-strong: #d4dce8;
-  --brand-shadow: 0 22px 60px rgba(50, 70, 110, 0.12);
+  /* Brand palette — soft purple / blue / cyan */
+  --primary: #7C5CFC;
+  --primary-soft: #F2EFFF;
+  --blue: #4F8CFF;
+  --blue-soft: #EEF5FF;
+  --cyan: #38C6E8;
+  --cyan-soft: #ECFBFF;
+  --green: #22B573;
+  --green-soft: #EDFBF4;
+  --heading: #25324A;
+  --body-text: #667085;
+  --muted: #98A2B3;
+  --background: #FAFBFF;
+  --surface: #FFFFFF;
+  --border-color: #E8EAF2;
 
-  --orange: #ff5a1f;
-  --orange-dim: rgba(255, 90, 31, 0.10);
-  --orange-hover: #e84e18;
+  --bg: var(--background);
+  --panel: var(--surface);
+  --panel-2: var(--surface);
+  --panel-3: #F7F8FC;
+  --brand-text: var(--heading);
+  --brand-muted: var(--muted);
+  --brand-amber: var(--primary);
+  --brand-teal: var(--green);
+  --brand-purple: var(--primary);
+  --brand-blue: var(--blue);
+  --brand-line: var(--border-color);
+  --brand-line-strong: #DDE1EE;
+  --brand-shadow: 0 22px 60px rgba(80, 90, 140, 0.10);
 
-  --dark:  #f6f8fc;
-  --dark2: #ffffff;
-  --dark3: #f8f9fc;
-  --dark4: #e3e8f1;
-  --dark5: #d4dce8;
+  /* Legacy aliases used across the app */
+  --orange: var(--primary);
+  --orange-dim: var(--primary-soft);
+  --orange-hover: #6B4BE8;
 
-  --text:  #0b1f3a;
-  --text2: #42526b;
-  --muted: #7d8ba3;
+  --dark:  var(--background);
+  --dark2: var(--surface);
+  --dark3: #F7F8FC;
+  --dark4: var(--border-color);
+  --dark5: #DDE1EE;
 
-  --green:      #10a958;
-  --green-dim:  rgba(16, 169, 88, 0.10);
+  /* App uses --text as primary/heading color */
+  --text: var(--heading);
+  --text2: var(--body-text);
+
+  --green-dim:  var(--green-soft);
   --red:        #DC2626;
   --red-dim:    rgba(220, 38, 38, 0.10);
-  --amber:      #ff5a1f;
-  --amber-dim:  rgba(255, 90, 31, 0.10);
-  --blue:       #3267f5;
-  --blue-dim:   rgba(50, 103, 245, 0.10);
-  --purple:     #5b46e8;
-  --purple-dim: rgba(91, 70, 232, 0.10);
+  --amber:      var(--primary);
+  --amber-dim:  var(--primary-soft);
+  --blue-dim:   var(--blue-soft);
+  --purple:     var(--primary);
+  --purple-dim: var(--primary-soft);
 
-  --border: 1px solid var(--dark4);
-  --shadow: 0 1px 3px rgba(50, 70, 110, 0.08), 0 1px 2px rgba(50, 70, 110, 0.04);
-  --shadow-md: 0 4px 12px rgba(50, 70, 110, 0.10), 0 2px 4px rgba(50, 70, 110, 0.04);
+  --border: 1px solid var(--border-color);
+  --shadow: 0 1px 3px rgba(80, 90, 140, 0.06), 0 1px 2px rgba(80, 90, 140, 0.04);
+  --shadow-md: 0 10px 25px rgba(124, 92, 252, 0.12);
   --radius: 8px;
   --radius-lg: 12px;
 
@@ -80,8 +94,8 @@
 }
 
 body {
-  background: var(--dark);
-  color: var(--text);
+  background: var(--background);
+  color: var(--heading);
   font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: var(--text-base);
   line-height: 1.65;
@@ -806,7 +820,8 @@ body:has(.app-shell),
 /* -- Buttons -- */
 .btn          { display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius); font-weight: 600; cursor: pointer; transition: all 0.15s ease; font-family: inherit; }
 .btn:disabled { background: var(--dark4) !important; color: var(--muted) !important; cursor: not-allowed !important; }
-.btn--primary   { background: var(--orange); color: #fff; border: 1px solid var(--orange); }
+.btn--primary   { background: linear-gradient(135deg, #7C5CFC, #4F8CFF); color: #fff; border: 1px solid transparent; box-shadow: 0 10px 25px rgba(124, 92, 252, 0.20); }
+.btn--primary:hover:not(:disabled) { filter: brightness(1.03); }
 .btn--primary:hover:not(:disabled)   { opacity: 0.9; }
 .btn--secondary { background: var(--dark3); color: var(--text2); border: 1px solid var(--dark4); }
 .btn--secondary:hover:not(:disabled) { background: var(--dark4); }
@@ -817,7 +832,8 @@ body:has(.app-shell),
 .btn--lg   { padding: 12px 20px; font-size: 14px; }
 .btn--full { width: 100%; }
 
-.orange-btn { background: var(--orange); color: #fff; padding: 9px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; white-space: nowrap; border: none; display: inline-flex; align-items: center; font-family: inherit; }
+.orange-btn { background: linear-gradient(135deg, #7C5CFC, #4F8CFF); color: #fff; padding: 9px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; transition: filter 0.2s; white-space: nowrap; border: none; display: inline-flex; align-items: center; font-family: inherit; box-shadow: 0 10px 25px rgba(124, 92, 252, 0.20); }
+.orange-btn:hover { filter: brightness(1.03); }
 .orange-btn:hover:not(:disabled) { opacity: 0.9; }
 .orange-btn:disabled { background: var(--dark4); color: var(--muted); cursor: not-allowed; }
 
@@ -851,7 +867,7 @@ body:has(.app-shell),
 .project-row__del:hover { color: var(--red); }
 
 /* -- DA Goal Card -- */
-.da-goal-card       { background: linear-gradient(135deg, var(--purple), var(--blue)); border-radius: var(--radius-lg); padding: 1.25rem; color: #fff; box-shadow: 0 4px 20px rgba(91,70,232,0.28); }
+.da-goal-card       { background: linear-gradient(135deg, #7C5CFC, #4F8CFF); border-radius: var(--radius-lg); padding: 1.25rem; color: #fff; box-shadow: 0 10px 25px rgba(124, 92, 252, 0.22); }
 .da-goal-card__label { font-size: 10px; font-weight: 700; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
 .da-goal-card__nums  { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
 .da-goal-card__num   { font-size: 36px; font-weight: 800; font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }

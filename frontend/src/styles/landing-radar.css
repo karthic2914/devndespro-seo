@@ -1,21 +1,27 @@
-/* DevnDespro SEO — Light brand theme
-   BG #f6f8fc | Panel #ffffff | Text #0b1f3a | Muted #7d8ba3
-   Amber #ff5a1f | Teal #10a958 | Purple #5b46e8 | Blue #3267f5
+/* DevnDespro SEO — Soft purple/blue brand theme
+   BG #FAFBFF | Panel #FFFFFF | Heading #25324A | Text #667085 | Muted #98A2B3
+   Primary #7C5CFC | Blue #4F8CFF | Cyan #38C6E8 | Green #22B573 | Border #E8EAF2
 */
 
 .dd-landing {
-  --dd-bg: #f6f8fc;
-  --dd-panel: #ffffff;
-  --dd-panel-3: #f8f9fc;
-  --dd-text: #0b1f3a;
-  --dd-muted: #7d8ba3;
-  --dd-amber: #ff5a1f;
-  --dd-teal: #10a958;
-  --dd-purple: #5b46e8;
-  --dd-blue: #3267f5;
-  --dd-line: #e3e8f1;
-  --dd-line-strong: #d4dce8;
-  --dd-shadow: 0 22px 60px rgba(50, 70, 110, 0.12);
+  --dd-bg: #FAFBFF;
+  --dd-panel: #FFFFFF;
+  --dd-panel-3: #F2EFFF;
+  --dd-text: #25324A;
+  --dd-muted: #667085;
+  --dd-muted-soft: #98A2B3;
+  --dd-amber: #7C5CFC;
+  --dd-teal: #22B573;
+  --dd-purple: #7C5CFC;
+  --dd-blue: #4F8CFF;
+  --dd-cyan: #38C6E8;
+  --dd-primary-soft: #F2EFFF;
+  --dd-blue-soft: #EEF5FF;
+  --dd-cyan-soft: #ECFBFF;
+  --dd-green-soft: #EDFBF4;
+  --dd-line: #E8EAF2;
+  --dd-line-strong: #E8EAF2;
+  --dd-shadow: 0 22px 60px rgba(124, 92, 252, 0.10);
   --dd-radius: 18px;
 
   position: relative;
@@ -26,8 +32,8 @@
   padding-top: 74px;
   color: var(--dd-text);
   background:
-    radial-gradient(circle at 80% 10%, rgba(91, 70, 232, 0.08), transparent 24%),
-    radial-gradient(circle at 10% 20%, rgba(255, 90, 31, 0.08), transparent 20%),
+    radial-gradient(circle at 15% 20%, rgba(124, 92, 252, 0.10), transparent 35%),
+    radial-gradient(circle at 85% 25%, rgba(56, 198, 232, 0.10), transparent 35%),
     var(--dd-bg);
   font-family: Inter, system-ui, sans-serif;
 }
@@ -38,8 +44,8 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(11, 31, 58, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(11, 31, 58, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(37, 50, 74, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37, 50, 74, 0.03) 1px, transparent 1px);
   background-size: 32px 32px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 80%);
   z-index: 0;
@@ -97,8 +103,8 @@
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--dd-amber), var(--dd-purple));
-  box-shadow: 0 0 18px rgba(255, 90, 31, 0.35);
+  background: linear-gradient(135deg, #7C5CFC, #4F8CFF);
+  box-shadow: 0 0 18px rgba(124, 92, 252, 0.35);
 }
 
 .dd-landing .dd-nav-links {
@@ -156,9 +162,9 @@
 }
 
 .dd-landing .dd-btn-primary {
-  background: var(--dd-amber);
+  background: linear-gradient(135deg, #7C5CFC, #4F8CFF);
   color: #ffffff;
-  box-shadow: 0 12px 30px rgba(255, 90, 31, 0.22);
+  box-shadow: 0 10px 25px rgba(124, 92, 252, 0.20);
 }
 
 .dd-landing .dd-btn-secondary {
@@ -237,7 +243,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--dd-amber);
-  box-shadow: 0 0 14px rgba(255, 90, 31, 0.45);
+  box-shadow: 0 0 14px rgba(124, 92, 252, 0.45);
 }
 
 .dd-landing h1,
@@ -292,14 +298,14 @@
 
 .dd-landing .dd-proof-item strong {
   display: block;
-  color: var(--dd-purple);
+  color: var(--dd-blue);
   font: 500 18px 'JetBrains Mono', monospace;
 }
 
 .dd-landing .dd-proof-item span {
   display: block;
   margin-top: 4px;
-  color: var(--dd-muted);
+  color: var(--dd-muted-soft);
   font: 500 10px 'JetBrains Mono', monospace;
   letter-spacing: 0.06em;
 }
@@ -309,9 +315,9 @@
   position: relative;
   aspect-ratio: 1 / 1;
   min-height: 500px;
-  border: 1px solid rgba(91, 70, 232, 0.22);
+  border: 1px solid rgba(79, 140, 255, 0.22);
   border-radius: 28px;
-  background: radial-gradient(circle at 50% 50%, #eef1ff 0%, #f7f8ff 48%, #ffffff 78%);
+  background: radial-gradient(circle at 50% 50%, #EEF5FF 0%, #F2EFFF 48%, #FFFFFF 78%);
   box-shadow: var(--dd-shadow);
   overflow: hidden;
 }
@@ -320,7 +326,7 @@
   content: '';
   position: absolute;
   inset: 16px;
-  border: 1px solid rgba(91, 70, 232, 0.12);
+  border: 1px solid rgba(79, 140, 255, 0.12);
   border-radius: 22px;
   pointer-events: none;
 }
@@ -350,13 +356,13 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(91, 70, 232, 0.22);
+  border: 1px solid rgba(79, 140, 255, 0.22);
 }
 
 .dd-landing .dd-ring {
   position: absolute;
   inset: 12.5%;
-  border: 1px solid rgba(91, 70, 232, 0.16);
+  border: 1px solid rgba(79, 140, 255, 0.16);
   border-radius: 50%;
 }
 
@@ -371,7 +377,7 @@
 .dd-landing .dd-axis-x,
 .dd-landing .dd-axis-y {
   position: absolute;
-  background: rgba(91, 70, 232, 0.14);
+  background: rgba(79, 140, 255, 0.14);
 }
 
 .dd-landing .dd-axis-x {
@@ -396,7 +402,7 @@
   height: 2px;
   transform-origin: left center;
   background: linear-gradient(90deg, var(--dd-amber), transparent);
-  box-shadow: 0 0 12px rgba(255, 90, 31, 0.35);
+  box-shadow: 0 0 12px rgba(124, 92, 252, 0.35);
   animation: dd-sweep 5s linear infinite;
 }
 
@@ -407,7 +413,7 @@
   top: -170px;
   width: 170px;
   height: 170px;
-  background: conic-gradient(from 225deg, rgba(255, 90, 31, 0.14), transparent 70deg);
+  background: conic-gradient(from 225deg, rgba(124, 92, 252, 0.14), transparent 70deg);
   transform-origin: 100% 100%;
 }
 
@@ -432,14 +438,14 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #a8b4c8;
+  background: #98A2B3;
   opacity: 0.65;
 }
 
 .dd-landing .dd-node.active::before {
   background: var(--dd-teal);
   opacity: 1;
-  box-shadow: 0 0 12px rgba(16, 169, 88, 0.45);
+  box-shadow: 0 0 12px rgba(34, 181, 115, 0.45);
   animation: dd-pulse 2s ease-in-out infinite;
 }
 
@@ -449,7 +455,7 @@
 
 .dd-landing .dd-node.you::before {
   background: var(--dd-amber);
-  box-shadow: 0 0 14px rgba(255, 90, 31, 0.45);
+  box-shadow: 0 0 14px rgba(124, 92, 252, 0.45);
   opacity: 1;
 }
 
@@ -585,12 +591,12 @@
   text-decoration: none;
   color: inherit;
   display: block;
-  box-shadow: 0 8px 28px rgba(50, 70, 110, 0.06);
+  box-shadow: 0 8px 28px rgba(124, 92, 252, 0.06);
 }
 
 .dd-landing .dd-feature:hover {
   transform: translateY(-5px);
-  border-color: rgba(255, 90, 31, 0.35);
+  border-color: rgba(124, 92, 252, 0.35);
 }
 
 .dd-landing .dd-feature .dd-num {
@@ -606,8 +612,8 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(91, 70, 232, 0.08);
-  border: 1px solid rgba(91, 70, 232, 0.16);
+  background: rgba(124, 92, 252, 0.08);
+  border: 1px solid rgba(124, 92, 252, 0.16);
   color: var(--dd-purple);
   font-size: 20px;
 }
@@ -709,13 +715,13 @@
 .dd-landing .dd-bar {
   flex: 1;
   border-radius: 8px 8px 2px 2px;
-  background: linear-gradient(180deg, rgba(91, 70, 232, 0.95), rgba(91, 70, 232, 0.12));
+  background: linear-gradient(180deg, rgba(124, 92, 252, 0.95), rgba(124, 92, 252, 0.12));
   min-width: 20px;
   position: relative;
 }
 
 .dd-landing .dd-bar:nth-child(2n) {
-  background: linear-gradient(180deg, rgba(255, 90, 31, 0.95), rgba(255, 90, 31, 0.12));
+  background: linear-gradient(180deg, rgba(79, 140, 255, 0.95), rgba(79, 140, 255, 0.12));
 }
 
 .dd-landing .dd-bar::after {
@@ -818,12 +824,12 @@
 .dd-landing .dd-cta-panel {
   margin: 40px auto 110px;
   padding: 56px;
-  border: 1px solid rgba(255, 90, 31, 0.28);
+  border: 1px solid rgba(124, 92, 252, 0.28);
   border-radius: 28px;
   background: linear-gradient(
     135deg,
-    rgba(255, 90, 31, 0.06),
-    rgba(91, 70, 232, 0.04) 55%,
+    rgba(124, 92, 252, 0.06),
+    rgba(79, 140, 255, 0.04) 55%,
     var(--dd-panel)
   );
   display: flex;
@@ -1055,21 +1061,21 @@
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  border: 1px solid var(--dd-line-strong, #d4dce8);
-  background: #ffffff;
-  color: #ff5a1f;
+  border: 1px solid var(--dd-line-strong, #E8EAF2);
+  background: #FFFFFF;
+  color: #7C5CFC;
   font-size: 20px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 14px 36px rgba(50, 70, 110, 0.12);
+  box-shadow: 0 14px 36px rgba(124, 92, 252, 0.12);
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .dd-back-top:hover {
   transform: translateY(-3px);
-  background: #f8f9fc;
-  border-color: rgba(255, 90, 31, 0.45);
+  background: #F2EFFF;
+  border-color: rgba(124, 92, 252, 0.45);
 }
 
 @media (max-width: 640px) {
