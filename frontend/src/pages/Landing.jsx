@@ -1,8 +1,8 @@
 ﻿import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
-import { PRIMARY_MARKETING_NAV } from '../data/marketingPages'
+import { PRIMARY_MARKETING_NAV, isPrimaryNavActive } from '../data/marketingPages'
 import '../styles/landing-radar.css'
 
 const LOGO_SRC = '/images/devndespro_seo_transparent.png'
@@ -69,6 +69,7 @@ const ISSUE_ROWS = [
 
 export default function Landing() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
   const closeMenu = () => setMenuOpen(false)
@@ -93,8 +94,13 @@ export default function Landing() {
               <NavLink
                 key={item.to}
                 to={item.to}
-                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
                 end
+                className={() =>
+                  isPrimaryNavActive(item.to, location.pathname) ? 'is-active' : undefined
+                }
+                aria-current={
+                  isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined
+                }
               >
                 {item.label}
               </NavLink>
@@ -125,8 +131,11 @@ export default function Landing() {
             <NavLink
               key={item.to}
               to={item.to}
-              className={({ isActive }) => (isActive ? 'is-active' : undefined)}
               end
+              className={() =>
+                isPrimaryNavActive(item.to, location.pathname) ? 'is-active' : undefined
+              }
+              aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               onClick={closeMenu}
             >
               {item.label}

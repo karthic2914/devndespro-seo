@@ -1,12 +1,21 @@
 import { useState } from 'react'
-import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { MARKETING_NAV, PRIMARY_MARKETING_NAV } from '../../data/marketingPages'
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import {
+  MARKETING_NAV,
+  PRIMARY_MARKETING_NAV,
+  isPrimaryNavActive,
+} from '../../data/marketingPages'
 import BackToTop from './BackToTop'
 import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
+function primaryClassName(to, pathname) {
+  return isPrimaryNavActive(to, pathname) ? 'is-active' : undefined
+}
+
 export default function MarketingLayout({ children }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
 
@@ -28,7 +37,8 @@ export default function MarketingLayout({ children }) {
                 key={item.to}
                 to={item.to}
                 end
-                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+                className={() => primaryClassName(item.to, location.pathname)}
+                aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               >
                 {item.label}
               </NavLink>
@@ -60,7 +70,8 @@ export default function MarketingLayout({ children }) {
               key={item.to}
               to={item.to}
               end
-              className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+              className={() => primaryClassName(item.to, location.pathname)}
+              aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               onClick={() => setMenuOpen(false)}
             >
               {item.label}
@@ -86,9 +97,14 @@ export default function MarketingLayout({ children }) {
           <div>© {new Date().getFullYear()} DevnDespro Visibility</div>
           <div className="dd-footer-links">
             {MARKETING_NAV.map((item) => (
-              <Link key={item.path} to={item.path}>
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end
+                className={({ isActive }) => (isActive ? 'is-active' : undefined)}
+              >
                 {item.label}
-              </Link>
+              </NavLink>
             ))}
             <a href="https://www.devndespro.com/" target="_blank" rel="noreferrer">
               Company

@@ -114,8 +114,12 @@
 }
 
 .dd-landing .dd-nav-links a.is-active,
-.dd-landing .dd-nav-links a.is-active:visited {
-  color: var(--dd-brand);
+.dd-landing .dd-nav-links a.is-active:visited,
+.dd-landing .dd-nav-links a.active,
+.dd-landing .dd-nav-links a.active:visited,
+.dd-landing .dd-nav-links a[aria-current='page'],
+.dd-landing .dd-nav-links a[aria-current='page']:visited {
+  color: var(--dd-brand) !important;
   border-bottom-color: var(--dd-brand);
   font-weight: 800;
 }
@@ -203,8 +207,17 @@
 
 .dd-landing .dd-mobile-menu a.is-active,
 .dd-landing .dd-mobile-menu a.is-active:visited,
+.dd-landing .dd-mobile-menu a.active,
+.dd-landing .dd-mobile-menu a[aria-current='page'],
 .dd-landing .dd-mobile-menu a:hover {
   color: var(--dd-brand);
+}
+
+.dd-landing .dd-footer-links a.is-active,
+.dd-landing .dd-footer-links a.active,
+.dd-landing .dd-footer-links a[aria-current='page'] {
+  color: var(--dd-brand);
+  font-weight: 700;
 }
 
 .dd-landing .dd-mobile-menu .dd-btn {

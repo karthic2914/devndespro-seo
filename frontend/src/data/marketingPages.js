@@ -9,6 +9,21 @@ export const PRIMARY_MARKETING_NAV = [
   { label: 'Pricing', to: '/pricing' },
 ]
 
+/** Paths that should also light up a primary nav item. */
+const PRIMARY_NAV_ALIASES = {
+  '/features': ['/features', '/seo-audit', '/keyword-tracking', '/backlink-monitoring'],
+  '/ai-visibility': ['/ai-visibility'],
+  '/platform': ['/platform'],
+  '/how-it-works': ['/how-it-works'],
+  '/pricing': ['/pricing'],
+}
+
+export function isPrimaryNavActive(to, pathname) {
+  const path = (pathname || '/').replace(/\/$/, '') || '/'
+  const aliases = PRIMARY_NAV_ALIASES[to] || [to]
+  return aliases.includes(path)
+}
+
 export const MARKETING_NAV = [
   { path: '/platform', label: 'Platform' },
   { path: '/how-it-works', label: 'How it works' },
