@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth'
 import { canUseBacklinks, canUseKeywords, canUseAiAssistant, canUseColdEmails } from './utils/features'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
+import MarketingPage from './pages/marketing/MarketingPage'
 import Sites from './pages/Sites'
 import Dashboard from './pages/Dashboard'
 import Keywords from './pages/Keywords'
@@ -198,9 +199,16 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/public/ai-visibility/:token" element={<PublicAIVisibility />} />
-        <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/" element={<HomeRoute />} />
+          <Route path="/features" element={<MarketingPage />} />
+          <Route path="/ai-visibility" element={<MarketingPage />} />
+          <Route path="/seo-audit" element={<MarketingPage />} />
+          <Route path="/keyword-tracking" element={<MarketingPage />} />
+          <Route path="/backlink-monitoring" element={<MarketingPage />} />
+          <Route path="/pricing" element={<MarketingPage />} />
+          <Route path="/about" element={<MarketingPage />} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

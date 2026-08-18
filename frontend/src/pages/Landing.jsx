@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
@@ -15,6 +15,7 @@ import {
 import { Logo, T } from '../components/UI'
 import LandingHeader from '../components/LandingHeader'
 import useDocumentMeta from '../hooks/useDocumentMeta'
+import { ALL_MARKETING_PATHS } from '../data/marketingPages'
 
 const FAQ_ITEMS = [
   {
@@ -725,23 +726,45 @@ export default function Landing() {
           style={{
             ...styles.container,
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: 20,
+            flexDirection: 'column',
+            gap: 18,
           }}
         >
-          <Logo size="sm" variant="transparent" />
-
-          <p
+          <div
             style={{
-              margin: 0,
-              color: '#888A91',
-              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 20,
             }}
           >
-            (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
-          </p>
+            <Logo size="sm" variant="transparent" />
+
+            <p
+              style={{
+                margin: 0,
+                color: '#888A91',
+                fontSize: 12,
+              }}
+            >
+              (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
+            </p>
+          </div>
+          <nav
+            aria-label="Footer marketing links"
+            style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px' }}
+          >
+            {ALL_MARKETING_PATHS.map((path) => (
+              <Link
+                key={path}
+                to={path}
+                style={{ color: '#5B5E68', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
+              >
+                {path.replace(/^\//, '')}
+              </Link>
+            ))}
+          </nav>
         </div>
       </footer>
     </div>
