@@ -1,5 +1,4 @@
-﻿import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+﻿import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faArrowRight,
@@ -154,7 +153,6 @@ const styles = {
 
 export default function Landing() {
   const navigate = useNavigate()
-  const [activeSection, setActiveSection] = useState('')
 
   useDocumentMeta({
     title: 'devndespro SEO — Site Audit, Keywords & AI Visibility',
@@ -164,36 +162,6 @@ export default function Landing() {
   })
 
   const goToLogin = () => navigate('/login')
-  /* ACTIVE SECTION OBSERVER */
-  useEffect(() => {
-    const sectionIds = ['platform', 'features', 'how-it-works']
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleSection = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-
-        if (visibleSection) {
-          setActiveSection(visibleSection.target.id)
-        }
-      },
-      {
-        rootMargin: '-25% 0px -55% 0px',
-        threshold: [0.1, 0.25, 0.5],
-      }
-    )
-
-    sectionIds.forEach((id) => {
-      const section = document.getElementById(id)
-
-      if (section) {
-        observer.observe(section)
-      }
-    })
-
-    return () => observer.disconnect()
-  }, [])
 
   return (
     <div className="premium-landing-page" style={styles.page}>

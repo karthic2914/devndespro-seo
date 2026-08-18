@@ -82,6 +82,8 @@ function renderPage(page) {
 <body>
   <header>
     <a class="brand" href="/">DevnDespro SEO</a>
+    <a href="/platform">Platform</a>
+    <a href="/how-it-works">How it works</a>
     <a href="/features">Features</a>
     <a href="/seo-audit">Site Audit</a>
     <a href="/ai-visibility">AI Visibility</a>

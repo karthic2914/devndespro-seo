@@ -1,6 +1,8 @@
 /** Shared copy for public marketing routes (React + static crawl shells). */
 
 export const MARKETING_NAV = [
+  { path: '/platform', label: 'Platform' },
+  { path: '/how-it-works', label: 'How it works' },
   { path: '/features', label: 'Features' },
   { path: '/seo-audit', label: 'Site Audit' },
   { path: '/ai-visibility', label: 'AI Visibility' },
@@ -9,6 +11,94 @@ export const MARKETING_NAV = [
 ]
 
 export const MARKETING_PAGES = {
+  platform: {
+    path: '/platform',
+    title: 'SEO Platform — Technical, AI & Nordic Search | DevnDespro',
+    description:
+      'One SEO platform for technical site health, AI visibility and Nordic search intelligence. Understand how your business is discovered.',
+    h1: 'Understand exactly how your business is discovered',
+    eyebrow: 'ONE PLATFORM. THREE SIGNALS.',
+    intro:
+      'DevnDespro SEO combines technical SEO, AI visibility and Nordic search intelligence in one clear view — so teams stop juggling disconnected tools and start fixing what limits growth.',
+    sections: [
+      {
+        h2: 'Technical SEO that unblocks growth',
+        body: [
+          'Find crawl errors, broken links, weak metadata and performance issues that limit search visibility. Site Audit scores on-page, technical and content quality so you know what to fix first.',
+          'Homepage and multi-page crawls keep Site Health honest after every release, with issues ordered by impact instead of buried in generic checklists.',
+        ],
+      },
+      {
+        h2: 'AI visibility alongside classic search',
+        body: [
+          'Check whether ChatGPT and Claude mention, understand or recommend your business. Mentions, citations and trust signals sit next to your SEO work — not in a separate experiment.',
+          'Prepare content for Google rankings and answer engines at the same time, with recommendations that respect both channels.',
+        ],
+      },
+      {
+        h2: 'Nordic search intelligence',
+        body: [
+          'Analyse Norwegian and regional search intent, local keywords and discovery opportunities that generic global tools often miss.',
+          'Keep each hostname as its own project so parent marketing sites and product subdomains never share a confused health score.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: 'What makes this one platform instead of three tools?',
+        a: 'Site Audit, keywords, backlinks and AI visibility share the same projects, Action Plan and reporting — so priorities stay aligned.',
+      },
+      {
+        q: 'Who is the platform for?',
+        a: 'Nordic marketing teams, founders and agencies who want practical signals and authorised private workspaces.',
+      },
+    ],
+  },
+
+  'how-it-works': {
+    path: '/how-it-works',
+    title: 'How It Works — Domain to Decisions in Three Steps | DevnDespro',
+    description:
+      'Add your website, run the analysis, improve visibility. See how DevnDespro SEO turns audits and AI signals into a prioritised action plan.',
+    h1: 'From domain to decisions in three steps',
+    eyebrow: 'SIMPLE WORKFLOW',
+    intro:
+      'Run the analysis, understand the signals and follow a prioritised plan for improvement. DevnDespro keeps the path short: add a site, audit what matters, then act in impact order.',
+    sections: [
+      {
+        h2: '01 — Add your website',
+        body: [
+          'Enter your domain and select the market you want to analyse. Each project is tied to a hostname so product and marketing sites stay separate.',
+          'Invite authorised teammates into a private workspace — access stays limited to people you approve.',
+        ],
+      },
+      {
+        h2: '02 — Run the analysis',
+        body: [
+          'We audit your website, keywords and AI visibility signals. Site Health summarises critical issues and warnings you can explain to stakeholders.',
+          'Multi-page crawls and homepage checks surface duplicates, thin content, technical blockers and AI-readiness gaps in one place.',
+        ],
+      },
+      {
+        h2: '03 — Improve your visibility',
+        body: [
+          'Follow clear recommendations ordered by business impact. Action Plan stays synced with audit findings so work does not die in a PDF.',
+          'Re-run audits after fixes to confirm Site Health improved — then expand into keywords, backlinks and AI citations as you need them.',
+        ],
+      },
+    ],
+    faqs: [
+      {
+        q: 'How long does the first analysis take?',
+        a: 'Homepage audits complete quickly; full-site crawls scale with page count. You can review issues as soon as the homepage pass finishes.',
+      },
+      {
+        q: 'Do I need all modules on day one?',
+        a: 'No. Start with Site Audit and Site Health, then enable keywords, backlinks or AI visibility when your workflow needs them.',
+      },
+    ],
+  },
+
   features: {
     path: '/features',
     title: 'SEO Features — Site Audit, Keywords, Backlinks & AI | DevnDespro',

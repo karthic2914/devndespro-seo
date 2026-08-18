@@ -203,6 +203,8 @@ export default function App() {
           <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/" element={<HomeRoute />} />
           <Route path="/features" element={<MarketingPage />} />
+          <Route path="/platform" element={<MarketingPage />} />
+          <Route path="/how-it-works" element={<MarketingPage />} />
           <Route path="/ai-visibility" element={<MarketingPage />} />
           <Route path="/seo-audit" element={<MarketingPage />} />
           <Route path="/keyword-tracking" element={<MarketingPage />} />
