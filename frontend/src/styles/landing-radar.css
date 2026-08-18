@@ -31,6 +31,7 @@
   overflow-x: clip;
   color: var(--dd-ink);
   background: var(--dd-surface);
+  -webkit-text-size-adjust: 100%;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   line-height: 1.6;
 }
@@ -307,6 +308,8 @@
   border-radius: 24px;
   padding: 12px;
   box-shadow: var(--dd-shadow-lg);
+  min-width: 0;
+  max-width: 100%;
 }
 
 .dd-landing .dd-window-bar {
@@ -386,6 +389,8 @@
 
 .dd-landing .dd-app-main {
   padding: 16px;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .dd-landing .dd-app-top {
@@ -453,7 +458,7 @@
 
 .dd-landing .dd-mini-metrics {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1030,25 +1035,64 @@
     display: grid;
   }
 
+  .dd-landing .dd-nav {
+    background: rgba(255, 255, 255, 0.98);
+  }
+
+  .dd-landing .dd-mobile-menu.is-open {
+    background: #fff;
+    padding-bottom: 20px;
+  }
+
+  .dd-landing .dd-hero {
+    padding: 56px 0 48px;
+  }
+
   .dd-landing .dd-hero-grid,
   .dd-landing .dd-showcase-grid {
     grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .dd-landing .dd-hero h1 {
+    font-size: clamp(34px, 7vw, 52px);
+    letter-spacing: -1.8px;
+    max-width: none;
+  }
+
+  .dd-landing .dd-hero-copy {
+    font-size: 16px;
+    max-width: none;
   }
 
   .dd-landing .dd-app-frame {
-    max-width: 720px;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .dd-landing .dd-app-shell {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .dd-landing .dd-preview-sidebar {
+    display: none;
+  }
+
+  .dd-landing .dd-mini-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dd-landing .dd-feature-grid,
   .dd-landing .dd-steps {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .dd-landing .dd-trust-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .dd-landing .dd-trust-item:nth-child(2) {
+  .dd-landing .dd-trust-item:nth-child(2n) {
     border-right: 0;
   }
 
@@ -1056,24 +1100,53 @@
   .dd-landing .dd-trust-item:nth-child(2) {
     border-bottom: 1px solid var(--dd-line);
   }
+
+  .dd-landing .dd-section {
+    padding: 72px 0;
+  }
+
+  .dd-landing .dd-cta {
+    padding: 72px 0;
+  }
+
+  .dd-landing .dd-chart-bars {
+    gap: 10px;
+    left: 16px;
+    right: 16px;
+  }
+
+  .dd-landing .dd-issue-text strong {
+    overflow-wrap: anywhere;
+  }
 }
 
 @media (max-width: 650px) {
   .dd-landing .dd-container {
-    width: min(100% - 28px, 1200px);
+    width: min(100% - 24px, 1200px);
+  }
+
+  .dd-landing .dd-nav-inner {
+    min-height: 64px;
+    gap: 12px;
   }
 
   .dd-landing .dd-nav-actions .dd-btn-secondary {
     display: none;
   }
 
+  .dd-landing .dd-nav-actions .dd-btn-primary {
+    min-height: 40px;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
   .dd-landing .dd-hero {
-    padding: 70px 0 56px;
+    padding: 40px 0 40px;
   }
 
   .dd-landing .dd-hero h1 {
-    font-size: 46px;
-    letter-spacing: -2.3px;
+    font-size: clamp(30px, 8.5vw, 40px);
+    letter-spacing: -1.4px;
   }
 
   .dd-landing .dd-hero-actions {
@@ -1084,12 +1157,14 @@
     width: 100%;
   }
 
-  .dd-landing .dd-app-shell {
-    grid-template-columns: 1fr;
+  .dd-landing .dd-hero-proof {
+    gap: 12px 16px;
+    font-size: 12px;
   }
 
-  .dd-landing .dd-preview-sidebar {
-    display: none;
+  .dd-landing .dd-app-frame {
+    padding: 8px;
+    border-radius: 16px;
   }
 
   .dd-landing .dd-mini-metrics,
@@ -1097,24 +1172,92 @@
   .dd-landing .dd-steps,
   .dd-landing .dd-trust-grid,
   .dd-landing .dd-insight-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dd-landing .dd-trust-item {
     border-right: 0;
     border-bottom: 1px solid var(--dd-line);
+    padding: 18px 12px;
+  }
+
+  .dd-landing .dd-trust-item:last-child {
+    border-bottom: 0;
+  }
+
+  .dd-landing .dd-feature,
+  .dd-landing .dd-step {
+    padding: 22px;
+  }
+
+  .dd-landing .dd-section {
+    padding: 56px 0;
+  }
+
+  .dd-landing h2 {
+    font-size: clamp(26px, 7vw, 36px);
+    letter-spacing: -1px;
+  }
+
+  .dd-landing .dd-cta {
+    padding: 56px 0;
   }
 
   .dd-landing .dd-cta-card {
-    padding: 40px 22px;
+    padding: 32px 18px;
+    border-radius: 18px;
+  }
+
+  .dd-landing .dd-analytics-card {
+    padding: 14px;
+  }
+
+  .dd-landing .dd-chart {
+    height: 150px;
   }
 
   .dd-landing .dd-footer-inner {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dd-landing .dd-footer-links {
+    gap: 12px 16px;
   }
 
   .dd-landing .dd-logo-img,
   .dd-landing .dd-brand-logo {
-    height: 34px;
+    height: 32px;
+  }
+
+  .dd-landing .dd-back-top {
+    right: 14px;
+    bottom: 14px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .dd-landing .dd-issue-row {
+    grid-template-columns: 18px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .dd-landing .dd-issue-status {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+@media (max-width: 380px) {
+  .dd-landing .dd-nav-actions .dd-btn-primary {
+    display: none;
+  }
+
+  .dd-landing .dd-mini-card {
+    padding: 8px;
+  }
+
+  .dd-landing .dd-mini-value {
+    font-size: 16px;
   }
 }

@@ -57,6 +57,10 @@
   color: var(--mkt-text);
 }
 
+.mkt-hero--pricing {
+  min-height: auto;
+}
+
 .mkt-hero__noise,
 .mkt-hero__glow {
   display: none;
@@ -68,6 +72,31 @@
   max-width: 920px;
   padding-bottom: 40px;
   animation: mkt-rise 780ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  min-width: 0;
+}
+
+.mkt-hero__content--pricing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px;
+  align-items: flex-end;
+  justify-content: space-between;
+  max-width: none;
+}
+
+.mkt-pricing-intro {
+  flex: 1 1 280px;
+  max-width: 640px;
+  min-width: 0;
+}
+
+.mkt-pricing-intro .mkt-hero__lede {
+  margin-bottom: 0;
+}
+
+.mkt-hero--pricing .mkt-select-wrap {
+  flex: 0 1 280px;
+  width: min(100%, 280px);
 }
 
 .mkt-eyebrow {
@@ -770,10 +799,20 @@
 
   .mkt-hero h1 {
     max-width: none;
+    font-size: clamp(32px, 6vw, 48px);
+    letter-spacing: -1.4px;
   }
 
   .mkt-hero__content {
     padding-bottom: 28px;
+  }
+
+  .mkt-hero__content--pricing {
+    gap: 22px;
+  }
+
+  .mkt-pricing-intro {
+    max-width: none;
   }
 
   .mkt-rail__grid {
@@ -783,6 +822,7 @@
 
   .mkt-rail__item {
     border: 1px solid var(--mkt-line);
+    min-width: 0;
   }
 
   .mkt-feature {
@@ -803,10 +843,25 @@
   .mkt-select-wrap {
     width: 100%;
     min-width: 0;
+    max-width: none;
+  }
+
+  .mkt-hero--pricing .mkt-select-wrap {
+    flex: 1 1 100%;
+    width: 100%;
   }
 
   .mkt-band {
     padding: 64px 0;
+  }
+
+  .mkt-plan {
+    min-width: 0;
+  }
+
+  .mkt-plan__price strong {
+    font-size: clamp(28px, 8vw, 40px);
+    overflow-wrap: anywhere;
   }
 }
 
@@ -818,6 +873,18 @@
 
   .mkt-rail__item {
     border: 1px solid var(--mkt-line);
+  }
+
+  .mkt-hero {
+    padding-top: 36px;
+  }
+
+  .mkt-hero h1 {
+    font-size: clamp(28px, 8vw, 36px);
+  }
+
+  .mkt-hero__lede {
+    font-size: 15px;
   }
 
   .mkt-hero__actions {
@@ -833,5 +900,22 @@
   .mkt-cta-row {
     padding: 28px 18px;
     border-radius: 20px;
+  }
+
+  .mkt-section-head h2 {
+    font-size: clamp(24px, 7vw, 32px);
+  }
+
+  .mkt-plan {
+    padding: 22px 18px;
+  }
+
+  .mkt-select-menu--portal {
+    max-width: calc(100vw - 24px);
+  }
+
+  .mkt-faq details,
+  .mkt-faq summary {
+    overflow-wrap: anywhere;
   }
 }

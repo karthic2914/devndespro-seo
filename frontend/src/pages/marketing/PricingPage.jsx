@@ -117,15 +117,19 @@ export default function PricingPage() {
   useLayoutEffect(() => {
     if (!regionOpen || !triggerRef.current) return undefined
     const updatePos = () => {
-      // Anchor under the full wrap (trigger + hint) so the menu does not cover the FX caption.
       const anchor = regionMenuRef.current || triggerRef.current
       const rect = anchor.getBoundingClientRect()
-      const width = Math.max(rect.width, 240)
-      const estimatedHeight = 260
+      const isNarrow = window.innerWidth <= 560
+      const width = isNarrow
+        ? Math.min(window.innerWidth - 24, Math.max(rect.width, 240))
+        : Math.max(rect.width, 240)
+      const estimatedHeight = Math.min(280, window.innerHeight * 0.45)
       const gap = 6
       const spaceBelow = window.innerHeight - rect.bottom - 12
       const openUp = spaceBelow < estimatedHeight && rect.top > spaceBelow
-      const left = Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))
+      const left = isNarrow
+        ? Math.max(12, (window.innerWidth - width) / 2)
+        : Math.max(12, Math.min(rect.left, window.innerWidth - width - 12))
       setMenuPos({
         top: openUp ? Math.max(8, rect.top - estimatedHeight - gap) : rect.bottom + gap,
         left,
@@ -202,27 +206,16 @@ export default function PricingPage() {
   return (
     <MarketingLayout>
       <article className="mkt-page">
-        <section className="mkt-hero" style={{ minHeight: 'auto' }}>
+        <section className="mkt-hero mkt-hero--pricing">
           <div className="mkt-container">
-            <div
-              className="mkt-hero__content"
-              style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: 28,
-                alignItems: 'flex-end',
-                justifyContent: 'space-between',
-                maxWidth: 'none',
-                paddingBottom: 40,
-              }}
-            >
-              <div style={{ maxWidth: 640 }}>
+            <div className="mkt-hero__content mkt-hero__content--pricing">
+              <div className="mkt-pricing-intro">
                 <p className="mkt-eyebrow">PRICING</p>
                 <h1>
                   Plans that stay affordable{' '}
                   <span className="mkt-accent">as you grow</span>
                 </h1>
-                <p className="mkt-hero__lede" style={{ marginBottom: 0 }}>
+                <p className="mkt-hero__lede">
                   Launch, Accelerate and Command. Switch Norway, Europe, India, USA or UK and see
                   live converted rates.
                 </p>
