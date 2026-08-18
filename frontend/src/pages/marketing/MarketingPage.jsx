@@ -1,6 +1,19 @@
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowRight,
+  faChartLine,
+  faCheck,
+  faCube,
+  faGaugeHigh,
+  faKey,
+  faLayerGroup,
+  faLink,
+  faMagnifyingGlassChart,
+  faRobot,
+  faRoute,
+  faTags,
+} from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
 import {
@@ -9,6 +22,18 @@ import {
   MARKETING_NAV,
   PAGE_VISUALS,
 } from '../../data/marketingPages'
+
+const SLUG_ICONS = {
+  platform: faCube,
+  features: faLayerGroup,
+  'ai-visibility': faRobot,
+  'how-it-works': faRoute,
+  'seo-audit': faMagnifyingGlassChart,
+  'keyword-tracking': faKey,
+  'backlink-monitoring': faLink,
+  about: faChartLine,
+  pricing: faTags,
+}
 
 function slugFromPath(pathname) {
   return pathname.replace(/^\//, '').replace(/\/$/, '')
@@ -30,6 +55,65 @@ function splitHeadline(h1) {
     return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
   }
   return [h1, null]
+}
+
+function MarketingHeroPanel({ slug, visual }) {
+  const icon = SLUG_ICONS[slug] || faGaugeHigh
+  const stats = visual.stats || []
+  const chips = visual.chips || []
+  const bars = ['42%', '58%', '51%', '72%', '64%', '80%']
+
+  return (
+    <aside className="mkt-hero-panel" aria-label={visual.panelTitle || 'Product preview'}>
+      <div className="mkt-hero-panel__frame">
+        <div className="mkt-hero-panel__bar">
+          <div className="mkt-hero-panel__dots" aria-hidden>
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="mkt-hero-panel__url">seo.devndespro.com</div>
+          <div />
+        </div>
+
+        <div className="mkt-hero-panel__body">
+          <div className="mkt-hero-panel__head">
+            <span className="mkt-hero-panel__badge" aria-hidden>
+              <FontAwesomeIcon icon={icon} />
+            </span>
+            <div>
+              <strong>{visual.panelTitle}</strong>
+              <small>Live workspace preview</small>
+            </div>
+          </div>
+
+          <div className="mkt-hero-panel__stats">
+            {stats.slice(0, 3).map((stat) => (
+              <div key={`${stat.value}-${stat.label}`} className="mkt-hero-panel__stat">
+                <strong>{stat.value}</strong>
+                <span>{stat.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mkt-hero-panel__chart" aria-hidden>
+            {bars.map((h, i) => (
+              <div key={h + i} className="mkt-hero-panel__bar-col" style={{ height: h }} />
+            ))}
+          </div>
+
+          <ul className="mkt-hero-panel__list">
+            {chips.slice(0, 3).map((chip) => (
+              <li key={chip}>
+                <FontAwesomeIcon icon={faCheck} aria-hidden />
+                {chip}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </aside>
+  )
 }
 
 export default function MarketingPage() {
@@ -63,7 +147,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
     <MarketingLayout>
       <article className="mkt-page">
         <section className="mkt-hero">
-          <div className="mkt-container">
+          <div className="mkt-container mkt-hero__grid">
             <div className="mkt-hero__content">
               <p className="mkt-eyebrow">{page.eyebrow}</p>
               <h1>
@@ -85,6 +169,8 @@ export function MarketingPageView({ page, slug, onLogin }) {
                 </Link>
               </div>
             </div>
+
+            <MarketingHeroPanel slug={slug} visual={visual} />
           </div>
 
           <div className="mkt-rail">
