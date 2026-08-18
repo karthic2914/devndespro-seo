@@ -14,18 +14,24 @@ import {
 import { PAGE_VISUALS } from '../../data/marketingPages'
 
 async function fetchRatesFromNok() {
-  const symbols = 'USD,EUR,GBP,INR'
-  const url = `https://api.frankfurter.app/latest?from=NOK&to=${symbols}`
-  const res = await fetch(url)
+  // Same-origin proxy avoids browser CORS (Frankfurter blocks direct frontend calls).
+  const res = await fetch('/api/public/fx?from=NOK', {
+    headers: { Accept: 'application/json' },
+  })
   if (!res.ok) throw new Error(`Rates HTTP ${res.status}`)
   const data = await res.json()
+  const rates = data.rates || {}
+  if (![rates.USD, rates.EUR, rates.GBP, rates.INR].every((n) => Number.isFinite(Number(n)) && Number(n) > 0)) {
+    throw new Error('Incomplete rates')
+  }
   return {
     NOK: 1,
-    USD: Number(data.rates?.USD),
-    EUR: Number(data.rates?.EUR),
-    GBP: Number(data.rates?.GBP),
-    INR: Number(data.rates?.INR),
+    USD: Number(rates.USD),
+    EUR: Number(rates.EUR),
+    GBP: Number(rates.GBP),
+    INR: Number(rates.INR),
     date: data.date || null,
+    source: data.source || 'live',
   }
 }
 
@@ -87,7 +93,7 @@ export default function PricingPage() {
         }
         setRates(next)
         setRatesDate(next.date)
-        setRatesStatus('live')
+        setRatesStatus(next.source === 'fallback' ? 'fallback' : 'live')
       } catch {
         if (cancelled) return
         setRates(FALLBACK_RATES_FROM_NOK)
