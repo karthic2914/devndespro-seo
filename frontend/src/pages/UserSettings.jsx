@@ -53,10 +53,31 @@ export default function UserSettings() {
     const sessionId = params.get('session_id')
     const upgraded = params.get('upgraded') === '1'
     const planParam = params.get('plan') || 'paid'
+    const startCheckout = params.get('checkout')
 
-    if (params.get('checkout') === 'cancel') {
+    if (startCheckout === 'cancel') {
       setError('Checkout cancelled. No charge was made.')
       window.history.replaceState({}, '', '/settings')
+      return
+    }
+
+    if (startCheckout === 'pro' || startCheckout === 'agency') {
+      window.history.replaceState({}, '', '/settings')
+      ;(async () => {
+        setCheckoutPlan(startCheckout)
+        setError('')
+        try {
+          const { data } = await api.post('/billing/checkout', { plan: startCheckout })
+          if (data?.url) {
+            window.location.href = data.url
+            return
+          }
+          setError(data?.error || 'Checkout unavailable')
+        } catch (e) {
+          setError(e.response?.data?.error || 'Checkout failed')
+        }
+        setCheckoutPlan(null)
+      })()
       return
     }
 

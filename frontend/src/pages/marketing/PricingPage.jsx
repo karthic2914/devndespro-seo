@@ -5,6 +5,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
+import { useAuth } from '../../hooks/useAuth'
+import api from '../../utils/api'
 import {
   PRICING_PLANS,
   PRICING_REGIONS,
@@ -69,12 +71,15 @@ function detectDefaultRegion() {
 
 export default function PricingPage() {
   const navigate = useNavigate()
+  const { user, loading: authLoading } = useAuth()
   const [regionId, setRegionId] = useState(() => detectDefaultRegion())
   const [rates, setRates] = useState(FALLBACK_RATES_FROM_NOK)
   const [ratesDate, setRatesDate] = useState(null)
   const [ratesStatus, setRatesStatus] = useState('loading')
   const [regionOpen, setRegionOpen] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 240 })
+  const [checkoutPlan, setCheckoutPlan] = useState(null)
+  const [checkoutError, setCheckoutError] = useState('')
   const regionMenuRef = useRef(null)
   const triggerRef = useRef(null)
 
@@ -156,6 +161,39 @@ export default function PricingPage() {
   )
 
   const goLogin = () => navigate('/login')
+
+  const startPlan = async (plan) => {
+    setCheckoutError('')
+    const stripePlan = plan.stripePlan
+
+    // Launch / free path — sign in (or go to app if already signed in)
+    if (!stripePlan) {
+      navigate(user ? '/' : '/login')
+      return
+    }
+
+    if (authLoading) return
+
+    if (!user) {
+      navigate(`/login?checkout=${stripePlan}`)
+      return
+    }
+
+    setCheckoutPlan(plan.id)
+    try {
+      const { data } = await api.post('/billing/checkout', { plan: stripePlan })
+      if (data?.url) {
+        window.location.href = data.url
+        return
+      }
+      setCheckoutError(data?.error || 'Checkout unavailable. Try again from Settings.')
+    } catch (e) {
+      setCheckoutError(
+        e.response?.data?.error || 'Checkout failed. Sign in and try again from Settings.'
+      )
+    }
+    setCheckoutPlan(null)
+  }
 
   return (
     <MarketingLayout activePath="/pricing">
@@ -298,19 +336,31 @@ export default function PricingPage() {
                       ))}
                     </ul>
 
-                    <button type="button" className="mkt-plan__cta" onClick={goLogin}>
-                      {plan.cta}
-                      <FontAwesomeIcon icon={faArrowRight} />
+                    <button
+                      type="button"
+                      className="mkt-plan__cta"
+                      disabled={!!checkoutPlan || authLoading}
+                      onClick={() => startPlan(plan)}
+                    >
+                      {checkoutPlan === plan.id ? 'Redirecting to Stripe…' : plan.cta}
+                      {checkoutPlan === plan.id ? null : <FontAwesomeIcon icon={faArrowRight} />}
                     </button>
                   </div>
                 )
               })}
             </div>
 
+            {checkoutError ? (
+              <p className="mkt-note" style={{ color: '#FF8A7A', marginTop: 14 }}>
+                {checkoutError}
+              </p>
+            ) : null}
+
             <p className="mkt-note">
-              Prices convert from NOK using {ratesStatus === 'live' ? 'live' : 'reference'} rates for{' '}
-              {region.label}. Billing currency at checkout may be confirmed with your workspace admin.
-              *Fair-use limits apply on Command.
+              Accelerate and Command open Stripe Checkout when you are signed in. Launch takes you
+              into the workspace. Prices convert from NOK using{' '}
+              {ratesStatus === 'live' ? 'live' : 'reference'} rates for {region.label}. Billing is in
+              NOK at checkout. *Fair-use limits apply on Command.
             </p>
           </div>
         </section>

@@ -1,15 +1,35 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import { Logo, Card, Divider, T } from '../components/UI'
+import api from '../utils/api'
+
+async function continueAfterLogin(navigate, checkoutPlan) {
+  if (checkoutPlan === 'pro' || checkoutPlan === 'agency') {
+    try {
+      const { data } = await api.post('/billing/checkout', { plan: checkoutPlan })
+      if (data?.url) {
+        window.location.href = data.url
+        return
+      }
+    } catch {
+      /* fall through to settings so they can retry */
+    }
+    navigate(`/settings?checkout=${checkoutPlan}`, { replace: true })
+    return
+  }
+  navigate('/', { replace: true })
+}
 
 export default function Login() {
   const { login, loginWithEmail } = useAuth()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const checkoutPlan = searchParams.get('checkout')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
@@ -28,7 +48,7 @@ export default function Login() {
       setError('')
       try {
         await login(tokenResponse.access_token)
-        navigate('/')
+        await continueAfterLogin(navigate, checkoutPlan)
       } catch (e) {
         setError(e.response?.data?.error || 'Access denied. You may not be authorised.')
       } finally {
@@ -50,7 +70,7 @@ export default function Login() {
 
     try {
       await loginWithEmail(normalized)
-      navigate('/')
+      await continueAfterLogin(navigate, checkoutPlan)
     } catch (e) {
       setError(e.response?.data?.error || 'Access denied. This email is not authorized.')
     } finally {
@@ -75,7 +95,9 @@ export default function Login() {
             Sign in to DevnDespro SEO
           </h1>
           <p style={{ fontSize: 14, color: T.text2, lineHeight: 1.6, margin: 0 }}>
-            The SEO platform that gets your website to <strong style={{ color: T.orange }}>#1 on Google</strong>
+            {checkoutPlan === 'pro' || checkoutPlan === 'agency'
+              ? 'Sign in to continue to Stripe Checkout for your selected plan.'
+              : <>The SEO platform that gets your website to <strong style={{ color: T.orange }}>#1 on Google</strong></>}
           </p>
         </div>
 

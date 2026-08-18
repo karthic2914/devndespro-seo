@@ -19,8 +19,8 @@ export const FALLBACK_RATES_FROM_NOK = {
 
 /**
  * Basic → Launch
- * Advanced → Accelerate
- * Business → Command
+ * Advanced → Accelerate (Stripe: pro)
+ * Business → Command (Stripe: agency)
  */
 export const PRICING_PLANS = [
   {
@@ -30,6 +30,7 @@ export const PRICING_PLANS = [
     tagline: 'Clarity to get moving',
     blurb: 'Core site health and visibility basics for founders and small teams.',
     priceNok: 99,
+    stripePlan: null,
     accent: '#171923',
     featured: false,
     cta: 'Start with Launch',
@@ -49,6 +50,7 @@ export const PRICING_PLANS = [
     tagline: 'Grow search & AI reach',
     blurb: 'Full visibility toolkit for teams serious about rankings and citations.',
     priceNok: 199,
+    stripePlan: 'pro',
     accent: '#EA6A3B',
     featured: true,
     cta: 'Choose Accelerate',
@@ -69,6 +71,7 @@ export const PRICING_PLANS = [
     tagline: 'Run the full stack',
     blurb: 'Agency-ready control for portfolios, outreach and client delivery.',
     priceNok: 399,
+    stripePlan: 'agency',
     accent: '#5246D9',
     featured: false,
     cta: 'Go with Command',
