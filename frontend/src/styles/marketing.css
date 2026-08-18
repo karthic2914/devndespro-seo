@@ -99,12 +99,13 @@
 
 .mkt-hero h1 {
   margin: 0 0 22px;
-  font-size: clamp(40px, 5.8vw, 68px);
+  font-size: clamp(34px, 7vw, 68px);
   font-weight: 700;
   line-height: 0.98;
   letter-spacing: -0.045em;
   color: var(--mkt-text);
   max-width: 16ch;
+  overflow-wrap: anywhere;
 }
 
 .mkt-hero h1 .mkt-accent {
@@ -657,7 +658,7 @@
 
 @media (max-width: 960px) {
   .mkt-pricing-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mkt-plan.is-featured {
@@ -675,8 +676,12 @@
     max-width: none;
   }
 
+  .mkt-hero__content {
+    padding-bottom: 28px;
+  }
+
   .mkt-rail__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .mkt-rail__item:nth-child(2n) {
@@ -688,7 +693,7 @@
   }
 
   .mkt-feature {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
 
@@ -701,14 +706,38 @@
   .mkt-container {
     width: min(100% - 28px, 1180px);
   }
+
+  .mkt-select-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .mkt-band {
+    padding: 64px 0;
+  }
 }
 
 @media (max-width: 560px) {
   .mkt-rail__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .mkt-rail__item {
     border-right: none;
+  }
+
+  .mkt-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mkt-btn-primary,
+  .mkt-btn-ghost {
+    width: 100%;
+  }
+
+  .mkt-cta-row {
+    padding: 28px 18px;
+    border-radius: 20px;
   }
 }
