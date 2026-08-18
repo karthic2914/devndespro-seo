@@ -1,18 +1,28 @@
-﻿import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+﻿import { useEffect, useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
+import { PRIMARY_MARKETING_NAV } from '../data/marketingPages'
 import '../styles/landing-radar.css'
 
 const LOGO_SRC = '/images/devndespro_seo_transparent.png'
 
-const NAV = [
-  { href: '#top', label: 'Platform', active: true },
-  { href: '#features', label: 'Features' },
-  { href: '#product', label: 'Product' },
-  { href: '#how', label: 'How it works' },
-  { to: '/pricing', label: 'Pricing' },
-]
+function navTarget(item) {
+  if (item.to) return item.to
+  return { pathname: '/', hash: item.hash }
+}
+
+function NavItem({ item, onClick, active }) {
+  return (
+    <Link
+      to={navTarget(item)}
+      className={active ? 'is-active' : undefined}
+      onClick={onClick}
+    >
+      {item.label}
+    </Link>
+  )
+}
 
 const FEATURES = [
   {
@@ -74,33 +84,34 @@ const ISSUE_ROWS = [
   { title: 'Improve internal linking', cat: 'Technical SEO' },
 ]
 
-function NavItem({ item, onClick }) {
-  if (item.to) {
-    return (
-      <Link to={item.to} className={item.active ? 'is-active' : undefined} onClick={onClick}>
-        {item.label}
-      </Link>
-    )
-  }
-  return (
-    <a href={item.href} className={item.active ? 'is-active' : undefined} onClick={onClick}>
-      {item.label}
-    </a>
-  )
+function scrollToHash(hash) {
+  if (!hash) return
+  const id = hash.replace(/^#/, '')
+  const el = document.getElementById(id)
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 export default function Landing() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
   const closeMenu = () => setMenuOpen(false)
 
+  useEffect(() => {
+    if (!location.hash) return
+    const t = window.setTimeout(() => scrollToHash(location.hash), 50)
+    return () => window.clearTimeout(t)
+  }, [location.hash, location.key])
+
   useDocumentMeta({
-    title: 'DevnDespro Visibility — SEO & AI Discovery Platform',
+    title: 'DevnDespro Visibility | SEO & AI Discovery Platform',
     description:
       'DevnDespro Visibility brings technical SEO, keyword intelligence, backlinks and AI discovery into one focused workspace.',
     canonical: 'https://seo.devndespro.com/',
   })
+
+  const activeHash = (location.hash || '#top').replace(/^#/, '')
 
   return (
     <div className="dd-landing">
@@ -111,8 +122,12 @@ export default function Landing() {
           </Link>
 
           <div className="dd-nav-links">
-            {NAV.map((item) => (
-              <NavItem key={item.label} item={item} />
+            {PRIMARY_MARKETING_NAV.map((item) => (
+              <NavItem
+                key={item.label}
+                item={item}
+                active={item.to ? false : item.hash === activeHash}
+              />
             ))}
           </div>
 
@@ -136,7 +151,7 @@ export default function Landing() {
         </div>
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
-          {NAV.map((item) => (
+          {PRIMARY_MARKETING_NAV.map((item) => (
             <NavItem key={item.label} item={item} onClick={closeMenu} />
           ))}
           <button
@@ -167,7 +182,7 @@ export default function Landing() {
 
               <p className="dd-hero-copy">
                 DevnDespro Visibility brings site health, keyword tracking, backlinks and AI discovery
-                into one workspace — helping teams understand what needs attention and what to improve
+                into one workspace, helping teams understand what needs attention and what to improve
                 next.
               </p>
 
@@ -323,7 +338,7 @@ export default function Landing() {
           <div className="dd-container dd-showcase-grid">
             <div className="dd-showcase-copy">
               <div className="dd-kicker">Built for decisions</div>
-              <h2>See what is improving — and what still needs work.</h2>
+              <h2>See what is improving, and what still needs work.</h2>
               <p>
                 Your team gets a single view of technical health, search momentum and AI visibility,
                 with enough detail to act without drowning in dashboards.

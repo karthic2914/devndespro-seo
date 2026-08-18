@@ -1,20 +1,23 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { MARKETING_NAV } from '../../data/marketingPages'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { MARKETING_NAV, PRIMARY_MARKETING_NAV } from '../../data/marketingPages'
 import BackToTop from './BackToTop'
 import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
-const NAV = [
-  { to: '/platform', label: 'Platform' },
-  { to: '/features', label: 'Features' },
-  { to: '/ai-visibility', label: 'AI Visibility' },
-  { to: '/how-it-works', label: 'How it works' },
-  { to: '/pricing', label: 'Pricing' },
-]
+function navTo(item) {
+  if (item.to) return item.to
+  return { pathname: '/', hash: item.hash }
+}
+
+function isNavActive(item, activePath, pathname) {
+  if (item.to === '/pricing') return activePath === '/pricing' || pathname === '/pricing'
+  return false
+}
 
 export default function MarketingLayout({ children, activePath = '' }) {
   const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
 
@@ -31,11 +34,11 @@ export default function MarketingLayout({ children, activePath = '' }) {
           </Link>
 
           <div className="dd-nav-links">
-            {NAV.map((item) => (
+            {PRIMARY_MARKETING_NAV.map((item) => (
               <Link
-                key={item.to}
-                to={item.to}
-                className={activePath === item.to ? 'is-active' : undefined}
+                key={item.label}
+                to={navTo(item)}
+                className={isNavActive(item, activePath, location.pathname) ? 'is-active' : undefined}
               >
                 {item.label}
               </Link>
@@ -62,11 +65,11 @@ export default function MarketingLayout({ children, activePath = '' }) {
         </div>
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
-          {NAV.map((item) => (
+          {PRIMARY_MARKETING_NAV.map((item) => (
             <Link
-              key={item.to}
-              to={item.to}
-              className={activePath === item.to ? 'is-active' : undefined}
+              key={item.label}
+              to={navTo(item)}
+              className={isNavActive(item, activePath, location.pathname) ? 'is-active' : undefined}
               onClick={() => setMenuOpen(false)}
             >
               {item.label}

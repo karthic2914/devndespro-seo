@@ -35,9 +35,13 @@
   line-height: 1.6;
 }
 
-.dd-landing a {
-  color: inherit;
-  text-decoration: none;
+.dd-landing .dd-section,
+.dd-landing .dd-showcase,
+.dd-landing #top,
+.dd-landing #features,
+.dd-landing #product,
+.dd-landing #how {
+  scroll-margin-top: 88px;
 }
 
 .dd-landing .dd-container {

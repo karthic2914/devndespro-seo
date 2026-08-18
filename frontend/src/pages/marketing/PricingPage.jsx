@@ -84,7 +84,7 @@ export default function PricingPage() {
   const triggerRef = useRef(null)
 
   useDocumentMeta({
-    title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
+    title: 'Pricing | Launch, Accelerate & Command | DevnDespro SEO',
     description:
       'Simple DevnDespro SEO plans: Launch, Accelerate and Command. Switch currency for Norway, Europe, India, USA and UK with live exchange rates.',
     canonical: 'https://seo.devndespro.com/pricing',
@@ -166,7 +166,7 @@ export default function PricingPage() {
     setCheckoutError('')
     const stripePlan = plan.stripePlan
 
-    // Launch / free path — sign in (or go to app if already signed in)
+    // Launch / free path: sign in (or go to app if already signed in)
     if (!stripePlan) {
       navigate(user ? '/' : '/login')
       return
@@ -219,7 +219,7 @@ export default function PricingPage() {
                   <span className="mkt-accent">as you grow</span>
                 </h1>
                 <p className="mkt-hero__lede" style={{ marginBottom: 0 }}>
-                  Launch, Accelerate and Command — switch Norway, Europe, India, USA or UK and see
+                  Launch, Accelerate and Command. Switch Norway, Europe, India, USA or UK and see
                   live converted rates.
                 </p>
               </div>

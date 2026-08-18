@@ -18,9 +18,9 @@ function splitHeadline(h1) {
     const i = h1.indexOf('. ')
     return [h1.slice(0, i + 1), h1.slice(i + 2)]
   }
-  if (h1.includes(' — ')) {
-    const parts = h1.split(' — ')
-    return [parts[0], parts.slice(1).join(' — ')]
+  if (h1.includes(' · ')) {
+    const parts = h1.split(' · ')
+    return [parts[0], parts.slice(1).join(' · ')]
   }
   const words = h1.trim().split(/\s+/)
   if (words.length >= 6) {
@@ -108,7 +108,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
               <p className="mkt-eyebrow">WHY IT MATTERS</p>
               <h2>Clarity first. Then the lift.</h2>
               <p>
-                Practical depth under a clear signal — so every page feels like the same product,
+                Practical depth under a clear signal, so every page feels like the same product,
                 not a different theme.
               </p>
             </div>

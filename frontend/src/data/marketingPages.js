@@ -1,5 +1,14 @@
 /** Shared copy for public marketing routes (React + static crawl shells). */
 
+/** Top nav: home sections + pricing page only (same on landing and marketing). */
+export const PRIMARY_MARKETING_NAV = [
+  { label: 'Platform', hash: 'top' },
+  { label: 'Features', hash: 'features' },
+  { label: 'Product', hash: 'product' },
+  { label: 'How it works', hash: 'how' },
+  { label: 'Pricing', to: '/pricing' },
+]
+
 export const MARKETING_NAV = [
   { path: '/platform', label: 'Platform' },
   { path: '/how-it-works', label: 'How it works' },
@@ -98,13 +107,13 @@ export const PAGE_VISUALS = {
 export const MARKETING_PAGES = {
   platform: {
     path: '/platform',
-    title: 'SEO Platform — Technical, AI & Nordic Search | DevnDespro',
+    title: 'SEO Platform · Technical, AI & Nordic Search | DevnDespro',
     description:
       'One SEO platform for technical site health, AI visibility and Nordic search intelligence. Understand how your business is discovered.',
     h1: 'Understand exactly how your business is discovered',
     eyebrow: 'ONE PLATFORM. THREE SIGNALS.',
     intro:
-      'DevnDespro SEO combines technical SEO, AI visibility and Nordic search intelligence in one clear view — so teams stop juggling disconnected tools and start fixing what limits growth.',
+      'DevnDespro SEO combines technical SEO, AI visibility and Nordic search intelligence in one clear view, so teams stop juggling disconnected tools and start fixing what limits growth.',
     sections: [
       {
         h2: 'Technical SEO that unblocks growth',
@@ -116,7 +125,7 @@ export const MARKETING_PAGES = {
       {
         h2: 'AI visibility alongside classic search',
         body: [
-          'Check whether ChatGPT and Claude mention, understand or recommend your business. Mentions, citations and trust signals sit next to your SEO work — not in a separate experiment.',
+          'Check whether ChatGPT and Claude mention, understand or recommend your business. Mentions, citations and trust signals sit next to your SEO work, not in a separate experiment.',
           'Prepare content for Google rankings and answer engines at the same time, with recommendations that respect both channels.',
         ],
       },
@@ -131,7 +140,7 @@ export const MARKETING_PAGES = {
     faqs: [
       {
         q: 'What makes this one platform instead of three tools?',
-        a: 'Site Audit, keywords, backlinks and AI visibility share the same projects, Action Plan and reporting — so priorities stay aligned.',
+        a: 'Site Audit, keywords, backlinks and AI visibility share the same projects, Action Plan and reporting, so priorities stay aligned.',
       },
       {
         q: 'Who is the platform for?',
@@ -142,7 +151,7 @@ export const MARKETING_PAGES = {
 
   'how-it-works': {
     path: '/how-it-works',
-    title: 'How It Works — Domain to Decisions in Three Steps | DevnDespro',
+    title: 'How It Works · Domain to Decisions in Three Steps | DevnDespro',
     description:
       'Add your website, run the analysis, improve visibility. See how DevnDespro SEO turns audits and AI signals into a prioritised action plan.',
     h1: 'From domain to decisions in three steps',
@@ -151,24 +160,24 @@ export const MARKETING_PAGES = {
       'Run the analysis, understand the signals and follow a prioritised plan for improvement. DevnDespro keeps the path short: add a site, audit what matters, then act in impact order.',
     sections: [
       {
-        h2: '01 — Add your website',
+        h2: '01 · Add your website',
         body: [
           'Enter your domain and select the market you want to analyse. Each project is tied to a hostname so product and marketing sites stay separate.',
-          'Invite authorised teammates into a private workspace — access stays limited to people you approve.',
+          'Invite authorised teammates into a private workspace. Access stays limited to people you approve.',
         ],
       },
       {
-        h2: '02 — Run the analysis',
+        h2: '02 · Run the analysis',
         body: [
           'We audit your website, keywords and AI visibility signals. Site Health summarises critical issues and warnings you can explain to stakeholders.',
           'Multi-page crawls and homepage checks surface duplicates, thin content, technical blockers and AI-readiness gaps in one place.',
         ],
       },
       {
-        h2: '03 — Improve your visibility',
+        h2: '03 · Improve your visibility',
         body: [
           'Follow clear recommendations ordered by business impact. Action Plan stays synced with audit findings so work does not die in a PDF.',
-          'Re-run audits after fixes to confirm Site Health improved — then expand into keywords, backlinks and AI citations as you need them.',
+          'Re-run audits after fixes to confirm Site Health improved, then expand into keywords, backlinks and AI citations as you need them.',
         ],
       },
     ],
@@ -186,13 +195,13 @@ export const MARKETING_PAGES = {
 
   features: {
     path: '/features',
-    title: 'SEO Features — Site Audit, Keywords, Backlinks & AI | DevnDespro',
+    title: 'SEO Features · Site Audit, Keywords, Backlinks & AI | DevnDespro',
     description:
       'Explore DevnDespro SEO features: technical site audits, keyword tracking, backlink monitoring, and AI citation visibility for Nordic teams.',
     h1: 'Everything you need to improve search and AI visibility',
     eyebrow: 'PLATFORM FEATURES',
     intro:
-      'DevnDespro SEO brings technical SEO, ranking intelligence, link monitoring and AI visibility into one private workspace. Stop jumping between tools — see what blocks growth and what to fix next.',
+      'DevnDespro SEO brings technical SEO, ranking intelligence, link monitoring and AI visibility into one private workspace. Stop jumping between tools. See what blocks growth and what to fix next.',
     sections: [
       {
         h2: 'Technical site audits that prioritise impact',
@@ -219,7 +228,7 @@ export const MARKETING_PAGES = {
         h2: 'AI visibility beyond classic SERPs',
         body: [
           'Measure whether assistants like ChatGPT and Claude mention or recommend your brand. AI citation checks sit alongside technical SEO so you prepare content for both rankings and answer engines.',
-          'Use clear recommendations ordered by visibility impact — not generic SEO checklists that ignore how discovery is changing.',
+          'Use clear recommendations ordered by visibility impact, not generic SEO checklists that ignore how discovery is changing.',
         ],
       },
     ],
@@ -237,7 +246,7 @@ export const MARKETING_PAGES = {
 
   'ai-visibility': {
     path: '/ai-visibility',
-    title: 'AI Visibility Tracking — ChatGPT & Claude Citations | DevnDespro',
+    title: 'AI Visibility Tracking · ChatGPT & Claude Citations | DevnDespro',
     description:
       'Track whether ChatGPT and Claude mention or recommend your business. Improve AI visibility alongside classic SEO with DevnDespro.',
     h1: 'See whether AI assistants recommend your business',
@@ -248,7 +257,7 @@ export const MARKETING_PAGES = {
       {
         h2: 'Why AI visibility matters now',
         body: [
-          'Answer engines summarise the web and often cite a short list of trusted sources. If your site is thin, unclear or poorly structured, you are less likely to be mentioned — even if you rank for a few classic keywords.',
+          'Answer engines summarise the web and often cite a short list of trusted sources. If your site is thin, unclear or poorly structured, you are less likely to be mentioned, even if you rank for a few classic keywords.',
           'AI visibility monitoring shows whether your brand appears in assistant answers for prompts that matter to your market, and highlights gaps competitors already fill.',
         ],
       },
@@ -256,7 +265,7 @@ export const MARKETING_PAGES = {
         h2: 'How DevnDespro measures AI signals',
         body: [
           'Run structured AI visibility checks for your domain, review citation outcomes, and track score history over time. Results live next to Site Audit and Action Plan so technical fixes and content improvements support both Google and AI discovery.',
-          'Combine AI findings with Nordic search context — language, local intent and regional competitors — instead of treating AI SEO as a separate science experiment.',
+          'Combine AI findings with Nordic search context (language, local intent and regional competitors) instead of treating AI SEO as a separate science experiment.',
         ],
       },
       {
@@ -281,13 +290,13 @@ export const MARKETING_PAGES = {
 
   'seo-audit': {
     path: '/seo-audit',
-    title: 'SEO Site Audit Tool — Technical & Content Health | DevnDespro',
+    title: 'SEO Site Audit Tool · Technical & Content Health | DevnDespro',
     description:
       'Run technical SEO site audits: crawl issues, titles, H1s, content quality and Site Health scoring. Built for teams who need clear fix priorities.',
     h1: 'Site audits that turn crawl issues into an action plan',
     eyebrow: 'SEO SITE AUDIT',
     intro:
-      'DevnDespro Site Audit crawls your pages, scores Site Health, and lists critical issues and warnings by impact. Fix what blocks indexing and rankings first — then re-check to prove improvement.',
+      'DevnDespro Site Audit crawls your pages, scores Site Health, and lists critical issues and warnings by impact. Fix what blocks indexing and rankings first, then re-check to prove improvement.',
     sections: [
       {
         h2: 'Homepage and multi-page crawls',
@@ -306,7 +315,7 @@ export const MARKETING_PAGES = {
       {
         h2: 'Built for modern JavaScript sites',
         body: [
-          'Many marketing sites are React or Vite SPAs. Our crawler can use static HTML when present and optional headless rendering when the shell is empty — so H1 and word-count checks better match what users see.',
+          'Many marketing sites are React or Vite SPAs. Our crawler can use static HTML when present and optional headless rendering when the shell is empty, so H1 and word-count checks better match what users see.',
           'Still, we recommend crawlable HTML for critical landing pages so search bots and audits do not depend on JavaScript alone.',
         ],
       },
@@ -318,14 +327,14 @@ export const MARKETING_PAGES = {
       },
       {
         q: 'What is a good Site Health score?',
-        a: 'Aim to clear critical errors first. Scores climb as duplicates, thin pages and technical blockers disappear — progress matters more than a single number.',
+        a: 'Aim to clear critical errors first. Scores climb as duplicates, thin pages and technical blockers disappear. Progress matters more than a single number.',
       },
     ],
   },
 
   'keyword-tracking': {
     path: '/keyword-tracking',
-    title: 'Keyword Tracking Software — Rank Monitoring | DevnDespro',
+    title: 'Keyword Tracking Software · Rank Monitoring | DevnDespro',
     description:
       'Track keyword rankings, organic opportunity and competitor overlap. Keyword tracking built for Nordic SEO teams inside DevnDespro.',
     h1: 'Keyword tracking tied to real business priorities',
@@ -343,7 +352,7 @@ export const MARKETING_PAGES = {
       {
         h2: 'From ranks to actions',
         body: [
-          'When rankings slip, pair keyword evidence with Site Audit findings — thin content, weak titles or technical issues often explain the drop.',
+          'When rankings slip, pair keyword evidence with Site Audit findings. Thin content, weak titles or technical issues often explain the drop.',
           'Action Plan items can reflect ranking priorities so content and engineering share one queue.',
         ],
       },
@@ -369,13 +378,13 @@ export const MARKETING_PAGES = {
 
   'backlink-monitoring': {
     path: '/backlink-monitoring',
-    title: 'Backlink Monitoring Tool — Links, Spam & Disavow | DevnDespro',
+    title: 'Backlink Monitoring Tool · Links, Spam & Disavow | DevnDespro',
     description:
       'Monitor backlinks, referring domains and spam risk. Export disavow files and track cleanup with DevnDespro backlink monitoring.',
     h1: 'Backlink monitoring with spam controls that teams actually use',
     eyebrow: 'BACKLINK MONITORING',
     intro:
-      'Links still influence trust and discovery — but toxic profiles create risk. DevnDespro helps you monitor referring domains, spot spam patterns, export disavow candidates and verify cleanup over time.',
+      'Links still influence trust and discovery, but toxic profiles create risk. DevnDespro helps you monitor referring domains, spot spam patterns, export disavow candidates and verify cleanup over time.',
     sections: [
       {
         h2: 'See the links pointing to your site',
@@ -387,7 +396,7 @@ export const MARKETING_PAGES = {
       {
         h2: 'Spam filter, export and disavow tracking',
         body: [
-          'Flag suspicious links, export CSV or disavow text files, and follow Google’s disavow process with a simple status tracker — submitted, waiting, ready to re-check.',
+          'Flag suspicious links, export CSV or disavow text files, and follow Google’s disavow process with a simple status tracker: submitted, waiting, ready to re-check.',
           'Re-scan after processing windows so you know whether risky links still appear in your profile.',
         ],
       },
@@ -413,13 +422,13 @@ export const MARKETING_PAGES = {
 
   pricing: {
     path: '/pricing',
-    title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
+    title: 'Pricing · Launch, Accelerate & Command | DevnDespro SEO',
     description:
       'Simple DevnDespro SEO plans: Launch, Accelerate and Command. Switch currency for Norway, Europe, India, USA and UK with live exchange rates.',
     h1: 'Plans that stay affordable as you grow',
     eyebrow: 'PRICING',
     intro:
-      'Three clear packages — Launch (Basic), Accelerate (Advanced) and Command (Business) — with prices shown in your currency using live exchange rates.',
+      'Three clear packages: Launch (Basic), Accelerate (Advanced) and Command (Business), with prices shown in your currency using live exchange rates.',
     sections: [
       {
         h2: 'Launch, Accelerate and Command',
@@ -439,13 +448,13 @@ export const MARKETING_PAGES = {
 
   about: {
     path: '/about',
-    title: 'About DevnDespro SEO — Built in Stavanger, Norway',
+    title: 'About DevnDespro SEO · Built in Stavanger, Norway',
     description:
       'DevnDespro SEO is built in Stavanger, Norway for Nordic teams who need practical SEO, site audits and AI visibility in one workspace.',
     h1: 'Built in Stavanger for teams who need practical SEO clarity',
     eyebrow: 'ABOUT',
     intro:
-      'DevnDespro builds digital products with a bias toward clarity. Our SEO platform helps Nordic businesses understand site health, rankings, links and AI visibility — then act in priority order.',
+      'DevnDespro builds digital products with a bias toward clarity. Our SEO platform helps Nordic businesses understand site health, rankings, links and AI visibility, then act in priority order.',
     sections: [
       {
         h2: 'Our point of view',
