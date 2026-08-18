@@ -42,6 +42,7 @@ export default function MarketingLayout({ children }) {
                 className={() => primaryClassName(item.to, location.pathname)}
                 aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               >
+                <FontAwesomeIcon icon={item.icon} className="dd-nav-icon" aria-hidden />
                 {item.label}
               </NavLink>
             ))}
@@ -76,6 +77,7 @@ export default function MarketingLayout({ children }) {
               aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               onClick={() => setMenuOpen(false)}
             >
+              <FontAwesomeIcon icon={item.icon} className="dd-nav-icon" aria-hidden />
               {item.label}
             </NavLink>
           ))}

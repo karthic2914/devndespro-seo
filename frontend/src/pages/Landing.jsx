@@ -147,6 +147,7 @@ export default function Landing() {
                   isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined
                 }
               >
+                <FontAwesomeIcon icon={item.icon} className="dd-nav-icon" aria-hidden />
                 {item.label}
               </NavLink>
             ))}
@@ -183,6 +184,7 @@ export default function Landing() {
               aria-current={isPrimaryNavActive(item.to, location.pathname) ? 'page' : undefined}
               onClick={closeMenu}
             >
+              <FontAwesomeIcon icon={item.icon} className="dd-nav-icon" aria-hidden />
               {item.label}
             </NavLink>
           ))}

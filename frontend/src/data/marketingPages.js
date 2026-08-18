@@ -1,12 +1,20 @@
 /** Shared copy for public marketing routes (React + static crawl shells). */
 
+import {
+  faCube,
+  faLayerGroup,
+  faRobot,
+  faRoute,
+  faTags,
+} from '@fortawesome/free-solid-svg-icons'
+
 /** Top nav: dedicated marketing routes (same URLs on landing and inner pages). */
 export const PRIMARY_MARKETING_NAV = [
-  { label: 'Platform', to: '/platform' },
-  { label: 'Features', to: '/features' },
-  { label: 'AI Visibility', to: '/ai-visibility' },
-  { label: 'How it works', to: '/how-it-works' },
-  { label: 'Pricing', to: '/pricing' },
+  { label: 'Platform', to: '/platform', icon: faCube },
+  { label: 'Features', to: '/features', icon: faLayerGroup },
+  { label: 'AI Visibility', to: '/ai-visibility', icon: faRobot },
+  { label: 'How it works', to: '/how-it-works', icon: faRoute },
+  { label: 'Pricing', to: '/pricing', icon: faTags },
 ]
 
 /** Paths that should also light up a primary nav item. */
