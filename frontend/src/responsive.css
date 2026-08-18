@@ -834,7 +834,7 @@ body {
   padding-top: 72px;
 }
 
-/* Let hero glows bleed into side margins; clip only at the page edge */
+/* Let homepage landing glows bleed; keep marketing wow pages clipped */
 .premium-landing-page main,
 .premium-landing-page section {
   width: 100%;
@@ -847,6 +847,14 @@ body {
   box-sizing: border-box;
   overflow-x: visible;
 }
+
+.premium-landing-page:has(.mkt-page) main,
+.premium-landing-page:has(.mkt-page) section,
+.premium-landing-page:has(.mkt-page) section > div {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
 
 /* Sticky premium header */
 .landing-sticky-header {
@@ -1459,6 +1467,12 @@ body,
   max-width: 100%;
   box-sizing: border-box;
   overflow-x: visible;
+}
+
+.premium-landing-page:has(.mkt-page) main,
+.premium-landing-page:has(.mkt-page) section,
+.premium-landing-page:has(.mkt-page) section > div {
+  overflow-x: clip;
 }
 
 .landing-hero-grid,

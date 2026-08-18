@@ -21,9 +21,10 @@ export default function MarketingLayout({ children, activePath = '' }) {
         background: '#FBFAF8',
         color: '#171923',
         fontFamily: 'inherit',
-        overflowX: 'hidden',
+        overflowX: 'clip',
         position: 'relative',
         width: '100%',
+        maxWidth: '100%',
         paddingTop: 72,
       }}
     >
