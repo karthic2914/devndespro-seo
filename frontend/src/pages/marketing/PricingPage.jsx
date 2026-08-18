@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -73,7 +74,9 @@ export default function PricingPage() {
   const [ratesDate, setRatesDate] = useState(null)
   const [ratesStatus, setRatesStatus] = useState('loading')
   const [regionOpen, setRegionOpen] = useState(false)
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0, width: 240 })
   const regionMenuRef = useRef(null)
+  const triggerRef = useRef(null)
 
   useDocumentMeta({
     title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
@@ -106,10 +109,35 @@ export default function PricingPage() {
     }
   }, [])
 
+  useLayoutEffect(() => {
+    if (!regionOpen || !triggerRef.current) return undefined
+    const updatePos = () => {
+      const rect = triggerRef.current.getBoundingClientRect()
+      const width = Math.max(rect.width, 240)
+      const estimatedHeight = 260
+      const spaceBelow = window.innerHeight - rect.bottom - 12
+      const openUp = spaceBelow < estimatedHeight && rect.top > spaceBelow
+      setMenuPos({
+        top: openUp ? Math.max(8, rect.top - estimatedHeight - 8) : rect.bottom + 8,
+        left: Math.min(rect.left, window.innerWidth - width - 12),
+        width,
+      })
+    }
+    updatePos()
+    window.addEventListener('resize', updatePos)
+    window.addEventListener('scroll', updatePos, true)
+    return () => {
+      window.removeEventListener('resize', updatePos)
+      window.removeEventListener('scroll', updatePos, true)
+    }
+  }, [regionOpen])
+
   useEffect(() => {
     if (!regionOpen) return undefined
     const onPointer = (e) => {
-      if (!regionMenuRef.current?.contains(e.target)) setRegionOpen(false)
+      const inTrigger = regionMenuRef.current?.contains(e.target)
+      const inMenu = e.target?.closest?.('.mkt-select-menu')
+      if (!inTrigger && !inMenu) setRegionOpen(false)
     }
     const onKey = (e) => {
       if (e.key === 'Escape') setRegionOpen(false)
@@ -166,6 +194,7 @@ export default function PricingPage() {
                   <button
                     type="button"
                     id="pricing-region"
+                    ref={triggerRef}
                     className={`mkt-select-trigger${regionOpen ? ' is-open' : ''}`}
                     aria-haspopup="listbox"
                     aria-expanded={regionOpen}
@@ -177,29 +206,6 @@ export default function PricingPage() {
                     </span>
                     <FontAwesomeIcon icon={faChevronDown} className="mkt-select-icon" />
                   </button>
-
-                  {regionOpen ? (
-                    <ul
-                      className="mkt-select-menu"
-                      role="listbox"
-                      aria-labelledby="pricing-region-label"
-                    >
-                      {PRICING_REGIONS.map((r) => (
-                        <li key={r.id} role="option" aria-selected={r.id === regionId}>
-                          <button
-                            type="button"
-                            className={`mkt-select-option${r.id === regionId ? ' is-selected' : ''}`}
-                            onClick={() => {
-                              setRegionId(r.id)
-                              setRegionOpen(false)
-                            }}
-                          >
-                            {r.flag} {r.label} ({r.currency})
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : null}
                 </div>
                 <p className="mkt-select-hint">
                   {ratesStatus === 'live' && ratesDate
@@ -209,6 +215,36 @@ export default function PricingPage() {
                       : 'Showing fallback rates (live feed unavailable)'}
                 </p>
               </div>
+
+              {regionOpen &&
+                createPortal(
+                  <ul
+                    className="mkt-select-menu mkt-select-menu--portal"
+                    role="listbox"
+                    aria-labelledby="pricing-region-label"
+                    style={{
+                      top: menuPos.top,
+                      left: menuPos.left,
+                      width: menuPos.width,
+                    }}
+                  >
+                    {PRICING_REGIONS.map((r) => (
+                      <li key={r.id} role="option" aria-selected={r.id === regionId}>
+                        <button
+                          type="button"
+                          className={`mkt-select-option${r.id === regionId ? ' is-selected' : ''}`}
+                          onClick={() => {
+                            setRegionId(r.id)
+                            setRegionOpen(false)
+                          }}
+                        >
+                          {r.flag} {r.label} ({r.currency})
+                        </button>
+                      </li>
+                    ))}
+                  </ul>,
+                  document.body
+                )}
             </div>
           </div>
 

@@ -653,47 +653,49 @@
 }
 
 .mkt-select-menu {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
   margin: 0;
   padding: 8px;
   list-style: none;
   border-radius: 12px;
-  border: 1px solid rgba(255, 182, 39, 0.28);
+  border: 1px solid rgba(255, 182, 39, 0.35);
   background: #142430;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
-  max-height: 280px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  max-height: min(320px, calc(100vh - 24px));
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mkt-select-menu--portal {
+  position: fixed;
+  z-index: 2000;
 }
 
 .mkt-select-option {
   width: 100%;
   display: flex;
   align-items: center;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 12px;
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: var(--mkt-text);
+  color: #EAF2F0;
   font-size: 14px;
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
   text-align: left;
+  pointer-events: auto;
 }
 
 .mkt-select-option:hover {
-  background: rgba(255, 182, 39, 0.12);
+  background: rgba(255, 182, 39, 0.16);
   color: #fff;
 }
 
 .mkt-select-option.is-selected {
-  background: rgba(45, 212, 191, 0.14);
-  color: var(--mkt-teal);
+  background: rgba(255, 182, 39, 0.22);
+  color: #FFB627;
 }
 
 .mkt-select-hint {
