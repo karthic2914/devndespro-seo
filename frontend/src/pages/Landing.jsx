@@ -1,6 +1,7 @@
 ﻿import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
+import BackToTop from '../components/marketing/BackToTop'
 import '../styles/landing-radar.css'
 
 const NAV = [
@@ -387,6 +388,8 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      <BackToTop />
     </div>
   )
 }

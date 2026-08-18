@@ -1,14 +1,17 @@
-/* DevnDespro SEO — radar landing (scoped) */
+/* DevnDespro SEO — Fjord radar theme
+   Fjord Navy #0B1620 | Deep Steel #142430 | Signal Amber #FFB627
+   Fjord Teal #2DD4BF | Mist White #EAF2F0 | Slate Fog #8FA3AA
+*/
 
 .dd-landing {
-  --dd-bg: #071018;
-  --dd-panel: #0c1822;
-  --dd-text: #ecf5f2;
-  --dd-muted: #90a7ad;
-  --dd-amber: #ffb627;
-  --dd-teal: #2dd4bf;
-  --dd-line: rgba(236, 245, 242, 0.1);
-  --dd-line-strong: rgba(236, 245, 242, 0.18);
+  --dd-bg: #0B1620;
+  --dd-panel: #142430;
+  --dd-text: #EAF2F0;
+  --dd-muted: #8FA3AA;
+  --dd-amber: #FFB627;
+  --dd-teal: #2DD4BF;
+  --dd-line: rgba(234, 242, 240, 0.1);
+  --dd-line-strong: rgba(234, 242, 240, 0.18);
   --dd-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
   --dd-radius: 18px;
 
@@ -58,7 +61,7 @@
   top: 0;
   z-index: 50;
   backdrop-filter: blur(18px);
-  background: rgba(7, 16, 24, 0.72);
+  background: rgba(11, 22, 32, 0.78);
   border-bottom: 1px solid var(--dd-line);
 }
 
@@ -138,7 +141,7 @@
 
 .dd-landing .dd-btn-primary {
   background: var(--dd-amber);
-  color: #071018;
+  color: #0B1620;
   box-shadow: 0 12px 30px rgba(255, 182, 39, 0.14);
 }
 
@@ -264,7 +267,7 @@
 }
 
 .dd-landing .dd-proof-item {
-  background: rgba(12, 24, 34, 0.7);
+  background: rgba(20, 36, 48, 0.85);
   padding: 18px 20px;
 }
 
@@ -289,7 +292,7 @@
   min-height: 500px;
   border: 1px solid var(--dd-line-strong);
   border-radius: 28px;
-  background: radial-gradient(circle at 50% 50%, #173543 0%, #0e202b 45%, #09151d 75%);
+  background: radial-gradient(circle at 50% 50%, #1a3a48 0%, #142430 45%, #0B1620 75%);
   box-shadow: var(--dd-shadow);
   overflow: hidden;
 }
@@ -611,7 +614,7 @@
 
 .dd-landing .dd-insight-card,
 .dd-landing .dd-chart-card {
-  background: rgba(12, 24, 34, 0.82);
+  background: rgba(20, 36, 48, 0.92);
   border: 1px solid var(--dd-line);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
@@ -769,7 +772,7 @@
 .dd-landing .dd-faq details {
   border: 1px solid var(--dd-line);
   border-radius: 14px;
-  background: rgba(12, 24, 34, 0.65);
+  background: rgba(20, 36, 48, 0.72);
   padding: 18px 22px;
 }
 
@@ -801,7 +804,7 @@
     135deg,
     rgba(255, 182, 39, 0.08),
     rgba(45, 212, 191, 0.06) 55%,
-    rgba(12, 24, 34, 0.95)
+    rgba(20, 36, 48, 0.95)
   );
   display: flex;
   align-items: center;
@@ -949,5 +952,40 @@
 
   .dd-landing .dd-metrics {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Back to top — long pages */
+.dd-back-top {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 80;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  border: 1px solid rgba(234, 242, 240, 0.16);
+  background: #142430;
+  color: #FFB627;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.dd-back-top:hover {
+  transform: translateY(-3px);
+  background: #1a3140;
+  border-color: rgba(255, 182, 39, 0.45);
+}
+
+@media (max-width: 640px) {
+  .dd-back-top {
+    right: 14px;
+    bottom: 14px;
+    width: 42px;
+    height: 42px;
   }
 }

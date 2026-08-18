@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { MARKETING_NAV } from '../../data/marketingPages'
+import BackToTop from './BackToTop'
 import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
@@ -93,6 +94,8 @@ export default function MarketingLayout({ children, activePath = '' }) {
           </div>
         </div>
       </footer>
+
+      <BackToTop />
     </div>
   )
 }
