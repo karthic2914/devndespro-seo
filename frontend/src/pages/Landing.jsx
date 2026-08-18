@@ -1,20 +1,78 @@
-﻿import { Link, useNavigate } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowRight,
-  faCheck,
-  faChartLine,
-  faComments,
-  faGlobe,
-  faLocationDot,
-  faMagnifyingGlass,
-  faShieldHalved,
-  faStar,
-} from '@fortawesome/free-solid-svg-icons'
-import { Logo, T } from '../components/UI'
-import LandingHeader from '../components/LandingHeader'
+﻿import { useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import useDocumentMeta from '../hooks/useDocumentMeta'
-import { ALL_MARKETING_PATHS } from '../data/marketingPages'
+import '../styles/landing-radar.css'
+
+const NAV = [
+  { to: '/platform', label: 'Platform' },
+  { to: '/features', label: 'Features' },
+  { to: '/ai-visibility', label: 'AI Visibility' },
+  { to: '/how-it-works', label: 'How it works' },
+  { to: '/pricing', label: 'Pricing' },
+]
+
+const FEATURES = [
+  {
+    num: 'SIGNAL 01',
+    icon: '⌁',
+    title: 'Technical SEO Audit',
+    to: '/seo-audit',
+    text: 'Find crawl issues, metadata gaps, broken links, performance problems and structural SEO weaknesses — ranked by impact.',
+  },
+  {
+    num: 'SIGNAL 02',
+    icon: '◉',
+    title: 'AI Visibility',
+    to: '/ai-visibility',
+    text: 'Understand whether AI answer engines can discover, understand and mention your business — with evidence you can act on.',
+  },
+  {
+    num: 'SIGNAL 03',
+    icon: '↗',
+    title: 'Keyword Tracking',
+    to: '/keyword-tracking',
+    text: 'Track the queries that matter, compare movement over time and connect ranking changes to the work your team is doing.',
+  },
+  {
+    num: 'SIGNAL 04',
+    icon: '⌘',
+    title: 'Backlink Monitoring',
+    to: '/backlink-monitoring',
+    text: 'Watch referring domains, spot lost links and understand the authority signals supporting your search visibility.',
+  },
+  {
+    num: 'SIGNAL 05',
+    icon: '◎',
+    title: 'Competitor Intelligence',
+    to: '/features',
+    text: 'Compare visibility, content opportunities and keyword coverage so you can see where competitors are winning attention.',
+  },
+  {
+    num: 'SIGNAL 06',
+    icon: '✓',
+    title: 'Action Plans',
+    to: '/platform',
+    text: 'Turn audit findings into an ordered roadmap your team can actually execute — instead of another endless issue list.',
+  },
+]
+
+const STEPS = [
+  {
+    no: '01 · CONNECT',
+    title: 'Add your website',
+    text: 'Enter your domain and choose the signals you want to track.',
+  },
+  {
+    no: '02 · ANALYSE',
+    title: 'Scan your discoverability',
+    text: 'Run SEO, keyword, backlink and AI visibility checks from one workspace.',
+  },
+  {
+    no: '03 · IMPROVE',
+    title: 'Follow the priorities',
+    text: 'Work through the highest-impact recommendations and monitor the result over time.',
+  },
+]
 
 const FAQ_ITEMS = [
   {
@@ -35,1242 +93,300 @@ const FAQ_ITEMS = [
   },
 ]
 
-const FEATURES = [
-  {
-    icon: faComments,
-    title: 'AI citation monitoring',
-    description:
-      'Track whether ChatGPT and Claude mention, understand or recommend your business.',
-  },
-  {
-    icon: faMagnifyingGlass,
-    title: 'Technical website intelligence',
-    description:
-      'Find crawl errors, indexing problems, broken links and performance issues across your site.',
-  },
-  {
-    icon: faLocationDot,
-    title: 'Nordic market insights',
-    description:
-      'Analyse Norwegian search intent, regional keywords and local discovery opportunities.',
-  },
-  {
-    icon: faChartLine,
-    title: 'Impact-based action plan',
-    description:
-      'Prioritise improvements by visibility impact instead of working through generic checklists.',
-  },
-  {
-    icon: faGlobe,
-    title: 'Search and AI readiness',
-    description:
-      'Prepare your content for Google rankings, AI answers and modern recommendation engines.',
-  },
-  {
-    icon: faShieldHalved,
-    title: 'Secure private workspace',
-    description:
-      'Keep website analysis, reports and business visibility data protected in one private workspace.',
-  },
-]
-
-const STEPS = [
-  {
-    number: '01',
-    icon: faGlobe,
-    title: 'Add your website',
-    description: 'Enter your domain and select the market you want to analyse.',
-  },
-  {
-    number: '02',
-    icon: faMagnifyingGlass,
-    title: 'Run the analysis',
-    description: 'We audit your website, keywords and AI visibility signals.',
-  },
-  {
-    number: '03',
-    icon: faChartLine,
-    title: 'Improve your visibility',
-    description: 'Follow clear recommendations ordered by business impact.',
-  },
-]
-
-const monoFont = "'SF Mono', 'Consolas', 'Menlo', monospace"
-
-const styles = {
-  page: {
-    minHeight: '100vh',
-    background: '#FBFAF8',
-    color: '#171923',
-    fontFamily: 'inherit',
-    overflowX: 'hidden',
-    position: 'relative',
-    width: '100%',
-  },
-
-  container: {
-    width: '100%',
-    maxWidth: 1180,
-    margin: '0 auto',
-    padding: '0 24px',
-    boxSizing: 'border-box',
-  },
-
-  primaryButton: {
-    height: 50,
-    padding: '0 24px',
-    border: 'none',
-    borderRadius: 10,
-    background: '#EA6A3B',
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 650,
-    fontFamily: 'inherit',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 10,
-    boxShadow: '0 10px 25px rgba(234,106,59,0.24)',
-  },
-
-  secondaryButton: {
-    height: 50,
-    padding: '0 22px',
-    border: '1px solid #DAD8D3',
-    borderRadius: 10,
-    background: 'rgba(255,255,255,0.72)',
-    color: '#20222B',
-    fontSize: 14,
-    fontWeight: 600,
-    fontFamily: 'inherit',
-    cursor: 'pointer',
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-}
+const BAR_HEIGHTS = ['46%', '58%', '51%', '66%', '72%', '69%', '82%']
+const BAR_LABELS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'NOW']
 
 export default function Landing() {
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const goLogin = () => navigate('/login')
 
   useDocumentMeta({
-    title: 'devndespro SEO — Site Audit, Keywords & AI Visibility',
+    title: 'DevnDespro SEO — Search & AI Visibility Platform',
     description:
-      'Audit site health, track keywords, monitor backlinks and measure AI citations in one workspace. Built for Nordic teams by DevnDespro.',
+      'DevnDespro SEO helps businesses improve technical SEO, track AI visibility, monitor keywords, analyze backlinks and turn search data into clear actions.',
     canonical: 'https://seo.devndespro.com/',
   })
 
-  const goToLogin = () => navigate('/login')
-
   return (
-    <div className="premium-landing-page" style={styles.page}>
-      {/* Background decoration */}
-      <div
-        style={{
-          position: 'absolute',
-          top: -220,
-          right: -80,
-          width: 720,
-          height: 720,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(255,213,192,0.72) 0%, rgba(255,240,230,0.35) 42%, transparent 72%)',
-          pointerEvents: 'none',
-        }}
-      />
+    <div className="dd-landing">
+      <nav className="dd-nav" aria-label="Primary">
+        <div className="dd-container dd-nav-inner">
+          <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
+            <span className="dd-logo-mark" aria-hidden />
+            DevnDespro SEO
+          </Link>
 
-      <div
-        style={{
-          position: 'absolute',
-          top: 160,
-          right: 'max(0px, calc((100% - 1180px) / 2 - 120px))',
-          width: 520,
-          height: 520,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(234,106,59,0.16) 0%, rgba(82,70,217,0.10) 40%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
+          <div className="dd-nav-links">
+            {NAV.map((item) => (
+              <Link key={item.to} to={item.to}>
+                {item.label}
+              </Link>
+            ))}
+          </div>
 
-      <div
-        style={{
-          position: 'absolute',
-          top: 200,
-          left: -260,
-          width: 600,
-          height: 600,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(207,224,255,0.72) 0%, rgba(228,237,255,0.3) 42%, transparent 72%)',
-          pointerEvents: 'none',
-        }}
-      />
-      <LandingHeader
-        onLogin={goToLogin}
-        onStart={goToLogin}
-      />
-
-      <main style={{ position: 'relative', zIndex: 1 }}>
-        {/* Hero */}
-        <section style={{ padding: '70px 0 46px' }}>
-          <div style={styles.container}>
-            <div
-              className="landing-hero-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(0, 1.05fr) minmax(0, 0.95fr)',
-                gap: 58,
-                alignItems: 'center',
-              }}
+          <div className="dd-nav-actions">
+            <button type="button" className="dd-btn dd-btn-secondary" onClick={goLogin}>
+              Sign in
+            </button>
+            <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+              Start free audit →
+            </button>
+            <button
+              type="button"
+              className="dd-mobile-toggle"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
             >
+              {menuOpen ? '✕' : '☰'}
+            </button>
+          </div>
+        </div>
+
+        <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
+          {NAV.map((item) => (
+            <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
+          <button
+            type="button"
+            className="dd-btn dd-btn-primary"
+            onClick={() => {
+              setMenuOpen(false)
+              goLogin()
+            }}
+          >
+            Start free audit →
+          </button>
+        </div>
+      </nav>
+
+      <main id="top">
+        <div className="dd-container dd-hero">
+          <div className="dd-hero-copy">
+            <div className="dd-eyebrow dd-mono">SEARCH INTELLIGENCE · STAVANGER, NORWAY</div>
+            <h1>
+              Know exactly how your business gets <span className="dd-accent">discovered.</span>
+            </h1>
+            <p>
+              DevnDespro SEO brings technical SEO, keyword intelligence, backlink monitoring and AI
+              answer-engine visibility into one focused workspace — so every insight becomes a clear
+              next action.
+            </p>
+            <div className="dd-hero-actions">
+              <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+                Analyse your website →
+              </button>
+              <Link className="dd-btn dd-btn-secondary" to="/platform">
+                Explore the platform
+              </Link>
+            </div>
+            <div className="dd-proof">
+              <div className="dd-proof-item">
+                <strong>01</strong>
+                <span>UNIFIED WORKSPACE</span>
+              </div>
+              <div className="dd-proof-item">
+                <strong>AI + SEO</strong>
+                <span>DISCOVERY SIGNALS</span>
+              </div>
+              <div className="dd-proof-item">
+                <strong>24/7</strong>
+                <span>VISIBILITY MONITORING</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="dd-radar-card" aria-label="AI visibility radar concept">
+            <div className="dd-radar-top dd-mono">
+              <span>
+                SIGNAL SCAN · <b className="dd-live">LIVE</b>
+              </span>
+              <span>58.9700° N</span>
+            </div>
+            <div className="dd-radar">
+              <div className="dd-ring" />
+              <div className="dd-ring r2" />
+              <div className="dd-ring r3" />
+              <div className="dd-axis-x" />
+              <div className="dd-axis-y" />
+              <div className="dd-sweep" />
+              <div className="dd-node active dd-n1">GOOGLE</div>
+              <div className="dd-node active dd-n2">CLAUDE</div>
+              <div className="dd-node dd-n3">PERPLEXITY</div>
+              <div className="dd-node dd-n4">CHATGPT</div>
+              <div className="dd-node you dd-n5">YOUR SITE</div>
+            </div>
+            <div className="dd-radar-score">
+              <strong>67%</strong>
+              <span className="dd-mono">DISCOVERY SIGNAL</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="dd-strip">
+          <div className="dd-container dd-strip-inner">
+            <span>
+              TRACK <b>TECHNICAL SEO</b>
+            </span>
+            <span>
+              MEASURE <b>AI VISIBILITY</b>
+            </span>
+            <span>
+              MONITOR <b>KEYWORDS</b>
+            </span>
+            <span>
+              ANALYSE <b>BACKLINKS</b>
+            </span>
+            <span>
+              ACT ON <b>PRIORITIES</b>
+            </span>
+          </div>
+        </div>
+
+        <section className="dd-section" id="platform">
+          <div className="dd-container">
+            <div className="dd-section-head">
               <div>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 9,
-                    background: '#FFF1E9',
-                    border: '1px solid #F8D4C4',
-                    borderRadius: 999,
-                    padding: '7px 12px',
-                    marginBottom: 24,
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={faStar}
-                    style={{ color: '#D95527', fontSize: 12 }}
-                  />
+                <div className="dd-kicker">ONE PLATFORM · MULTIPLE SIGNALS</div>
+                <h2>Search intelligence without the dashboard overload.</h2>
+              </div>
+              <p>
+                See the signals that affect discoverability, understand what changed, and move
+                directly from insight to action.
+              </p>
+            </div>
 
-                  <span
-                    style={{
-                      fontFamily: monoFont,
-                      fontSize: 10,
-                      fontWeight: 650,
-                      color: '#A64322',
-                      letterSpacing: '0.08em',
-                    }}
-                  >
-                    SEARCH VISIBILITY FOR NORDIC BUSINESSES
-                  </span>
+            <div className="dd-feature-grid" id="features">
+              {FEATURES.map((f) => (
+                <Link key={f.title} className="dd-feature" to={f.to}>
+                  <div className="dd-num">{f.num}</div>
+                  <div className="dd-icon" aria-hidden>
+                    {f.icon}
+                  </div>
+                  <h3>{f.title}</h3>
+                  <p>{f.text}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-section" id="audit">
+          <div className="dd-container dd-dashboard">
+            <div className="dd-insight-card">
+              <div className="dd-tag">DISCOVERY REPORT · EXAMPLE</div>
+              <h3>From “what’s wrong?” to “what should we do next?”</h3>
+              <p>
+                The platform combines technical, search and AI-discovery signals into one practical
+                view, keeping the highest-impact work at the top.
+              </p>
+              <div className="dd-check-list">
+                <div className="dd-check">Prioritised technical SEO issues</div>
+                <div className="dd-check">AI mention and citation visibility</div>
+                <div className="dd-check">Keyword movement and intent</div>
+                <div className="dd-check">Backlink and authority signals</div>
+                <div className="dd-check">Clear action plan for your team</div>
+              </div>
+            </div>
+            <div className="dd-chart-card">
+              <div className="dd-chart-head">
+                <span>VISIBILITY TREND · LAST 7 CHECKS</span>
+                <span>UPDATED LIVE</span>
+              </div>
+              <div className="dd-bars">
+                {BAR_HEIGHTS.map((h, i) => (
+                  <div key={BAR_LABELS[i]} className="dd-bar" style={{ height: h }} data-label={BAR_LABELS[i]} />
+                ))}
+              </div>
+              <div className="dd-metrics">
+                <div className="dd-metric">
+                  <strong>82</strong>
+                  <span>SITE HEALTH</span>
                 </div>
-
-                <h1
-                  style={{
-                    maxWidth: 670,
-                    margin: '0 0 24px',
-                    color: '#171923',
-                    fontSize: 'clamp(34px, 9vw, 66px)',
-                    fontWeight: 740,
-                    lineHeight: 0.99,
-                    letterSpacing: '-0.052em',
-                  }}
-                >
-                  Be discovered by Google.
-                  <span
-                    style={{
-                      display: 'block',
-                      color: '#5246D9',
-                      marginTop: 8,
-                    }}
-                  >
-                    Be recommended by AI.
-                  </span>
-                </h1>
-
-                <p
-                  style={{
-                    maxWidth: 590,
-                    margin: '0 0 32px',
-                    color: '#5B5E68',
-                    fontSize: 18,
-                    lineHeight: 1.68,
-                  }}
-                >
-                  Understand how visible your business is across search engines
-                  and AI platforms - and get a clear plan to improve it.
-                </p>
-
-                <div
-                  className="landing-hero-actions"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                    marginBottom: 28,
-                  }}
-                >
-                  <button
-                    className="landing-hero-primary-button"
-                    onClick={goToLogin}
-                    style={styles.primaryButton}
-                  >
-                    Analyse your website
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-
-                  <button
-                    className="landing-hero-secondary-button"
-                    onClick={goToLogin}
-                    style={styles.secondaryButton}
-                  >
-                    See live demo
-                  </button>
+                <div className="dd-metric">
+                  <strong>+18%</strong>
+                  <span>AI VISIBILITY</span>
                 </div>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 20,
-                    color: '#70737D',
-                    fontSize: 12,
-                  }}
-                >
-                  <TrustItem text="No credit card required" />
-                  <TrustItem text="Instant insights" />
-                  <TrustItem text="Nordic focused" />
+                <div className="dd-metric">
+                  <strong>14</strong>
+                  <span>PRIORITY ACTIONS</span>
                 </div>
               </div>
-
-              <DashboardPreview />
             </div>
           </div>
         </section>
 
-        {/* Trust strip */}
-        <section
-          style={{
-            padding: '10px 0 38px',
-          }}
-        >
-          <div style={styles.container}>
-            <div
-              style={{
-                borderTop: '1px solid #E5E2DC',
-                borderBottom: '1px solid #E5E2DC',
-                padding: '24px 0',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 38,
-                color: '#7A7D86',
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.02em',
-              }}
-            >
-              <span>TECHNICAL SEO</span>
-              <span>AI CITATION TRACKING</span>
-              <span>NORDIC KEYWORDS</span>
-              <span>LOCAL SEARCH</span>
-              <span>ACTIONABLE REPORTING</span>
+        <section className="dd-section" id="how">
+          <div className="dd-container">
+            <div className="dd-section-head">
+              <div>
+                <div className="dd-kicker">HOW IT WORKS</div>
+                <h2>Three steps from URL to action.</h2>
+              </div>
             </div>
-          </div>
-        </section>
-
-        {/* Problem statement */}
-<section id="platform" style={{ padding: '48px 0 76px' }}>
-  <div style={styles.container}>
-    <div
-      className="landing-platform-section"
-      style={{
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: 28,
-        padding: '68px 56px',
-        background:
-          'linear-gradient(145deg, #171923 0%, #252941 58%, #3028A8 100%)',
-        boxShadow: '0 30px 80px rgba(23,25,35,0.20)',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          width: 520,
-          height: 520,
-          top: -330,
-          right: -150,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(115,103,255,0.34) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'absolute',
-          width: 420,
-          height: 420,
-          bottom: -260,
-          left: -160,
-          borderRadius: '50%',
-          background:
-            'radial-gradient(circle, rgba(234,106,59,0.18) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'relative',
-          maxWidth: 760,
-          margin: '0 auto 42px',
-          textAlign: 'center',
-        }}
-      >
-        <p
-          style={{
-            margin: '0 0 14px',
-            fontFamily: monoFont,
-            color: '#AFA9FF',
-            fontSize: 11,
-            fontWeight: 700,
-            letterSpacing: '0.14em',
-          }}
-        >
-          ONE PLATFORM. THREE SIGNALS.
-        </p>
-
-        <h2
-          style={{
-            margin: '0 0 18px',
-            color: '#fff',
-            fontSize: 'clamp(36px, 4.4vw, 54px)',
-            lineHeight: 1.08,
-            letterSpacing: '-0.04em',
-          }}
-        >
-          Understand exactly how your business is discovered.
-        </h2>
-
-        <p
-          style={{
-            maxWidth: 650,
-            margin: '0 auto',
-            color: '#C9CBD8',
-            fontSize: 16,
-            lineHeight: 1.75,
-          }}
-        >
-          Combine technical SEO, AI visibility and Nordic search intelligence
-          in one clear view.
-        </p>
-      </div>
-
-      <div
-        className="landing-platform-cards"
-        style={{
-          position: 'relative',
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-          gap: 16,
-        }}
-      >
-        <div className="landing-platform-card">
-          <div className="landing-platform-icon">
-            <FontAwesomeIcon icon={faMagnifyingGlass} />
-          </div>
-
-          <p className="landing-platform-label">TECHNICAL SEO</p>
-          <h3>Fix what blocks growth</h3>
-          <p>
-            Find crawl errors, broken links, weak metadata and performance
-            issues that limit search visibility.
-          </p>
-
-          <span>Site health and crawl signals</span>
-        </div>
-
-        <div className="landing-platform-card landing-platform-card-featured">
-          <div className="landing-platform-icon">
-            <FontAwesomeIcon icon={faComments} />
-          </div>
-
-          <p className="landing-platform-label">AI VISIBILITY</p>
-          <h3>See where AI cites you</h3>
-          <p>
-            Check whether ChatGPT and Claude mention, understand or recommend
-            your business.
-          </p>
-
-          <span>Mentions, citations and trust</span>
-        </div>
-
-        <div className="landing-platform-card">
-          <div className="landing-platform-icon">
-            <FontAwesomeIcon icon={faLocationDot} />
-          </div>
-
-          <p className="landing-platform-label">NORDIC SEARCH</p>
-          <h3>Win your local market</h3>
-          <p>
-            Analyse Norwegian keywords, local intent and search patterns built
-            for Nordic businesses.
-          </p>
-
-          <span>Keywords and regional signals</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-{/* Features */}
-        <section id="features" style={{ padding: '64px 0 76px' }}>
-          <div style={styles.container}>
-            <SectionHeader
-              eyebrow="PLATFORM CAPABILITIES"
-              title="One platform for search and AI visibility"
-              description="Understand how search engines and AI platforms see your business, then act on the opportunities that matter most."
-            />
-
-            <div
-              className="landing-features-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 18,
-                marginTop: 46,
-              }}
-            >
-              {FEATURES.map((feature) => (
-                <FeatureCard key={feature.title} {...feature} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* How it works */}
-        <section id="how-it-works" style={{ padding: '64px 0 76px' }}>
-          <div style={styles.container}>
-            <SectionHeader
-              eyebrow="SIMPLE WORKFLOW"
-              title="From domain to decisions in three steps"
-              description="Run the analysis, understand the signals and follow a prioritised plan for improvement."
-            />
-
-            <div
-              className="landing-steps-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 18,
-                marginTop: 46,
-              }}
-            >
-              {STEPS.map((step) => (
-                <StepCard key={step.number} {...step} />
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FAQ — stronger content volume for SEO */}
-        <section id="faq" style={{ padding: '64px 0 40px' }}>
-          <div style={styles.container}>
-            <SectionHeader
-              eyebrow="FAQ"
-              title="Answers for teams improving search visibility"
-              description="Practical context on site health, AI citations, and how DevnDespro SEO fits Nordic growth workflows."
-            />
-            <div
-              style={{
-                maxWidth: 780,
-                margin: '0 auto',
-                display: 'grid',
-                gap: 22,
-              }}
-            >
-              {FAQ_ITEMS.map((item) => (
-                <div key={item.q}>
-                  <h3
-                    style={{
-                      margin: '0 0 8px',
-                      color: '#171923',
-                      fontSize: 18,
-                      fontWeight: 700,
-                      letterSpacing: '-0.02em',
-                    }}
-                  >
-                    {item.q}
-                  </h3>
-                  <p
-                    style={{
-                      margin: 0,
-                      color: '#5B5E68',
-                      fontSize: 15,
-                      lineHeight: 1.75,
-                    }}
-                  >
-                    {item.a}
-                  </p>
+            <div className="dd-steps">
+              {STEPS.map((s) => (
+                <div key={s.no} className="dd-step">
+                  <div className="dd-step-no">{s.no}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.text}</p>
                 </div>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section style={{ padding: '72px 0' }}>
-          <div style={styles.container}>
-            <div
-              style={{
-                maxWidth: 920,
-                margin: '0 auto',
-                textAlign: 'center',
-              }}
-            >
-              <p
-                style={{
-                  fontFamily: monoFont,
-                  color: '#D75F32',
-                  fontSize: 11,
-                  fontWeight: 650,
-                  letterSpacing: '0.12em',
-                  margin: '0 0 18px',
-                }}
-              >
-                KNOW WHERE YOU STAND
-              </p>
-
-              <h2
-                style={{
-                  margin: '0 auto 20px',
-                  maxWidth: 700,
-                  color: '#171923',
-                  fontSize: 'clamp(35px, 4.4vw, 54px)',
-                  lineHeight: 1.08,
-                  letterSpacing: '-0.04em',
-                }}
-              >
-                Make your business easier to find, understand and recommend.
-              </h2>
-
-              <p
-                style={{
-                  maxWidth: 580,
-                  margin: '0 auto 32px',
-                  color: '#666A73',
-                  fontSize: 16,
-                  lineHeight: 1.7,
-                }}
-              >
-                Run your first analysis and discover what is limiting your
-                visibility across Google and AI search.
-              </p>
-
-              <button onClick={goToLogin} style={styles.primaryButton}>
-                Analyse your website
-                <FontAwesomeIcon icon={faArrowRight} />
-              </button>
-
-              <p
-                style={{
-                  marginTop: 15,
-                  color: '#898B92',
-                  fontSize: 12,
-                }}
-              >
-                Private beta - Limited early access
-              </p>
+        <section className="dd-section" id="faq" style={{ paddingTop: 0 }}>
+          <div className="dd-container">
+            <div className="dd-section-head">
+              <div>
+                <div className="dd-kicker">FAQ</div>
+                <h2>Common questions</h2>
+              </div>
             </div>
+            <div className="dd-faq">
+              {FAQ_ITEMS.map((item) => (
+                <details key={item.q}>
+                  <summary>{item.q}</summary>
+                  <p>{item.a}</p>
+                </details>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-container dd-cta-panel" id="pricing">
+          <div>
+            <div className="dd-eyebrow dd-mono">START WITH YOUR DOMAIN</div>
+            <h2>Find out what search engines and AI systems can see about your business.</h2>
+            <p>Run your first website analysis and get a focused visibility snapshot.</p>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+              Start free audit →
+            </button>
+            <Link className="dd-btn dd-btn-secondary" to="/pricing">
+              View pricing
+            </Link>
           </div>
         </section>
       </main>
 
-      <footer
-        style={{
-          borderTop: '1px solid #E4E1DB',
-          padding: '30px 0',
-        }}
-      >
-        <div
-          style={{
-            ...styles.container,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 18,
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: 20,
-            }}
-          >
-            <Logo size="sm" variant="transparent" />
-
-            <p
-              style={{
-                margin: 0,
-                color: '#888A91',
-                fontSize: 12,
-              }}
-            >
-              (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
-            </p>
+      <footer className="dd-footer">
+        <div className="dd-container dd-footer-inner">
+          <div>© {new Date().getFullYear()} DevnDespro · Stavanger, Norway</div>
+          <div className="dd-footer-links">
+            <Link to="/about">About</Link>
+            <Link to="/pricing">Pricing</Link>
+            <a href="https://www.devndespro.com/" target="_blank" rel="noreferrer">
+              Company
+            </a>
           </div>
-          <nav
-            aria-label="Footer marketing links"
-            style={{ display: 'flex', flexWrap: 'wrap', gap: '10px 18px' }}
-          >
-            {ALL_MARKETING_PATHS.map((path) => (
-              <Link
-                key={path}
-                to={path}
-                style={{ color: '#5B5E68', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}
-              >
-                {path.replace(/^\//, '')}
-              </Link>
-            ))}
-          </nav>
         </div>
       </footer>
     </div>
   )
 }
-
-function DashboardPreview() {
-  return (
-    <div
-      style={{
-        position: 'relative',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: '8% -6% -8%',
-          background:
-            'linear-gradient(135deg, rgba(82,70,217,0.22), rgba(234,106,59,0.18))',
-          filter: 'blur(40px)',
-          borderRadius: 30,
-        }}
-      />
-
-      <div
-        style={{
-          position: 'relative',
-          background: '#151821',
-          borderRadius: 20,
-          padding: 10,
-          boxShadow: '0 35px 80px rgba(24,27,39,0.24)',
-          border: '1px solid rgba(255,255,255,0.08)',
-        }}
-      >
-        <div
-          style={{
-            background: '#FDFDFC',
-            borderRadius: 13,
-            overflow: 'hidden',
-          }}
-        >
-          <div
-            style={{
-              height: 44,
-              background: '#F4F3F0',
-              borderBottom: '1px solid #E6E3DD',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 15px',
-            }}
-          >
-            <div style={{ display: 'flex', gap: 6 }}>
-              <span style={windowDotStyle} />
-              <span style={windowDotStyle} />
-              <span style={windowDotStyle} />
-            </div>
-
-            <span
-              style={{
-                fontSize: 10,
-                color: '#81838B',
-                fontFamily: monoFont,
-              }}
-            >
-              app.aurorasearch.io
-            </span>
-
-            <span style={{ width: 35 }} />
-          </div>
-
-          <div
-            style={{
-              padding: 22,
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-start',
-                marginBottom: 22,
-              }}
-            >
-              <div>
-                <p
-                  style={{
-                    margin: '0 0 5px',
-                    fontSize: 11,
-                    color: '#8A8C93',
-                  }}
-                >
-                  WEBSITE OVERVIEW
-                </p>
-
-                <h3
-                  style={{
-                    margin: 0,
-                    color: '#1A1C24',
-                    fontSize: 18,
-                  }}
-                >
-                  AuroraSearch.io
-                </h3>
-              </div>
-
-              <span
-                style={{
-                  background: '#E9F7EF',
-                  color: '#227A49',
-                  borderRadius: 999,
-                  padding: '6px 9px',
-                  fontSize: 9,
-                  fontWeight: 700,
-                }}
-              >
-                ANALYSIS COMPLETE
-              </span>
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: 10,
-                marginBottom: 18,
-              }}
-            >
-              <MetricCard label="Site health" value="66" suffix="/100" />
-              <MetricCard label="Pages scanned" value="97" />
-              <MetricCard label="AI citations" value="4" />
-            </div>
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1.1fr 0.9fr',
-                gap: 12,
-              }}
-            >
-              <div
-                style={{
-                  border: '1px solid #E7E4DE',
-                  borderRadius: 12,
-                  padding: 15,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 10,
-                    color: '#898B93',
-                    margin: '0 0 14px',
-                  }}
-                >
-                  PRIORITY ISSUES
-                </p>
-
-                <IssueRow label="Missing page titles" count="8" />
-                <IssueRow label="Broken internal links" count="4" />
-                <IssueRow label="Slow mobile pages" count="3" />
-              </div>
-
-              <div
-                style={{
-                  borderRadius: 12,
-                  padding: 15,
-                  background: '#F0EFFF',
-                  border: '1px solid #DCD8FF',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 9,
-                    color: '#7169B9',
-                    margin: '0 0 8px',
-                    fontFamily: monoFont,
-                  }}
-                >
-                  ASK CLAUDE
-                </p>
-
-                <p
-                  style={{
-                    color: '#3E3B5C',
-                    fontSize: 11,
-                    lineHeight: 1.55,
-                    margin: '0 0 13px',
-                  }}
-                >
-                  Best CRM platform for shipping companies in Norway
-                </p>
-
-                <span
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    color: '#25764A',
-                    fontSize: 10,
-                    fontWeight: 700,
-                    gap: 5,
-                  }}
-                >
-                  <FontAwesomeIcon icon={faCheck} />
-                  AuroraSearch.io cited
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        style={{
-          position: 'absolute',
-          right: -28,
-          bottom: -26,
-          width: 190,
-          background: '#fff',
-          border: '1px solid #E4E1DB',
-          borderRadius: 12,
-          padding: 14,
-          boxShadow: '0 18px 45px rgba(25,28,38,0.16)',
-        }}
-      >
-        <p
-          style={{
-            margin: '0 0 7px',
-            color: '#858790',
-            fontSize: 9,
-            fontWeight: 700,
-          }}
-        >
-          VISIBILITY CHANGE
-        </p>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 6,
-          }}
-        >
-          <strong
-            style={{
-              color: '#252832',
-              fontSize: 24,
-            }}
-          >
-            +18%
-          </strong>
-
-          <span
-            style={{
-              color: '#31855A',
-              fontSize: 10,
-              fontWeight: 700,
-            }}
-          >
-            this month
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function MetricCard({ label, value, suffix }) {
-  return (
-    <div
-      style={{
-        background: '#F5F4F1',
-        borderRadius: 10,
-        padding: '12px 11px',
-      }}
-    >
-      <p
-        style={{
-          margin: '0 0 7px',
-          color: '#8B8D94',
-          fontSize: 9,
-        }}
-      >
-        {label.toUpperCase()}
-      </p>
-
-      <strong
-        style={{
-          color: '#24262E',
-          fontSize: 20,
-        }}
-      >
-        {value}
-
-        {suffix && (
-          <span
-            style={{
-              color: '#9799A0',
-              fontSize: 10,
-              fontWeight: 500,
-            }}
-          >
-            {suffix}
-          </span>
-        )}
-      </strong>
-    </div>
-  )
-}
-
-function IssueRow({ label, count }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        borderTop: '1px solid #EEECE7',
-        padding: '9px 0',
-      }}
-    >
-      <span
-        style={{
-          color: '#5C5F68',
-          fontSize: 10,
-        }}
-      >
-        {label}
-      </span>
-
-      <span
-        style={{
-          background: '#FFF0E7',
-          color: '#BB542C',
-          borderRadius: 5,
-          padding: '3px 6px',
-          fontSize: 9,
-          fontWeight: 700,
-        }}
-      >
-        {count}
-      </span>
-    </div>
-  )
-}
-
-function TrustItem({ text }) {
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 6,
-      }}
-    >
-      <FontAwesomeIcon
-        icon={faCheck}
-        style={{
-          color: '#37865C',
-          fontSize: 10,
-        }}
-      />
-
-      {text}
-    </span>
-  )
-}
-
-function SectionHeader({ eyebrow, title, description }) {
-  return (
-    <div className="landing-section-header">
-      <div className="landing-section-eyebrow">
-        <span className="landing-section-eyebrow-dot" />
-        {eyebrow}
-      </div>
-
-      <h2>{title}</h2>
-
-      <p>{description}</p>
-    </div>
-  )
-}
-
-function StepCard({ number, icon, title, description }) {
-  return (
-    <div
-      className="landing-step-card"
-      style={{
-        minHeight: 220,
-        padding: 25,
-        borderRadius: 16,
-        background: '#fff',
-        border: '1px solid #E6E3DD',
-        transition: 'transform 180ms ease, box-shadow 180ms ease',
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          marginBottom: 22,
-        }}
-      >
-        <div
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            background: '#FFF1E9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <FontAwesomeIcon
-            icon={icon}
-            style={{
-              color: '#D75F32',
-              fontSize: 17,
-            }}
-          />
-        </div>
-
-        <span
-          style={{
-            fontFamily: monoFont,
-            fontSize: 11,
-            fontWeight: 700,
-            color: '#D75F32',
-            letterSpacing: '0.06em',
-          }}
-        >
-          {number}
-        </span>
-      </div>
-
-      <h3
-        style={{
-          margin: '0 0 9px',
-          color: '#20222A',
-          fontSize: 17,
-        }}
-      >
-        {title}
-      </h3>
-
-      <p
-        style={{
-          margin: 0,
-          color: '#6C6F78',
-          fontSize: 13,
-          lineHeight: 1.65,
-        }}
-      >
-        {description}
-      </p>
-    </div>
-  )
-}
-
-function FeatureCard({ icon, title, description }) {
-  return (
-    <div
-      style={{
-        minHeight: 205,
-        padding: 25,
-        borderRadius: 16,
-        background: '#fff',
-        border: '1px solid #E6E3DD',
-        transition: 'transform 180ms ease, box-shadow 180ms ease',
-      }}
-    >
-      <div
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          background: '#EFEEFF',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 23,
-        }}
-      >
-        <FontAwesomeIcon
-          icon={icon}
-          style={{
-            color: '#5146CE',
-            fontSize: 17,
-          }}
-        />
-      </div>
-
-      <h3
-        style={{
-          margin: '0 0 9px',
-          color: '#20222A',
-          fontSize: 17,
-        }}
-      >
-        {title}
-      </h3>
-
-      <p
-        style={{
-          margin: 0,
-          color: '#6C6F78',
-          fontSize: 13,
-          lineHeight: 1.65,
-        }}
-      >
-        {description}
-      </p>
-    </div>
-  )
-}
-
-const navLinkStyle = {
-  color: '#5D6069',
-  fontSize: 13,
-  fontWeight: 550,
-  textDecoration: 'none',
-}
-
-const windowDotStyle = {
-  width: 7,
-  height: 7,
-  borderRadius: '50%',
-  background: '#C9C7C2',
-}
-
-
-
-
-
-
-
-
-
-
-

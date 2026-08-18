@@ -1,0 +1,953 @@
+/* DevnDespro SEO — radar landing (scoped) */
+
+.dd-landing {
+  --dd-bg: #071018;
+  --dd-panel: #0c1822;
+  --dd-text: #ecf5f2;
+  --dd-muted: #90a7ad;
+  --dd-amber: #ffb627;
+  --dd-teal: #2dd4bf;
+  --dd-line: rgba(236, 245, 242, 0.1);
+  --dd-line-strong: rgba(236, 245, 242, 0.18);
+  --dd-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  --dd-radius: 18px;
+
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  color: var(--dd-text);
+  background:
+    radial-gradient(circle at 80% 10%, rgba(45, 212, 191, 0.09), transparent 24%),
+    radial-gradient(circle at 10% 20%, rgba(255, 182, 39, 0.08), transparent 20%),
+    var(--dd-bg);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.dd-landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 80%);
+  z-index: 0;
+}
+
+.dd-landing a {
+  color: inherit;
+}
+
+.dd-landing .dd-mono {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dd-landing .dd-container {
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* —— Nav —— */
+.dd-landing .dd-nav {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(18px);
+  background: rgba(7, 16, 24, 0.72);
+  border-bottom: 1px solid var(--dd-line);
+}
+
+.dd-landing .dd-nav-inner {
+  height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.dd-landing .dd-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.dd-landing .dd-logo-mark {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--dd-amber);
+  box-shadow: 0 0 22px rgba(255, 182, 39, 0.85);
+}
+
+.dd-landing .dd-nav-links {
+  display: flex;
+  gap: 26px;
+  align-items: center;
+}
+
+.dd-landing .dd-nav-links a {
+  color: var(--dd-muted);
+  text-decoration: none;
+  font-size: 13px;
+  transition: color 0.2s ease;
+}
+
+.dd-landing .dd-nav-links a:hover {
+  color: var(--dd-text);
+}
+
+.dd-landing .dd-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dd-landing .dd-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.dd-landing .dd-btn:hover {
+  transform: translateY(-2px);
+}
+
+.dd-landing .dd-btn-primary {
+  background: var(--dd-amber);
+  color: #071018;
+  box-shadow: 0 12px 30px rgba(255, 182, 39, 0.14);
+}
+
+.dd-landing .dd-btn-secondary {
+  border-color: var(--dd-line-strong);
+  color: var(--dd-text);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.dd-landing .dd-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: 1px solid var(--dd-line-strong);
+  color: var(--dd-text);
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  cursor: pointer;
+  place-items: center;
+  font-size: 18px;
+}
+
+.dd-landing .dd-mobile-menu {
+  display: none;
+  padding: 0 0 18px;
+  border-top: 1px solid var(--dd-line);
+}
+
+.dd-landing .dd-mobile-menu.is-open {
+  display: block;
+}
+
+.dd-landing .dd-mobile-menu a {
+  display: block;
+  padding: 12px 0;
+  color: var(--dd-muted);
+  text-decoration: none;
+  font-size: 14px;
+  border-bottom: 1px solid var(--dd-line);
+}
+
+.dd-landing .dd-mobile-menu a:hover {
+  color: var(--dd-text);
+}
+
+.dd-landing .dd-mobile-menu .dd-btn {
+  width: 100%;
+  margin-top: 14px;
+}
+
+/* —— Hero —— */
+.dd-landing .dd-hero {
+  position: relative;
+  z-index: 1;
+  padding: 92px 0 82px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  align-items: center;
+  gap: 70px;
+}
+
+.dd-landing .dd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--dd-amber);
+  letter-spacing: 0.12em;
+  margin-bottom: 24px;
+}
+
+.dd-landing .dd-eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--dd-amber);
+  box-shadow: 0 0 14px var(--dd-amber);
+}
+
+.dd-landing h1,
+.dd-landing h2,
+.dd-landing h3 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.dd-landing h1 {
+  font-size: clamp(48px, 6vw, 76px);
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+  max-width: 760px;
+  font-weight: 700;
+}
+
+.dd-landing h1 .dd-accent {
+  color: var(--dd-amber);
+}
+
+.dd-landing .dd-hero-copy > p {
+  color: var(--dd-muted);
+  font-size: 18px;
+  line-height: 1.7;
+  max-width: 650px;
+  margin: 26px 0 32px;
+}
+
+.dd-landing .dd-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.dd-landing .dd-proof {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin-top: 44px;
+  background: var(--dd-line);
+  border: 1px solid var(--dd-line);
+  border-radius: 14px;
+  overflow: hidden;
+  max-width: 650px;
+}
+
+.dd-landing .dd-proof-item {
+  background: rgba(12, 24, 34, 0.7);
+  padding: 18px 20px;
+}
+
+.dd-landing .dd-proof-item strong {
+  display: block;
+  color: var(--dd-teal);
+  font: 500 18px 'JetBrains Mono', monospace;
+}
+
+.dd-landing .dd-proof-item span {
+  display: block;
+  margin-top: 4px;
+  color: var(--dd-muted);
+  font: 500 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.06em;
+}
+
+/* —— Radar —— */
+.dd-landing .dd-radar-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 500px;
+  border: 1px solid var(--dd-line-strong);
+  border-radius: 28px;
+  background: radial-gradient(circle at 50% 50%, #173543 0%, #0e202b 45%, #09151d 75%);
+  box-shadow: var(--dd-shadow);
+  overflow: hidden;
+}
+
+.dd-landing .dd-radar-card::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 22px;
+  pointer-events: none;
+}
+
+.dd-landing .dd-radar-top {
+  position: absolute;
+  z-index: 10;
+  top: 22px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--dd-muted);
+  letter-spacing: 0.08em;
+}
+
+.dd-landing .dd-live {
+  color: var(--dd-teal);
+}
+
+.dd-landing .dd-radar {
+  position: absolute;
+  width: 76%;
+  aspect-ratio: 1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(236, 245, 242, 0.14);
+}
+
+.dd-landing .dd-ring {
+  position: absolute;
+  inset: 12.5%;
+  border: 1px solid rgba(236, 245, 242, 0.11);
+  border-radius: 50%;
+}
+
+.dd-landing .dd-ring.r2 {
+  inset: 25%;
+}
+
+.dd-landing .dd-ring.r3 {
+  inset: 37.5%;
+}
+
+.dd-landing .dd-axis-x,
+.dd-landing .dd-axis-y {
+  position: absolute;
+  background: rgba(236, 245, 242, 0.09);
+}
+
+.dd-landing .dd-axis-x {
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+}
+
+.dd-landing .dd-axis-y {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+}
+
+.dd-landing .dd-sweep {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 50%;
+  height: 2px;
+  transform-origin: left center;
+  background: linear-gradient(90deg, var(--dd-amber), transparent);
+  box-shadow: 0 0 12px rgba(255, 182, 39, 0.4);
+  animation: dd-sweep 5s linear infinite;
+}
+
+.dd-landing .dd-sweep::after {
+  content: '';
+  position: absolute;
+  right: 80%;
+  top: -170px;
+  width: 170px;
+  height: 170px;
+  background: conic-gradient(from 225deg, rgba(255, 182, 39, 0.16), transparent 70deg);
+  transform-origin: 100% 100%;
+}
+
+@keyframes dd-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.dd-landing .dd-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 500 10px 'JetBrains Mono', monospace;
+  color: var(--dd-muted);
+  z-index: 5;
+}
+
+.dd-landing .dd-node::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #7f949a;
+  opacity: 0.65;
+}
+
+.dd-landing .dd-node.active::before {
+  background: var(--dd-teal);
+  opacity: 1;
+  box-shadow: 0 0 12px var(--dd-teal);
+  animation: dd-pulse 2s ease-in-out infinite;
+}
+
+.dd-landing .dd-node.you {
+  color: var(--dd-amber);
+}
+
+.dd-landing .dd-node.you::before {
+  background: var(--dd-amber);
+  box-shadow: 0 0 14px var(--dd-amber);
+  opacity: 1;
+}
+
+@keyframes dd-pulse {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+}
+
+.dd-landing .dd-n1 {
+  top: 23%;
+  left: 59%;
+}
+.dd-landing .dd-n2 {
+  top: 34%;
+  left: 17%;
+}
+.dd-landing .dd-n3 {
+  top: 68%;
+  left: 67%;
+}
+.dd-landing .dd-n4 {
+  top: 74%;
+  left: 25%;
+}
+.dd-landing .dd-n5 {
+  top: 48%;
+  left: 43%;
+}
+
+.dd-landing .dd-radar-score {
+  position: absolute;
+  right: 24px;
+  bottom: 22px;
+  text-align: right;
+}
+
+.dd-landing .dd-radar-score strong {
+  font: 500 34px 'JetBrains Mono', monospace;
+  color: var(--dd-teal);
+}
+
+.dd-landing .dd-radar-score span {
+  display: block;
+  color: var(--dd-muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  margin-top: 4px;
+}
+
+/* —— Strip —— */
+.dd-landing .dd-strip {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--dd-line);
+  border-bottom: 1px solid var(--dd-line);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.dd-landing .dd-strip-inner {
+  display: flex;
+  gap: 34px;
+  align-items: center;
+  justify-content: center;
+  min-height: 76px;
+  color: var(--dd-muted);
+  font: 500 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+  flex-wrap: wrap;
+}
+
+.dd-landing .dd-strip-inner b {
+  color: var(--dd-text);
+  font-weight: 500;
+}
+
+/* —— Sections —— */
+.dd-landing section {
+  scroll-margin-top: 96px;
+  position: relative;
+  z-index: 1;
+}
+
+.dd-landing .dd-section {
+  padding: 100px 0;
+}
+
+.dd-landing .dd-section-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: end;
+  margin-bottom: 38px;
+}
+
+.dd-landing .dd-kicker {
+  color: var(--dd-amber);
+  font: 500 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.dd-landing .dd-section-head h2 {
+  font-size: clamp(34px, 4vw, 52px);
+  letter-spacing: -0.03em;
+  max-width: 700px;
+  font-weight: 700;
+}
+
+.dd-landing .dd-section-head p {
+  color: var(--dd-muted);
+  max-width: 440px;
+  line-height: 1.7;
+  font-size: 15px;
+}
+
+.dd-landing .dd-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dd-landing .dd-feature {
+  background: linear-gradient(180deg, rgba(16, 33, 45, 0.88), rgba(10, 22, 31, 0.88));
+  border: 1px solid var(--dd-line);
+  border-radius: var(--dd-radius);
+  padding: 28px;
+  min-height: 260px;
+  position: relative;
+  overflow: hidden;
+  transition: 0.25s ease;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.dd-landing .dd-feature:hover {
+  transform: translateY(-5px);
+  border-color: rgba(45, 212, 191, 0.28);
+}
+
+.dd-landing .dd-feature .dd-num {
+  color: var(--dd-amber);
+  font: 500 11px 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+.dd-landing .dd-feature .dd-icon {
+  width: 46px;
+  height: 46px;
+  margin: 26px 0 24px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(45, 212, 191, 0.08);
+  border: 1px solid rgba(45, 212, 191, 0.18);
+  color: var(--dd-teal);
+  font-size: 20px;
+}
+
+.dd-landing .dd-feature h3 {
+  font-size: 21px;
+  margin-bottom: 12px;
+  font-weight: 650;
+}
+
+.dd-landing .dd-feature p {
+  color: var(--dd-muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+/* —— Dashboard —— */
+.dd-landing .dd-dashboard {
+  display: grid;
+  grid-template-columns: 0.84fr 1.16fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.dd-landing .dd-insight-card,
+.dd-landing .dd-chart-card {
+  background: rgba(12, 24, 34, 0.82);
+  border: 1px solid var(--dd-line);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+}
+
+.dd-landing .dd-insight-card {
+  padding: 30px;
+}
+
+.dd-landing .dd-insight-card .dd-tag {
+  color: var(--dd-teal);
+  font: 500 10px 'JetBrains Mono', monospace;
+  letter-spacing: 0.08em;
+}
+
+.dd-landing .dd-insight-card h3 {
+  font-size: 30px;
+  margin: 14px 0 12px;
+  font-weight: 700;
+}
+
+.dd-landing .dd-insight-card > p {
+  color: var(--dd-muted);
+  line-height: 1.7;
+}
+
+.dd-landing .dd-check-list {
+  margin-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+
+.dd-landing .dd-check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: #c9d8d6;
+  font-size: 14px;
+}
+
+.dd-landing .dd-check::before {
+  content: '✓';
+  color: var(--dd-teal);
+  font-weight: 700;
+}
+
+.dd-landing .dd-chart-card {
+  padding: 26px;
+  min-height: 420px;
+}
+
+.dd-landing .dd-chart-head {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.dd-landing .dd-chart-head span {
+  color: var(--dd-muted);
+  font: 500 10px 'JetBrains Mono', monospace;
+}
+
+.dd-landing .dd-bars {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  height: 250px;
+  padding: 0 8px 18px;
+  border-bottom: 1px solid var(--dd-line);
+}
+
+.dd-landing .dd-bar {
+  flex: 1;
+  border-radius: 8px 8px 2px 2px;
+  background: linear-gradient(180deg, rgba(45, 212, 191, 0.95), rgba(45, 212, 191, 0.12));
+  min-width: 20px;
+  position: relative;
+}
+
+.dd-landing .dd-bar:nth-child(2n) {
+  background: linear-gradient(180deg, rgba(255, 182, 39, 0.95), rgba(255, 182, 39, 0.12));
+}
+
+.dd-landing .dd-bar::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: -34px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--dd-muted);
+  font: 500 9px 'JetBrains Mono', monospace;
+}
+
+.dd-landing .dd-metrics {
+  margin-top: 54px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.dd-landing .dd-metric {
+  border: 1px solid var(--dd-line);
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.dd-landing .dd-metric strong {
+  font: 500 22px 'JetBrains Mono', monospace;
+  color: var(--dd-teal);
+}
+
+.dd-landing .dd-metric span {
+  display: block;
+  color: var(--dd-muted);
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+/* —— Steps —— */
+.dd-landing .dd-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dd-landing .dd-step {
+  padding: 26px;
+  border-top: 1px solid var(--dd-line-strong);
+}
+
+.dd-landing .dd-step-no {
+  color: var(--dd-amber);
+  font: 500 11px 'JetBrains Mono', monospace;
+}
+
+.dd-landing .dd-step h3 {
+  margin: 16px 0 10px;
+  font-size: 20px;
+}
+
+.dd-landing .dd-step p {
+  color: var(--dd-muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+/* —— FAQ —— */
+.dd-landing .dd-faq {
+  display: grid;
+  gap: 12px;
+  max-width: 820px;
+}
+
+.dd-landing .dd-faq details {
+  border: 1px solid var(--dd-line);
+  border-radius: 14px;
+  background: rgba(12, 24, 34, 0.65);
+  padding: 18px 22px;
+}
+
+.dd-landing .dd-faq summary {
+  cursor: pointer;
+  font-weight: 650;
+  font-size: 15px;
+  list-style: none;
+}
+
+.dd-landing .dd-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.dd-landing .dd-faq p {
+  margin-top: 12px;
+  color: var(--dd-muted);
+  line-height: 1.65;
+  font-size: 14px;
+}
+
+/* —— CTA —— */
+.dd-landing .dd-cta-panel {
+  margin: 40px auto 110px;
+  padding: 56px;
+  border: 1px solid rgba(255, 182, 39, 0.26);
+  border-radius: 28px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 182, 39, 0.08),
+    rgba(45, 212, 191, 0.06) 55%,
+    rgba(12, 24, 34, 0.95)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+}
+
+.dd-landing .dd-cta-panel h2 {
+  font-size: clamp(34px, 4vw, 50px);
+  max-width: 670px;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+.dd-landing .dd-cta-panel p {
+  color: var(--dd-muted);
+  margin-top: 12px;
+}
+
+/* —— Footer —— */
+.dd-landing .dd-footer {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid var(--dd-line);
+  padding: 36px 0 48px;
+  color: var(--dd-muted);
+}
+
+.dd-landing .dd-footer-inner {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.dd-landing .dd-footer-links {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.dd-landing .dd-footer-links a {
+  text-decoration: none;
+  color: var(--dd-muted);
+}
+
+.dd-landing .dd-footer-links a:hover {
+  color: var(--dd-text);
+}
+
+@media (max-width: 980px) {
+  .dd-landing .dd-nav-links {
+    display: none;
+  }
+
+  .dd-landing .dd-mobile-toggle {
+    display: inline-grid;
+  }
+
+  .dd-landing .dd-hero {
+    grid-template-columns: 1fr;
+    padding-top: 68px;
+  }
+
+  .dd-landing .dd-radar-card {
+    max-width: 620px;
+    width: 100%;
+    justify-self: center;
+    min-height: unset;
+  }
+
+  .dd-landing .dd-feature-grid,
+  .dd-landing .dd-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dd-landing .dd-dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .dd-landing .dd-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dd-landing .dd-cta-panel {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .dd-landing .dd-container {
+    width: min(100% - 28px, 1180px);
+  }
+
+  .dd-landing .dd-nav-actions .dd-btn-secondary {
+    display: none;
+  }
+
+  .dd-landing h1 {
+    font-size: 48px;
+  }
+
+  .dd-landing .dd-hero {
+    gap: 44px;
+    padding-bottom: 64px;
+  }
+
+  .dd-landing .dd-proof {
+    grid-template-columns: 1fr;
+  }
+
+  .dd-landing .dd-feature-grid,
+  .dd-landing .dd-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .dd-landing .dd-section {
+    padding: 76px 0;
+  }
+
+  .dd-landing .dd-radar-top {
+    right: 18px;
+    left: 18px;
+  }
+
+  .dd-landing .dd-radar-score strong {
+    font-size: 26px;
+  }
+
+  .dd-landing .dd-cta-panel {
+    padding: 34px 24px;
+    margin-bottom: 70px;
+  }
+
+  .dd-landing .dd-footer-inner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .dd-landing .dd-metrics {
+    grid-template-columns: 1fr;
+  }
+}
