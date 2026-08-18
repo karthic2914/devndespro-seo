@@ -615,28 +615,87 @@
   color: var(--mkt-muted);
 }
 
-.mkt-hero__content--pricing {
+.mkt-panel-plans {
+  display: grid;
+  gap: 10px;
+}
+
+.mkt-panel-plans__card {
+  background: #fff;
+  border: 1px solid var(--mkt-line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  position: relative;
+}
+
+.mkt-panel-plans__card.is-featured {
+  border-color: rgba(108, 92, 231, 0.45);
+  box-shadow: 0 0 0 1px rgba(108, 92, 231, 0.12);
+  background: linear-gradient(180deg, #faf8ff 0%, #fff 100%);
+}
+
+.mkt-panel-plans__top {
   display: flex;
-  flex-wrap: wrap;
-  gap: 28px;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.mkt-panel-plans__name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--mkt-text);
+}
+
+.mkt-panel-plans__pop {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--mkt-primary-soft);
+  color: var(--mkt-amber);
+}
+
+.mkt-panel-plans__price {
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--mkt-amber);
+  margin-right: 4px;
+}
+
+.mkt-panel-plans__per {
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--mkt-muted);
+}
+
+.mkt-panel-plans__tag {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--mkt-muted);
+  line-height: 1.35;
+}
+
+.mkt-hero__content--pricing {
+  display: block;
   max-width: none;
 }
 
 .mkt-pricing-intro {
-  flex: 1 1 280px;
-  max-width: 640px;
+  max-width: none;
   min-width: 0;
 }
 
 .mkt-pricing-intro .mkt-hero__lede {
-  margin-bottom: 0;
+  margin-bottom: 22px;
 }
 
 .mkt-hero--pricing .mkt-select-wrap {
-  flex: 0 1 280px;
-  width: min(100%, 280px);
+  width: min(100%, 300px);
+  margin-top: 4px;
 }
 
 .mkt-eyebrow {
@@ -1357,11 +1416,15 @@
   }
 
   .mkt-hero__content--pricing {
-    gap: 22px;
+    gap: 0;
   }
 
   .mkt-pricing-intro {
     max-width: none;
+  }
+
+  .mkt-hero--pricing .mkt-select-wrap {
+    width: 100%;
   }
 
   .mkt-rail__grid {
@@ -1393,11 +1456,6 @@
     width: 100%;
     min-width: 0;
     max-width: none;
-  }
-
-  .mkt-hero--pricing .mkt-select-wrap {
-    flex: 1 1 100%;
-    width: 100%;
   }
 
   .mkt-band {

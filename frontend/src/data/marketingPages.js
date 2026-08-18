@@ -170,7 +170,7 @@ export const PAGE_VISUALS = {
     ],
   },
   pricing: {
-    variant: 'signals',
+    variant: 'plans',
     panelTitle: 'Launch · Accelerate · Command',
     chips: ['NOK base', 'Live FX', '5 regions'],
     stats: [

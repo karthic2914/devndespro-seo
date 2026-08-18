@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight, faCheck, faChevronDown, faTags } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
 import { useAuth } from '../../hooks/useAuth'
@@ -207,7 +207,7 @@ export default function PricingPage() {
     <MarketingLayout>
       <article className="mkt-page">
         <section className="mkt-hero mkt-hero--pricing">
-          <div className="mkt-container">
+          <div className="mkt-container mkt-hero__grid">
             <div className="mkt-hero__content mkt-hero__content--pricing">
               <div className="mkt-pricing-intro">
                 <p className="mkt-eyebrow">PRICING</p>
@@ -219,37 +219,37 @@ export default function PricingPage() {
                   Launch, Accelerate and Command. Switch Norway, Europe, India, USA or UK and see
                   live converted rates.
                 </p>
-              </div>
 
-              <div className="mkt-select-wrap" ref={regionMenuRef}>
-                <span className="mkt-select-label" id="pricing-region-label">
-                  Show prices in
-                </span>
-                <div className="mkt-select-field">
-                  <button
-                    type="button"
-                    id="pricing-region"
-                    ref={triggerRef}
-                    className={`mkt-select-trigger${regionOpen ? ' is-open' : ''}`}
-                    aria-haspopup="listbox"
-                    aria-expanded={regionOpen}
-                    aria-controls="pricing-region-listbox"
-                    aria-labelledby="pricing-region-label"
-                    onClick={() => setRegionOpen((v) => !v)}
-                  >
-                    <span>
-                      {region.flag} {region.label} ({region.currency})
-                    </span>
-                    <FontAwesomeIcon icon={faChevronDown} className="mkt-select-icon" />
-                  </button>
+                <div className="mkt-select-wrap" ref={regionMenuRef}>
+                  <span className="mkt-select-label" id="pricing-region-label">
+                    Show prices in
+                  </span>
+                  <div className="mkt-select-field">
+                    <button
+                      type="button"
+                      id="pricing-region"
+                      ref={triggerRef}
+                      className={`mkt-select-trigger${regionOpen ? ' is-open' : ''}`}
+                      aria-haspopup="listbox"
+                      aria-expanded={regionOpen}
+                      aria-controls="pricing-region-listbox"
+                      aria-labelledby="pricing-region-label"
+                      onClick={() => setRegionOpen((v) => !v)}
+                    >
+                      <span>
+                        {region.flag} {region.label} ({region.currency})
+                      </span>
+                      <FontAwesomeIcon icon={faChevronDown} className="mkt-select-icon" />
+                    </button>
+                  </div>
+                  <p className={`mkt-select-hint${regionOpen ? ' is-hidden' : ''}`}>
+                    {ratesStatus === 'live' && ratesDate
+                      ? `Live ECB rates · updated ${ratesDate}`
+                      : ratesStatus === 'loading'
+                        ? 'Loading live exchange rates…'
+                        : 'Showing fallback rates (live feed unavailable)'}
+                  </p>
                 </div>
-                <p className={`mkt-select-hint${regionOpen ? ' is-hidden' : ''}`}>
-                  {ratesStatus === 'live' && ratesDate
-                    ? `Live ECB rates · updated ${ratesDate}`
-                    : ratesStatus === 'loading'
-                      ? 'Loading live exchange rates…'
-                      : 'Showing fallback rates (live feed unavailable)'}
-                </p>
               </div>
 
               {regionOpen &&
@@ -288,6 +288,54 @@ export default function PricingPage() {
                   document.body
                 )}
             </div>
+
+            <aside className="mkt-hero-panel mkt-hero-panel--plans" aria-label="Plan overview">
+              <div className="mkt-hero-panel__frame">
+                <div className="mkt-hero-panel__bar">
+                  <div className="mkt-hero-panel__dots" aria-hidden>
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <div className="mkt-hero-panel__url">seo.devndespro.com/pricing</div>
+                  <div />
+                </div>
+                <div className="mkt-hero-panel__body">
+                  <div className="mkt-hero-panel__head">
+                    <span className="mkt-hero-panel__badge" aria-hidden>
+                      <FontAwesomeIcon icon={faTags} />
+                    </span>
+                    <div>
+                      <strong>Three clear packages</strong>
+                      <small>Prices update with your region</small>
+                    </div>
+                  </div>
+
+                  <div className="mkt-panel-plans">
+                    {PRICING_PLANS.map((plan) => {
+                      const amount = convertFromNok(plan.priceNok, region.currency, rates)
+                      const priceLabel = formatMoney(amount, region.currency, region.locale)
+                      return (
+                        <div
+                          key={plan.id}
+                          className={`mkt-panel-plans__card${plan.featured ? ' is-featured' : ''}`}
+                        >
+                          <div className="mkt-panel-plans__top">
+                            <span className="mkt-panel-plans__name">{plan.name}</span>
+                            {plan.featured ? (
+                              <span className="mkt-panel-plans__pop">Popular</span>
+                            ) : null}
+                          </div>
+                          <strong className="mkt-panel-plans__price">{priceLabel}</strong>
+                          <span className="mkt-panel-plans__per">/ month</span>
+                          <p className="mkt-panel-plans__tag">{plan.tagline}</p>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            </aside>
           </div>
 
           <div className="mkt-rail">
