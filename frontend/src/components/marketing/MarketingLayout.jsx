@@ -4,6 +4,7 @@ import { faArrowRight, faBars, faXmark } from '@fortawesome/free-solid-svg-icons
 import { useState } from 'react'
 import { Logo } from '../UI'
 import { MARKETING_NAV } from '../../data/marketingPages'
+import '../../styles/marketing.css'
 
 const monoFont = "'SF Mono', 'Consolas', 'Menlo', monospace"
 

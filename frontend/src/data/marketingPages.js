@@ -10,6 +10,91 @@ export const MARKETING_NAV = [
   { path: '/about', label: 'About' },
 ]
 
+/** Visual chrome shared by all wow marketing pages (icons keyed later in UI). */
+export const PAGE_VISUALS = {
+  platform: {
+    panelTitle: 'Three signals. One workspace.',
+    chips: ['Technical SEO', 'AI citations', 'Nordic intent'],
+    stats: [
+      { value: '3', label: 'core signals' },
+      { value: '1', label: 'shared Action Plan' },
+      { value: '100%', label: 'hostname-aware' },
+    ],
+  },
+  'how-it-works': {
+    panelTitle: 'Domain → decisions → lift',
+    chips: ['Add site', 'Run analysis', 'Improve'],
+    stats: [
+      { value: '01', label: 'add domain' },
+      { value: '02', label: 'audit signals' },
+      { value: '03', label: 'act by impact' },
+    ],
+  },
+  features: {
+    panelTitle: 'Modules that stay connected',
+    chips: ['Site Audit', 'Keywords', 'Backlinks', 'AI Visibility'],
+    stats: [
+      { value: '4', label: 'growth modules' },
+      { value: '∞', label: 're-run audits' },
+      { value: '1', label: 'private workspace' },
+    ],
+  },
+  'ai-visibility': {
+    panelTitle: 'Show up where answers happen',
+    chips: ['ChatGPT', 'Claude', 'Citations'],
+    stats: [
+      { value: 'AI', label: 'answer engines' },
+      { value: 'SEO', label: 'classic SERPs' },
+      { value: '1', label: 'unified view' },
+    ],
+  },
+  'seo-audit': {
+    panelTitle: 'Crawl → score → fix',
+    chips: ['Site Health', 'Critical issues', 'Re-check'],
+    stats: [
+      { value: 'H1', label: 'on-page checks' },
+      { value: '100', label: 'page crawl cap*' },
+      { value: 'PDF', label: 'shareable proof' },
+    ],
+  },
+  'keyword-tracking': {
+    panelTitle: 'Ranks tied to revenue intent',
+    chips: ['Positions', 'GSC', 'Competitors'],
+    stats: [
+      { value: 'Δ', label: 'rank change' },
+      { value: 'URL', label: 'ranking pages' },
+      { value: 'NO', label: 'Nordic markets' },
+    ],
+  },
+  'backlink-monitoring': {
+    panelTitle: 'Links with spam controls',
+    chips: ['Ref domains', 'Spam filter', 'Disavow'],
+    stats: [
+      { value: 'DR', label: 'domain signals' },
+      { value: 'CSV', label: 'exports' },
+      { value: '21d', label: 'disavow wait' },
+    ],
+  },
+  about: {
+    panelTitle: 'Built in Stavanger',
+    chips: ['Nordic focus', 'Private beta', 'Impact-first'],
+    stats: [
+      { value: 'SVG', label: 'Stavanger' },
+      { value: 'SEO', label: 'product lab' },
+      { value: 'AI', label: 'discovery era' },
+    ],
+  },
+  pricing: {
+    panelTitle: 'Launch · Accelerate · Command',
+    chips: ['NOK base', 'Live FX', '5 regions'],
+    stats: [
+      { value: '3', label: 'clear packages' },
+      { value: '5', label: 'currencies' },
+      { value: 'live', label: 'ECB rates' },
+    ],
+  },
+}
+
 export const MARKETING_PAGES = {
   platform: {
     path: '/platform',
