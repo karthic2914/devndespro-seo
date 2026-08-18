@@ -107,21 +107,23 @@ export default function PricingPage() {
   const goLogin = () => navigate('/login')
 
   return (
-    <MarketingLayout activePath="/pricing">
+    <MarketingLayout activePath="/pricing" darkShell>
       <article className="mkt-page">
-        <section className="mkt-hero" style={{ paddingBottom: 28 }}>
+        <section className="mkt-hero" style={{ minHeight: 'auto' }}>
+          <div className="mkt-hero__noise" aria-hidden />
           <div className="mkt-hero__glow mkt-hero__glow--a" aria-hidden />
           <div className="mkt-hero__glow mkt-hero__glow--b" aria-hidden />
           <div className="mkt-container">
             <div
+              className="mkt-hero__content"
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                gap: 24,
+                gap: 28,
                 alignItems: 'flex-end',
                 justifyContent: 'space-between',
-                position: 'relative',
-                zIndex: 1,
+                maxWidth: 'none',
+                paddingBottom: 40,
               }}
             >
               <div style={{ maxWidth: 640 }}>
@@ -129,19 +131,14 @@ export default function PricingPage() {
                   <span className="mkt-eyebrow__dot" aria-hidden />
                   PRICING
                 </p>
-                <h1 style={{ maxWidth: '14ch' }}>Plans that stay affordable as you grow</h1>
-                <p className="mkt-hero__lede" style={{ marginBottom: 18 }}>
-                  Three clear packages — Launch, Accelerate and Command — with prices shown in your
-                  currency using live exchange rates.
+                <h1 style={{ maxWidth: '12ch' }}>
+                  Plans that stay affordable
+                  <span className="mkt-accent">as you grow</span>
+                </h1>
+                <p className="mkt-hero__lede" style={{ marginBottom: 0 }}>
+                  Launch, Accelerate and Command — switch Norway, Europe, India, USA or UK and see
+                  live converted rates.
                 </p>
-                <div className="mkt-stats">
-                  {(PAGE_VISUALS.pricing?.stats || []).map((s) => (
-                    <div key={s.label} className="mkt-stat">
-                      <span className="mkt-stat__value">{s.value}</span>
-                      <span className="mkt-stat__label">{s.label}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div style={{ minWidth: 240 }}>
@@ -152,7 +149,7 @@ export default function PricingPage() {
                     marginBottom: 8,
                     fontSize: 12,
                     fontWeight: 650,
-                    color: '#5B5E68',
+                    color: 'rgba(233,235,242,0.72)',
                   }}
                 >
                   Show prices in
@@ -169,18 +166,17 @@ export default function PricingPage() {
                       height: 48,
                       padding: '0 40px 0 14px',
                       borderRadius: 10,
-                      border: '1.5px solid #DAD8D3',
-                      background: '#fff',
-                      color: '#171923',
+                      border: '1px solid rgba(255,255,255,0.16)',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: '#fff',
                       fontSize: 14,
                       fontWeight: 650,
                       fontFamily: 'inherit',
                       cursor: 'pointer',
-                      boxShadow: '0 10px 30px rgba(23,25,35,0.05)',
                     }}
                   >
                     {PRICING_REGIONS.map((r) => (
-                      <option key={r.id} value={r.id}>
+                      <option key={r.id} value={r.id} style={{ color: '#171923' }}>
                         {r.flag} {r.label} ({r.currency})
                       </option>
                     ))}
@@ -192,13 +188,13 @@ export default function PricingPage() {
                       right: 14,
                       top: '50%',
                       transform: 'translateY(-50%)',
-                      color: '#898B92',
+                      color: 'rgba(255,255,255,0.55)',
                       pointerEvents: 'none',
                       fontSize: 12,
                     }}
                   />
                 </div>
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: '#898B92' }}>
+                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(210,214,224,0.65)' }}>
                   {ratesStatus === 'live' && ratesDate
                     ? `Live ECB rates · updated ${ratesDate}`
                     : ratesStatus === 'loading'
@@ -208,9 +204,27 @@ export default function PricingPage() {
               </div>
             </div>
           </div>
+
+          <div className="mkt-rail">
+            <div className="mkt-container">
+              <div className="mkt-rail__grid">
+                {(PAGE_VISUALS.pricing?.chips || []).slice(0, 4).map((chip, i) => (
+                  <div key={chip} className={`mkt-rail__item ${i === 0 ? 'is-active' : ''}`}>
+                    <div className="mkt-rail__bar" aria-hidden />
+                    <span className="mkt-rail__label">{chip}</span>
+                    <p className="mkt-rail__text">
+                      {PAGE_VISUALS.pricing?.stats?.[i]
+                        ? `${PAGE_VISUALS.pricing.stats[i].value} · ${PAGE_VISUALS.pricing.stats[i].label}`
+                        : 'Transparent monthly pricing'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
 
-        <section style={{ padding: '12px 0 56px' }}>
+        <section className="mkt-band mkt-band--tint" style={{ paddingTop: 40 }}>
           <div className="mkt-container">
             <div
               className="pricing-grid"

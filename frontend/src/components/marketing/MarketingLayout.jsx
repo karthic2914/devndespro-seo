@@ -8,17 +8,17 @@ import '../../styles/marketing.css'
 
 const monoFont = "'SF Mono', 'Consolas', 'Menlo', monospace"
 
-export default function MarketingLayout({ children, activePath = '' }) {
+export default function MarketingLayout({ children, activePath = '', darkShell = false }) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
 
   return (
     <div
-      className="premium-landing-page"
+      className={`premium-landing-page${darkShell ? ' mkt-shell' : ''}`}
       style={{
         minHeight: '100vh',
-        background: '#FBFAF8',
+        background: darkShell ? '#07080C' : '#FBFAF8',
         color: '#171923',
         fontFamily: 'inherit',
         overflowX: 'clip',

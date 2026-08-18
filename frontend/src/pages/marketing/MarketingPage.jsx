@@ -1,15 +1,6 @@
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowRight,
-  faBolt,
-  faChartLine,
-  faComments,
-  faGlobe,
-  faLink,
-  faMagnifyingGlass,
-  faShieldHalved,
-} from '@fortawesome/free-solid-svg-icons'
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
 import {
@@ -20,18 +11,27 @@ import {
 } from '../../data/marketingPages'
 import '../../styles/marketing.css'
 
-const SECTION_ICONS = [
-  faMagnifyingGlass,
-  faComments,
-  faChartLine,
-  faLink,
-  faGlobe,
-  faShieldHalved,
-  faBolt,
-]
-
 function slugFromPath(pathname) {
   return pathname.replace(/^\//, '').replace(/\/$/, '')
+}
+
+/** Split headline into lead + accent line for cinematic hero typography. */
+function splitHeadline(h1) {
+  if (!h1) return ['', null]
+  if (h1.includes('. ')) {
+    const i = h1.indexOf('. ')
+    return [h1.slice(0, i + 1), h1.slice(i + 2)]
+  }
+  if (h1.includes(' — ')) {
+    const parts = h1.split(' — ')
+    return [parts[0], parts.slice(1).join(' — ')]
+  }
+  const words = h1.trim().split(/\s+/)
+  if (words.length >= 6) {
+    const mid = Math.ceil(words.length * 0.45)
+    return [words.slice(0, mid).join(' '), words.slice(mid).join(' ')]
+  }
+  return [h1, null]
 }
 
 export default function MarketingPage() {
@@ -47,6 +47,13 @@ export default function MarketingPage() {
 
 export function MarketingPageView({ page, slug, onLogin }) {
   const visual = PAGE_VISUALS[slug] || PAGE_VISUALS.features
+  const [lead, accent] = splitHeadline(page.h1)
+  const railItems = (visual.chips || []).slice(0, 4).map((chip, i) => ({
+    label: chip,
+    text: visual.stats?.[i]?.label
+      ? `${visual.stats[i].value} · ${visual.stats[i].label}`
+      : visual.panelTitle,
+  }))
 
   useDocumentMeta({
     title: page.title,
@@ -55,55 +62,50 @@ export function MarketingPageView({ page, slug, onLogin }) {
   })
 
   return (
-    <MarketingLayout activePath={page.path}>
+    <MarketingLayout activePath={page.path} darkShell>
       <article className="mkt-page">
         <section className="mkt-hero">
+          <div className="mkt-hero__noise" aria-hidden />
           <div className="mkt-hero__glow mkt-hero__glow--a" aria-hidden />
           <div className="mkt-hero__glow mkt-hero__glow--b" aria-hidden />
-          <div className="mkt-container">
-            <div className="mkt-hero__inner">
-              <div>
-                <p className="mkt-eyebrow">
-                  <span className="mkt-eyebrow__dot" aria-hidden />
-                  {page.eyebrow}
-                </p>
-                <h1>{page.h1}</h1>
-                <p className="mkt-hero__lede">{page.intro}</p>
-                <div className="mkt-hero__actions">
-                  <button type="button" className="mkt-btn-primary" onClick={onLogin}>
-                    Analyse your website
-                    <FontAwesomeIcon icon={faArrowRight} />
-                  </button>
-                  <Link to="/pricing" className="mkt-btn-ghost">
-                    View plans
-                  </Link>
-                </div>
-                <div className="mkt-stats">
-                  {(visual.stats || []).map((s) => (
-                    <div key={s.label} className="mkt-stat">
-                      <span className="mkt-stat__value">{s.value}</span>
-                      <span className="mkt-stat__label">{s.label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="mkt-hero-visual" aria-hidden={false}>
-                <div className="mkt-hero-visual__grid" aria-hidden />
-                <div className="mkt-hero-visual__body">
-                  <p className="mkt-hero-visual__label">DEVNDESPRO SEO</p>
-                  <h2 className="mkt-hero-visual__title">{visual.panelTitle}</h2>
-                  <div className="mkt-hero-visual__chips">
-                    {(visual.chips || []).map((chip, i) => (
-                      <div key={chip} className="mkt-chip">
-                        <div className="mkt-chip__icon">
-                          <FontAwesomeIcon icon={SECTION_ICONS[i % SECTION_ICONS.length]} />
-                        </div>
-                        <div className="mkt-chip__text">{chip}</div>
-                      </div>
-                    ))}
+          <div className="mkt-container">
+            <div className="mkt-hero__content">
+              <p className="mkt-eyebrow">
+                <span className="mkt-eyebrow__dot" aria-hidden />
+                {page.eyebrow}
+              </p>
+              <h1>
+                {lead}
+                {accent ? <span className="mkt-accent">{accent}</span> : null}
+              </h1>
+              <p className="mkt-hero__lede">{page.intro}</p>
+              <div className="mkt-hero__actions">
+                <button type="button" className="mkt-btn-primary" onClick={onLogin}>
+                  Analyse your website
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </button>
+                <Link to="/pricing" className="mkt-btn-ghost">
+                  View plans
+                  <FontAwesomeIcon icon={faArrowRight} />
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mkt-rail">
+            <div className="mkt-container">
+              <div className="mkt-rail__grid">
+                {railItems.map((item, i) => (
+                  <div
+                    key={item.label}
+                    className={`mkt-rail__item ${i === 0 ? 'is-active' : ''}`}
+                  >
+                    <div className="mkt-rail__bar" aria-hidden />
+                    <span className="mkt-rail__label">{item.label}</span>
+                    <p className="mkt-rail__text">{item.text}</p>
                   </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
@@ -112,14 +114,14 @@ export function MarketingPageView({ page, slug, onLogin }) {
         <section className="mkt-band mkt-band--tint">
           <div className="mkt-container">
             <div className="mkt-section-head">
-              <p className="mkt-eyebrow" style={{ margin: '0 auto 14px' }}>
+              <p className="mkt-eyebrow mkt-eyebrow--light" style={{ margin: '0 auto 14px' }}>
                 <span className="mkt-eyebrow__dot" aria-hidden />
                 WHY IT MATTERS
               </p>
-              <h2>Designed to feel premium — and stay practical</h2>
+              <h2>Clarity first. Then the lift.</h2>
               <p>
-                Same visual system on every page: clear hierarchy, real product language, and next
-                steps you can act on this week.
+                Every page uses the same cinematic system — bold signal up top, practical depth
+                below — so the product feels premium without losing the plot.
               </p>
             </div>
 
@@ -145,10 +147,10 @@ export function MarketingPageView({ page, slug, onLogin }) {
           <div className="mkt-container">
             <div className="mkt-cta-row">
               <div>
-                <h2>Ready when your next release ships</h2>
+                <h2>Ship the fix. Prove the lift.</h2>
                 <p>
                   Run Site Audit, watch Site Health move, and keep keywords, links and AI citations
-                  in the same private workspace.
+                  in one private workspace.
                 </p>
               </div>
               <button type="button" className="mkt-btn-primary" onClick={onLogin}>
@@ -162,7 +164,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
         <section className="mkt-band">
           <div className="mkt-container">
             <div className="mkt-section-head">
-              <p className="mkt-eyebrow" style={{ margin: '0 auto 14px' }}>
+              <p className="mkt-eyebrow mkt-eyebrow--light" style={{ margin: '0 auto 14px' }}>
                 <span className="mkt-eyebrow__dot" aria-hidden />
                 FAQ
               </p>
@@ -180,9 +182,9 @@ export function MarketingPageView({ page, slug, onLogin }) {
           </div>
         </section>
 
-        <section className="mkt-band" style={{ paddingTop: 0 }}>
+        <section className="mkt-band" style={{ paddingTop: 0, paddingBottom: 80 }}>
           <div className="mkt-container">
-            <div className="mkt-section-head" style={{ marginBottom: 20 }}>
+            <div className="mkt-section-head" style={{ marginBottom: 18 }}>
               <h2 style={{ fontSize: 22 }}>Keep exploring</h2>
             </div>
             <div className="mkt-explore">
