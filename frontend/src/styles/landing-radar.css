@@ -1,18 +1,21 @@
-/* DevnDespro SEO — Fjord radar theme
-   Fjord Navy #0B1620 | Deep Steel #142430 | Signal Amber #FFB627
-   Fjord Teal #2DD4BF | Mist White #EAF2F0 | Slate Fog #8FA3AA
+/* DevnDespro SEO — Light brand theme
+   BG #f6f8fc | Panel #ffffff | Text #0b1f3a | Muted #7d8ba3
+   Amber #ff5a1f | Teal #10a958 | Purple #5b46e8 | Blue #3267f5
 */
 
 .dd-landing {
-  --dd-bg: #0B1620;
-  --dd-panel: #142430;
-  --dd-text: #EAF2F0;
-  --dd-muted: #8FA3AA;
-  --dd-amber: #FFB627;
-  --dd-teal: #2DD4BF;
-  --dd-line: rgba(234, 242, 240, 0.1);
-  --dd-line-strong: rgba(234, 242, 240, 0.18);
-  --dd-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+  --dd-bg: #f6f8fc;
+  --dd-panel: #ffffff;
+  --dd-panel-3: #f8f9fc;
+  --dd-text: #0b1f3a;
+  --dd-muted: #7d8ba3;
+  --dd-amber: #ff5a1f;
+  --dd-teal: #10a958;
+  --dd-purple: #5b46e8;
+  --dd-blue: #3267f5;
+  --dd-line: #e3e8f1;
+  --dd-line-strong: #d4dce8;
+  --dd-shadow: 0 22px 60px rgba(50, 70, 110, 0.12);
   --dd-radius: 18px;
 
   position: relative;
@@ -23,8 +26,8 @@
   padding-top: 74px;
   color: var(--dd-text);
   background:
-    radial-gradient(circle at 80% 10%, rgba(45, 212, 191, 0.09), transparent 24%),
-    radial-gradient(circle at 10% 20%, rgba(255, 182, 39, 0.08), transparent 20%),
+    radial-gradient(circle at 80% 10%, rgba(91, 70, 232, 0.08), transparent 24%),
+    radial-gradient(circle at 10% 20%, rgba(255, 90, 31, 0.08), transparent 20%),
     var(--dd-bg);
   font-family: Inter, system-ui, sans-serif;
 }
@@ -35,10 +38,10 @@
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+    linear-gradient(rgba(11, 31, 58, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11, 31, 58, 0.03) 1px, transparent 1px);
   background-size: 32px 32px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 80%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.35), transparent 80%);
   z-index: 0;
 }
 
@@ -64,7 +67,7 @@
   right: 0;
   z-index: 50;
   backdrop-filter: blur(18px);
-  background: rgba(11, 22, 32, 0.88);
+  background: rgba(255, 255, 255, 0.88);
   border-bottom: 1px solid var(--dd-line);
 }
 
@@ -94,8 +97,8 @@
   width: 12px;
   height: 12px;
   border-radius: 999px;
-  background: var(--dd-amber);
-  box-shadow: 0 0 22px rgba(255, 182, 39, 0.85);
+  background: linear-gradient(135deg, var(--dd-amber), var(--dd-purple));
+  box-shadow: 0 0 18px rgba(255, 90, 31, 0.35);
 }
 
 .dd-landing .dd-nav-links {
@@ -154,19 +157,19 @@
 
 .dd-landing .dd-btn-primary {
   background: var(--dd-amber);
-  color: #0B1620;
-  box-shadow: 0 12px 30px rgba(255, 182, 39, 0.14);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(255, 90, 31, 0.22);
 }
 
 .dd-landing .dd-btn-secondary {
   border-color: var(--dd-line-strong);
   color: var(--dd-text);
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--dd-panel);
 }
 
 .dd-landing .dd-mobile-toggle {
   display: none;
-  background: transparent;
+  background: var(--dd-panel);
   border: 1px solid var(--dd-line-strong);
   color: var(--dd-text);
   border-radius: 8px;
@@ -234,7 +237,7 @@
   height: 7px;
   border-radius: 50%;
   background: var(--dd-amber);
-  box-shadow: 0 0 14px var(--dd-amber);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.45);
 }
 
 .dd-landing h1,
@@ -283,13 +286,13 @@
 }
 
 .dd-landing .dd-proof-item {
-  background: rgba(20, 36, 48, 0.85);
+  background: var(--dd-panel);
   padding: 18px 20px;
 }
 
 .dd-landing .dd-proof-item strong {
   display: block;
-  color: var(--dd-teal);
+  color: var(--dd-purple);
   font: 500 18px 'JetBrains Mono', monospace;
 }
 
@@ -306,9 +309,9 @@
   position: relative;
   aspect-ratio: 1 / 1;
   min-height: 500px;
-  border: 1px solid var(--dd-line-strong);
+  border: 1px solid rgba(91, 70, 232, 0.22);
   border-radius: 28px;
-  background: radial-gradient(circle at 50% 50%, #1a3a48 0%, #142430 45%, #0B1620 75%);
+  background: radial-gradient(circle at 50% 50%, #eef1ff 0%, #f7f8ff 48%, #ffffff 78%);
   box-shadow: var(--dd-shadow);
   overflow: hidden;
 }
@@ -317,7 +320,7 @@
   content: '';
   position: absolute;
   inset: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(91, 70, 232, 0.12);
   border-radius: 22px;
   pointer-events: none;
 }
@@ -347,13 +350,13 @@
   left: 50%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  border: 1px solid rgba(236, 245, 242, 0.14);
+  border: 1px solid rgba(91, 70, 232, 0.22);
 }
 
 .dd-landing .dd-ring {
   position: absolute;
   inset: 12.5%;
-  border: 1px solid rgba(236, 245, 242, 0.11);
+  border: 1px solid rgba(91, 70, 232, 0.16);
   border-radius: 50%;
 }
 
@@ -368,7 +371,7 @@
 .dd-landing .dd-axis-x,
 .dd-landing .dd-axis-y {
   position: absolute;
-  background: rgba(236, 245, 242, 0.09);
+  background: rgba(91, 70, 232, 0.14);
 }
 
 .dd-landing .dd-axis-x {
@@ -393,7 +396,7 @@
   height: 2px;
   transform-origin: left center;
   background: linear-gradient(90deg, var(--dd-amber), transparent);
-  box-shadow: 0 0 12px rgba(255, 182, 39, 0.4);
+  box-shadow: 0 0 12px rgba(255, 90, 31, 0.35);
   animation: dd-sweep 5s linear infinite;
 }
 
@@ -404,7 +407,7 @@
   top: -170px;
   width: 170px;
   height: 170px;
-  background: conic-gradient(from 225deg, rgba(255, 182, 39, 0.16), transparent 70deg);
+  background: conic-gradient(from 225deg, rgba(255, 90, 31, 0.14), transparent 70deg);
   transform-origin: 100% 100%;
 }
 
@@ -429,14 +432,14 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #7f949a;
+  background: #a8b4c8;
   opacity: 0.65;
 }
 
 .dd-landing .dd-node.active::before {
   background: var(--dd-teal);
   opacity: 1;
-  box-shadow: 0 0 12px var(--dd-teal);
+  box-shadow: 0 0 12px rgba(16, 169, 88, 0.45);
   animation: dd-pulse 2s ease-in-out infinite;
 }
 
@@ -446,7 +449,7 @@
 
 .dd-landing .dd-node.you::before {
   background: var(--dd-amber);
-  box-shadow: 0 0 14px var(--dd-amber);
+  box-shadow: 0 0 14px rgba(255, 90, 31, 0.45);
   opacity: 1;
 }
 
@@ -487,7 +490,7 @@
 
 .dd-landing .dd-radar-score strong {
   font: 500 34px 'JetBrains Mono', monospace;
-  color: var(--dd-teal);
+  color: var(--dd-purple);
 }
 
 .dd-landing .dd-radar-score span {
@@ -504,7 +507,7 @@
   z-index: 1;
   border-top: 1px solid var(--dd-line);
   border-bottom: 1px solid var(--dd-line);
-  background: rgba(255, 255, 255, 0.018);
+  background: var(--dd-panel);
 }
 
 .dd-landing .dd-strip-inner {
@@ -571,7 +574,7 @@
 }
 
 .dd-landing .dd-feature {
-  background: linear-gradient(180deg, rgba(16, 33, 45, 0.88), rgba(10, 22, 31, 0.88));
+  background: var(--dd-panel);
   border: 1px solid var(--dd-line);
   border-radius: var(--dd-radius);
   padding: 28px;
@@ -582,11 +585,12 @@
   text-decoration: none;
   color: inherit;
   display: block;
+  box-shadow: 0 8px 28px rgba(50, 70, 110, 0.06);
 }
 
 .dd-landing .dd-feature:hover {
   transform: translateY(-5px);
-  border-color: rgba(45, 212, 191, 0.28);
+  border-color: rgba(255, 90, 31, 0.35);
 }
 
 .dd-landing .dd-feature .dd-num {
@@ -602,9 +606,9 @@
   border-radius: 12px;
   display: grid;
   place-items: center;
-  background: rgba(45, 212, 191, 0.08);
-  border: 1px solid rgba(45, 212, 191, 0.18);
-  color: var(--dd-teal);
+  background: rgba(91, 70, 232, 0.08);
+  border: 1px solid rgba(91, 70, 232, 0.16);
+  color: var(--dd-purple);
   font-size: 20px;
 }
 
@@ -630,10 +634,10 @@
 
 .dd-landing .dd-insight-card,
 .dd-landing .dd-chart-card {
-  background: rgba(20, 36, 48, 0.92);
+  background: var(--dd-panel);
   border: 1px solid var(--dd-line);
   border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--dd-shadow);
 }
 
 .dd-landing .dd-insight-card {
@@ -667,7 +671,7 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
-  color: #c9d8d6;
+  color: var(--dd-text);
   font-size: 14px;
 }
 
@@ -705,13 +709,13 @@
 .dd-landing .dd-bar {
   flex: 1;
   border-radius: 8px 8px 2px 2px;
-  background: linear-gradient(180deg, rgba(45, 212, 191, 0.95), rgba(45, 212, 191, 0.12));
+  background: linear-gradient(180deg, rgba(91, 70, 232, 0.95), rgba(91, 70, 232, 0.12));
   min-width: 20px;
   position: relative;
 }
 
 .dd-landing .dd-bar:nth-child(2n) {
-  background: linear-gradient(180deg, rgba(255, 182, 39, 0.95), rgba(255, 182, 39, 0.12));
+  background: linear-gradient(180deg, rgba(255, 90, 31, 0.95), rgba(255, 90, 31, 0.12));
 }
 
 .dd-landing .dd-bar::after {
@@ -733,14 +737,14 @@
 
 .dd-landing .dd-metric {
   border: 1px solid var(--dd-line);
-  background: rgba(255, 255, 255, 0.015);
+  background: var(--dd-panel-3);
   border-radius: 12px;
   padding: 16px;
 }
 
 .dd-landing .dd-metric strong {
   font: 500 22px 'JetBrains Mono', monospace;
-  color: var(--dd-teal);
+  color: var(--dd-purple);
 }
 
 .dd-landing .dd-metric span {
@@ -788,7 +792,7 @@
 .dd-landing .dd-faq details {
   border: 1px solid var(--dd-line);
   border-radius: 14px;
-  background: rgba(20, 36, 48, 0.72);
+  background: var(--dd-panel);
   padding: 18px 22px;
 }
 
@@ -814,13 +818,13 @@
 .dd-landing .dd-cta-panel {
   margin: 40px auto 110px;
   padding: 56px;
-  border: 1px solid rgba(255, 182, 39, 0.26);
+  border: 1px solid rgba(255, 90, 31, 0.28);
   border-radius: 28px;
   background: linear-gradient(
     135deg,
-    rgba(255, 182, 39, 0.08),
-    rgba(45, 212, 191, 0.06) 55%,
-    rgba(20, 36, 48, 0.95)
+    rgba(255, 90, 31, 0.06),
+    rgba(91, 70, 232, 0.04) 55%,
+    var(--dd-panel)
   );
   display: flex;
   align-items: center;
@@ -829,6 +833,7 @@
   position: relative;
   z-index: 1;
   box-sizing: border-box;
+  box-shadow: var(--dd-shadow);
 }
 
 .dd-landing .dd-cta-panel h2 {
@@ -1050,21 +1055,21 @@
   width: 46px;
   height: 46px;
   border-radius: 12px;
-  border: 1px solid rgba(234, 242, 240, 0.16);
-  background: #142430;
-  color: #FFB627;
+  border: 1px solid var(--dd-line-strong, #d4dce8);
+  background: #ffffff;
+  color: #ff5a1f;
   font-size: 20px;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 14px 36px rgba(50, 70, 110, 0.12);
   transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
 }
 
 .dd-back-top:hover {
   transform: translateY(-3px);
-  background: #1a3140;
-  border-color: rgba(255, 182, 39, 0.45);
+  background: #f8f9fc;
+  border-color: rgba(255, 90, 31, 0.45);
 }
 
 @media (max-width: 640px) {

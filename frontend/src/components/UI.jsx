@@ -53,7 +53,7 @@ export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClos
 export const T = {
   orange: 'var(--orange)',
   orangeDim: 'var(--orange-dim)',
-  orangeGlow: 'rgba(255,107,43,0.35)',
+  orangeGlow: 'rgba(255,90,31,0.35)',
   blue: 'var(--blue)',
   blueDim: 'var(--blue-dim)',
   green: 'var(--green)',
@@ -62,7 +62,7 @@ export const T = {
   redDim: 'var(--red-dim)',
   amber: 'var(--amber)',
   amberDim: 'var(--amber-dim)',
-  purple: '#7C3AED',
+  purple: 'var(--purple)',
   text: 'var(--text)',
   text2: 'var(--text2)',
   muted: 'var(--muted)',
