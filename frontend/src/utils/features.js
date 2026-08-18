@@ -1,10 +1,10 @@
 export const PLAN_META = {
   free: {
     id: 'free',
-    label: 'Launch',
+    label: 'Free',
     blurb: 'Core SEO basics for getting started.',
-    priceNok: 99,
-    priceLabel: 'from 99 kr/mo',
+    priceNok: 0,
+    priceLabel: '0 kr',
     bullets: [
       'Keywords basic (view & track)',
       'Overview & Site Audit',
@@ -19,7 +19,7 @@ export const PLAN_META = {
     priceNok: 199,
     priceLabel: '199 kr/mo',
     bullets: [
-      'Everything in Launch',
+      'Everything in Free',
       'Full AI Visibility (scans, engines, recommendations)',
       'Backlinks',
       'AI Assistant',
