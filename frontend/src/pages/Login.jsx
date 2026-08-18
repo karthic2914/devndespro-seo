@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -26,7 +26,7 @@ async function continueAfterLogin(navigate, checkoutPlan) {
 }
 
 export default function Login() {
-  const { login, loginWithEmail } = useAuth()
+  const { user, loading: authLoading, login, loginWithEmail } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const checkoutPlan = searchParams.get('checkout')
@@ -34,6 +34,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
+  const [sessionBusy, setSessionBusy] = useState(false)
+  const resumedRef = useRef(false)
 
   useDocumentMeta({
     title: 'Sign in — DevnDespro SEO',
@@ -41,6 +43,20 @@ export default function Login() {
     canonical: 'https://seo.devndespro.com/login',
     robots: 'noindex, nofollow',
   })
+
+  // Already signed in (e.g. hard refresh on /login?checkout=pro) → go to Stripe / app
+  useEffect(() => {
+    if (authLoading || !user || resumedRef.current) return
+    resumedRef.current = true
+    setSessionBusy(true)
+    ;(async () => {
+      try {
+        await continueAfterLogin(navigate, checkoutPlan)
+      } finally {
+        setSessionBusy(false)
+      }
+    })()
+  }, [authLoading, user, checkoutPlan, navigate])
 
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -76,6 +92,28 @@ export default function Login() {
     } finally {
       setEmailLoading(false)
     }
+  }
+
+  if (authLoading || (user && sessionBusy)) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(135deg, #FFF4EE 0%, #F3F4F6 50%, #EFF6FF 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '2rem',
+          fontFamily: 'inherit',
+          color: T.text2,
+          fontSize: 14,
+        }}
+      >
+        {checkoutPlan === 'pro' || checkoutPlan === 'agency'
+          ? 'Continuing to Stripe Checkout…'
+          : 'Signing you in…'}
+      </div>
+    )
   }
 
   return (
