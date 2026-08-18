@@ -1,151 +1,98 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight, faBars, faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useState } from 'react'
-import { Logo } from '../UI'
+import { Link, useNavigate } from 'react-router-dom'
 import { MARKETING_NAV } from '../../data/marketingPages'
+import '../../styles/landing-radar.css'
 import '../../styles/marketing.css'
 
-const monoFont = "'SF Mono', 'Consolas', 'Menlo', monospace"
+const NAV = [
+  { to: '/platform', label: 'Platform' },
+  { to: '/features', label: 'Features' },
+  { to: '/ai-visibility', label: 'AI Visibility' },
+  { to: '/how-it-works', label: 'How it works' },
+  { to: '/pricing', label: 'Pricing' },
+]
 
-export default function MarketingLayout({ children, activePath = '', darkShell = false }) {
+export default function MarketingLayout({ children, activePath = '' }) {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
 
   return (
-    <div
-      className={`premium-landing-page${darkShell ? ' mkt-shell' : ''}`}
-      style={{
-        minHeight: '100vh',
-        background: darkShell ? '#07080C' : '#FBFAF8',
-        color: '#171923',
-        fontFamily: 'inherit',
-        overflowX: 'clip',
-        position: 'relative',
-        width: '100%',
-        maxWidth: '100%',
-        paddingTop: 72,
-      }}
-    >
-      <header className="landing-site-header">
-        <div className="landing-site-header-inner">
-          <Link to="/" className="landing-site-logo" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <Logo size="md" variant="transparent" />
+    <div className="dd-landing">
+      <nav className="dd-nav" aria-label="Primary">
+        <div className="dd-container dd-nav-inner">
+          <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
+            <span className="dd-logo-mark" aria-hidden />
+            DevnDespro SEO
           </Link>
 
-          <nav className="landing-desktop-nav" aria-label="Marketing navigation">
-            {MARKETING_NAV.map((item) => (
+          <div className="dd-nav-links">
+            {NAV.map((item) => (
               <Link
-                key={item.path}
-                to={item.path}
-                className={`landing-nav-item ${activePath === item.path ? 'is-active' : ''}`}
-                style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}
+                key={item.to}
+                to={item.to}
+                style={activePath === item.to ? { color: '#ecf5f2' } : undefined}
               >
                 {item.label}
               </Link>
             ))}
-          </nav>
+          </div>
 
-          <div className="landing-header-actions">
-            <button type="button" className="landing-signin-button" onClick={goLogin}>
+          <div className="dd-nav-actions">
+            <button type="button" className="dd-btn dd-btn-secondary" onClick={goLogin}>
               Sign in
             </button>
-            <button type="button" className="landing-start-button" onClick={goLogin}>
-              Start free audit
-              <FontAwesomeIcon icon={faArrowRight} />
+            <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+              Start free audit →
             </button>
             <button
               type="button"
-              className="landing-menu-button"
+              className="dd-mobile-toggle"
               aria-label={menuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} />
+              {menuOpen ? '✕' : '☰'}
             </button>
           </div>
         </div>
 
-        {menuOpen && (
-          <div className="landing-mobile-menu">
-            <nav aria-label="Mobile marketing navigation">
-              {MARKETING_NAV.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`landing-mobile-nav-item ${activePath === item.path ? 'is-active' : ''}`}
-                  onClick={() => setMenuOpen(false)}
-                  style={{ textDecoration: 'none' }}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-            <button
-              type="button"
-              className="landing-mobile-start-button"
-              onClick={() => {
-                setMenuOpen(false)
-                goLogin()
-              }}
-            >
-              Start free audit
-              <FontAwesomeIcon icon={faArrowRight} />
-            </button>
-          </div>
-        )}
-      </header>
-
-      <main style={{ position: 'relative', zIndex: 1 }}>{children}</main>
-
-      <footer style={{ borderTop: '1px solid #E4E1DB', padding: '36px 0 42px', marginTop: 40 }}>
-        <div
-          style={{
-            width: '100%',
-            maxWidth: 1180,
-            margin: '0 auto',
-            padding: '0 24px',
-            boxSizing: 'border-box',
-          }}
-        >
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: 24,
-              justifyContent: 'space-between',
-              alignItems: 'flex-start',
-              marginBottom: 28,
+        <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
+          {NAV.map((item) => (
+            <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}>
+              {item.label}
+            </Link>
+          ))}
+          <button
+            type="button"
+            className="dd-btn dd-btn-primary"
+            onClick={() => {
+              setMenuOpen(false)
+              goLogin()
             }}
           >
-            <div>
-              <Logo size="sm" variant="transparent" />
-              <p style={{ margin: '12px 0 0', color: '#888A91', fontSize: 12, maxWidth: 320, lineHeight: 1.6 }}>
-                SEO site audits, keywords, backlinks and AI visibility for Nordic teams.
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px 22px', maxWidth: 520 }}>
-              {[...MARKETING_NAV, { path: '/keyword-tracking', label: 'Keywords' }, { path: '/backlink-monitoring', label: 'Backlinks' }].map(
-                (item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    style={{ color: '#5B5E68', fontSize: 13, textDecoration: 'none', fontWeight: 600 }}
-                  >
-                    {item.label}
-                  </Link>
-                )
-              )}
-            </div>
+            Start free audit →
+          </button>
+        </div>
+      </nav>
+
+      <main>{children}</main>
+
+      <footer className="dd-footer">
+        <div className="dd-container dd-footer-inner">
+          <div>© {new Date().getFullYear()} DevnDespro · Stavanger, Norway</div>
+          <div className="dd-footer-links">
+            {MARKETING_NAV.map((item) => (
+              <Link key={item.path} to={item.path}>
+                {item.label}
+              </Link>
+            ))}
+            <a href="https://www.devndespro.com/" target="_blank" rel="noreferrer">
+              Company
+            </a>
           </div>
-          <p style={{ margin: 0, color: '#888A91', fontSize: 12, fontFamily: monoFont }}>
-            (c) {new Date().getFullYear()} Devndespro. Built in Stavanger, Norway.
-          </p>
         </div>
       </footer>
     </div>
   )
 }
-
-export { monoFont }

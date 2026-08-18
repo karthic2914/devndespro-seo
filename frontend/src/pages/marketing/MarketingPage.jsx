@@ -1,6 +1,4 @@
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
 import {
@@ -9,13 +7,11 @@ import {
   MARKETING_NAV,
   PAGE_VISUALS,
 } from '../../data/marketingPages'
-import '../../styles/marketing.css'
 
 function slugFromPath(pathname) {
   return pathname.replace(/^\//, '').replace(/\/$/, '')
 }
 
-/** Split headline into lead + accent line for cinematic hero typography. */
 function splitHeadline(h1) {
   if (!h1) return ['', null]
   if (h1.includes('. ')) {
@@ -62,19 +58,12 @@ export function MarketingPageView({ page, slug, onLogin }) {
   })
 
   return (
-    <MarketingLayout activePath={page.path} darkShell>
+    <MarketingLayout activePath={page.path}>
       <article className="mkt-page">
         <section className="mkt-hero">
-          <div className="mkt-hero__noise" aria-hidden />
-          <div className="mkt-hero__glow mkt-hero__glow--a" aria-hidden />
-          <div className="mkt-hero__glow mkt-hero__glow--b" aria-hidden />
-
           <div className="mkt-container">
             <div className="mkt-hero__content">
-              <p className="mkt-eyebrow">
-                <span className="mkt-eyebrow__dot" aria-hidden />
-                {page.eyebrow}
-              </p>
+              <p className="mkt-eyebrow">{page.eyebrow}</p>
               <h1>
                 {lead}
                 {accent ? <span className="mkt-accent">{accent}</span> : null}
@@ -82,12 +71,10 @@ export function MarketingPageView({ page, slug, onLogin }) {
               <p className="mkt-hero__lede">{page.intro}</p>
               <div className="mkt-hero__actions">
                 <button type="button" className="mkt-btn-primary" onClick={onLogin}>
-                  Analyse your website
-                  <FontAwesomeIcon icon={faArrowRight} />
+                  Analyse your website →
                 </button>
                 <Link to="/pricing" className="mkt-btn-ghost">
                   View plans
-                  <FontAwesomeIcon icon={faArrowRight} />
                 </Link>
               </div>
             </div>
@@ -111,17 +98,14 @@ export function MarketingPageView({ page, slug, onLogin }) {
           </div>
         </section>
 
-        <section className="mkt-band mkt-band--tint">
+        <section className="mkt-band">
           <div className="mkt-container">
             <div className="mkt-section-head">
-              <p className="mkt-eyebrow mkt-eyebrow--light" style={{ margin: '0 auto 14px' }}>
-                <span className="mkt-eyebrow__dot" aria-hidden />
-                WHY IT MATTERS
-              </p>
+              <p className="mkt-eyebrow">WHY IT MATTERS</p>
               <h2>Clarity first. Then the lift.</h2>
               <p>
-                Every page uses the same cinematic system — bold signal up top, practical depth
-                below — so the product feels premium without losing the plot.
+                Practical depth under a clear signal — so every page feels like the same product,
+                not a different theme.
               </p>
             </div>
 
@@ -143,7 +127,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
           </div>
         </section>
 
-        <section className="mkt-band mkt-band--dark">
+        <section className="mkt-band" style={{ paddingTop: 0 }}>
           <div className="mkt-container">
             <div className="mkt-cta-row">
               <div>
@@ -154,8 +138,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
                 </p>
               </div>
               <button type="button" className="mkt-btn-primary" onClick={onLogin}>
-                Start free audit
-                <FontAwesomeIcon icon={faArrowRight} />
+                Start free audit →
               </button>
             </div>
           </div>
@@ -164,10 +147,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
         <section className="mkt-band">
           <div className="mkt-container">
             <div className="mkt-section-head">
-              <p className="mkt-eyebrow mkt-eyebrow--light" style={{ margin: '0 auto 14px' }}>
-                <span className="mkt-eyebrow__dot" aria-hidden />
-                FAQ
-              </p>
+              <p className="mkt-eyebrow">FAQ</p>
               <h2>Answers before you dive in</h2>
               <p>Straight talk on how this page fits the rest of the platform.</p>
             </div>

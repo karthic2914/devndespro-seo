@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
@@ -12,7 +12,6 @@ import {
   convertFromNok,
 } from '../../data/pricingPlans'
 import { PAGE_VISUALS } from '../../data/marketingPages'
-import '../../styles/marketing.css'
 
 async function fetchRatesFromNok() {
   const symbols = 'USD,EUR,GBP,INR'
@@ -66,7 +65,7 @@ export default function PricingPage() {
   const [regionId, setRegionId] = useState(() => detectDefaultRegion())
   const [rates, setRates] = useState(FALLBACK_RATES_FROM_NOK)
   const [ratesDate, setRatesDate] = useState(null)
-  const [ratesStatus, setRatesStatus] = useState('loading') // loading | live | fallback
+  const [ratesStatus, setRatesStatus] = useState('loading')
 
   useDocumentMeta({
     title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
@@ -107,12 +106,9 @@ export default function PricingPage() {
   const goLogin = () => navigate('/login')
 
   return (
-    <MarketingLayout activePath="/pricing" darkShell>
+    <MarketingLayout activePath="/pricing">
       <article className="mkt-page">
         <section className="mkt-hero" style={{ minHeight: 'auto' }}>
-          <div className="mkt-hero__noise" aria-hidden />
-          <div className="mkt-hero__glow mkt-hero__glow--a" aria-hidden />
-          <div className="mkt-hero__glow mkt-hero__glow--b" aria-hidden />
           <div className="mkt-container">
             <div
               className="mkt-hero__content"
@@ -127,10 +123,7 @@ export default function PricingPage() {
               }}
             >
               <div style={{ maxWidth: 640 }}>
-                <p className="mkt-eyebrow">
-                  <span className="mkt-eyebrow__dot" aria-hidden />
-                  PRICING
-                </p>
+                <p className="mkt-eyebrow">PRICING</p>
                 <h1 style={{ maxWidth: '12ch' }}>
                   Plans that stay affordable
                   <span className="mkt-accent">as you grow</span>
@@ -141,39 +134,13 @@ export default function PricingPage() {
                 </p>
               </div>
 
-              <div style={{ minWidth: 240 }}>
-                <label
-                  htmlFor="pricing-region"
-                  style={{
-                    display: 'block',
-                    marginBottom: 8,
-                    fontSize: 12,
-                    fontWeight: 650,
-                    color: 'rgba(233,235,242,0.72)',
-                  }}
-                >
-                  Show prices in
-                </label>
+              <div className="mkt-select-wrap">
+                <label htmlFor="pricing-region">Show prices in</label>
                 <div style={{ position: 'relative' }}>
                   <select
                     id="pricing-region"
                     value={regionId}
                     onChange={(e) => setRegionId(e.target.value)}
-                    style={{
-                      width: '100%',
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      height: 48,
-                      padding: '0 40px 0 14px',
-                      borderRadius: 10,
-                      border: '1px solid rgba(255,255,255,0.16)',
-                      background: 'rgba(255,255,255,0.06)',
-                      color: '#fff',
-                      fontSize: 14,
-                      fontWeight: 650,
-                      fontFamily: 'inherit',
-                      cursor: 'pointer',
-                    }}
                   >
                     {PRICING_REGIONS.map((r) => (
                       <option key={r.id} value={r.id} style={{ color: '#171923' }}>
@@ -183,18 +150,11 @@ export default function PricingPage() {
                   </select>
                   <FontAwesomeIcon
                     icon={faChevronDown}
-                    style={{
-                      position: 'absolute',
-                      right: 14,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: 'rgba(255,255,255,0.55)',
-                      pointerEvents: 'none',
-                      fontSize: 12,
-                    }}
+                    className="mkt-select-icon"
+                    style={{ top: '50%', bottom: 'auto', transform: 'translateY(-50%)' }}
                   />
                 </div>
-                <p style={{ margin: '8px 0 0', fontSize: 11, color: 'rgba(210,214,224,0.65)' }}>
+                <p className="mkt-select-hint">
                   {ratesStatus === 'live' && ratesDate
                     ? `Live ECB rates · updated ${ratesDate}`
                     : ratesStatus === 'loading'
@@ -224,171 +184,39 @@ export default function PricingPage() {
           </div>
         </section>
 
-        <section className="mkt-band mkt-band--tint" style={{ paddingTop: 40 }}>
+        <section className="mkt-band" style={{ paddingTop: 40 }}>
           <div className="mkt-container">
-            <div
-              className="pricing-grid"
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: 18,
-                alignItems: 'stretch',
-              }}
-            >
+            <div className="mkt-pricing-grid">
               {PRICING_PLANS.map((plan) => {
                 const amount = convertFromNok(plan.priceNok, region.currency, rates)
                 const priceLabel = formatMoney(amount, region.currency, region.locale)
                 return (
                   <div
                     key={plan.id}
-                    style={{
-                      position: 'relative',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      padding: plan.featured ? 28 : 24,
-                      borderRadius: 18,
-                      background: plan.featured ? '#171923' : '#fff',
-                      color: plan.featured ? '#fff' : '#171923',
-                      border: plan.featured ? '1px solid #171923' : '1px solid #E6E3DD',
-                      boxShadow: plan.featured
-                        ? '0 28px 60px rgba(23,25,35,0.22)'
-                        : '0 10px 30px rgba(23,25,35,0.04)',
-                      transform: plan.featured ? 'translateY(-6px)' : 'none',
-                    }}
+                    className={`mkt-plan${plan.featured ? ' is-featured' : ''}`}
                   >
-                    {plan.featured && (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: 14,
-                          right: 14,
-                          background: '#EA6A3B',
-                          color: '#fff',
-                          fontSize: 10,
-                          fontWeight: 750,
-                          letterSpacing: '0.08em',
-                          padding: '5px 9px',
-                          borderRadius: 999,
-                        }}
-                      >
-                        MOST POPULAR
-                      </span>
-                    )}
+                    {plan.featured ? <span className="mkt-plan__badge">MOST POPULAR</span> : null}
 
-                    <p
-                      style={{
-                        margin: '0 0 6px',
-                        fontFamily: "'SF Mono', Consolas, Menlo, monospace",
-                        fontSize: 10,
-                        fontWeight: 700,
-                        letterSpacing: '0.12em',
-                        color: plan.featured ? '#F0A88A' : '#D75F32',
-                      }}
-                    >
-                      {plan.tier.toUpperCase()}
-                    </p>
-                    <h2
-                      style={{
-                        margin: '0 0 6px',
-                        fontSize: 28,
-                        letterSpacing: '-0.03em',
-                        fontWeight: 750,
-                      }}
-                    >
-                      {plan.name}
-                    </h2>
-                    <p
-                      style={{
-                        margin: '0 0 18px',
-                        fontSize: 14,
-                        color: plan.featured ? '#C9CBD8' : '#666A73',
-                        lineHeight: 1.5,
-                      }}
-                    >
-                      {plan.tagline}
-                    </p>
+                    <p className="mkt-plan__tier">{plan.tier.toUpperCase()}</p>
+                    <h2>{plan.name}</h2>
+                    <p className="mkt-plan__tagline">{plan.tagline}</p>
 
-                    <div style={{ marginBottom: 8 }}>
-                      <span
-                        style={{
-                          fontSize: 'clamp(34px, 4vw, 42px)',
-                          fontWeight: 760,
-                          letterSpacing: '-0.04em',
-                          fontVariantNumeric: 'tabular-nums',
-                        }}
-                      >
-                        {priceLabel}
-                      </span>
-                      <span
-                        style={{
-                          marginLeft: 6,
-                          fontSize: 13,
-                          color: plan.featured ? '#A8ABB8' : '#898B92',
-                          fontWeight: 600,
-                        }}
-                      >
-                        / month
-                      </span>
+                    <div className="mkt-plan__price">
+                      <strong>{priceLabel}</strong>
+                      <span>/ month</span>
                     </div>
-                    <p
-                      style={{
-                        margin: '0 0 22px',
-                        fontSize: 13,
-                        color: plan.featured ? '#A8ABB8' : '#898B92',
-                        lineHeight: 1.55,
-                      }}
-                    >
-                      {plan.blurb}
-                    </p>
+                    <p className="mkt-plan__blurb">{plan.blurb}</p>
 
-                    <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0, flex: 1 }}>
+                    <ul>
                       {plan.features.map((f) => (
-                        <li
-                          key={f}
-                          style={{
-                            display: 'flex',
-                            gap: 10,
-                            alignItems: 'flex-start',
-                            marginBottom: 10,
-                            fontSize: 13.5,
-                            lineHeight: 1.45,
-                            color: plan.featured ? '#E8E9EF' : '#3F434D',
-                          }}
-                        >
-                          <FontAwesomeIcon
-                            icon={faCheck}
-                            style={{
-                              marginTop: 3,
-                              color: plan.featured ? '#EA6A3B' : '#37865C',
-                              fontSize: 12,
-                              flexShrink: 0,
-                            }}
-                          />
+                        <li key={f}>
+                          <FontAwesomeIcon icon={faCheck} />
                           {f}
                         </li>
                       ))}
                     </ul>
 
-                    <button
-                      type="button"
-                      onClick={goLogin}
-                      style={{
-                        height: 48,
-                        border: plan.featured ? 'none' : '1.5px solid #DAD8D3',
-                        borderRadius: 10,
-                        background: plan.featured ? '#EA6A3B' : '#fff',
-                        color: plan.featured ? '#fff' : '#171923',
-                        fontSize: 14,
-                        fontWeight: 650,
-                        fontFamily: 'inherit',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 10,
-                        boxShadow: plan.featured ? '0 10px 25px rgba(234,106,59,0.28)' : 'none',
-                      }}
-                    >
+                    <button type="button" className="mkt-plan__cta" onClick={goLogin}>
                       {plan.cta}
                       <FontAwesomeIcon icon={faArrowRight} />
                     </button>
@@ -397,14 +225,7 @@ export default function PricingPage() {
               })}
             </div>
 
-            <p
-              style={{
-                margin: '18px 0 0',
-                fontSize: 12,
-                color: '#898B92',
-                textAlign: 'center',
-              }}
-            >
+            <p className="mkt-note">
               Prices convert from NOK using {ratesStatus === 'live' ? 'live' : 'reference'} rates for{' '}
               {region.label}. Billing currency at checkout may be confirmed with your workspace admin.
               *Fair-use limits apply on Command.
@@ -415,10 +236,7 @@ export default function PricingPage() {
         <section className="mkt-band">
           <div className="mkt-container">
             <div className="mkt-section-head">
-              <p className="mkt-eyebrow" style={{ margin: '0 auto 14px' }}>
-                <span className="mkt-eyebrow__dot" aria-hidden />
-                FAQ
-              </p>
+              <p className="mkt-eyebrow">FAQ</p>
               <h2>Pricing FAQ</h2>
               <p>Currency, upgrades, and how names map to product access.</p>
             </div>
@@ -445,18 +263,27 @@ export default function PricingPage() {
             </div>
           </div>
         </section>
-      </article>
 
-      <style>{`
-        @media (max-width: 960px) {
-          .pricing-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .pricing-grid > div {
-            transform: none !important;
-          }
-        }
-      `}</style>
+        <section className="mkt-band" style={{ paddingTop: 0, paddingBottom: 80 }}>
+          <div className="mkt-container">
+            <div className="mkt-cta-row">
+              <div>
+                <div className="mkt-eyebrow">START WITH YOUR DOMAIN</div>
+                <h2>Ready to see your discovery signal?</h2>
+                <p>Run a free audit, then pick the plan that matches how hard you want to push.</p>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                <button type="button" className="mkt-btn-primary" onClick={goLogin}>
+                  Start free audit →
+                </button>
+                <Link to="/platform" className="mkt-btn-ghost">
+                  Explore platform
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      </article>
     </MarketingLayout>
   )
 }
