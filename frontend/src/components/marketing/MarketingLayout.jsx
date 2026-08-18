@@ -23,8 +23,11 @@ export default function MarketingLayout({ children, activePath = '' }) {
       <nav className="dd-nav" aria-label="Primary">
         <div className="dd-container dd-nav-inner">
           <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
-            <span className="dd-logo-mark" aria-hidden />
-            DevnDespro SEO
+            <img
+              src="/images/devndespro_seo_transparent.png"
+              alt="DevnDespro SEO"
+              className="dd-logo-img"
+            />
           </Link>
 
           <div className="dd-nav-links">
@@ -86,7 +89,7 @@ export default function MarketingLayout({ children, activePath = '' }) {
 
       <footer className="dd-footer">
         <div className="dd-container dd-footer-inner">
-          <div>© {new Date().getFullYear()} DevnDespro · Stavanger, Norway</div>
+          <div>© {new Date().getFullYear()} DevnDespro Visibility</div>
           <div className="dd-footer-links">
             {MARKETING_NAV.map((item) => (
               <Link key={item.path} to={item.path}>

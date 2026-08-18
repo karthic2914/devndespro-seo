@@ -4,74 +4,69 @@ import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
 import '../styles/landing-radar.css'
 
+const LOGO_SRC = '/images/devndespro_seo_transparent.png'
+
 const NAV = [
   { to: '/platform', label: 'Platform' },
   { to: '/features', label: 'Features' },
-  { to: '/ai-visibility', label: 'AI Visibility' },
-  { to: '/how-it-works', label: 'How it works' },
   { to: '/pricing', label: 'Pricing' },
+  { to: '/how-it-works', label: 'How it works' },
 ]
 
 const FEATURES = [
   {
-    num: 'SIGNAL 01',
-    icon: '⌁',
+    icon: '◎',
     title: 'Technical SEO Audit',
     to: '/seo-audit',
-    text: 'Find crawl issues, metadata gaps, broken links, performance problems and structural SEO weaknesses — ranked by impact.',
+    text: 'Find crawl errors, metadata problems, duplicate content and technical issues affecting visibility.',
   },
   {
-    num: 'SIGNAL 02',
-    icon: '◉',
+    icon: '↗',
+    title: 'Keyword Intelligence',
+    to: '/keyword-tracking',
+    text: 'Track rankings and discover the search opportunities that deserve attention next.',
+  },
+  {
+    icon: '✦',
     title: 'AI Visibility',
     to: '/ai-visibility',
-    text: 'Understand whether AI answer engines can discover, understand and mention your business — with evidence you can act on.',
+    text: 'Understand whether AI answer engines recognize and surface your business for relevant questions.',
   },
   {
-    num: 'SIGNAL 03',
-    icon: '↗',
-    title: 'Keyword Tracking',
-    to: '/keyword-tracking',
-    text: 'Track the queries that matter, compare movement over time and connect ranking changes to the work your team is doing.',
-  },
-  {
-    num: 'SIGNAL 04',
-    icon: '⌘',
-    title: 'Backlink Monitoring',
-    to: '/backlink-monitoring',
-    text: 'Watch referring domains, spot lost links and understand the authority signals supporting your search visibility.',
-  },
-  {
-    num: 'SIGNAL 05',
-    icon: '◎',
-    title: 'Competitor Intelligence',
-    to: '/features',
-    text: 'Compare visibility, content opportunities and keyword coverage so you can see where competitors are winning attention.',
-  },
-  {
-    num: 'SIGNAL 06',
     icon: '✓',
-    title: 'Action Plans',
+    title: 'Site Health',
     to: '/platform',
-    text: 'Turn audit findings into an ordered roadmap your team can actually execute — instead of another endless issue list.',
+    text: 'See one simple health score backed by prioritized technical and content recommendations.',
+  },
+  {
+    icon: '⌁',
+    title: 'Backlinks',
+    to: '/backlink-monitoring',
+    text: 'Monitor link growth and authority signals alongside your search performance.',
+  },
+  {
+    icon: '⚡',
+    title: 'Priority Actions',
+    to: '/features',
+    text: 'Turn findings into practical next steps instead of another long technical report.',
   },
 ]
 
 const STEPS = [
   {
-    no: '01 · CONNECT',
+    no: '1',
     title: 'Add your website',
-    text: 'Enter your domain and choose the signals you want to track.',
+    text: 'Connect your domain and start collecting the signals that matter to search and AI discovery.',
   },
   {
-    no: '02 · ANALYSE',
-    title: 'Scan your discoverability',
-    text: 'Run SEO, keyword, backlink and AI visibility checks from one workspace.',
+    no: '2',
+    title: 'Understand visibility',
+    text: 'See technical SEO, keyword performance, backlinks and AI visibility in one workspace.',
   },
   {
-    no: '03 · IMPROVE',
-    title: 'Follow the priorities',
-    text: 'Work through the highest-impact recommendations and monitor the result over time.',
+    no: '3',
+    title: 'Fix what matters',
+    text: 'Follow a prioritized action plan based on impact instead of working through generic checklists.',
   },
 ]
 
@@ -94,8 +89,14 @@ const FAQ_ITEMS = [
   },
 ]
 
-const BAR_HEIGHTS = ['46%', '58%', '51%', '66%', '72%', '69%', '82%']
-const BAR_LABELS = ['W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'NOW']
+const SIDE_ITEMS = ['Overview', 'Site Audit', 'Keywords', 'Backlinks', 'AI Visibility', 'Reports']
+
+const ISSUE_ROWS = [
+  { title: 'Duplicate page titles detected', cat: 'On-page SEO' },
+  { title: 'Low content depth', cat: 'Content quality' },
+  { title: 'Missing AI citation signals', cat: 'AI visibility' },
+  { title: 'Improve internal linking', cat: 'Technical SEO' },
+]
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -103,9 +104,9 @@ export default function Landing() {
   const goLogin = () => navigate('/login')
 
   useDocumentMeta({
-    title: 'DevnDespro SEO — Search & AI Visibility Platform',
+    title: 'DevnDespro Visibility — SEO & AI Discovery Platform',
     description:
-      'DevnDespro SEO helps businesses improve technical SEO, track AI visibility, monitor keywords, analyze backlinks and turn search data into clear actions.',
+      'DevnDespro Visibility brings technical SEO, keyword intelligence, backlinks and AI discovery into one focused workspace.',
     canonical: 'https://seo.devndespro.com/',
   })
 
@@ -114,13 +115,16 @@ export default function Landing() {
       <nav className="dd-nav" aria-label="Primary">
         <div className="dd-container dd-nav-inner">
           <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
-            <span className="dd-logo-mark" aria-hidden />
-            DevnDespro SEO
+            <img src={LOGO_SRC} alt="DevnDespro SEO" className="dd-logo-img" />
           </Link>
 
           <div className="dd-nav-links">
             {NAV.map((item) => (
-              <Link key={item.to} to={item.to}>
+              <Link
+                key={item.to}
+                to={item.to}
+                className={item.to === '/platform' ? 'is-active' : undefined}
+              >
                 {item.label}
               </Link>
             ))}
@@ -165,106 +169,159 @@ export default function Landing() {
       </nav>
 
       <main id="top">
-        <div className="dd-container dd-hero">
-          <div className="dd-hero-copy">
-            <div className="dd-eyebrow dd-mono">SEARCH INTELLIGENCE · STAVANGER, NORWAY</div>
-            <h1>
-              Know exactly how your business gets <span className="dd-accent">discovered.</span>
-            </h1>
-            <p>
-              DevnDespro SEO brings technical SEO, keyword intelligence, backlink monitoring and AI
-              answer-engine visibility into one focused workspace — so every insight becomes a clear
-              next action.
-            </p>
-            <div className="dd-hero-actions">
-              <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-                Analyse your website →
-              </button>
-              <Link className="dd-btn dd-btn-secondary" to="/platform">
-                Explore the platform
-              </Link>
-            </div>
-            <div className="dd-proof">
-              <div className="dd-proof-item">
-                <strong>01</strong>
-                <span>UNIFIED WORKSPACE</span>
+        <section className="dd-hero">
+          <div className="dd-container dd-hero-grid">
+            <div className="dd-hero-copy">
+              <div className="dd-eyebrow">
+                <i aria-hidden /> SEO + AI Discovery Platform
               </div>
-              <div className="dd-proof-item">
-                <strong>AI + SEO</strong>
-                <span>DISCOVERY SIGNALS</span>
-              </div>
-              <div className="dd-proof-item">
-                <strong>24/7</strong>
-                <span>VISIBILITY MONITORING</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="dd-radar-card" aria-label="AI visibility radar concept">
-            <div className="dd-radar-top dd-mono">
-              <span>
-                SIGNAL SCAN · <b className="dd-live">LIVE</b>
-              </span>
-              <span>58.9700° N</span>
-            </div>
-            <div className="dd-radar">
-              <div className="dd-ring" />
-              <div className="dd-ring r2" />
-              <div className="dd-ring r3" />
-              <div className="dd-axis-x" />
-              <div className="dd-axis-y" />
-              <div className="dd-sweep" />
-              <div className="dd-node active dd-n1">GOOGLE</div>
-              <div className="dd-node active dd-n2">CLAUDE</div>
-              <div className="dd-node dd-n3">PERPLEXITY</div>
-              <div className="dd-node dd-n4">CHATGPT</div>
-              <div className="dd-node you dd-n5">YOUR SITE</div>
-            </div>
-            <div className="dd-radar-score">
-              <strong>67%</strong>
-              <span className="dd-mono">DISCOVERY SIGNAL</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="dd-strip">
-          <div className="dd-container dd-strip-inner">
-            <span>
-              TRACK <b>TECHNICAL SEO</b>
-            </span>
-            <span>
-              MEASURE <b>AI VISIBILITY</b>
-            </span>
-            <span>
-              MONITOR <b>KEYWORDS</b>
-            </span>
-            <span>
-              ANALYSE <b>BACKLINKS</b>
-            </span>
-            <span>
-              ACT ON <b>PRIORITIES</b>
-            </span>
-          </div>
-        </div>
-
-        <section className="dd-section" id="platform">
-          <div className="dd-container">
-            <div className="dd-section-head">
-              <div>
-                <div className="dd-kicker">ONE PLATFORM · MULTIPLE SIGNALS</div>
-                <h2>Search intelligence without the dashboard overload.</h2>
-              </div>
+              <h1>
+                Turn search data into <span className="dd-accent">clear growth actions.</span>
+              </h1>
               <p>
-                See the signals that affect discoverability, understand what changed, and move
-                directly from insight to action.
+                DevnDespro Visibility brings site health, keyword tracking, backlinks and AI discovery
+                into one workspace — helping teams understand what needs attention and what to improve
+                next.
+              </p>
+              <div className="dd-hero-actions">
+                <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+                  Analyse your website →
+                </button>
+                <a className="dd-btn dd-btn-secondary" href="#product">
+                  See the product
+                </a>
+              </div>
+              <div className="dd-hero-proof">
+                <span>
+                  <b>✓</b> Technical SEO
+                </span>
+                <span>
+                  <b>✓</b> AI visibility
+                </span>
+                <span>
+                  <b>✓</b> Priority action plans
+                </span>
+              </div>
+            </div>
+
+            <div className="dd-app-frame" aria-label="Product interface preview">
+              <div className="dd-window-bar">
+                <div className="dd-window-dots">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <div className="dd-window-url">seo.devndespro.com</div>
+                <div />
+              </div>
+
+              <div className="dd-app-shell">
+                <aside className="dd-preview-sidebar">
+                  <div className="dd-side-logo">
+                    <img src={LOGO_SRC} alt="" className="dd-side-logo-img" />
+                  </div>
+                  {SIDE_ITEMS.map((label, i) => (
+                    <div key={label} className={`dd-side-item${i === 0 ? ' is-active' : ''}`}>
+                      <span className="dd-side-icon" aria-hidden />
+                      {label}
+                    </div>
+                  ))}
+                </aside>
+
+                <div className="dd-app-main">
+                  <div className="dd-app-top">
+                    <div>
+                      <div className="dd-app-title">Website Overview</div>
+                      <div className="dd-app-sub">Updated just now</div>
+                    </div>
+                    <div className="dd-app-action">Run audit</div>
+                  </div>
+
+                  <div className="dd-recommend">
+                    <div>
+                      <small>Next best move</small>
+                      <strong>Fix duplicate page titles</strong>
+                    </div>
+                    <div className="dd-rec-btn">View action</div>
+                  </div>
+
+                  <div className="dd-mini-metrics">
+                    <div className="dd-mini-card">
+                      <div className="dd-mini-label">Site Health</div>
+                      <div className="dd-mini-value">82</div>
+                    </div>
+                    <div className="dd-mini-card">
+                      <div className="dd-mini-label">Keywords</div>
+                      <div className="dd-mini-value">180</div>
+                    </div>
+                    <div className="dd-mini-card">
+                      <div className="dd-mini-label">Authority</div>
+                      <div className="dd-mini-value">60</div>
+                    </div>
+                    <div className="dd-mini-card">
+                      <div className="dd-mini-label">AI Visibility</div>
+                      <div className="dd-mini-value">67</div>
+                    </div>
+                  </div>
+
+                  <div className="dd-issue-card">
+                    <div className="dd-issue-head">
+                      <strong>Priority action plan</strong>
+                      <span className="dd-issue-pill">6 important</span>
+                    </div>
+                    {ISSUE_ROWS.map((row, i) => (
+                      <div key={row.title} className="dd-issue-row">
+                        <div className="dd-issue-num">{i + 1}</div>
+                        <div className="dd-issue-text">
+                          <strong>{row.title}</strong>
+                          <span>{row.cat}</span>
+                        </div>
+                        <div className="dd-issue-status">High</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-trust-strip">
+          <div className="dd-container dd-trust-grid">
+            <div className="dd-trust-item">
+              <strong>Technical SEO</strong>
+              <span>Site health & audits</span>
+            </div>
+            <div className="dd-trust-item">
+              <strong>Keyword Intelligence</strong>
+              <span>Rankings & opportunities</span>
+            </div>
+            <div className="dd-trust-item">
+              <strong>Backlink Monitoring</strong>
+              <span>Authority signals</span>
+            </div>
+            <div className="dd-trust-item">
+              <strong>AI Visibility</strong>
+              <span>Discovery beyond search</span>
+            </div>
+          </div>
+        </section>
+
+        <section className="dd-section" id="features">
+          <div className="dd-container">
+            <div className="dd-section-head dd-section-head--center">
+              <div className="dd-kicker">One focused workspace</div>
+              <h2>Everything your team needs to improve visibility.</h2>
+              <p>
+                Replace fragmented SEO tools and disconnected AI experiments with one clear view of
+                what matters most.
               </p>
             </div>
 
-            <div className="dd-feature-grid" id="features">
+            <div className="dd-feature-grid">
               {FEATURES.map((f) => (
                 <Link key={f.title} className="dd-feature" to={f.to}>
-                  <div className="dd-num">{f.num}</div>
-                  <div className="dd-icon" aria-hidden>
+                  <div className="dd-feature-icon" aria-hidden>
                     {f.icon}
                   </div>
                   <h3>{f.title}</h3>
@@ -275,45 +332,59 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="dd-section" id="audit">
-          <div className="dd-container dd-dashboard">
-            <div className="dd-insight-card">
-              <div className="dd-tag">DISCOVERY REPORT · EXAMPLE</div>
-              <h3>From “what’s wrong?” to “what should we do next?”</h3>
+        <section className="dd-section dd-showcase" id="product">
+          <div className="dd-container dd-showcase-grid">
+            <div className="dd-showcase-copy">
+              <div className="dd-kicker">Built for decisions</div>
+              <h2>See what is improving — and what still needs work.</h2>
               <p>
-                The platform combines technical, search and AI-discovery signals into one practical
-                view, keeping the highest-impact work at the top.
+                Your team gets a single view of technical health, search momentum and AI visibility,
+                with enough detail to act without drowning in dashboards.
               </p>
-              <div className="dd-check-list">
-                <div className="dd-check">Prioritised technical SEO issues</div>
-                <div className="dd-check">AI mention and citation visibility</div>
-                <div className="dd-check">Keyword movement and intent</div>
-                <div className="dd-check">Backlink and authority signals</div>
-                <div className="dd-check">Clear action plan for your team</div>
+              <div className="dd-checks">
+                <div className="dd-check">
+                  <span>✓</span>Prioritize issues by impact
+                </div>
+                <div className="dd-check">
+                  <span>✓</span>Track progress across projects
+                </div>
+                <div className="dd-check">
+                  <span>✓</span>Monitor search and AI visibility together
+                </div>
+                <div className="dd-check">
+                  <span>✓</span>Turn findings into actionable tasks
+                </div>
               </div>
             </div>
-            <div className="dd-chart-card">
-              <div className="dd-chart-head">
-                <span>VISIBILITY TREND · LAST 7 CHECKS</span>
-                <span>UPDATED LIVE</span>
+
+            <div className="dd-analytics-card">
+              <div className="dd-analytics-top">
+                <strong>Visibility performance</strong>
+                <span className="dd-analytics-chip">Last 30 days</span>
               </div>
-              <div className="dd-bars">
-                {BAR_HEIGHTS.map((h, i) => (
-                  <div key={BAR_LABELS[i]} className="dd-bar" style={{ height: h }} data-label={BAR_LABELS[i]} />
-                ))}
+              <div className="dd-chart">
+                <div className="dd-chart-grid" aria-hidden />
+                <div className="dd-chart-bars" aria-hidden>
+                  <div className="dd-bar" style={{ height: '48%' }} />
+                  <div className="dd-bar" style={{ height: '38%' }} />
+                  <div className="dd-bar" style={{ height: '72%' }} />
+                  <div className="dd-bar" style={{ height: '55%' }} />
+                  <div className="dd-bar" style={{ height: '86%' }} />
+                  <div className="dd-bar" style={{ height: '68%' }} />
+                </div>
               </div>
-              <div className="dd-metrics">
-                <div className="dd-metric">
+              <div className="dd-insight-row">
+                <div className="dd-insight">
+                  <small>Site Health</small>
                   <strong>82</strong>
-                  <span>SITE HEALTH</span>
                 </div>
-                <div className="dd-metric">
+                <div className="dd-insight">
+                  <small>AI Visibility</small>
+                  <strong>67</strong>
+                </div>
+                <div className="dd-insight">
+                  <small>Keyword Growth</small>
                   <strong>+18%</strong>
-                  <span>AI VISIBILITY</span>
-                </div>
-                <div className="dd-metric">
-                  <strong>14</strong>
-                  <span>PRIORITY ACTIONS</span>
                 </div>
               </div>
             </div>
@@ -322,19 +393,17 @@ export default function Landing() {
 
         <section className="dd-section" id="how">
           <div className="dd-container">
-            <div className="dd-section-head">
-              <div>
-                <div className="dd-kicker">HOW IT WORKS</div>
-                <h2>Three steps from URL to action.</h2>
-              </div>
+            <div className="dd-section-head dd-section-head--center">
+              <div className="dd-kicker">How it works</div>
+              <h2>From website to clear action in three steps.</h2>
             </div>
             <div className="dd-steps">
               {STEPS.map((s) => (
-                <div key={s.no} className="dd-step">
+                <article key={s.no} className="dd-step">
                   <div className="dd-step-no">{s.no}</div>
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
-                </div>
+                </article>
               ))}
             </div>
           </div>
@@ -342,11 +411,9 @@ export default function Landing() {
 
         <section className="dd-section" id="faq" style={{ paddingTop: 0 }}>
           <div className="dd-container">
-            <div className="dd-section-head">
-              <div>
-                <div className="dd-kicker">FAQ</div>
-                <h2>Common questions</h2>
-              </div>
+            <div className="dd-section-head dd-section-head--center">
+              <div className="dd-kicker">FAQ</div>
+              <h2>Common questions</h2>
             </div>
             <div className="dd-faq">
               {FAQ_ITEMS.map((item) => (
@@ -359,26 +426,25 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="dd-container dd-cta-panel" id="pricing">
-          <div>
-            <div className="dd-eyebrow dd-mono">START WITH YOUR DOMAIN</div>
-            <h2>Find out what search engines and AI systems can see about your business.</h2>
-            <p>Run your first website analysis and get a focused visibility snapshot.</p>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
-            <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-              Start free audit →
-            </button>
-            <Link className="dd-btn dd-btn-secondary" to="/pricing">
-              View pricing
-            </Link>
+        <section className="dd-cta">
+          <div className="dd-container">
+            <div className="dd-cta-card">
+              <h2>See how visible your website really is.</h2>
+              <p>
+                Run your first audit and get a clear view of technical SEO, keyword performance and AI
+                discovery.
+              </p>
+              <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
+                Start your free audit →
+              </button>
+            </div>
           </div>
         </section>
       </main>
 
       <footer className="dd-footer">
         <div className="dd-container dd-footer-inner">
-          <div>© {new Date().getFullYear()} DevnDespro · Stavanger, Norway</div>
+          <div>© {new Date().getFullYear()} DevnDespro Visibility</div>
           <div className="dd-footer-links">
             <Link to="/about">About</Link>
             <Link to="/pricing">Pricing</Link>

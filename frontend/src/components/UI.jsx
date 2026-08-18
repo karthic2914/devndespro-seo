@@ -51,23 +51,23 @@ export const Snackbar = ({ open, message, type = 'info', duration = 3500, onClos
 
 
 export const T = {
-  orange: 'var(--primary)',
-  orangeDim: 'var(--primary-soft)',
-  orangeGlow: 'rgba(124,92,252,0.28)',
+  orange: 'var(--brand)',
+  orangeDim: 'var(--brand-soft)',
+  orangeGlow: 'rgba(108,92,231,0.22)',
   blue: 'var(--blue)',
   blueDim: 'var(--blue-soft)',
   green: 'var(--green)',
   greenDim: 'var(--green-soft)',
   red: 'var(--red)',
   redDim: 'var(--red-dim)',
-  amber: 'var(--primary)',
-  amberDim: 'var(--primary-soft)',
-  purple: 'var(--primary)',
-  text: 'var(--heading)',
-  text2: 'var(--text)',
+  amber: 'var(--amber)',
+  amberDim: 'var(--amber-soft)',
+  purple: 'var(--brand)',
+  text: 'var(--ink)',
+  text2: 'var(--body-text)',
   muted: 'var(--muted)',
-  border: 'var(--border-color)',
-  surface2: 'var(--dark3)',
+  border: 'var(--line)',
+  surface2: 'var(--surface-2)',
   radius: 'var(--radius)',
   radiusMd: '12px',
   shadow: 'var(--shadow)',
@@ -78,7 +78,7 @@ export const Logo = ({ size = 'md', variant = 'solid' }) => {
   return (
     <img
       src={src}
-      alt="SEO Tool"
+      alt="DevnDespro SEO"
       className={`logo logo-${size}`}
     />
   )
