@@ -410,7 +410,7 @@ export default function PricingPage() {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                 <button type="button" className="mkt-btn-primary" onClick={goLogin}>
-                  Start free audit →
+                  Start free audit <FontAwesomeIcon icon={faArrowRight} />
                 </button>
                 <Link to="/platform" className="mkt-btn-ghost">
                   Explore platform

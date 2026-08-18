@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowUp } from '@fortawesome/free-solid-svg-icons'
 
 /**
  * Floating back-to-top control for long marketing/landing pages.
@@ -23,7 +25,7 @@ export default function BackToTop({ threshold = 480 }) {
       aria-label="Back to top"
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
     >
-      ↑
+      <FontAwesomeIcon icon={faArrowUp} />
     </button>
   )
 }

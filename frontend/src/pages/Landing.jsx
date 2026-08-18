@@ -1,5 +1,24 @@
 ﻿import { useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowRight,
+  faArrowTrendUp,
+  faBars,
+  faBolt,
+  faChartLine,
+  faCheck,
+  faClipboardList,
+  faEye,
+  faFileLines,
+  faGaugeHigh,
+  faGlobe,
+  faKey,
+  faLink,
+  faMagnifyingGlassChart,
+  faRobot,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import BackToTop from '../components/marketing/BackToTop'
 import { PRIMARY_MARKETING_NAV, isPrimaryNavActive } from '../data/marketingPages'
@@ -9,56 +28,82 @@ const LOGO_SRC = '/images/devndespro_seo_transparent.png'
 
 const FEATURES = [
   {
-    icon: '◎',
+    icon: faMagnifyingGlassChart,
     title: 'Technical SEO Audit',
     text: 'Find crawl errors, metadata problems, duplicate content and technical issues affecting visibility.',
   },
   {
-    icon: '↗',
+    icon: faArrowTrendUp,
     title: 'Keyword Intelligence',
     text: 'Track rankings and discover the search opportunities that deserve attention next.',
   },
   {
-    icon: '✦',
+    icon: faRobot,
     title: 'AI Visibility',
     text: 'Understand whether AI answer engines recognize and surface your business for relevant questions.',
   },
   {
-    icon: '✓',
+    icon: faGaugeHigh,
     title: 'Site Health',
     text: 'See one simple health score backed by prioritized technical and content recommendations.',
   },
   {
-    icon: '⌁',
+    icon: faLink,
     title: 'Backlinks',
     text: 'Monitor link growth and authority signals alongside your search performance.',
   },
   {
-    icon: '⚡',
+    icon: faBolt,
     title: 'Priority Actions',
     text: 'Turn findings into practical next steps instead of another long technical report.',
   },
 ]
 
+const CHECKS = [
+  'Prioritize issues by impact',
+  'Track progress across projects',
+  'Monitor search and AI visibility together',
+  'Turn findings into actionable tasks',
+]
+
+const PROOF = ['Technical SEO', 'AI visibility', 'Priority action plans']
+
+const SIDE_ITEMS = [
+  { label: 'Overview', icon: faChartLine },
+  { label: 'Site Audit', icon: faMagnifyingGlassChart },
+  { label: 'Keywords', icon: faKey },
+  { label: 'Backlinks', icon: faLink },
+  { label: 'AI Visibility', icon: faEye },
+  { label: 'Reports', icon: faFileLines },
+]
+
+const TRUST = [
+  { icon: faMagnifyingGlassChart, title: 'Technical SEO', text: 'Site health & audits' },
+  { icon: faArrowTrendUp, title: 'Keyword Intelligence', text: 'Rankings & opportunities' },
+  { icon: faLink, title: 'Backlink Monitoring', text: 'Authority signals' },
+  { icon: faRobot, title: 'AI Visibility', text: 'Discovery beyond search' },
+]
+
 const STEPS = [
   {
     no: '1',
+    icon: faGlobe,
     title: 'Add your website',
     text: 'Connect your domain and start collecting the signals that matter to search and AI discovery.',
   },
   {
     no: '2',
+    icon: faEye,
     title: 'Understand visibility',
     text: 'See technical SEO, keyword performance, backlinks and AI visibility in one workspace.',
   },
   {
     no: '3',
+    icon: faClipboardList,
     title: 'Fix what matters',
     text: 'Follow a prioritized action plan based on impact instead of working through generic checklists.',
   },
 ]
-
-const SIDE_ITEMS = ['Overview', 'Site Audit', 'Keywords', 'Backlinks', 'AI Visibility', 'Reports']
 
 const ISSUE_ROWS = [
   { title: 'Duplicate page titles detected', cat: 'On-page SEO' },
@@ -112,7 +157,7 @@ export default function Landing() {
               Sign in
             </button>
             <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-              Start free audit →
+              Start free audit <FontAwesomeIcon icon={faArrowRight} />
             </button>
             <button
               type="button"
@@ -121,7 +166,7 @@ export default function Landing() {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              {menuOpen ? '✕' : '☰'}
+              <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} />
             </button>
           </div>
         </div>
@@ -149,7 +194,7 @@ export default function Landing() {
               goLogin()
             }}
           >
-            Start free audit →
+            Start free audit <FontAwesomeIcon icon={faArrowRight} />
           </button>
         </div>
       </nav>
@@ -175,7 +220,7 @@ export default function Landing() {
 
               <div className="dd-hero-actions">
                 <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-                  Analyse your website →
+                  Analyse your website <FontAwesomeIcon icon={faArrowRight} />
                 </button>
                 <Link className="dd-btn dd-btn-secondary" to="/platform">
                   See the product
@@ -183,15 +228,11 @@ export default function Landing() {
               </div>
 
               <div className="dd-hero-proof">
-                <span>
-                  <b>✓</b> Technical SEO
-                </span>
-                <span>
-                  <b>✓</b> AI visibility
-                </span>
-                <span>
-                  <b>✓</b> Priority action plans
-                </span>
+                {PROOF.map((label) => (
+                  <span key={label}>
+                    <FontAwesomeIcon icon={faCheck} className="dd-proof-check" /> {label}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -209,10 +250,12 @@ export default function Landing() {
               <div className="dd-app-shell">
                 <aside className="dd-preview-sidebar">
                   <div className="dd-side-logo">DD Visibility</div>
-                  {SIDE_ITEMS.map((label, i) => (
-                    <div key={label} className={`dd-side-item${i === 0 ? ' is-active' : ''}`}>
-                      <span className="dd-side-icon" aria-hidden />
-                      {label}
+                  {SIDE_ITEMS.map((item, i) => (
+                    <div key={item.label} className={`dd-side-item${i === 0 ? ' is-active' : ''}`}>
+                      <span className="dd-side-icon" aria-hidden>
+                        <FontAwesomeIcon icon={item.icon} />
+                      </span>
+                      {item.label}
                     </div>
                   ))}
                 </aside>
@@ -277,22 +320,13 @@ export default function Landing() {
 
         <section className="dd-trust-strip">
           <div className="dd-container dd-trust-grid">
-            <div className="dd-trust-item">
-              <strong>Technical SEO</strong>
-              <span>Site health & audits</span>
-            </div>
-            <div className="dd-trust-item">
-              <strong>Keyword Intelligence</strong>
-              <span>Rankings & opportunities</span>
-            </div>
-            <div className="dd-trust-item">
-              <strong>Backlink Monitoring</strong>
-              <span>Authority signals</span>
-            </div>
-            <div className="dd-trust-item">
-              <strong>AI Visibility</strong>
-              <span>Discovery beyond search</span>
-            </div>
+            {TRUST.map((item) => (
+              <div key={item.title} className="dd-trust-item">
+                <FontAwesomeIcon icon={item.icon} className="dd-trust-icon" aria-hidden />
+                <strong>{item.title}</strong>
+                <span>{item.text}</span>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -311,7 +345,7 @@ export default function Landing() {
               {FEATURES.map((f) => (
                 <article key={f.title} className="dd-feature">
                   <div className="dd-feature-icon" aria-hidden>
-                    {f.icon}
+                    <FontAwesomeIcon icon={f.icon} />
                   </div>
                   <h3>{f.title}</h3>
                   <p>{f.text}</p>
@@ -331,18 +365,14 @@ export default function Landing() {
                 with enough detail to act without drowning in dashboards.
               </p>
               <div className="dd-checks">
-                <div className="dd-check">
-                  <span>✓</span>Prioritize issues by impact
-                </div>
-                <div className="dd-check">
-                  <span>✓</span>Track progress across projects
-                </div>
-                <div className="dd-check">
-                  <span>✓</span>Monitor search and AI visibility together
-                </div>
-                <div className="dd-check">
-                  <span>✓</span>Turn findings into actionable tasks
-                </div>
+                {CHECKS.map((label) => (
+                  <div key={label} className="dd-check">
+                    <span>
+                      <FontAwesomeIcon icon={faCheck} />
+                    </span>
+                    {label}
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -389,8 +419,12 @@ export default function Landing() {
             <div className="dd-steps">
               {STEPS.map((s) => (
                 <article key={s.no} className="dd-step">
-                  <div className="dd-step-no">{s.no}</div>
-                  <h3>{s.title}</h3>
+                  <div className="dd-step-no" aria-hidden>
+                    <FontAwesomeIcon icon={s.icon} />
+                  </div>
+                  <h3>
+                    <span className="dd-step-index">{s.no}.</span> {s.title}
+                  </h3>
                   <p>{s.text}</p>
                 </article>
               ))}
@@ -407,7 +441,7 @@ export default function Landing() {
                 discovery.
               </p>
               <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-                Start your free audit →
+                Start your free audit <FontAwesomeIcon icon={faArrowRight} />
               </button>
             </div>
           </div>

@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowRight, faBars, faXmark } from '@fortawesome/free-solid-svg-icons'
 import {
   MARKETING_NAV,
   PRIMARY_MARKETING_NAV,
@@ -50,7 +52,7 @@ export default function MarketingLayout({ children }) {
               Sign in
             </button>
             <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
-              Start free audit →
+              Start free audit <FontAwesomeIcon icon={faArrowRight} />
             </button>
             <button
               type="button"
@@ -59,7 +61,7 @@ export default function MarketingLayout({ children }) {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((v) => !v)}
             >
-              {menuOpen ? '✕' : '☰'}
+              <FontAwesomeIcon icon={menuOpen ? faXmark : faBars} />
             </button>
           </div>
         </div>
@@ -85,7 +87,7 @@ export default function MarketingLayout({ children }) {
               goLogin()
             }}
           >
-            Start free audit →
+            Start free audit <FontAwesomeIcon icon={faArrowRight} />
           </button>
         </div>
       </nav>

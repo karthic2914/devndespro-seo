@@ -381,10 +381,15 @@
   border-radius: 5px;
   background: #eef1f5;
   flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: #718097;
 }
 
 .dd-landing .dd-side-item.is-active .dd-side-icon {
   background: #ddd7ff;
+  color: var(--dd-brand);
 }
 
 .dd-landing .dd-app-main {
@@ -669,11 +674,81 @@
   display: grid;
   place-items: center;
   margin-bottom: 18px;
-  font-weight: 900;
   font-size: 18px;
   background: var(--dd-brand-soft);
   color: var(--dd-brand);
 }
+
+.dd-landing .dd-feature-icon svg {
+  width: 1em;
+  height: 1em;
+}
+
+.dd-landing .dd-proof-check {
+  color: var(--dd-green);
+  margin-right: 4px;
+}
+
+.dd-landing .dd-trust-icon {
+  display: block;
+  margin: 0 auto 8px;
+  color: var(--dd-brand);
+  font-size: 16px;
+}
+
+.dd-landing .dd-side-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: #eef1f5;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  color: #718097;
+}
+
+.dd-landing .dd-side-item.is-active .dd-side-icon {
+  background: #ddd7ff;
+  color: var(--dd-brand);
+}
+
+.dd-landing .dd-step-no {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--dd-brand);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 850;
+  margin-bottom: 18px;
+}
+
+.dd-landing .dd-step-index {
+  color: var(--dd-brand);
+  font-weight: 800;
+  margin-right: 4px;
+}
+
+.dd-landing .dd-check span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--dd-green-soft);
+  color: var(--dd-green);
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  font-size: 11px;
+}
+
+.dd-landing .dd-btn svg {
+  width: 0.85em;
+  height: 0.85em;
+}
+
 
 .dd-landing .dd-feature:nth-child(2) .dd-feature-icon {
   background: var(--dd-blue-soft);

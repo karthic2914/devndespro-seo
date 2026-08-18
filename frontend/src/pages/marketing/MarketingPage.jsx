@@ -1,4 +1,6 @@
 import { Link, useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons'
 import MarketingLayout from '../../components/marketing/MarketingLayout'
 import useDocumentMeta from '../../hooks/useDocumentMeta'
 import {
@@ -76,7 +78,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
               <p className="mkt-hero__lede">{page.intro}</p>
               <div className="mkt-hero__actions">
                 <button type="button" className="mkt-btn-primary" onClick={onLogin}>
-                  Analyse your website →
+                  Analyse your website <FontAwesomeIcon icon={faArrowRight} />
                 </button>
                 <Link to="/pricing" className="mkt-btn-ghost">
                   View plans
@@ -142,7 +144,7 @@ export function MarketingPageView({ page, slug, onLogin }) {
                 </p>
               </div>
               <button type="button" className="mkt-btn-primary" onClick={onLogin}>
-                Start free audit →
+                Start free audit <FontAwesomeIcon icon={faArrowRight} />
               </button>
             </div>
           </div>
