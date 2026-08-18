@@ -64,18 +64,28 @@
   gap: 28px;
 }
 
-.dd-landing .dd-logo {
+.dd-landing .dd-logo,
+.dd-landing .dd-brand {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
   text-decoration: none;
 }
 
-.dd-landing .dd-logo-img {
+.dd-landing .dd-logo-img,
+.dd-landing .dd-brand-logo {
   display: block;
-  height: 40px;
+  height: 42px;
   width: auto;
   object-fit: contain;
+}
+
+.dd-landing .dd-side-logo {
+  font-size: 12px;
+  font-weight: 850;
+  color: var(--dd-brand);
+  margin-bottom: 18px;
+  padding: 0 7px;
 }
 
 .dd-landing .dd-nav-links {
@@ -216,7 +226,7 @@
   display: block;
 }
 
-.dd-landing .dd-hero-copy h1 {
+.dd-landing .dd-hero h1 {
   font-size: clamp(50px, 5vw, 72px);
   line-height: 1.02;
   letter-spacing: -3.3px;
@@ -229,7 +239,7 @@
   color: var(--dd-brand);
 }
 
-.dd-landing .dd-hero-copy > p {
+.dd-landing .dd-hero-copy {
   margin-top: 26px;
   max-width: 660px;
   color: var(--dd-text);
@@ -309,19 +319,6 @@
   background: #fff;
   border-right: 1px solid var(--dd-line);
   padding: 14px 10px;
-}
-
-.dd-landing .dd-side-logo {
-  margin-bottom: 14px;
-  padding: 0 4px;
-}
-
-.dd-landing .dd-side-logo-img {
-  display: block;
-  height: 28px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
 }
 
 .dd-landing .dd-side-item {
@@ -1041,7 +1038,7 @@
     padding: 70px 0 56px;
   }
 
-  .dd-landing .dd-hero-copy h1 {
+  .dd-landing .dd-hero h1 {
     font-size: 46px;
     letter-spacing: -2.3px;
   }
@@ -1083,7 +1080,8 @@
     flex-direction: column;
   }
 
-  .dd-landing .dd-logo-img {
+  .dd-landing .dd-logo-img,
+  .dd-landing .dd-brand-logo {
     height: 34px;
   }
 }

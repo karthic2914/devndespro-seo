@@ -7,47 +7,42 @@ import '../styles/landing-radar.css'
 const LOGO_SRC = '/images/devndespro_seo_transparent.png'
 
 const NAV = [
-  { to: '/platform', label: 'Platform' },
-  { to: '/features', label: 'Features' },
+  { href: '#top', label: 'Platform', active: true },
+  { href: '#features', label: 'Features' },
+  { href: '#product', label: 'Product' },
+  { href: '#how', label: 'How it works' },
   { to: '/pricing', label: 'Pricing' },
-  { to: '/how-it-works', label: 'How it works' },
 ]
 
 const FEATURES = [
   {
     icon: '◎',
     title: 'Technical SEO Audit',
-    to: '/seo-audit',
     text: 'Find crawl errors, metadata problems, duplicate content and technical issues affecting visibility.',
   },
   {
     icon: '↗',
     title: 'Keyword Intelligence',
-    to: '/keyword-tracking',
     text: 'Track rankings and discover the search opportunities that deserve attention next.',
   },
   {
     icon: '✦',
     title: 'AI Visibility',
-    to: '/ai-visibility',
     text: 'Understand whether AI answer engines recognize and surface your business for relevant questions.',
   },
   {
     icon: '✓',
     title: 'Site Health',
-    to: '/platform',
     text: 'See one simple health score backed by prioritized technical and content recommendations.',
   },
   {
     icon: '⌁',
     title: 'Backlinks',
-    to: '/backlink-monitoring',
     text: 'Monitor link growth and authority signals alongside your search performance.',
   },
   {
     icon: '⚡',
     title: 'Priority Actions',
-    to: '/features',
     text: 'Turn findings into practical next steps instead of another long technical report.',
   },
 ]
@@ -70,25 +65,6 @@ const STEPS = [
   },
 ]
 
-const FAQ_ITEMS = [
-  {
-    q: 'What does the site health score measure?',
-    a: 'Site health combines on-page SEO, technical SEO, and content quality from your latest audit. Critical issues such as missing H1 headings, duplicate titles, or very thin pages pull the score down. Fixing crawl errors, metadata gaps, and thin content raises it over time.',
-  },
-  {
-    q: 'Who is DevnDespro SEO for?',
-    a: 'Marketing and growth teams at Nordic companies who need practical SEO and AI visibility insights without juggling disconnected tools. Agencies and in-house SEO owners can track projects per domain and share clear fix priorities with stakeholders.',
-  },
-  {
-    q: 'How is this different from a one-off audit PDF?',
-    a: 'Continuous monitoring of keywords, backlinks, and AI citations sits alongside re-runnable site audits. Improvements compound instead of becoming a forgotten report — verify fixes, watch spammy backlinks, and re-score health after each release.',
-  },
-  {
-    q: 'What does AI visibility mean?',
-    a: 'AI visibility tracks whether assistants like ChatGPT and Claude mention, understand, or recommend your business. Pair that with Nordic search insights so your content is ready for classic search results and answer engines.',
-  },
-]
-
 const SIDE_ITEMS = ['Overview', 'Site Audit', 'Keywords', 'Backlinks', 'AI Visibility', 'Reports']
 
 const ISSUE_ROWS = [
@@ -98,10 +74,26 @@ const ISSUE_ROWS = [
   { title: 'Improve internal linking', cat: 'Technical SEO' },
 ]
 
+function NavItem({ item, onClick }) {
+  if (item.to) {
+    return (
+      <Link to={item.to} className={item.active ? 'is-active' : undefined} onClick={onClick}>
+        {item.label}
+      </Link>
+    )
+  }
+  return (
+    <a href={item.href} className={item.active ? 'is-active' : undefined} onClick={onClick}>
+      {item.label}
+    </a>
+  )
+}
+
 export default function Landing() {
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const goLogin = () => navigate('/login')
+  const closeMenu = () => setMenuOpen(false)
 
   useDocumentMeta({
     title: 'DevnDespro Visibility — SEO & AI Discovery Platform',
@@ -114,19 +106,13 @@ export default function Landing() {
     <div className="dd-landing">
       <nav className="dd-nav" aria-label="Primary">
         <div className="dd-container dd-nav-inner">
-          <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
-            <img src={LOGO_SRC} alt="DevnDespro SEO" className="dd-logo-img" />
+          <Link className="dd-brand" to="/" aria-label="DevnDespro Visibility home">
+            <img src={LOGO_SRC} alt="DevnDespro SEO" className="dd-brand-logo" />
           </Link>
 
           <div className="dd-nav-links">
             {NAV.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={item.to === '/platform' ? 'is-active' : undefined}
-              >
-                {item.label}
-              </Link>
+              <NavItem key={item.label} item={item} />
             ))}
           </div>
 
@@ -151,15 +137,13 @@ export default function Landing() {
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {NAV.map((item) => (
-            <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}>
-              {item.label}
-            </Link>
+            <NavItem key={item.label} item={item} onClick={closeMenu} />
           ))}
           <button
             type="button"
             className="dd-btn dd-btn-primary"
             onClick={() => {
-              setMenuOpen(false)
+              closeMenu()
               goLogin()
             }}
           >
@@ -171,18 +155,22 @@ export default function Landing() {
       <main id="top">
         <section className="dd-hero">
           <div className="dd-container dd-hero-grid">
-            <div className="dd-hero-copy">
+            <div>
               <div className="dd-eyebrow">
                 <i aria-hidden /> SEO + AI Discovery Platform
               </div>
+
               <h1>
-                Turn search data into <span className="dd-accent">clear growth actions.</span>
+                Turn search data into
+                <span className="dd-accent"> clear growth actions.</span>
               </h1>
-              <p>
+
+              <p className="dd-hero-copy">
                 DevnDespro Visibility brings site health, keyword tracking, backlinks and AI discovery
                 into one workspace — helping teams understand what needs attention and what to improve
                 next.
               </p>
+
               <div className="dd-hero-actions">
                 <button type="button" className="dd-btn dd-btn-primary" onClick={goLogin}>
                   Analyse your website →
@@ -191,6 +179,7 @@ export default function Landing() {
                   See the product
                 </a>
               </div>
+
               <div className="dd-hero-proof">
                 <span>
                   <b>✓</b> Technical SEO
@@ -217,9 +206,7 @@ export default function Landing() {
 
               <div className="dd-app-shell">
                 <aside className="dd-preview-sidebar">
-                  <div className="dd-side-logo">
-                    <img src={LOGO_SRC} alt="" className="dd-side-logo-img" />
-                  </div>
+                  <div className="dd-side-logo">DD Visibility</div>
                   {SIDE_ITEMS.map((label, i) => (
                     <div key={label} className={`dd-side-item${i === 0 ? ' is-active' : ''}`}>
                       <span className="dd-side-icon" aria-hidden />
@@ -320,13 +307,13 @@ export default function Landing() {
 
             <div className="dd-feature-grid">
               {FEATURES.map((f) => (
-                <Link key={f.title} className="dd-feature" to={f.to}>
+                <article key={f.title} className="dd-feature">
                   <div className="dd-feature-icon" aria-hidden>
                     {f.icon}
                   </div>
                   <h3>{f.title}</h3>
                   <p>{f.text}</p>
-                </Link>
+                </article>
               ))}
             </div>
           </div>
@@ -391,7 +378,7 @@ export default function Landing() {
           </div>
         </section>
 
-        <section className="dd-section" id="how">
+        <section className="dd-section dd-how" id="how">
           <div className="dd-container">
             <div className="dd-section-head dd-section-head--center">
               <div className="dd-kicker">How it works</div>
@@ -404,23 +391,6 @@ export default function Landing() {
                   <h3>{s.title}</h3>
                   <p>{s.text}</p>
                 </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="dd-section" id="faq" style={{ paddingTop: 0 }}>
-          <div className="dd-container">
-            <div className="dd-section-head dd-section-head--center">
-              <div className="dd-kicker">FAQ</div>
-              <h2>Common questions</h2>
-            </div>
-            <div className="dd-faq">
-              {FAQ_ITEMS.map((item) => (
-                <details key={item.q}>
-                  <summary>{item.q}</summary>
-                  <p>{item.a}</p>
-                </details>
               ))}
             </div>
           </div>

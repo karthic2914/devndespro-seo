@@ -22,11 +22,11 @@ export default function MarketingLayout({ children, activePath = '' }) {
     <div className="dd-landing">
       <nav className="dd-nav" aria-label="Primary">
         <div className="dd-container dd-nav-inner">
-          <Link className="dd-logo" to="/" aria-label="DevnDespro SEO home">
+          <Link className="dd-brand" to="/" aria-label="DevnDespro Visibility home">
             <img
               src="/images/devndespro_seo_transparent.png"
               alt="DevnDespro SEO"
-              className="dd-logo-img"
+              className="dd-brand-logo"
             />
           </Link>
 
