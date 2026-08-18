@@ -57,14 +57,187 @@ function splitHeadline(h1) {
   return [h1, null]
 }
 
-function MarketingHeroPanel({ slug, visual }) {
-  const icon = SLUG_ICONS[slug] || faGaugeHigh
-  const stats = visual.stats || []
-  const chips = visual.chips || []
-  const bars = ['42%', '58%', '51%', '72%', '64%', '80%']
+function PanelHead({ icon, title, subtitle }) {
+  return (
+    <div className="mkt-hero-panel__head">
+      <span className="mkt-hero-panel__badge" aria-hidden>
+        <FontAwesomeIcon icon={icon} />
+      </span>
+      <div>
+        <strong>{title}</strong>
+        <small>{subtitle || 'Live workspace preview'}</small>
+      </div>
+    </div>
+  )
+}
+
+function PanelBody({ slug, visual }) {
+  const variant = visual.variant || 'signals'
+
+  if (variant === 'steps') {
+    return (
+      <ol className="mkt-panel-steps">
+        {(visual.steps || []).map((step) => (
+          <li key={step.n}>
+            <span className="mkt-panel-steps__n">{step.n}</span>
+            <div>
+              <strong>{step.title}</strong>
+              <small>{step.detail}</small>
+            </div>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+
+  if (variant === 'modules') {
+    return (
+      <div className="mkt-panel-modules">
+        {(visual.modules || []).map((mod) => (
+          <div key={mod.label} className="mkt-panel-modules__tile">
+            <FontAwesomeIcon icon={faCheck} aria-hidden />
+            <div>
+              <strong>{mod.label}</strong>
+              <small>{mod.meta}</small>
+            </div>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (variant === 'citations') {
+    return (
+      <ul className="mkt-panel-cites">
+        {(visual.citations || []).map((row) => (
+          <li key={row.engine}>
+            <span className="mkt-panel-cites__engine">{row.engine}</span>
+            <span className={`mkt-panel-cites__status is-${row.tone}`}>{row.status}</span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  if (variant === 'score') {
+    const score = visual.score ?? 78
+    return (
+      <div className="mkt-panel-score">
+        <div
+          className="mkt-panel-score__ring"
+          style={{ '--score': `${score}` }}
+          aria-label={`Site Health ${score}`}
+        >
+          <div className="mkt-panel-score__inner">
+            <strong>{score}</strong>
+            <span>Site Health</span>
+          </div>
+        </div>
+        <ul className="mkt-panel-score__issues">
+          {(visual.issues || []).map((issue) => (
+            <li key={issue.label}>
+              <span className={`mkt-panel-score__sev is-${issue.sev.toLowerCase()}`}>
+                {issue.sev}
+              </span>
+              <span>{issue.label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  if (variant === 'ranks') {
+    return (
+      <div className="mkt-panel-ranks">
+        <div className="mkt-panel-ranks__head">
+          <span>Keyword</span>
+          <span>Pos</span>
+          <span>Δ</span>
+        </div>
+        {(visual.ranks || []).map((row) => (
+          <div key={row.kw} className="mkt-panel-ranks__row">
+            <span className="mkt-panel-ranks__kw">{row.kw}</span>
+            <span className="mkt-panel-ranks__pos">{row.pos}</span>
+            <span
+              className={`mkt-panel-ranks__delta ${
+                String(row.delta).startsWith('−') || String(row.delta).startsWith('-')
+                  ? 'is-down'
+                  : 'is-up'
+              }`}
+            >
+              {row.delta}
+            </span>
+          </div>
+        ))}
+      </div>
+    )
+  }
+
+  if (variant === 'links') {
+    return (
+      <ul className="mkt-panel-links">
+        {(visual.links || []).map((row) => (
+          <li key={row.host}>
+            <div>
+              <strong>{row.host}</strong>
+              <small>DR {row.dr}</small>
+            </div>
+            <span className={`mkt-panel-links__flag is-${row.flag}`}>
+              {row.flag === 'spam' ? 'Spam' : 'Clean'}
+            </span>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  if (variant === 'about') {
+    return (
+      <ul className="mkt-panel-about">
+        {(visual.values || []).map((row) => (
+          <li key={row.label}>
+            <FontAwesomeIcon icon={faCheck} aria-hidden />
+            <div>
+              <strong>{row.label}</strong>
+              <small>{row.detail}</small>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+
+  // Default: platform-style signal cards
+  const signals = visual.signals || (visual.chips || []).map((chip, i) => ({
+    label: chip,
+    detail: visual.stats?.[i] ? `${visual.stats[i].value} ${visual.stats[i].label}` : '',
+    tone: ['amber', 'blue', 'teal'][i] || 'amber',
+  }))
 
   return (
-    <aside className="mkt-hero-panel" aria-label={visual.panelTitle || 'Product preview'}>
+    <div className="mkt-panel-signals">
+      {signals.map((sig) => (
+        <div key={sig.label} className={`mkt-panel-signals__card is-${sig.tone || 'amber'}`}>
+          <strong>{sig.label}</strong>
+          <small>{sig.detail}</small>
+        </div>
+      ))}
+      {slug === 'platform' ? (
+        <div className="mkt-panel-signals__note">One Action Plan across all three</div>
+      ) : null}
+    </div>
+  )
+}
+
+function MarketingHeroPanel({ slug, visual }) {
+  const icon = SLUG_ICONS[slug] || faGaugeHigh
+
+  return (
+    <aside
+      className={`mkt-hero-panel mkt-hero-panel--${visual.variant || 'signals'}`}
+      aria-label={visual.panelTitle || 'Product preview'}
+    >
       <div className="mkt-hero-panel__frame">
         <div className="mkt-hero-panel__bar">
           <div className="mkt-hero-panel__dots" aria-hidden>
@@ -77,39 +250,8 @@ function MarketingHeroPanel({ slug, visual }) {
         </div>
 
         <div className="mkt-hero-panel__body">
-          <div className="mkt-hero-panel__head">
-            <span className="mkt-hero-panel__badge" aria-hidden>
-              <FontAwesomeIcon icon={icon} />
-            </span>
-            <div>
-              <strong>{visual.panelTitle}</strong>
-              <small>Live workspace preview</small>
-            </div>
-          </div>
-
-          <div className="mkt-hero-panel__stats">
-            {stats.slice(0, 3).map((stat) => (
-              <div key={`${stat.value}-${stat.label}`} className="mkt-hero-panel__stat">
-                <strong>{stat.value}</strong>
-                <span>{stat.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="mkt-hero-panel__chart" aria-hidden>
-            {bars.map((h, i) => (
-              <div key={h + i} className="mkt-hero-panel__bar-col" style={{ height: h }} />
-            ))}
-          </div>
-
-          <ul className="mkt-hero-panel__list">
-            {chips.slice(0, 3).map((chip) => (
-              <li key={chip}>
-                <FontAwesomeIcon icon={faCheck} aria-hidden />
-                {chip}
-              </li>
-            ))}
-          </ul>
+          <PanelHead icon={icon} title={visual.panelTitle} />
+          <PanelBody slug={slug} visual={visual} />
         </div>
       </div>
     </aside>

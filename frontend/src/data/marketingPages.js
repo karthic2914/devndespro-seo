@@ -42,9 +42,13 @@ export const MARKETING_NAV = [
   { path: '/about', label: 'About' },
 ]
 
-/** Visual chrome shared by all wow marketing pages (icons keyed later in UI). */
+/**
+ * Per-page hero panel data. `variant` drives distinct layouts
+ * (signals | steps | modules | citations | score | ranks | links | about).
+ */
 export const PAGE_VISUALS = {
   platform: {
+    variant: 'signals',
     panelTitle: 'Three signals. One workspace.',
     chips: ['Technical SEO', 'AI citations', 'Nordic intent'],
     stats: [
@@ -52,8 +56,14 @@ export const PAGE_VISUALS = {
       { value: '1', label: 'shared Action Plan' },
       { value: '100%', label: 'hostname-aware' },
     ],
+    signals: [
+      { label: 'Technical SEO', detail: 'Crawl · meta · speed', tone: 'amber' },
+      { label: 'AI citations', detail: 'ChatGPT · Claude', tone: 'blue' },
+      { label: 'Nordic intent', detail: 'NO · SE · DK markets', tone: 'teal' },
+    ],
   },
   'how-it-works': {
+    variant: 'steps',
     panelTitle: 'Domain → decisions → lift',
     chips: ['Add site', 'Run analysis', 'Improve'],
     stats: [
@@ -61,8 +71,14 @@ export const PAGE_VISUALS = {
       { value: '02', label: 'audit signals' },
       { value: '03', label: 'act by impact' },
     ],
+    steps: [
+      { n: '01', title: 'Add your website', detail: 'Hostname + market' },
+      { n: '02', title: 'Run the analysis', detail: 'SEO + AI signals' },
+      { n: '03', title: 'Improve by impact', detail: 'Shared Action Plan' },
+    ],
   },
   features: {
+    variant: 'modules',
     panelTitle: 'Modules that stay connected',
     chips: ['Site Audit', 'Keywords', 'Backlinks', 'AI Visibility'],
     stats: [
@@ -70,8 +86,15 @@ export const PAGE_VISUALS = {
       { value: '∞', label: 're-run audits' },
       { value: '1', label: 'private workspace' },
     ],
+    modules: [
+      { label: 'Site Audit', meta: 'Health score' },
+      { label: 'Keywords', meta: 'Rank tracking' },
+      { label: 'Backlinks', meta: 'Spam filter' },
+      { label: 'AI Visibility', meta: 'Citations' },
+    ],
   },
   'ai-visibility': {
+    variant: 'citations',
     panelTitle: 'Show up where answers happen',
     chips: ['ChatGPT', 'Claude', 'Citations'],
     stats: [
@@ -79,8 +102,14 @@ export const PAGE_VISUALS = {
       { value: 'SEO', label: 'classic SERPs' },
       { value: '1', label: 'unified view' },
     ],
+    citations: [
+      { engine: 'ChatGPT', status: 'Mentioned', tone: 'good' },
+      { engine: 'Claude', status: 'Cited', tone: 'good' },
+      { engine: 'Perplexity', status: 'Watch', tone: 'warn' },
+    ],
   },
   'seo-audit': {
+    variant: 'score',
     panelTitle: 'Crawl → score → fix',
     chips: ['Site Health', 'Critical issues', 'Re-check'],
     stats: [
@@ -88,8 +117,15 @@ export const PAGE_VISUALS = {
       { value: '100', label: 'page crawl cap*' },
       { value: 'PDF', label: 'shareable proof' },
     ],
+    score: 78,
+    issues: [
+      { label: 'Missing meta descriptions', sev: 'Critical' },
+      { label: 'Slow LCP on product pages', sev: 'Warning' },
+      { label: 'Orphan URLs in crawl', sev: 'Info' },
+    ],
   },
   'keyword-tracking': {
+    variant: 'ranks',
     panelTitle: 'Ranks tied to revenue intent',
     chips: ['Positions', 'GSC', 'Competitors'],
     stats: [
@@ -97,8 +133,14 @@ export const PAGE_VISUALS = {
       { value: 'URL', label: 'ranking pages' },
       { value: 'NO', label: 'Nordic markets' },
     ],
+    ranks: [
+      { kw: 'seo audit norway', pos: '4', delta: '+2' },
+      { kw: 'ai visibility tool', pos: '7', delta: '+1' },
+      { kw: 'backlink monitor', pos: '12', delta: '−1' },
+    ],
   },
   'backlink-monitoring': {
+    variant: 'links',
     panelTitle: 'Links with spam controls',
     chips: ['Ref domains', 'Spam filter', 'Disavow'],
     stats: [
@@ -106,8 +148,14 @@ export const PAGE_VISUALS = {
       { value: 'CSV', label: 'exports' },
       { value: '21d', label: 'disavow wait' },
     ],
+    links: [
+      { host: 'tech.no', dr: '62', flag: 'ok' },
+      { host: 'news.se', dr: '48', flag: 'ok' },
+      { host: 'spam.biz', dr: '12', flag: 'spam' },
+    ],
   },
   about: {
+    variant: 'about',
     panelTitle: 'Built in Stavanger',
     chips: ['Nordic focus', 'Private beta', 'Impact-first'],
     stats: [
@@ -115,8 +163,14 @@ export const PAGE_VISUALS = {
       { value: 'SEO', label: 'product lab' },
       { value: 'AI', label: 'discovery era' },
     ],
+    values: [
+      { label: 'Nordic-first', detail: 'Local intent, not global noise' },
+      { label: 'Private by default', detail: 'Authorised workspaces only' },
+      { label: 'Impact over vanity', detail: 'Fix what moves discovery' },
+    ],
   },
   pricing: {
+    variant: 'signals',
     panelTitle: 'Launch · Accelerate · Command',
     chips: ['NOK base', 'Live FX', '5 regions'],
     stats: [
