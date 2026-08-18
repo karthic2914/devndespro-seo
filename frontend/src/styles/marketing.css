@@ -176,48 +176,42 @@
   border-color: rgba(236, 245, 242, 0.3);
 }
 
-/* Rail / strip */
+/* Rail / strip — compact chips, no chat-like long bars */
 .mkt-rail {
   position: relative;
   z-index: 1;
   margin-top: 40px;
   border-top: 1px solid var(--mkt-line);
-  border-bottom: 1px solid var(--mkt-line);
   background: rgba(255, 255, 255, 0.018);
 }
 
 .mkt-rail__grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
+  gap: 12px;
+  padding: 22px 0;
 }
 
 .mkt-rail__item {
-  padding: 22px 18px 26px;
-  border-right: 1px solid var(--mkt-line);
+  padding: 14px 16px;
   min-width: 0;
-  transition: background 180ms ease;
-}
-
-.mkt-rail__item:last-child {
-  border-right: none;
+  border-radius: 12px;
+  border: 1px solid var(--mkt-line);
+  background: rgba(20, 36, 48, 0.55);
+  transition: border-color 180ms ease, background 180ms ease;
 }
 
 .mkt-rail__item:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(20, 36, 48, 0.85);
+}
+
+.mkt-rail__item.is-active {
+  border-color: rgba(255, 182, 39, 0.4);
+  background: rgba(255, 182, 39, 0.06);
 }
 
 .mkt-rail__bar {
-  height: 2px;
-  width: 100%;
-  margin-bottom: 14px;
-  border-radius: 99px;
-  background: rgba(236, 245, 242, 0.12);
-}
-
-.mkt-rail__item.is-active .mkt-rail__bar {
-  background: linear-gradient(90deg, var(--mkt-amber), rgba(255, 182, 39, 0.2));
-  box-shadow: 0 0 16px rgba(255, 182, 39, 0.35);
+  display: none !important;
 }
 
 .mkt-rail__label {
@@ -681,14 +675,11 @@
 
   .mkt-rail__grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mkt-rail__item:nth-child(2n) {
-    border-right: 1px solid var(--mkt-line);
+    gap: 10px;
   }
 
   .mkt-rail__item {
-    border-bottom: 1px solid var(--mkt-line);
+    border: 1px solid var(--mkt-line);
   }
 
   .mkt-feature {
