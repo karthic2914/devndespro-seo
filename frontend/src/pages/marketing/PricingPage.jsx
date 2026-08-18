@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCheck, faChevronDown } from '@fortawesome/free-solid-svg-icons'
@@ -66,6 +66,8 @@ export default function PricingPage() {
   const [rates, setRates] = useState(FALLBACK_RATES_FROM_NOK)
   const [ratesDate, setRatesDate] = useState(null)
   const [ratesStatus, setRatesStatus] = useState('loading')
+  const [regionOpen, setRegionOpen] = useState(false)
+  const regionMenuRef = useRef(null)
 
   useDocumentMeta({
     title: 'Pricing — Launch, Accelerate & Command | DevnDespro SEO',
@@ -97,6 +99,22 @@ export default function PricingPage() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!regionOpen) return undefined
+    const onPointer = (e) => {
+      if (!regionMenuRef.current?.contains(e.target)) setRegionOpen(false)
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setRegionOpen(false)
+    }
+    document.addEventListener('mousedown', onPointer)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onPointer)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [regionOpen])
 
   const region = useMemo(
     () => PRICING_REGIONS.find((r) => r.id === regionId) || PRICING_REGIONS[0],
@@ -134,25 +152,48 @@ export default function PricingPage() {
                 </p>
               </div>
 
-              <div className="mkt-select-wrap">
-                <label htmlFor="pricing-region">Show prices in</label>
-                <div style={{ position: 'relative' }}>
-                  <select
+              <div className="mkt-select-wrap" ref={regionMenuRef}>
+                <span className="mkt-select-label" id="pricing-region-label">
+                  Show prices in
+                </span>
+                <div className="mkt-select-field">
+                  <button
+                    type="button"
                     id="pricing-region"
-                    value={regionId}
-                    onChange={(e) => setRegionId(e.target.value)}
+                    className={`mkt-select-trigger${regionOpen ? ' is-open' : ''}`}
+                    aria-haspopup="listbox"
+                    aria-expanded={regionOpen}
+                    aria-labelledby="pricing-region-label"
+                    onClick={() => setRegionOpen((v) => !v)}
                   >
-                    {PRICING_REGIONS.map((r) => (
-                      <option key={r.id} value={r.id} style={{ color: '#171923' }}>
-                        {r.flag} {r.label} ({r.currency})
-                      </option>
-                    ))}
-                  </select>
-                  <FontAwesomeIcon
-                    icon={faChevronDown}
-                    className="mkt-select-icon"
-                    style={{ top: '50%', bottom: 'auto', transform: 'translateY(-50%)' }}
-                  />
+                    <span>
+                      {region.flag} {region.label} ({region.currency})
+                    </span>
+                    <FontAwesomeIcon icon={faChevronDown} className="mkt-select-icon" />
+                  </button>
+
+                  {regionOpen ? (
+                    <ul
+                      className="mkt-select-menu"
+                      role="listbox"
+                      aria-labelledby="pricing-region-label"
+                    >
+                      {PRICING_REGIONS.map((r) => (
+                        <li key={r.id} role="option" aria-selected={r.id === regionId}>
+                          <button
+                            type="button"
+                            className={`mkt-select-option${r.id === regionId ? ' is-selected' : ''}`}
+                            onClick={() => {
+                              setRegionId(r.id)
+                              setRegionOpen(false)
+                            }}
+                          >
+                            {r.flag} {r.label} ({r.currency})
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
                 <p className="mkt-select-hint">
                   {ratesStatus === 'live' && ratesDate
