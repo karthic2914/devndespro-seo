@@ -105,11 +105,18 @@
   color: var(--dd-muted);
   text-decoration: none;
   font-size: 13px;
-  transition: color 0.2s ease;
+  padding: 6px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
 }
 
 .dd-landing .dd-nav-links a:hover {
   color: var(--dd-text);
+}
+
+.dd-landing .dd-nav-links a.is-active {
+  color: var(--dd-text);
+  border-bottom-color: var(--dd-amber);
 }
 
 .dd-landing .dd-nav-actions {
@@ -186,8 +193,10 @@
   border-bottom: 1px solid var(--dd-line);
 }
 
-.dd-landing .dd-mobile-menu a:hover {
+.dd-landing .dd-mobile-menu a.is-active {
   color: var(--dd-text);
+  border-left: 2px solid var(--dd-amber);
+  padding-left: 10px;
 }
 
 .dd-landing .dd-mobile-menu .dd-btn {

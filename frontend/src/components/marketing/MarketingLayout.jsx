@@ -32,7 +32,7 @@ export default function MarketingLayout({ children, activePath = '' }) {
               <Link
                 key={item.to}
                 to={item.to}
-                style={activePath === item.to ? { color: '#ecf5f2' } : undefined}
+                className={activePath === item.to ? 'is-active' : undefined}
               >
                 {item.label}
               </Link>
@@ -60,7 +60,12 @@ export default function MarketingLayout({ children, activePath = '' }) {
 
         <div className={`dd-container dd-mobile-menu${menuOpen ? ' is-open' : ''}`}>
           {NAV.map((item) => (
-            <Link key={item.to} to={item.to} onClick={() => setMenuOpen(false)}>
+            <Link
+              key={item.to}
+              to={item.to}
+              className={activePath === item.to ? 'is-active' : undefined}
+              onClick={() => setMenuOpen(false)}
+            >
               {item.label}
             </Link>
           ))}

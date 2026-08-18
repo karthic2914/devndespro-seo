@@ -101,16 +101,15 @@
   margin: 0 0 22px;
   font-size: clamp(34px, 7vw, 68px);
   font-weight: 700;
-  line-height: 0.98;
+  line-height: 1.05;
   letter-spacing: -0.045em;
   color: var(--mkt-text);
-  max-width: 16ch;
-  overflow-wrap: anywhere;
+  max-width: min(920px, 100%);
+  overflow-wrap: break-word;
 }
 
 .mkt-hero h1 .mkt-accent {
-  display: block;
-  margin-top: 0.08em;
+  display: inline;
   color: var(--mkt-amber);
 }
 

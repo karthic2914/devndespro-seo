@@ -124,8 +124,8 @@ export default function PricingPage() {
             >
               <div style={{ maxWidth: 640 }}>
                 <p className="mkt-eyebrow">PRICING</p>
-                <h1 style={{ maxWidth: '12ch' }}>
-                  Plans that stay affordable
+                <h1>
+                  Plans that stay affordable{' '}
                   <span className="mkt-accent">as you grow</span>
                 </h1>
                 <p className="mkt-hero__lede" style={{ marginBottom: 0 }}>

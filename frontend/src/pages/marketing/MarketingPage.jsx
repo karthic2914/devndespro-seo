@@ -66,7 +66,12 @@ export function MarketingPageView({ page, slug, onLogin }) {
               <p className="mkt-eyebrow">{page.eyebrow}</p>
               <h1>
                 {lead}
-                {accent ? <span className="mkt-accent">{accent}</span> : null}
+                {accent ? (
+                  <>
+                    {' '}
+                    <span className="mkt-accent">{accent}</span>
+                  </>
+                ) : null}
               </h1>
               <p className="mkt-hero__lede">{page.intro}</p>
               <div className="mkt-hero__actions">
