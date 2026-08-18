@@ -170,7 +170,6 @@ export default function PricingPage() {
               <div className="mkt-rail__grid">
                 {(PAGE_VISUALS.pricing?.chips || []).slice(0, 4).map((chip, i) => (
                   <div key={chip} className={`mkt-rail__item ${i === 0 ? 'is-active' : ''}`}>
-                    <div className="mkt-rail__bar" aria-hidden />
                     <span className="mkt-rail__label">{chip}</span>
                     <p className="mkt-rail__text">
                       {PAGE_VISUALS.pricing?.stats?.[i]

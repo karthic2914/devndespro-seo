@@ -684,7 +684,7 @@
   }
 
   .mkt-rail__item:nth-child(2n) {
-    border-right: none;
+    border-right: 1px solid var(--mkt-line);
   }
 
   .mkt-rail__item {
@@ -719,10 +719,11 @@
 @media (max-width: 560px) {
   .mkt-rail__grid {
     grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
   }
 
   .mkt-rail__item {
-    border-right: none;
+    border: 1px solid var(--mkt-line);
   }
 
   .mkt-hero__actions {

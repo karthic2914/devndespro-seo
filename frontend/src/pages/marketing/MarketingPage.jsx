@@ -93,7 +93,6 @@ export function MarketingPageView({ page, slug, onLogin }) {
                     key={item.label}
                     className={`mkt-rail__item ${i === 0 ? 'is-active' : ''}`}
                   >
-                    <div className="mkt-rail__bar" aria-hidden />
                     <span className="mkt-rail__label">{item.label}</span>
                     <p className="mkt-rail__text">{item.text}</p>
                   </div>

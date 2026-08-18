@@ -20,6 +20,7 @@
   width: 100%;
   max-width: 100%;
   overflow-x: clip;
+  padding-top: 74px;
   color: var(--dd-text);
   background:
     radial-gradient(circle at 80% 10%, rgba(45, 212, 191, 0.09), transparent 24%),
@@ -57,11 +58,13 @@
 
 /* —— Nav —— */
 .dd-landing .dd-nav {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 50;
   backdrop-filter: blur(18px);
-  background: rgba(11, 22, 32, 0.78);
+  background: rgba(11, 22, 32, 0.88);
   border-bottom: 1px solid var(--dd-line);
 }
 
@@ -925,6 +928,10 @@
   .dd-landing .dd-nav-inner {
     height: 64px;
     gap: 10px;
+  }
+
+  .dd-landing {
+    padding-top: 64px;
   }
 
   .dd-landing .dd-logo {
