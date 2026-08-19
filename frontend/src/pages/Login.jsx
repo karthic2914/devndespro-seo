@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faSpinner, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import { Logo, Card, Divider, T } from '../components/UI'
@@ -177,14 +177,27 @@ export default function Login() {
               disabled={emailLoading}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, background: emailLoading ? T.surface2 : '#fff',
+                gap: 12, background: emailLoading ? T.surface2 : '#fff',
                 color: T.text, border: `1.5px solid ${T.border}`,
                 borderRadius: T.radius, padding: '12px 20px',
                 fontSize: 14, fontWeight: 700, cursor: emailLoading ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit', boxShadow: T.shadow,
+                transition: 'all 0.18s',
               }}
+              onMouseEnter={e => !emailLoading && (e.currentTarget.style.borderColor = T.orange)}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = T.border)}
             >
-              {emailLoading ? 'Checking access...' : 'Continue with email'}
+              {emailLoading ? (
+                <>
+                  <FontAwesomeIcon icon={faSpinner} spin style={{ color: T.muted, fontSize: 16 }} />
+                  Checking access...
+                </>
+              ) : (
+                <>
+                  <FontAwesomeIcon icon={faEnvelope} style={{ color: T.orange, fontSize: 16 }} />
+                  Continue with email
+                </>
+              )}
             </button>
 
             <button
