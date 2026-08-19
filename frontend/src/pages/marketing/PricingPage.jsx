@@ -117,14 +117,13 @@ export default function PricingPage() {
   useLayoutEffect(() => {
     if (!regionOpen || !triggerRef.current) return undefined
     const updatePos = () => {
-      const anchor = regionMenuRef.current || triggerRef.current
-      const rect = anchor.getBoundingClientRect()
+      const rect = triggerRef.current.getBoundingClientRect()
       const isNarrow = window.innerWidth <= 560
       const width = isNarrow
         ? Math.min(window.innerWidth - 24, Math.max(rect.width, 240))
         : Math.max(rect.width, 240)
       const estimatedHeight = Math.min(280, window.innerHeight * 0.45)
-      const gap = 6
+      const gap = 4
       const spaceBelow = window.innerHeight - rect.bottom - 12
       const openUp = spaceBelow < estimatedHeight && rect.top > spaceBelow
       const left = isNarrow
