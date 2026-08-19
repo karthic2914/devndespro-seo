@@ -152,24 +152,39 @@ export default function Login() {
           <Divider label="Continue with" style={{ marginBottom: '1rem' }} />
 
           <div style={{ display: 'grid', gap: 10 }}>
-            <input
-              type="email"
-              placeholder="Enter your work or personal email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleEmailLogin()}
-              style={{
-                width: '100%',
-                border: `1.5px solid ${T.border}`,
-                borderRadius: T.radius,
-                padding: '12px 14px',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                background: '#fff',
-                color: T.text,
-                outline: 'none',
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <FontAwesomeIcon
+                icon={faEnvelope}
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  left: 14,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  color: T.muted,
+                  fontSize: 14,
+                  pointerEvents: 'none',
+                }}
+              />
+              <input
+                type="email"
+                placeholder="Enter your work or personal email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleEmailLogin()}
+                style={{
+                  width: '100%',
+                  border: `1.5px solid ${T.border}`,
+                  borderRadius: T.radius,
+                  padding: '12px 14px 12px 40px',
+                  fontSize: 14,
+                  fontFamily: 'inherit',
+                  background: '#fff',
+                  color: T.text,
+                  outline: 'none',
+                }}
+              />
+            </div>
 
             <button
               type="button"
