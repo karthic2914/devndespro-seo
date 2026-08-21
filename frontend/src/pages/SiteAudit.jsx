@@ -2792,7 +2792,7 @@ export default function SiteAudit() {
                   <img src='/images/devndespro_seo.png' alt='Devndespro SEO' style={{ height: 60 }} />
                 </div>
                 <div
-                  key={${emailLang}-${emailTone}}
+                  key={`${emailLang}-${emailTone}`}
                   ref={emailBodyRef}
                   style={{ padding: '10px 12px' }}
                   contentEditable suppressContentEditableWarning

@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+import { SplashScreen } from '@capacitor/splash-screen'
+import { Capacitor } from '@capacitor/core'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXmark } from '@fortawesome/free-solid-svg-icons'
@@ -185,6 +187,16 @@ function HomeRoute() {
 
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
+  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform())
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+    SplashScreen.hide()
+    const timer = setTimeout(() => {
+      setShowSplash(false)
+    }, 2500)
+    return () => clearTimeout(timer)
+  }, [])
 
   function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
     setSnackbar({ open: true, message, type, duration, ...options })
@@ -192,6 +204,18 @@ export default function App() {
 
   function closeSnackbar() {
     setSnackbar(s => ({ ...s, open: false }))
+  }
+
+  if (showSplash) {
+    return (
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 999999,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: '#fff',
+      }}>
+        <img src="/splash.png" alt="DevnDespro SEO" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+      </div>
+    )
   }
 
   return (

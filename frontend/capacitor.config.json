@@ -1,0 +1,10 @@
+{
+  "appId": "com.devndespro.seo",
+  "appName": "DevnDespro SEO",
+  "webDir": "dist",
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": false
+    }
+  }
+}

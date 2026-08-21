@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">DevnDespro SEO</string>
+    <string name="title_activity_main">DevnDespro SEO</string>
+    <string name="package_name">com.devndespro.seo</string>
+    <string name="custom_url_scheme">com.devndespro.seo</string>
+</resources>
