@@ -899,7 +899,10 @@ export default function SiteAudit() {
     setEmailMessage(html)
     setEmailSubject(getSummarySubject(emailLang, siteUrl || auditData?.url))
     isProgrammatic.current = true
-    if (emailBodyRef.current) emailBodyRef.current.innerHTML = html
+    if (emailBodyRef.current) {
+      emailBodyRef.current.blur()
+      emailBodyRef.current.innerHTML = html
+    }
     isProgrammatic.current = false
   }, [auditData, allIssues, emailLang, emailTone, showEmailModal])
 
@@ -2757,8 +2760,8 @@ export default function SiteAudit() {
               {/* Tone hint */}
               <div style={{ fontSize: 11, color: '#6B7280', marginTop: -8 }}>
                 {emailTone === 'formal'
-                  ? 'Formal ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ suited for corporate and enterprise prospects'
-                  : 'Casual ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œ suited for SMB and local businesses'}
+                  ? 'Formal - suited for corporate and enterprise prospects'
+                  : 'Casual - suited for SMB and local businesses'}
               </div>
 
               {/* Logo alignment controls */}
@@ -2789,6 +2792,7 @@ export default function SiteAudit() {
                   <img src='/images/devndespro_seo.png' alt='Devndespro SEO' style={{ height: 60 }} />
                 </div>
                 <div
+                  key={${emailLang}-${emailTone}}
                   ref={emailBodyRef}
                   style={{ padding: '10px 12px' }}
                   contentEditable suppressContentEditableWarning
