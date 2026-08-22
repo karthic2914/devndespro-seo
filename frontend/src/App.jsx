@@ -194,7 +194,7 @@ export default function App() {
     SplashScreen.hide()
     const timer = setTimeout(() => {
       setShowSplash(false)
-    }, 2500)
+    }, 800)
     return () => clearTimeout(timer)
   }, [])
 

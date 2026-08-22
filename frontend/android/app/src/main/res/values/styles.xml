@@ -17,7 +17,7 @@
 
 
 <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-    <item name="windowSplashScreenBackground">#6C3CE0</item>
-    <item name="windowSplashScreenAnimatedIcon">@drawable/splash</item>
+    <item name="windowSplashScreenBackground">#FFFFFF</item>
+    <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
 </style>
 </resources>

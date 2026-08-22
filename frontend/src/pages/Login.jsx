@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useGoogleLogin } from '@react-oauth/google'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -7,6 +7,9 @@ import { useAuth } from '../hooks/useAuth'
 import useDocumentMeta from '../hooks/useDocumentMeta'
 import { Logo, Card, Divider, T } from '../components/UI'
 import api from '../utils/api'
+import { Capacitor } from '@capacitor/core'
+import { Browser } from '@capacitor/browser'
+import { App as CapacitorApp } from '@capacitor/app'
 
 async function continueAfterLogin(navigate, checkoutPlan) {
   if (checkoutPlan === 'pro' || checkoutPlan === 'agency') {
@@ -26,7 +29,7 @@ async function continueAfterLogin(navigate, checkoutPlan) {
 }
 
 export default function Login() {
-  const { user, loading: authLoading, login, loginWithEmail } = useAuth()
+  const { user, loading: authLoading, login, loginWithEmail, refreshUser } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const checkoutPlan = searchParams.get('checkout')
@@ -35,6 +38,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [sessionBusy, setSessionBusy] = useState(false)
+  const [nativeGoogleLoading, setNativeGoogleLoading] = useState(false)
   const resumedRef = useRef(false)
 
   useDocumentMeta({
@@ -57,6 +61,53 @@ export default function Login() {
       }
     })()
   }, [authLoading, user, checkoutPlan, navigate])
+
+useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    const sub = CapacitorApp.addListener('appUrlOpen', async (data) => {
+      try {
+        const url = new URL(data.url)
+        const token = url.searchParams.get('token')
+        const errorMsg = url.searchParams.get('error')
+
+        await Browser.close().catch(() => {})
+
+        if (errorMsg) {
+          setError(decodeURIComponent(errorMsg))
+          setNativeGoogleLoading(false)
+          return
+        }
+
+        if (token) {
+          setNativeGoogleLoading(true)
+          localStorage.setItem('seo_token', token)
+          api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+          await refreshUser()
+          await continueAfterLogin(navigate, checkoutPlan)
+        }
+      } catch (e) {
+        setError('Sign-in failed. Please try again.')
+      } finally {
+        setNativeGoogleLoading(false)
+      }
+    })
+
+    return () => { sub.then(s => s.remove()) }
+  }, [])
+
+    async function handleGoogleNative() {
+    setNativeGoogleLoading(true)
+    setError('')
+    try {
+      const backendUrl = 'https://devndespro-seo-production.up.railway.app'
+      await Browser.open({ url: `${backendUrl}/api/auth/google/mobile` })
+    } catch (e) {
+      console.error('Failed to open Google sign-in:', e)
+      setError('Could not open sign-in. Please try again.')
+      setNativeGoogleLoading(false)
+    }
+  }
 
   const handleGoogle = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -216,22 +267,22 @@ export default function Login() {
             </button>
 
             <button
-              onClick={() => handleGoogle()}
-              disabled={loading}
+              onClick={() => Capacitor.isNativePlatform() ? handleGoogleNative() : handleGoogle()}
+              disabled={loading || nativeGoogleLoading}
               style={{
                 width: '100%', display: 'flex', alignItems: 'center',
                 justifyContent: 'center', gap: 12,
-                background: loading ? T.surface2 : '#fff',
+                background: (loading || nativeGoogleLoading) ? T.surface2 : '#fff',
                 color: T.text, border: `1.5px solid ${T.border}`,
                 borderRadius: T.radius, padding: '12px 20px',
-                fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
+                fontSize: 14, fontWeight: 600, cursor: (loading || nativeGoogleLoading) ? 'not-allowed' : 'pointer',
                 fontFamily: 'inherit', boxShadow: T.shadow,
                 transition: 'all 0.18s',
               }}
               onMouseEnter={e => !loading && (e.currentTarget.style.borderColor = T.orange)}
               onMouseLeave={e => (e.currentTarget.style.borderColor = T.border)}
             >
-              {loading ? (
+              {(loading || nativeGoogleLoading) ? (
                 <>
                   <svg width="18" height="18" viewBox="0 0 18 18" style={{ animation: 'spin 0.7s linear infinite' }}>
                     <circle cx="9" cy="9" r="7" stroke={T.muted} strokeWidth="2.5" strokeDasharray="28" strokeDashoffset="7" fill="none"/>

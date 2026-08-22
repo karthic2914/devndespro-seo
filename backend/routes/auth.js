@@ -65,6 +65,52 @@ async function resolveLoginAccess(email) {
   }
 }
 
+async function finalizeGoogleLogin(profile) {
+  const email = String(profile.email || '').trim().toLowerCase()
+
+  const access = await resolveLoginAccess(email)
+  if (!access.canLogin) {
+    const err = new Error('Access denied. Ask an admin to invite you or enable your account.')
+    err.status = 403
+    throw err
+  }
+
+  const { rows } = await pool.query(
+    'INSERT INTO users (email, name, photo) VALUES ($1,$2,$3) ON CONFLICT (email) DO UPDATE SET name=$2, photo=$3 RETURNING *',
+    [email, profile.name, profile.picture]
+  )
+  const user = rows[0]
+
+  if (access.isInvited) {
+    for (const invite of access.inviteRows) {
+      if (invite.site_id) {
+        await pool.query(
+          'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
+          [invite.site_id, user.id]
+        )
+      }
+      if (invite.status === 'pending') {
+        await pool.query(
+          `UPDATE invited_users SET status='accepted', accepted_at=NOW() WHERE id=$1`,
+          [invite.id]
+        )
+      }
+    }
+  }
+
+  if (access.isAllowlisted) {
+    await pool.query(
+      `INSERT INTO site_access (site_id, user_id)
+       SELECT id, $1 FROM sites WHERE user_id=$1
+       ON CONFLICT DO NOTHING`,
+      [user.id]
+    )
+  }
+
+  const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' })
+  return { jwtToken, user }
+}
+
 router.post('/email', async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase()
@@ -123,52 +169,55 @@ router.post('/google', async (req, res) => {
   try {
     const { token } = req.body
     const { data: profile } = await axios.get(`https://www.googleapis.com/oauth2/v2/userinfo?access_token=${token}`)
-    const email = String(profile.email || '').trim().toLowerCase()
-
-    const access = await resolveLoginAccess(email)
-    if (!access.canLogin) {
-      return res.status(403).json({
-        error: 'Access denied. Ask an admin to invite you or enable your account.',
-      })
-    }
-
-    const { rows } = await pool.query(
-      'INSERT INTO users (email, name, photo) VALUES ($1,$2,$3) ON CONFLICT (email) DO UPDATE SET name=$2, photo=$3 RETURNING *',
-      [email, profile.name, profile.picture]
-    )
-    const user = rows[0]
-
-    if (access.isInvited) {
-      for (const invite of access.inviteRows) {
-        if (invite.site_id) {
-          await pool.query(
-            'INSERT INTO site_access (site_id, user_id) VALUES ($1,$2) ON CONFLICT DO NOTHING',
-            [invite.site_id, user.id]
-          )
-        }
-        if (invite.status === 'pending') {
-          await pool.query(
-            `UPDATE invited_users SET status='accepted', accepted_at=NOW() WHERE id=$1`,
-            [invite.id]
-          )
-        }
-      }
-    }
-
-    if (access.isAllowlisted) {
-      await pool.query(
-        `INSERT INTO site_access (site_id, user_id)
-         SELECT id, $1 FROM sites WHERE user_id=$1
-         ON CONFLICT DO NOTHING`,
-        [user.id]
-      )
-    }
-
-    const jwtToken = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '30d' })
+    const { jwtToken, user } = await finalizeGoogleLogin(profile)
     res.json({ token: jwtToken, user: { id: user.id, email: user.email, name: user.name, photo: user.photo } })
   } catch (e) {
+    if (e.status === 403) return res.status(403).json({ error: e.message })
     console.error(e)
     res.status(500).json({ error: 'Auth failed' })
+  }
+})
+
+function getMobileGoogleRedirectUri(req) {
+  return `${getBackendUrl(req)}/api/auth/google/mobile/callback`
+}
+
+router.get('/google/mobile', (req, res) => {
+  const redirectUri = getMobileGoogleRedirectUri(req)
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: redirectUri,
+    response_type: 'code',
+    scope: 'email profile',
+    prompt: 'select_account',
+  })
+  res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`)
+})
+
+router.get('/google/mobile/callback', async (req, res) => {
+  try {
+    const { code } = req.query
+    const redirectUri = getMobileGoogleRedirectUri(req)
+
+    const { data: tokenData } = await axios.post('https://oauth2.googleapis.com/token', {
+      code,
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      redirect_uri: redirectUri,
+      grant_type: 'authorization_code',
+    })
+
+    const { data: profile } = await axios.get(
+      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${tokenData.access_token}`
+    )
+
+    const { jwtToken } = await finalizeGoogleLogin(profile)
+
+    res.redirect(`com.devndespro.seo://oauth-callback?token=${encodeURIComponent(jwtToken)}`)
+  } catch (e) {
+    console.error('Mobile Google callback:', e.response?.data || e.message)
+    const message = e.status === 403 ? e.message : 'Sign-in failed. Please try again.'
+    res.redirect(`com.devndespro.seo://oauth-callback?error=${encodeURIComponent(message)}`)
   }
 })
 
