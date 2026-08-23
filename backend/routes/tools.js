@@ -1,4 +1,4 @@
-const express = require('express')
+﻿const express = require('express')
 const axios = require('axios')
 const cheerio = require('cheerio')
 const { auth, requireFeature } = require('../middleware')
@@ -76,22 +76,34 @@ ${contentType ? `Content type: ${contentType}` : ''}
 
 Analyze the content below and respond ONLY with valid JSON in this exact shape, no markdown fences, no preamble:
 {
-  "originalScore": <integer 0-100, how citable the ORIGINAL content is as-is>,
-  "optimizedScore": <integer 0-100, how citable the REWRITE will be>,
-  "subScores": {
-    "clearAnswer": <integer 0-100, does it directly answer the likely question early on>,
-    "structure": <integer 0-100, headings/paragraphs/scannability>,
-    "authority": <integer 0-100, credibility signals, sources, expertise>,
-    "specificity": <integer 0-100, concrete facts/numbers vs vague claims>,
-    "freshness": <integer 0-100, signals of being current/up to date>
+  "originalSubScores": {
+    "clearAnswer": <integer 0-100>,
+    "structure": <integer 0-100>,
+    "authority": <integer 0-100>,
+    "specificity": <integer 0-100>,
+    "freshness": <integer 0-100>
+  },
+  "optimizedSubScores": {
+    "clearAnswer": <integer 0-100>,
+    "structure": <integer 0-100>,
+    "authority": <integer 0-100>,
+    "specificity": <integer 0-100>,
+    "freshness": <integer 0-100>
   },
   "improvements": [
     { "title": "<short action title>", "detail": "<one sentence what to do and why>", "done": <true if original content already does this well, else false> }
   ],
-  "rewrite": "<the improved version: same topic, similar length, restructured with a direct answer near the top, clear headings, specific facts, and a natural authoritative tone. Wrap the 2-4 MOST IMPORTANT improved phrases/sentences in <mark></mark> tags to highlight what changed and why it helps citation.>"
+  "rewrite": "<the improved version: same topic, similar length, restructured with a direct answer near the top, and a natural authoritative tone. IMPORTANT: plain prose only, NO markdown syntax whatsoever - no ## headings, no ** bold, no bullet dashes. Use plain paragraph breaks only. Wrap the 2-4 MOST IMPORTANT improved phrases/sentences in <mark></mark> tags to highlight what changed and why it helps citation.>"
 }
 
-Provide 3-5 items in "improvements", ordered by impact, highest impact first.
+Definitions for each sub-score dimension:
+- clearAnswer: does it directly answer the likely question early on
+- structure: is it scannable and logically organized (via prose flow, not markdown headings)
+- authority: credibility signals, sources, expertise
+- specificity: concrete facts/numbers vs vague claims
+- freshness: signals of being current/up to date
+
+Score both originalSubScores and optimizedSubScores using the SAME scale and criteria, so they are directly comparable. Provide 3-5 items in "improvements", ordered by impact, highest impact first.
 
 Content to analyze:
 """
@@ -113,6 +125,30 @@ ${sourceText}
       return res.status(502).json({ error: 'AI response could not be parsed. Please try again.' })
     }
 
+    // Strip any markdown that slipped through despite instructions
+    if (typeof parsed.rewrite === 'string') {
+      parsed.rewrite = parsed.rewrite
+        .replace(/^#{1,6}\s*/gm, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/^[-*]\s+/gm, '')
+    }
+
+    // Compute overall scores as the average of sub-scores, so numbers always add up
+    const avg = (obj) => {
+      const vals = Object.values(obj || {}).map(Number).filter(Number.isFinite)
+      return vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0
+    }
+    const originalScore = avg(parsed.originalSubScores)
+    const optimizedScore = avg(parsed.optimizedSubScores)
+    parsed = {
+      originalScore,
+      optimizedScore,
+      subScores: parsed.optimizedSubScores,
+      originalSubScores: parsed.originalSubScores,
+      improvements: parsed.improvements,
+      rewrite: parsed.rewrite,
+    }
+
     try {
       await pool.query(
         `INSERT INTO ai_rewrites
@@ -121,7 +157,7 @@ ${sourceText}
          RETURNING id`,
         [
           req.user.id, siteId || null, sourceUrl, targetKeyword || null, audience || null, contentType || null,
-          sourceText, parsed.originalScore, parsed.optimizedScore,
+          sourceText, originalScore, optimizedScore,
           JSON.stringify(parsed.subScores || {}), JSON.stringify(parsed.improvements || []), parsed.rewrite,
         ]
       )
@@ -161,3 +197,5 @@ router.post('/rewrite-for-ai/save', auth, requireFeature('ai_assistant'), async 
 })
 
 module.exports = router
+
+
