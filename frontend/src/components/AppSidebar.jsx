@@ -4,7 +4,7 @@ import { faFolder, faChartBar, faWrench, faGear, faRightFromBracket, faUsers } f
 import { useAuth } from '../hooks/useAuth'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Logo } from './UI'
-
+import { Capacitor } from '@capacitor/core'
 const NAV = [
   { label: 'Projects', icon: faFolder,   path: '/',         adminOnly: false },
   { label: 'Reports',  icon: faChartBar, path: '/reports',  adminOnly: false },
@@ -12,16 +12,49 @@ const NAV = [
   { label: 'Tools',    icon: faWrench,   path: '/tools',    adminOnly: false },
   { label: 'Settings', icon: faGear,     path: '/settings', adminOnly: false },
 ]
-
 export default function AppSidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-
+  const isNative = Capacitor.isNativePlatform()
+  const visibleNav = NAV.filter(item => !item.adminOnly || user?.id === 1)
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  if (isNative) {
+    return (
+      <>
+        <div className="mobile-topbar">
+          <div style={{ width: 40 }} />
+          <Logo size="sm" />
+          <button className="hamburger-btn" onClick={handleLogout} aria-label="Sign out">
+            <FontAwesomeIcon icon={faRightFromBracket} />
+          </button>
+        </div>
+        <nav className="bottom-tab-bar">
+          {visibleNav.map(item => {
+            const isActive = item.path === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(item.path)
+            return (
+              <div
+                key={item.label}
+                className={`bottom-tab-bar__item${isActive ? ' active' : ''}`}
+                onClick={() => navigate(item.path)}
+              >
+                <span className="bottom-tab-bar__icon">
+                  <FontAwesomeIcon icon={item.icon} />
+                </span>
+                <span className="bottom-tab-bar__label">{item.label}</span>
+              </div>
+            )
+          })}
+        </nav>
+      </>
+    )
   }
 
   return (
@@ -33,16 +66,13 @@ export default function AppSidebar() {
         <Logo size="sm" />
         <div style={{ width: 40 }} />
       </div>
-
       {mobileOpen && <div className="sidebar-backdrop" onClick={() => setMobileOpen(false)} />}
-
       <aside className={`sidebar${mobileOpen ? ' sidebar--open' : ''}`}>
         <div className="sidebar__header">
           <Logo size="sm" />
         </div>
-
         <nav className="sidebar__nav">
-          {NAV.filter(item => !item.adminOnly || user?.id === 1).map(item => {
+          {visibleNav.map(item => {
             const isActive = item.path === '/'
               ? location.pathname === '/'
               : location.pathname.startsWith(item.path)
@@ -61,7 +91,6 @@ export default function AppSidebar() {
             )
           })}
         </nav>
-
         <div className="sidebar__footer">
           {user && (
             <div className="user-row">
