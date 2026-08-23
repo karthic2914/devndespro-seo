@@ -233,7 +233,7 @@ export default function Tools() {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <div className="ai-tools-analyze-row" style={{ display: 'flex', justifyContent: 'flex-end' }}>
                   <Button variant="primary" loading={loading} onClick={analyze}>
                     <FontAwesomeIcon icon={faWandMagicSparkles} style={{ marginRight: 8 }} />
                     Analyze Content
@@ -370,5 +370,6 @@ export default function Tools() {
     </div>
   )
 }
+
 
 
