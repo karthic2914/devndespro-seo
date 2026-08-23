@@ -1,10 +1,17 @@
-import React from 'react'
+﻿import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './hooks/useAuth.jsx'
 import App from './App.jsx'
-import './index.css'
+import './styles/app/01-base-reset.css'
+import './styles/app/02-layout-sidebar.css'
+import './styles/app/03-components.css'
+import './styles/app/04-tooltips-crawler.css'
+import './styles/app/05-backlinks.css'
+import './styles/app/06-responsive-breakpoints.css'
+import './styles/app/07-saas-ux-overview.css'
+import './styles/app/08-projects-cards.css'
 import './responsive.css'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID
@@ -85,4 +92,5 @@ queueMicrotask(() => {
   const shell = document.getElementById('seo-shell')
   if (shell) shell.remove()
 })
+
 

@@ -1,0 +1,165 @@
+﻿
+/* Mobile topbar + hamburger */
+.mobile-topbar {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 1001;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  align-items: center; justify-content: space-between; padding: 0 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.mobile-topbar img, .mobile-topbar .logo-img, .mobile-topbar svg {
+  height: 36px !important; width: auto !important;
+}
+.hamburger-btn {
+  width: 40px; height: 40px; background: none; border: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  border-radius: 8px; padding: 8px;
+}
+.hamburger-btn span {
+  display: block; width: 20px; height: 2px; background: var(--text); border-radius: 2px;
+}
+.sidebar-backdrop {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Brand â€” DevnDespro Visibility */
+  --brand: #6C5CE7;
+  --brand-dark: #5647D8;
+  --brand-soft: #F2F0FF;
+  --blue: #4E7BFF;
+  --blue-soft: #EEF4FF;
+  --cyan: #2FA9C8;
+  --cyan-soft: #EFF9FC;
+  --green: #20A66A;
+  --green-soft: #ECF8F2;
+  --amber: #D98924;
+  --amber-soft: #FFF7EA;
+
+  --ink: #25324A;
+  --heading: #25324A;
+  --body-text: #667085;
+  --muted: #98A2B3;
+  --line: #E5E9F0;
+  --page: #F8FAFC;
+  --background: #F8FAFC;
+  --surface: #FFFFFF;
+  --surface-2: #F5F7FA;
+  --border-color: #E5E9F0;
+
+  --primary: var(--brand);
+  --primary-soft: var(--brand-soft);
+  --bg: var(--page);
+  --panel: var(--surface);
+  --panel-2: var(--surface);
+  --panel-3: var(--surface-2);
+  --brand-text: var(--ink);
+  --brand-muted: var(--muted);
+  --brand-amber: var(--brand);
+  --brand-teal: var(--green);
+  --brand-purple: var(--brand);
+  --brand-blue: var(--blue);
+  --brand-line: var(--line);
+  --brand-line-strong: #D8DEE8;
+  --brand-shadow: 0 18px 48px rgba(42, 52, 75, 0.08);
+
+  --orange: var(--brand);
+  --orange-dim: var(--brand-soft);
+  --orange-hover: var(--brand-dark);
+
+  --dark: var(--page);
+  --dark2: var(--surface);
+  --dark3: var(--surface-2);
+  --dark4: var(--line);
+  --dark5: #D8DEE8;
+
+  --text: var(--ink);
+  --text2: var(--body-text);
+
+  --green-dim: var(--green-soft);
+  --red: #DC2626;
+  --red-dim: rgba(220, 38, 38, 0.10);
+  --amber-dim: var(--amber-soft);
+  --blue-dim: var(--blue-soft);
+  --purple: var(--brand);
+  --purple-dim: var(--brand-soft);
+
+  --border: 1px solid var(--border-color);
+  --shadow: 0 8px 24px rgba(42, 52, 75, 0.06);
+  --shadow-md: 0 18px 48px rgba(42, 52, 75, 0.08);
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 17px;
+  --text-lg: 20px;
+  --text-xl: 24px;
+  --text-2xl: 30px;
+}
+
+body {
+  background: var(--background);
+  color: var(--heading);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--text-base);
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--dark3); }
+::-webkit-scrollbar-thumb { background: var(--dark5); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+input, textarea, select {
+  background: var(--dark3);
+  border: var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 9px 13px;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--text-sm);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(255,107,43,0.12);
+  background: #fff;
+}
+input::placeholder, textarea::placeholder { color: var(--muted); }
+select option { background: #fff; color: var(--text); }
+
+button {
+  cursor: pointer;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: var(--text-sm);
+  border: none;
+  outline: none;
+}
+
+a { color: var(--orange); text-decoration: none; }
+a:hover { color: var(--orange-hover); }
+
+h1 { font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+h2 { font-size: var(--text-xl);  font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; }
+h3 { font-size: var(--text-lg);  font-weight: 600; letter-spacing: -0.01em; }
+h4 { font-size: var(--text-md);  font-weight: 600; }
+
+@keyframes fadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+.fade-in { animation: fadeIn 0.25s ease forwards; }
+.spin { animation: spin 0.8s linear infinite; }
+.pulse { animation: pulse 1.5s ease-in-out infinite; }

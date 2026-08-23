@@ -1,0 +1,340 @@
+/* DEVNDESPRO PROJECTS MODERN LIVE START */
+
+.projects-modern-kpi-grid {
+  gap: 14px !important;
+  margin-bottom: 18px !important;
+}
+
+.projects-modern-kpi-card {
+  min-height: 122px;
+  padding: 18px 20px !important;
+  background: #fff !important;
+  border: 1px solid #E5EAF1 !important;
+  border-top: 1px solid #E5EAF1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, .045) !important;
+  transition: transform .16s ease, box-shadow .16s ease !important;
+}
+
+.projects-modern-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 24px rgba(15, 23, 42, .07) !important;
+}
+
+.projects-modern-kpi-card .bench-card__header {
+  margin-bottom: 9px !important;
+}
+
+.projects-modern-kpi-card .bench-card__icon {
+  width: 34px;
+  height: 34px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  background: #F6F7FB;
+}
+
+.projects-modern-kpi-card .bench-card__title {
+  color: #64748B !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: .035em !important;
+}
+
+.projects-modern-kpi-card .bench-card__value {
+  font-size: 27px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  letter-spacing: -.035em !important;
+}
+
+.projects-modern-kpi-card .bench-card__sub {
+  margin-top: 7px !important;
+  color: #94A3B8 !important;
+  font-size: 10px !important;
+}
+
+.projects-modern-layout {
+  grid-template-columns: minmax(0, 1fr) 300px !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.projects-modern-panel {
+  overflow: visible !important;
+  background: #fff !important;
+  border: 1px solid #E4E9F0 !important;
+  border-radius: 15px !important;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, .04) !important;
+}
+
+.projects-natural-scroll {
+  max-height: none !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.projects-modern-panel input[placeholder="Search projects..."] {
+  height: 40px !important;
+  border: 1px solid #E2E7EE !important;
+  border-radius: 9px !important;
+  background: #fff !important;
+}
+
+.projects-modern-panel input[placeholder="Search projects..."]:focus {
+  border-color: #A5B4FC !important;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.10) !important;
+}
+
+.projects-modern-project-card {
+  transition:
+    transform .16s ease,
+    box-shadow .16s ease,
+    border-color .16s ease,
+    background-color .16s ease !important;
+}
+
+.projects-modern-project-card:hover {
+  transform: translateY(-2px);
+  background: #FCFCFF !important;
+  border-color: #D9DFE8 !important;
+  box-shadow: 0 8px 22px rgba(15,23,42,.07) !important;
+}
+
+.projects-modern-rail {
+  gap: 14px !important;
+}
+
+.projects-modern-rail .da-goal-card {
+  border-radius: 15px !important;
+  padding: 20px !important;
+  background: linear-gradient(145deg,#5538D5 0%,#3C6FDF 100%) !important;
+  box-shadow: 0 12px 28px rgba(76,67,210,.20) !important;
+}
+
+.projects-modern-rail .da-goal-card__label,
+.projects-modern-rail .da-goal-card__num,
+.projects-modern-rail .da-goal-card__arrow {
+  color: #fff !important;
+}
+
+.projects-modern-rail .da-goal-card__tip {
+  color: rgba(255,255,255,.86) !important;
+}
+
+.projects-modern-rail .da-goal-card__bar {
+  background: rgba(255,255,255,.22) !important;
+}
+
+.projects-modern-rail .da-goal-card__fill {
+  background: #40D37D !important;
+}
+
+.projects-modern-rail > .card {
+  border: 1px solid #E5EAF1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 3px 12px rgba(15,23,42,.04) !important;
+}
+
+@media (max-width: 1180px) {
+  .projects-modern-layout {
+    grid-template-columns: 1fr !important;
+  }
+
+  .projects-modern-rail {
+    display: grid !important;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .projects-modern-kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .projects-modern-rail {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* DEVNDESPRO PROJECTS MODERN LIVE END */
+
+/* DEVNDESPRO PROJECT CARD POLISH START */
+
+/* One page scrollbar only Ã¢â‚¬â€ kill any remaining nested project scroll area. */
+.projects-modern-panel [style*="overflow-y: auto"],
+.projects-modern-panel [style*="overflow-y:auto"],
+.projects-modern-panel [style*="overflowY"],
+.projects-modern-panel .projects-natural-scroll,
+.projects-modern-panel .projects-list-flow {
+  max-height: none !important;
+  height: auto !important;
+  overflow-y: visible !important;
+  overflow: visible !important;
+}
+
+/* Main project grid Ã¢â‚¬â€ closer to approved mockup. */
+.projects-card-grid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  padding: 12px !important;
+  align-items: stretch !important;
+}
+
+/* If class injection misses, use the visible three-column grid inside the panel. */
+.projects-modern-panel > div [style*="grid-template-columns: repeat(3"],
+.projects-modern-panel > div [style*="grid-template-columns:repeat(3"] {
+  gap: 12px !important;
+}
+
+/* Compact premium card. */
+.projects-portfolio-card,
+.projects-card-grid > div {
+  min-height: 0 !important;
+  padding: 13px !important;
+  background: #fff !important;
+  border: 1px solid #E4E9F0 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .025) !important;
+  cursor: pointer;
+  transition:
+    transform .16s ease,
+    box-shadow .16s ease,
+    border-color .16s ease !important;
+}
+
+.projects-portfolio-card:hover,
+.projects-card-grid > div:hover {
+  transform: translateY(-2px);
+  border-color: #D6DDE8 !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .07) !important;
+}
+
+/* Header/avatar proportions. */
+.projects-portfolio-card img,
+.projects-card-grid > div img {
+  max-width: 42px;
+  max-height: 42px;
+}
+
+/* Make metric tiles denser and closer to the mockup. */
+.projects-portfolio-card [style*="background: rgb(249, 250, 251)"],
+.projects-portfolio-card [style*="background:#F9FAFB"],
+.projects-card-grid > div [style*="background: rgb(249, 250, 251)"],
+.projects-card-grid > div [style*="background:#F9FAFB"] {
+  padding: 6px 7px !important;
+  border-radius: 7px !important;
+}
+
+/* New explicit footer. */
+.projects-card-footer {
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid #EEF1F5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.projects-card-mini-meta {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #94A3B8;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.projects-card-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #5B4BDB;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.projects-card-open:hover {
+  color: #4338CA;
+}
+
+/* Keep delete separate and quiet until hover. */
+.projects-portfolio-card button[title*="Delete"],
+.projects-card-grid > div button[title*="Delete"] {
+  opacity: .62;
+}
+
+.projects-portfolio-card:hover button[title*="Delete"],
+.projects-card-grid > div:hover button[title*="Delete"] {
+  opacity: 1;
+}
+
+/* Right rail slightly tighter to match project panel rhythm. */
+.projects-modern-rail {
+  gap: 12px !important;
+}
+
+.projects-modern-rail .da-goal-card {
+  min-height: 170px !important;
+  padding: 18px !important;
+}
+
+.projects-modern-rail > .card {
+  padding: 17px !important;
+}
+
+/* Tablet */
+@media (max-width: 1180px) {
+  .projects-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 720px) {
+  .projects-card-grid {
+    grid-template-columns: 1fr !important;
+    padding: 10px !important;
+  }
+
+  .projects-portfolio-card,
+  .projects-card-grid > div {
+    padding: 12px !important;
+  }
+}
+
+/* DEVNDESPRO PROJECT CARD POLISH END */
+
+
+
+
+/* ============================================================
+   FIX: mobile sidebar content hidden behind fixed mobile-topbar
+   Both .mobile-topbar and .sidebar are position:fixed at top:0,
+   but .sidebar had no top offset to clear the 60px topbar sitting
+   above it (topbar z-index 1001 > sidebar z-index 1000).
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar--open {
+    padding-top: 60px !important;
+    box-sizing: border-box !important;
+  }
+}
+/* ============================================================
+   FIX v2: stronger compound selector to guarantee this wins
+   over any other .sidebar rule regardless of cascade order
+   ============================================================ */
+   @media (max-width: 1024px) {
+    aside.sidebar.sidebar--open {
+      padding-top: 60px !important;
+      box-sizing: border-box !important;
+    }
+  }
+
