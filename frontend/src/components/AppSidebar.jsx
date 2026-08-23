@@ -43,7 +43,7 @@ export default function AppSidebar() {
               <div
                 key={item.label}
                 className={`bottom-tab-bar__item${isActive ? ' active' : ''}`}
-                onClick={() => navigate(item.path)}
+                onClick={() => navigate(item.path, { replace: true })}
               >
                 <span className="bottom-tab-bar__icon">
                   <FontAwesomeIcon icon={item.icon} />
@@ -112,3 +112,4 @@ export default function AppSidebar() {
     </>
   )
 }
+
