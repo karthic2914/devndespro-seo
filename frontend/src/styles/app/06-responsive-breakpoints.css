@@ -122,7 +122,7 @@
   .logout-btn { width: 100%; justify-content: center; }
   
   .app-main { flex: 1; padding-top: 78px; overflow-x: hidden; }
-  .topbar { flex-direction: row; height: 40px; padding: 0 1rem; gap: 10px; }
+  .topbar { display: none; }
   .topbar__title { font-size: 13px; }
   
   .grid-4col { grid-template-columns: 1fr; gap: 10px; }
@@ -172,8 +172,10 @@
   
   .add-project-choice-grid { grid-template-columns: 1fr !important; }
 
-  .ai-tools-tab-row { gap: 4px !important; overflow-x: visible !important; flex-wrap: nowrap !important; justify-content: space-between !important; }
-  .ai-tools-tab-row button { white-space: nowrap; font-size: 11px !important; padding: 12px 2px !important; }
+  .btn, .btn--sm, .btn--md, .btn--lg { min-height: 44px !important; padding: 10px 16px !important; font-size: 13px !important; }
+
+  .ai-tools-tab-row { gap: 6px !important; overflow-x: visible !important; flex-wrap: nowrap !important; justify-content: space-between !important; }
+  .ai-tools-tab-row button { white-space: nowrap; font-size: 13px !important; padding: 14px 4px !important; }
 
   input, textarea, select { padding: 7px 10px; font-size: 16px; }
   .btn { padding: 5px 10px; font-size: 11px; }
@@ -282,6 +284,8 @@
     gap: 12px !important;
   }
 }
+
+
 
 
 
