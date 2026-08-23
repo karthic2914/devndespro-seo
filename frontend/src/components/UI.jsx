@@ -303,9 +303,12 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
       style={{ zIndex: 10050 }}
     >
       <div className="modal" style={{ maxWidth: width }} onClick={e => e.stopPropagation()}>
-        <div className="modal__header">
-          <div className="modal__title">{title}</div>
-          {subtitle && <div className="modal__subtitle">{subtitle}</div>}
+        <div className="modal__header" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+          <div style={{ minWidth: 0 }}>
+            <div className="modal__title">{title}</div>
+            {subtitle && <div className="modal__subtitle">{subtitle}</div>}
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ flexShrink: 0, background: "none", border: "none", cursor: "pointer", fontSize: 22, lineHeight: 1, color: "#9CA3AF", padding: 8, marginTop: -4, marginRight: -6 }}>&times;</button>
         </div>
         <div className="modal__body">{children}</div>
         {footer && <div className="modal__footer">{footer}</div>}
@@ -314,3 +317,5 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
     document.body
   )
 }
+
+

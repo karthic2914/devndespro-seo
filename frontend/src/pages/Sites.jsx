@@ -464,7 +464,7 @@ export default function Sites() {
           }
         >
           {addMode === 'choose' && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+            <div className="add-project-choice-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
               <div
                 onClick={() => { setAddMode('gsc'); checkGscAndLoadProperties() }}
                 style={{ border: '1px solid #e5e7eb', borderRadius: 12, padding: 18, cursor: 'pointer', transition: 'box-shadow 0.2s ease' }}
@@ -1103,6 +1103,8 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
 
 
