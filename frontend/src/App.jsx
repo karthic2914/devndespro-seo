@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { Capacitor } from '@capacitor/core'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -29,6 +29,7 @@ import Users from './pages/Users'
 import AcceptInvite from './pages/AcceptInvite'
 import Settings from './pages/Settings'
 import Reports from './pages/Reports'
+import Tools from './pages/Tools'
 
 // -- Global Snackbar context --------------------------------------------------
 export const SnackbarContext = createContext(null)
@@ -239,6 +240,7 @@ export default function App() {
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/tools" element={<ProtectedRoute><Tools /></ProtectedRoute>} />
           <Route path="/site/:siteId" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
             <Route index element={<Dashboard />} />
             <Route path="keywords" element={<Keywords />} />
@@ -262,5 +264,6 @@ export default function App() {
     </SnackbarContext.Provider>
   )
 }
+
 
 
