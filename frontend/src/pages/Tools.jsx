@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWrench, faWandMagicSparkles, faCopy, faCheck, faLock, faLink, faFileLines,
@@ -159,7 +159,7 @@ export default function Tools() {
           ) : (
             <>
               <div className="card" style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--dark4)', marginBottom: 18 }}>
+                <div className="ai-tools-tab-row" style={{ display: 'flex', gap: 24, borderBottom: '1px solid var(--dark4)', marginBottom: 18 }}>
                   {[
                     { key: 'url', label: 'Enter URL', icon: faLink },
                     { key: 'paste', label: 'Paste Content', icon: faFileLines },
@@ -170,7 +170,7 @@ export default function Tools() {
                       onClick={() => setTab(t.key)}
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                        padding: '10px 2px', fontSize: 13, fontWeight: 700,
+                        padding: '12px 4px', fontSize: 13, fontWeight: 700, minHeight: 44,
                         color: tab === t.key ? 'var(--brand)' : 'var(--muted)',
                         borderBottom: tab === t.key ? '2px solid var(--brand)' : '2px solid transparent',
                         display: 'flex', alignItems: 'center', gap: 7, marginBottom: -1,
@@ -370,3 +370,5 @@ export default function Tools() {
     </div>
   )
 }
+
+

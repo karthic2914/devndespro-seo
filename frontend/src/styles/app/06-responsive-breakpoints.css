@@ -1,4 +1,4 @@
-/* -- Responsive Design System -- */
+﻿/* -- Responsive Design System -- */
 /* Breakpoints: mobile-first design */
 /* sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px */
 
@@ -97,7 +97,7 @@
   .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; z-index: 1000; transition: left 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
   .sidebar--open { left: 0 !important; }
   .sidebar-backdrop { display: block; }
-  .app-main { padding-top: 56px; }
+  .app-main { padding-top: 78px; }
 }
 
 @media (max-width: 639px) {
@@ -121,7 +121,7 @@
   .user-email { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
   .logout-btn { width: 100%; justify-content: center; }
   
-  .app-main { flex: 1; padding-top: 56px; overflow-x: hidden; }
+  .app-main { flex: 1; padding-top: 78px; overflow-x: hidden; }
   .topbar { flex-direction: column; height: auto; padding: 0.75rem 1rem; gap: 10px; }
   .topbar__title { font-size: 13px; }
   
@@ -171,6 +171,9 @@
   .modal__footer .btn { width: 100%; }
   
   .add-project-choice-grid { grid-template-columns: 1fr !important; }
+
+  .ai-tools-tab-row { gap: 10px !important; overflow-x: auto; flex-wrap: nowrap !important; }
+  .ai-tools-tab-row button { white-space: nowrap; font-size: 12px !important; }
 
   input, textarea, select { padding: 7px 10px; font-size: 16px; }
   .btn { padding: 5px 10px; font-size: 11px; }
@@ -279,4 +282,6 @@
     gap: 12px !important;
   }
 }
+
+
 
