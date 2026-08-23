@@ -47,6 +47,7 @@ export default function Tools() {
   const [copied, setCopied] = useState(false)
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState(null)
+  const [mobilePanel, setMobilePanel] = useState('improve')
 
   useEffect(() => {
     if (!isPremium || tab !== 'project') return
@@ -288,8 +289,19 @@ export default function Tools() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 16, marginBottom: 16 }}>
-                    <div className="card">
+                  <div className="ai-tools-mobile-switch">
+                    <button type="button" className={mobilePanel === 'improve' ? 'is-active' : ''} onClick={() => setMobilePanel('improve')}>
+                      <FontAwesomeIcon icon={faCircleExclamation} />
+                      What to improve
+                      <span className="ai-tools-switch-badge">{(result.improvements || []).length}</span>
+                    </button>
+                    <button type="button" className={mobilePanel === 'rewrite' ? 'is-active' : ''} onClick={() => setMobilePanel('rewrite')}>
+                      <FontAwesomeIcon icon={faWandMagicSparkles} />
+                      Rewrite
+                    </button>
+                  </div>
+                  <div className="ai-tools-panels-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 16, marginBottom: 16 }}>
+                    <div className={`card ai-tools-panel-improve ${mobilePanel === 'improve' ? 'is-active-mobile' : ''}`}>
                       <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>What to improve</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         {(result.improvements || []).map((imp, i) => (
@@ -323,7 +335,7 @@ export default function Tools() {
                       </div>
                     </div>
 
-                    <div className="card">
+                    <div className={`card ai-tools-panel-rewrite ${mobilePanel === 'rewrite' ? 'is-active-mobile' : ''}`}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                         <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Citation-ready rewrite</div>
                       </div>
@@ -370,6 +382,9 @@ export default function Tools() {
     </div>
   )
 }
+
+
+
 
 
 
