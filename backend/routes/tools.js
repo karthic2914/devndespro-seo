@@ -112,7 +112,7 @@ ${sourceText}
 
     const msg = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }],
     })
 
@@ -121,7 +121,10 @@ ${sourceText}
     let parsed
     try {
       parsed = JSON.parse(cleaned)
-    } catch {
+    } catch (parseErr) {
+      console.error('rewrite-for-ai JSON parse failed:', parseErr.message)
+      console.error('Raw response (first 2000 chars):', raw.slice(0, 2000))
+      console.error('Response length:', raw.length, 'stop_reason:', msg.stop_reason)
       return res.status(502).json({ error: 'AI response could not be parsed. Please try again.' })
     }
 
@@ -197,5 +200,8 @@ router.post('/rewrite-for-ai/save', auth, requireFeature('ai_assistant'), async 
 })
 
 module.exports = router
+
+
+
 
 
