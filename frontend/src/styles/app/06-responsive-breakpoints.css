@@ -97,7 +97,7 @@
   .sidebar { position: fixed; top: 0; left: -280px; width: 260px; height: 100vh; z-index: 1000; transition: left 0.25s ease; box-shadow: 4px 0 20px rgba(0,0,0,0.15); }
   .sidebar--open { left: 0 !important; }
   .sidebar-backdrop { display: block; }
-  .app-main { padding-top: 78px; }
+  .app-main { padding-top: 92px; }
 }
 
 @media (max-width: 639px) {
@@ -121,7 +121,7 @@
   .user-email { font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
   .logout-btn { width: 100%; justify-content: center; }
   
-  .app-main { flex: 1; padding-top: 78px; overflow-x: hidden; }
+  .app-main { flex: 1; padding-top: 92px; overflow-x: hidden; }
   .topbar { display: none; }
   .topbar__title { font-size: 13px; }
   
@@ -284,6 +284,7 @@
     gap: 12px !important;
   }
 }
+
 
 
 
