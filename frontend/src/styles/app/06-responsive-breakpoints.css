@@ -1,4 +1,4 @@
-﻿/* -- Responsive Design System -- */
+/* -- Responsive Design System -- */
 /* Breakpoints: mobile-first design */
 /* sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px */
 
@@ -361,15 +361,46 @@
   }
 }
 
+/* DEVNDESPRO_MOBILE_SCORE_FIX */
+@media (max-width: 639px) {
+  .ai-tools-score-layout {
+    align-items: stretch !important;
+  }
 
+  .ai-tools-score-summary {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
 
+  .ai-tools-subscore-scroll {
+    display: flex !important;
+    flex: 0 0 100% !important;
 
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
 
+    flex-wrap: nowrap !important;
+    gap: 10px !important;
 
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
 
+    margin: 0 !important;
+    padding: 4px 0 10px !important;
 
+    scroll-snap-type: x proximity !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
 
+  .ai-tools-subscore-scroll::-webkit-scrollbar {
+    display: none;
+  }
 
-
-
-
+  .ai-tools-subscore-scroll > div {
+    flex: 0 0 118px !important;
+    min-width: 118px !important;
+    scroll-snap-align: start;
+  }
+}

@@ -274,8 +274,14 @@ export default function Tools() {
                 <>
                   <div className="card" style={{ marginBottom: 16 }}>
                     <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--text)', marginBottom: 16 }}>Citation Readiness</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 220 }}>
+                    <div
+  className="ai-tools-score-layout"
+  style={{ display: 'flex', flexWrap: 'wrap', gap: 20, alignItems: 'center' }}
+>
+                      <div
+  className="ai-tools-score-summary"
+  style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 220 }}
+>
                         <div style={{
                           width: 84, height: 84, borderRadius: '50%', flexShrink: 0,
                           display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column',
