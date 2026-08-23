@@ -3570,3 +3570,17 @@ textarea {
 /* DEVNDESPRO PROJECT CARD POLISH END */
 
 
+
+
+/* ============================================================
+   FIX: mobile sidebar content hidden behind fixed mobile-topbar
+   Both .mobile-topbar and .sidebar are position:fixed at top:0,
+   but .sidebar had no top offset to clear the 60px topbar sitting
+   above it (topbar z-index 1001 > sidebar z-index 1000).
+   ============================================================ */
+@media (max-width: 1024px) {
+  .sidebar--open {
+    padding-top: 60px !important;
+    box-sizing: border-box !important;
+  }
+}
