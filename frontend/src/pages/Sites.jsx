@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -13,7 +13,7 @@ import { Button, Badge, Modal, Input, T } from '../components/UI'
 import AppSidebar from '../components/AppSidebar'
 import UsageBar from '../components/UsageBar'
 import SiteFavicon from '../components/SiteFavicon'
-import api from '../utils/api'
+import api, { API_BASE } from "../utils/api"
 
 const BENCHMARKS = [
   { label: 'Avg. Time to Rank',    value: '3-6 mo', sub: 'new domain',      color: T.orange, icon: faClock },
@@ -78,11 +78,11 @@ export default function Sites() {
 
   const load = async () => {
     try {
-      const res = await fetch('/api/sites', { headers: authHeaders })
+      const res = await fetch(`${API_BASE}/sites`, { headers: authHeaders })
       if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
       const data = await res.json()
       setSites(Array.isArray(data) ? data : [])
-      const sumRes = await fetch('/api/sites/summary', { headers: authHeaders })
+      const sumRes = await fetch(`${API_BASE}/sites/summary`, { headers: authHeaders })
       if (sumRes.ok) setSummary(await sumRes.json())
     } catch { setSites([]) }
     finally { setLoading(false) }
@@ -96,7 +96,7 @@ export default function Sites() {
 
   useEffect(() => {
     if (user?.id === 1) {
-      fetch('/api/sites/pending/all', { headers: authHeaders })
+      fetch(`${API_BASE}/sites/pending/all`, { headers: authHeaders })
         .then(r => r.ok ? r.json() : [])
         .then(setPendingProjects)
         .catch(() => {})
@@ -105,7 +105,7 @@ export default function Sites() {
 
   const approveProject = async (id) => {
     try {
-      await fetch(`/api/sites/${id}/approve`, { method: 'PATCH', headers: authHeaders })
+      await fetch(`${API_BASE}/sites/${id}/approve`, { method: 'PATCH', headers: authHeaders })
       toast.success('Project approved')
       setPendingProjects(p => p.filter(s => s.id !== id))
       load()
@@ -142,7 +142,7 @@ export default function Sites() {
   const checkGscAndLoadProperties = async () => {
     setGscLoadingProps(true)
     try {
-      const res = await fetch('/api/sites/gsc-properties', { headers: authHeaders })
+      const res = await fetch(`${API_BASE}/sites/gsc-properties`, { headers: authHeaders })
       const data = await res.json()
       setGscConnected(!!data.connected)
       setGscProperties(Array.isArray(data.properties) ? data.properties : [])
@@ -156,7 +156,7 @@ export default function Sites() {
   const connectGsc = async () => {
     setGscConnecting(true)
     try {
-      const res = await fetch('/api/auth/gsc', { headers: authHeaders })
+      const res = await fetch(`${API_BASE}/auth/gsc`, { headers: authHeaders })
       const data = await res.json()
       const popup = window.open(data.url, 'gsc_connect', 'width=520,height=640')
       const onMessage = (e) => {
@@ -261,7 +261,7 @@ export default function Sites() {
         ? propUrl.replace('sc-domain:', '')
         : propUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')
       try {
-        const res = await fetch('/api/sites', {
+        const res = await fetch(`${API_BASE}/sites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({ name: displayUrl, url: displayUrl, notifyAdmin: true }),
@@ -293,7 +293,7 @@ export default function Sites() {
     if (!validate()) return
     setAdding(true)
     try {
-      const res = await fetch('/api/sites', {
+      const res = await fetch(`${API_BASE}/sites`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(form),
@@ -311,7 +311,7 @@ export default function Sites() {
       load()
 
       if (newSite?.id && (user?.is_paid || user?.id === 1)) {
-        fetch(`/api/sites/${newSite.id}/backlinks/crawl`, {
+        fetch(`${API_BASE}/sites/${newSite.id}/backlinks/crawl`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...authHeaders },
           body: JSON.stringify({}),
@@ -340,7 +340,7 @@ export default function Sites() {
   }
 
   const remove = async (id) => {
-    const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
+    const res = await fetch(`${API_BASE}/sites/${id}`, { method: 'DELETE', headers: authHeaders })
     if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
     toast.success('Project deleted')
     load()
@@ -364,7 +364,7 @@ export default function Sites() {
     let successCount = 0
     for (const id of selectedIds) {
       try {
-        const res = await fetch(`/api/sites/${id}`, { method: 'DELETE', headers: authHeaders })
+        const res = await fetch(`${API_BASE}/sites/${id}`, { method: 'DELETE', headers: authHeaders })
         if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
         if (res.ok) successCount++
       } catch { /* continue with remaining */ }
@@ -572,7 +572,7 @@ export default function Sites() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>
                     Locale: {discoverData.meta?.locale?.locationName || 'United States'}
                     {discoverData.meta?.importedCount != null && (
-                      <> Ã‚Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                      <> Ãƒâ€šÃ‚Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
                     )}
                   </div>
 
@@ -634,10 +634,10 @@ export default function Sites() {
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
                                   <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                                     {item.position ? `#${item.position}` : 'No pos'}
-                                    {' Ã‚Â· '}Vol {Number(item.volume || 0).toLocaleString()}
-                                    {' Ã‚Â· '}{item.difficulty || 'Medium'}
-                                    {item.opportunity ? ` Ã‚Â· ${item.opportunity}` : ''}
-                                    {item.source ? ` Ã‚Â· ${item.source}` : ''}
+                                    {' Ãƒâ€šÃ‚Â· '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' Ãƒâ€šÃ‚Â· '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? ` Ãƒâ€šÃ‚Â· ${item.opportunity}` : ''}
+                                    {item.source ? ` Ãƒâ€šÃ‚Â· ${item.source}` : ''}
                                   </div>
                                   {bucket.mode === 'how' && item.how && (
                                     <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
@@ -1103,6 +1103,8 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
 
 

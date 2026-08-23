@@ -1,6 +1,8 @@
 ﻿import axios from 'axios'
 import { Capacitor } from '@capacitor/core'
 
+export const API_BASE = Capacitor.isNativePlatform() ? `${import.meta.env.VITE_API_URL}/api` : "/api"
+
 const api = axios.create({
   baseURL: Capacitor.isNativePlatform() ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   headers: { 'Content-Type': 'application/json' }
@@ -19,6 +21,7 @@ api.interceptors.response.use(
 )
 
 export default api
+
 
 
 

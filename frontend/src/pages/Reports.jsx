@@ -1,4 +1,5 @@
 ﻿import { useEffect, useState } from 'react'
+import { API_BASE } from '../utils/api'
 import {
   Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
@@ -18,10 +19,10 @@ export default function Reports() {
   useEffect(() => {
     setLoading(true)
     Promise.all([
-      fetch('/api/reports/summary').then(res => res.json()),
-      fetch('/api/reports/health-trend').then(res => res.json()),
-      fetch('/api/reports/keyword-trend').then(res => res.json()),
-      fetch('/api/reports/backlink-trend').then(res => res.json()),
+      fetch(`${API_BASE}/reports/summary`).then(res => res.json()),
+      fetch(`${API_BASE}/reports/health-trend`).then(res => res.json()),
+      fetch(`${API_BASE}/reports/keyword-trend`).then(res => res.json()),
+      fetch(`${API_BASE}/reports/backlink-trend`).then(res => res.json()),
     ])
       .then(([summary, health, keywords, backlinks]) => {
         setStats({
@@ -168,3 +169,4 @@ export default function Reports() {
     </div>
   )
 }
+
