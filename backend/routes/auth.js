@@ -179,7 +179,11 @@ router.post('/google', async (req, res) => {
 })
 
 function getMobileGoogleRedirectUri(req) {
-  return `${getBackendUrl(req)}/api/auth/google/mobile/callback`
+  // Railway proxies traffic as http internally, so req.protocol can be
+  // wrong even though the public-facing domain is always https. Force
+  // https explicitly while keeping the host fully dynamic (no hardcoding).
+  const host = req.get('x-forwarded-host') || req.get('host')
+  return `https://${host}/api/auth/google/mobile/callback`
 }
 
 router.get('/google/mobile', (req, res) => {
