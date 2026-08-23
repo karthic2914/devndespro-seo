@@ -117,7 +117,10 @@ ${sourceText}
     })
 
     const raw = msg.content[0]?.text || ''
-    const cleaned = raw.replace(/```json|```/g, '').trim()
+    let cleaned = raw.replace(/```json|```/g, '').trim()
+    cleaned = cleaned.replace(/"(?:[^"\\]|\\.)*"/gs, (match) =>
+      match.replace(/\n/g, '\\n').replace(/\r/g, '').replace(/\t/g, '\\t')
+    )
     let parsed
     try {
       parsed = JSON.parse(cleaned)
@@ -200,6 +203,7 @@ router.post('/rewrite-for-ai/save', auth, requireFeature('ai_assistant'), async 
 })
 
 module.exports = router
+
 
 
 
