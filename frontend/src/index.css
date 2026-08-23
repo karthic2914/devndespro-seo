@@ -3584,3 +3584,13 @@ textarea {
     box-sizing: border-box !important;
   }
 }
+/* ============================================================
+   FIX v2: stronger compound selector to guarantee this wins
+   over any other .sidebar rule regardless of cascade order
+   ============================================================ */
+   @media (max-width: 1024px) {
+    aside.sidebar.sidebar--open {
+      padding-top: 60px !important;
+      box-sizing: border-box !important;
+    }
+  }

@@ -1,4 +1,4 @@
-require('dotenv').config()
+﻿require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const { initDB } = require('./db')
@@ -30,7 +30,22 @@ const PORT = process.env.PORT || 4000
 
 wrapAiClients()
 
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5174', credentials: true }))
+const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5174',
+  'https://localhost',
+  'capacitor://localhost'
+]
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  },
+  credentials: true
+}))
 
 // Stripe needs the raw body for signature verification
 app.post(
@@ -110,3 +125,4 @@ await ensureAiUsageTable().catch((err) => console.error('ai usage table init fai
 
 app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })
+

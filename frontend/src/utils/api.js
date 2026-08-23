@@ -1,7 +1,7 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: window.Capacitor ? `${import.meta.env.VITE_API_URL}/api` : '/api',
   headers: { 'Content-Type': 'application/json' }
 })
 
@@ -18,3 +18,4 @@ api.interceptors.response.use(
 )
 
 export default api
+
