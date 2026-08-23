@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWrench, faWandMagicSparkles, faCopy, faCheck, faLock, faLink, faFileLines,
-  faFolder, faChevronRight, faChevronDown, faCircleExclamation, faCircleCheck,
+  faFolder, faChevronLeft, faChevronRight, faChevronDown, faCircleExclamation, faCircleCheck,
   faDownload, faFloppyDisk, faShieldHalved, faLayerGroup, faBullseye, faClock,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
@@ -49,6 +49,55 @@ export default function Tools() {
   const [expanded, setExpanded] = useState(null)
   const [mobilePanel, setMobilePanel] = useState('improve')
   const [showAllImprovements, setShowAllImprovements] = useState(false)
+  // DEVNDESPRO_SUBSCORE_CAROUSEL
+  const subscoreRef = useRef(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+
+  const updateSubscoreArrows = useCallback(() => {
+    const element = subscoreRef.current
+
+    if (!element) {
+      setCanScrollLeft(false)
+      setCanScrollRight(false)
+      return
+    }
+
+    const maximumScroll =
+      element.scrollWidth - element.clientWidth
+
+    setCanScrollLeft(element.scrollLeft > 4)
+    setCanScrollRight(
+      element.scrollLeft < maximumScroll - 4
+    )
+  }, [])
+
+  useEffect(() => {
+    const frame = requestAnimationFrame(
+      updateSubscoreArrows
+    )
+
+    window.addEventListener(
+      'resize',
+      updateSubscoreArrows
+    )
+
+    return () => {
+      cancelAnimationFrame(frame)
+
+      window.removeEventListener(
+        'resize',
+        updateSubscoreArrows
+      )
+    }
+  }, [result, updateSubscoreArrows])
+
+  const scrollSubscores = direction => {
+    subscoreRef.current?.scrollBy({
+      left: direction * 140,
+      behavior: 'smooth',
+    })
+  }
 
   useEffect(() => {
     if (!isPremium || tab !== 'project') return
@@ -255,17 +304,21 @@ export default function Tools() {
               )}
 
               {loading && (
-                <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
-                  <div style={{
-                    width: 40, height: 40, margin: '0 auto 16px', borderRadius: '50%',
-                    border: '3px solid var(--dark4)', borderTopColor: 'var(--brand)',
-                    animation: 'spin 0.8s linear infinite',
-                  }} />
-                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
-                    Analyzing your content...
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
-                    Checking clarity, structure, authority, and freshness
+                <div
+                  className="ai-tools-loading-overlay"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <div className="ai-tools-loading-dialog">
+                    <div className="ai-tools-loading-spinner" />
+
+                    <div className="ai-tools-loading-title">
+                      Analyzing your content
+                    </div>
+
+                    <div className="ai-tools-loading-message">
+                      Checking clarity, structure, authority and freshness...
+                    </div>
                   </div>
                 </div>
               )}
@@ -301,8 +354,24 @@ export default function Tools() {
                         </div>
                       </div>
 
-                      <div className="ai-tools-subscore-scroll" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flex: 1 }}>
-                        {SUB_SCORE_META.map(m => {
+                      <div className="ai-tools-subscore-shell">
+                        {canScrollLeft && (
+                          <button
+                            type="button"
+                            className="ai-tools-scroll-arrow ai-tools-scroll-arrow--left"
+                            aria-label="View previous scores"
+                            onClick={() => scrollSubscores(-1)}
+                          >
+                            <FontAwesomeIcon icon={faChevronLeft} />
+                          </button>
+                        )}
+
+                        <div
+                          ref={subscoreRef}
+                          className="ai-tools-subscore-scroll"
+                          onScroll={updateSubscoreArrows}
+                        >
+                          {SUB_SCORE_META.map(m => {
                           const val = result.subScores?.[m.key] ?? 0
                           return (
                             <div key={m.key} style={{ border: '1px solid var(--dark4)', borderRadius: 10, padding: '10px 14px', minWidth: 110, textAlign: 'center' }}>
@@ -313,6 +382,18 @@ export default function Tools() {
                             </div>
                           )
                         })}
+                        </div>
+
+                        {canScrollRight && (
+                          <button
+                            type="button"
+                            className="ai-tools-scroll-arrow ai-tools-scroll-arrow--right"
+                            aria-label="View more scores"
+                            onClick={() => scrollSubscores(1)}
+                          >
+                            <FontAwesomeIcon icon={faChevronRight} />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
