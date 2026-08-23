@@ -500,7 +500,15 @@ export default function Sites() {
                   <Button variant="primary" loading={gscConnecting} onClick={connectGsc}>Connect Google Search Console</Button>
                 </div>
               ) : gscProperties.length === 0 ? (
-                <div style={{ padding: '1.5rem', textAlign: 'center', color: '#6B7280', fontSize: 13 }}>No new verified domains found in your GSC account. All verified domains may already be added as projects.</div>
+                <div style={{ padding: '1.5rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827', marginBottom: 8 }}>All caught up</div>
+                  <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6, marginBottom: 4 }}>
+                    Every domain verified in this Google Search Console account is already added as a project here.
+                  </div>
+                  <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.6 }}>
+                    To add a new one, verify it in <a href="https://search.google.com/search-console" target="_blank" rel="noreferrer" style={{ color: '#EA6A3B', fontWeight: 600 }}>Google Search Console</a> first, or use <strong>Add manually</strong> instead.
+                  </div>
+                </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
                   {gscProperties.map(p => (
@@ -1103,6 +1111,7 @@ export default function Sites() {
     </div>
   )
 }
+
 
 
 
