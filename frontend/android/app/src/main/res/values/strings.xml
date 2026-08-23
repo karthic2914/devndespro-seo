@@ -4,4 +4,5 @@
     <string name="title_activity_main">DevnDespro SEO</string>
     <string name="package_name">com.devndespro.seo</string>
     <string name="custom_url_scheme">com.devndespro.seo</string>
+    <string name="server_client_id">476128701143-mbitsnsv351h5vsjdl3a2emkvorfatjf.apps.googleusercontent.com</string>
 </resources>

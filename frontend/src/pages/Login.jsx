@@ -8,8 +8,7 @@ import useDocumentMeta from '../hooks/useDocumentMeta'
 import { Logo, Card, Divider, T } from '../components/UI'
 import api from '../utils/api'
 import { Capacitor } from '@capacitor/core'
-import { Browser } from '@capacitor/browser'
-import { App as CapacitorApp } from '@capacitor/app'
+import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth'
 
 async function continueAfterLogin(navigate, checkoutPlan) {
   if (checkoutPlan === 'pro' || checkoutPlan === 'agency') {
@@ -29,7 +28,7 @@ async function continueAfterLogin(navigate, checkoutPlan) {
 }
 
 export default function Login() {
-  const { user, loading: authLoading, login, loginWithEmail, refreshUser } = useAuth()
+  const { user, loading: authLoading, login, loginWithEmail } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const checkoutPlan = searchParams.get('checkout')
@@ -62,49 +61,29 @@ export default function Login() {
     })()
   }, [authLoading, user, checkoutPlan, navigate])
 
-useEffect(() => {
+  // One-time native Google Sign-In setup (no-op on web)
+  useEffect(() => {
     if (!Capacitor.isNativePlatform()) return
-
-    const sub = CapacitorApp.addListener('appUrlOpen', async (data) => {
-      try {
-        const url = new URL(data.url)
-        const token = url.searchParams.get('token')
-        const errorMsg = url.searchParams.get('error')
-
-        await Browser.close().catch(() => {})
-
-        if (errorMsg) {
-          setError(decodeURIComponent(errorMsg))
-          setNativeGoogleLoading(false)
-          return
-        }
-
-        if (token) {
-          setNativeGoogleLoading(true)
-          localStorage.setItem('seo_token', token)
-          api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-          await refreshUser()
-          await continueAfterLogin(navigate, checkoutPlan)
-        }
-      } catch (e) {
-        setError('Sign-in failed. Please try again.')
-      } finally {
-        setNativeGoogleLoading(false)
-      }
-    })
-
-    return () => { sub.then(s => s.remove()) }
+    GoogleAuth.initialize()
   }, [])
 
-    async function handleGoogleNative() {
+  async function handleGoogleNative() {
     setNativeGoogleLoading(true)
     setError('')
     try {
-      const backendUrl = 'https://devndespro-seo-production.up.railway.app'
-      await Browser.open({ url: `${backendUrl}/api/auth/google/mobile` })
+      const result = await GoogleAuth.signIn()
+      const accessToken = result?.authentication?.accessToken
+      if (!accessToken) throw new Error('No access token returned')
+      await login(accessToken)
+      await continueAfterLogin(navigate, checkoutPlan)
     } catch (e) {
-      console.error('Failed to open Google sign-in:', e)
-      setError('Could not open sign-in. Please try again.')
+      console.error('Google native sign-in error:', e)
+      // User closing the native picker throws too — don't show a scary error for that
+      const cancelled = e?.error === 'popup_closed_by_user' || e?.message?.includes('cancel')
+      if (!cancelled) {
+        setError('Google sign-in failed. Please try again.')
+      }
+    } finally {
       setNativeGoogleLoading(false)
     }
   }

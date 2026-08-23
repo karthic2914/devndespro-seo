@@ -8,6 +8,11 @@
       "launchAutoHide": true,
       "backgroundColor": "#ffffff",
       "showSpinner": false
+    },
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "476128701143-mbitsnsv351h5vsjdl3a2emkvorfatjf.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
     }
   }
 }
