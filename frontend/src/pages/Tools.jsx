@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faWrench, faWandMagicSparkles, faCopy, faCheck, faLock, faLink, faFileLines,
@@ -48,6 +48,7 @@ export default function Tools() {
   const [saving, setSaving] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [mobilePanel, setMobilePanel] = useState('improve')
+  const [showAllImprovements, setShowAllImprovements] = useState(false)
 
   useEffect(() => {
     if (!isPremium || tab !== 'project') return
@@ -56,6 +57,7 @@ export default function Tools() {
 
   const analyze = async () => {
     if (tab === 'paste' && !content.trim()) return toast.error('Paste some content first')
+    if (tab === 'paste' && content.trim().length < 40) return toast.error('Please paste at least a full sentence or two (40+ characters) for an accurate score')
     if (tab === 'url' && !url.trim()) return toast.error('Enter a URL first')
     if (tab === 'project' && !siteId) return toast.error('Choose a project first')
 
@@ -63,6 +65,7 @@ export default function Tools() {
     setError('')
     setResult(null)
     setExpanded(null)
+    setShowAllImprovements(false)
     try {
       const body = { targetKeyword: targetKeyword || undefined, audience: audience || undefined, contentType: contentType || undefined }
       if (tab === 'paste') body.content = content
@@ -122,6 +125,9 @@ export default function Tools() {
   const renderRewrite = (html) => {
     return { __html: html.replace(/<mark>/g, '<mark style="background:#EDE9FE;color:#5B21B6;padding:0 3px;border-radius:3px;font-weight:600;">') }
   }
+
+  const allImprovements = result?.improvements || []
+  const visibleImprovements = showAllImprovements ? allImprovements : allImprovements.slice(0, 3)
 
   return (
     <div className="app-shell">
@@ -248,6 +254,22 @@ export default function Tools() {
                 </div>
               )}
 
+              {loading && (
+                <div className="card" style={{ textAlign: 'center', padding: '3rem 2rem' }}>
+                  <div style={{
+                    width: 40, height: 40, margin: '0 auto 16px', borderRadius: '50%',
+                    border: '3px solid var(--dark4)', borderTopColor: 'var(--brand)',
+                    animation: 'spin 0.8s linear infinite',
+                  }} />
+                  <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', marginBottom: 6 }}>
+                    Analyzing your content...
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--muted)' }}>
+                    Checking clarity, structure, authority, and freshness
+                  </div>
+                </div>
+              )}
+
               {result && (
                 <>
                   <div className="card" style={{ marginBottom: 16 }}>
@@ -273,7 +295,7 @@ export default function Tools() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flex: 1 }}>
+                      <div className="ai-tools-subscore-scroll" style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flex: 1 }}>
                         {SUB_SCORE_META.map(m => {
                           const val = result.subScores?.[m.key] ?? 0
                           return (
@@ -293,7 +315,7 @@ export default function Tools() {
                     <button type="button" className={mobilePanel === 'improve' ? 'is-active' : ''} onClick={() => setMobilePanel('improve')}>
                       <FontAwesomeIcon icon={faCircleExclamation} />
                       What to improve
-                      <span className="ai-tools-switch-badge">{(result.improvements || []).length}</span>
+                      <span className="ai-tools-switch-badge">{allImprovements.length}</span>
                     </button>
                     <button type="button" className={mobilePanel === 'rewrite' ? 'is-active' : ''} onClick={() => setMobilePanel('rewrite')}>
                       <FontAwesomeIcon icon={faWandMagicSparkles} />
@@ -302,9 +324,20 @@ export default function Tools() {
                   </div>
                   <div className="ai-tools-panels-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.4fr)', gap: 16, marginBottom: 16 }}>
                     <div className={`card ai-tools-panel-improve ${mobilePanel === 'improve' ? 'is-active-mobile' : ''}`}>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)', marginBottom: 12 }}>What to improve</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Priority improvements</div>
+                        {allImprovements.length > 3 && (
+                          <button
+                            type="button"
+                            onClick={() => setShowAllImprovements(v => !v)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--brand)', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}
+                          >
+                            {showAllImprovements ? 'Show less' : `View all ${allImprovements.length}`}
+                          </button>
+                        )}
+                      </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {(result.improvements || []).map((imp, i) => (
+                        {visibleImprovements.map((imp, i) => (
                           <div key={i} style={{ border: '1px solid var(--dark4)', borderRadius: 10, overflow: 'hidden' }}>
                             <button
                               onClick={() => setExpanded(expanded === i ? null : i)}
@@ -340,10 +373,11 @@ export default function Tools() {
                         <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>Citation-ready rewrite</div>
                       </div>
                       <div
+                        className="ai-tools-rewrite-body"
                         style={{ fontSize: 13.5, lineHeight: 1.7, color: 'var(--text)', background: '#F9FAFB', border: '1px solid var(--dark4)', borderRadius: 10, padding: 16, maxHeight: 420, overflowY: 'auto' }}
                         dangerouslySetInnerHTML={renderRewrite(result.rewrite || '')}
                       />
-                      <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                      <div className="ai-tools-rewrite-actions" style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                         <Button variant="secondary" size="sm" onClick={copyRewrite}>
                           <FontAwesomeIcon icon={copied ? faCheck : faCopy} style={{ marginRight: 6 }} />{copied ? 'Copied' : 'Copy'}
                         </Button>
@@ -357,7 +391,7 @@ export default function Tools() {
                     </div>
                   </div>
 
-                  <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+                  <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 90 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text2)' }}>
                       Original <span style={{ color: scoreColor(result.originalScore), fontWeight: 800, fontSize: 16 }}>{result.originalScore}</span>
                     </div>
@@ -373,6 +407,18 @@ export default function Tools() {
                       +{Math.max(result.optimizedScore - result.originalScore, 0)} improvement
                     </div>
                   </div>
+
+                  <div className="ai-tools-sticky-actions">
+                    <Button variant="secondary" size="sm" onClick={copyRewrite}>
+                      <FontAwesomeIcon icon={copied ? faCheck : faCopy} style={{ marginRight: 6 }} />{copied ? 'Copied' : 'Copy'}
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={exportRewrite}>
+                      <FontAwesomeIcon icon={faDownload} style={{ marginRight: 6 }} />Export
+                    </Button>
+                    <Button variant="primary" size="sm" loading={saving} onClick={saveToProject}>
+                      <FontAwesomeIcon icon={faFloppyDisk} style={{ marginRight: 6 }} />Save
+                    </Button>
+                  </div>
                 </>
               )}
             </>
@@ -382,9 +428,3 @@ export default function Tools() {
     </div>
   )
 }
-
-
-
-
-
-
