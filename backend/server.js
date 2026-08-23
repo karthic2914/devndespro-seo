@@ -21,6 +21,7 @@ const settingsRouter = require('./routes/settings')
 const publicAuditRouter = require('./routes/publicAudit')
 const publicFxRouter = require('./routes/publicFx')
 const usageRouter = require('./routes/usage')
+const toolsRouter = require('./routes/tools')
 const { router: billingRouter, handleStripeWebhook } = require('./routes/billing')
 const { wrapAiClients } = require('./utils/wrapAiClients')
 const { ensureAiUsageTable } = require('./utils/aiUsage')
@@ -76,6 +77,7 @@ app.use('/api/settings', settingsRouter)
 app.use('/api/public', publicAuditRouter)
 app.use('/api/public', publicFxRouter)
 app.use('/api/usage', usageRouter)
+app.use('/api/tools', toolsRouter)
 
 
 const cron = require('node-cron')
@@ -125,4 +127,5 @@ await ensureAiUsageTable().catch((err) => console.error('ai usage table init fai
 
 app.listen(PORT, () => console.log(`SEO backend running on port ${PORT}`))
 }).catch(err => { console.error('DB init failed:', err); process.exit(1) })
+
 
