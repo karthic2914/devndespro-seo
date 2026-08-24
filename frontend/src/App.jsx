@@ -207,16 +207,31 @@ function HomeRoute() {
 }
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
-  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform())
+  const { loading: authLoading } = useAuth()
 
+  // DEVNDESPRO_AUTH_READY_SPLASH
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
-    SplashScreen.hide()
-    const timer = setTimeout(() => {
-      setShowSplash(false)
-    }, 800)
-    return () => clearTimeout(timer)
-  }, [])
+    if (
+      !Capacitor.isNativePlatform() ||
+      authLoading
+    ) {
+      return
+    }
+
+    // Login or Sites has rendered behind the native splash.
+    const frame = requestAnimationFrame(() => {
+      SplashScreen.hide().catch(error => {
+        console.error(
+          'Failed to hide splash screen:',
+          error
+        )
+      })
+    })
+
+    return () => {
+      cancelAnimationFrame(frame)
+    }
+  }, [authLoading])
 
   function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
     setSnackbar({ open: true, message, type, duration, ...options })
@@ -226,17 +241,6 @@ export default function App() {
     setSnackbar(s => ({ ...s, open: false }))
   }
 
-  if (showSplash) {
-    return (
-      <div style={{
-        position: 'fixed', inset: 0, zIndex: 999999,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#fff',
-      }}>
-        <img src="/splash.png" alt="DevnDespro SEO" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-      </div>
-    )
-  }
 
   return (
     <SnackbarContext.Provider value={showSnackbar}>
