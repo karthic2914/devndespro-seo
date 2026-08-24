@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef, createContext, useContext, Suspense, lazy } from 'react'
-import { SplashScreen } from '@capacitor/splash-screen'
 import { Capacitor } from '@capacitor/core'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -207,26 +206,19 @@ function HomeRoute() {
 }
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
-  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform())
   const { loading: authLoading } = useAuth()
 
+  // DEVNDESPRO_APP_READY_SIGNAL
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return
+    if (authLoading) return
 
-    SplashScreen.hide()
+    document.documentElement.dataset.devndesproAppReady =
+      'true'
 
-    // Keep the branded splash up until we actually know whether the
-    // person is logged in, instead of a blind timer that can hide it
-    // before the auth check finishes (which exposed a white flash).
-    if (!authLoading) {
-      const timer = setTimeout(() => {
-        setShowSplash(false)
-      }, 300)
-
-      return () => clearTimeout(timer)
-    }
+    window.dispatchEvent(
+      new CustomEvent('devndespro:app-ready')
+    )
   }, [authLoading])
-
   function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
     setSnackbar({ open: true, message, type, duration, ...options })
   }
@@ -235,32 +227,6 @@ export default function App() {
     setSnackbar(s => ({ ...s, open: false }))
   }
 
-
-  if (showSplash) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 999999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          background: '#ffffff',
-        }}
-      >
-        <img
-          src="/splash.png"
-          alt="DevnDespro SEO"
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-        />
-      </div>
-    )
-  }
 
   return (
     <SnackbarContext.Provider value={showSnackbar}>

@@ -93,56 +93,124 @@ queueMicrotask(() => {
   if (shell) shell.remove()
 })
 
-// DEVNDESPRO_FIRST_WEB_FRAME
+
+// DEVNDESPRO_SINGLE_SPLASH_CONTROLLER
 const finishNativeStartup = async () => {
-  try {
-    const startupImage = document.querySelector(
-      '#devndespro-startup-splash img'
-    )
+  const startupSplash = document.getElementById(
+    'devndespro-startup-splash'
+  )
 
-    if (startupImage && !startupImage.complete) {
-      await new Promise((resolve) => {
-        const finish = () => resolve()
+  const startupImage = startupSplash?.querySelector(
+    'img'
+  )
 
-        startupImage.addEventListener('load', finish, {
-          once: true,
-        })
+  const waitForImage = async () => {
+    if (!startupImage || startupImage.complete) return
 
-        startupImage.addEventListener('error', finish, {
-          once: true,
-        })
+    await new Promise((resolve) => {
+      let completed = false
 
-        window.setTimeout(finish, 1500)
+      const finish = () => {
+        if (completed) return
+        completed = true
+        resolve()
+      }
+
+      startupImage.addEventListener('load', finish, {
+        once: true,
       })
+
+      startupImage.addEventListener('error', finish, {
+        once: true,
+      })
+
+      window.setTimeout(finish, 2000)
+    })
+  }
+
+  const waitForAppReady = async () => {
+    if (
+      document.documentElement.dataset
+        .devndesproAppReady === 'true'
+    ) {
+      return
     }
 
+    await new Promise((resolve) => {
+      let completed = false
+
+      const finish = () => {
+        if (completed) return
+        completed = true
+
+        window.removeEventListener(
+          'devndespro:app-ready',
+          finish
+        )
+
+        resolve()
+      }
+
+      window.addEventListener(
+        'devndespro:app-ready',
+        finish,
+        { once: true }
+      )
+
+      // Safety fallback if authentication is unavailable.
+      window.setTimeout(finish, 6000)
+    })
+  }
+
+  try {
+    await Promise.all([
+      waitForImage(),
+      waitForAppReady(),
+    ])
+
+    // Allow Login or Sites to complete two paint cycles.
     await new Promise((resolve) => {
       requestAnimationFrame(() => {
         requestAnimationFrame(resolve)
       })
     })
 
-    const capacitorModule = await import(
-      '@capacitor/core'
-    )
+    const {
+      Capacitor,
+    } = await import('@capacitor/core')
 
-    if (
-      capacitorModule.Capacitor.isNativePlatform()
-    ) {
-      const splashModule = await import(
-        '@capacitor/splash-screen'
-      )
+    if (Capacitor.isNativePlatform()) {
+      const {
+        SplashScreen,
+      } = await import('@capacitor/splash-screen')
 
-      await splashModule.SplashScreen.hide({
+      await SplashScreen.hide({
         fadeOutDuration: 160,
       })
+    }
+
+    // The static branded splash remains underneath the
+    // native layer, preventing a white transition.
+    await new Promise((resolve) => {
+      window.setTimeout(resolve, 180)
+    })
+
+    if (startupSplash) {
+      startupSplash.style.opacity = '0'
+      startupSplash.style.pointerEvents = 'none'
+
+      window.setTimeout(() => {
+        startupSplash.remove()
+      }, 180)
     }
   }
   catch (error) {
     console.warn(
-      'Native startup transition:',
+      'Startup splash transition:',
       error
     )
+
+    startupSplash?.remove()
   }
 }
 
