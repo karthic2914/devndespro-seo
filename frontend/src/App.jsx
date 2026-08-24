@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { Capacitor } from '@capacitor/core'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -175,17 +175,36 @@ function FeatureRoute({ feature, children }) {
   return children
 }
 
+function WebOnlyRoute({ children }) {
+  if (Capacitor.isNativePlatform()) {
+    return <Navigate to="/" replace />
+  }
+
+  return children
+}
+
 function HomeRoute() {
   const { user, loading } = useAuth()
+  const isNativeApp = Capacitor.isNativePlatform()
+
   if (loading) return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#666', fontFamily: 'Syne,sans-serif' }}>
       Loading...
     </div>
   )
-  if (!user) return <Landing />
+
+  // Installed Android/iOS app bypasses marketing.
+  if (isNativeApp && !user) {
+    return <Navigate to="/login" replace />
+  }
+
+  // Public website continues to show the landing page.
+  if (!user) {
+    return <Landing />
+  }
+
   return <Sites />
 }
-
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
   const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform())
@@ -228,15 +247,15 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/accept-invite" element={<AcceptInvite />} />
           <Route path="/" element={<HomeRoute />} />
-          <Route path="/features" element={<MarketingPage />} />
-          <Route path="/platform" element={<MarketingPage />} />
-          <Route path="/how-it-works" element={<MarketingPage />} />
-          <Route path="/ai-visibility" element={<MarketingPage />} />
-          <Route path="/seo-audit" element={<MarketingPage />} />
-          <Route path="/keyword-tracking" element={<MarketingPage />} />
-          <Route path="/backlink-monitoring" element={<MarketingPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/about" element={<MarketingPage />} />
+          <Route path="/features" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/platform" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/how-it-works" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/ai-visibility" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/seo-audit" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/keyword-tracking" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/backlink-monitoring" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
+          <Route path="/pricing" element={<WebOnlyRoute><PricingPage /></WebOnlyRoute>} />
+          <Route path="/about" element={<WebOnlyRoute><MarketingPage /></WebOnlyRoute>} />
           <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
