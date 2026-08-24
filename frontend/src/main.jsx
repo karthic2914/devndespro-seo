@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Toaster } from 'react-hot-toast'
@@ -93,4 +93,57 @@ queueMicrotask(() => {
   if (shell) shell.remove()
 })
 
+// DEVNDESPRO_FIRST_WEB_FRAME
+const finishNativeStartup = async () => {
+  try {
+    const startupImage = document.querySelector(
+      '#devndespro-startup-splash img'
+    )
 
+    if (startupImage && !startupImage.complete) {
+      await new Promise((resolve) => {
+        const finish = () => resolve()
+
+        startupImage.addEventListener('load', finish, {
+          once: true,
+        })
+
+        startupImage.addEventListener('error', finish, {
+          once: true,
+        })
+
+        window.setTimeout(finish, 1500)
+      })
+    }
+
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(resolve)
+      })
+    })
+
+    const capacitorModule = await import(
+      '@capacitor/core'
+    )
+
+    if (
+      capacitorModule.Capacitor.isNativePlatform()
+    ) {
+      const splashModule = await import(
+        '@capacitor/splash-screen'
+      )
+
+      await splashModule.SplashScreen.hide({
+        fadeOutDuration: 160,
+      })
+    }
+  }
+  catch (error) {
+    console.warn(
+      'Native startup transition:',
+      error
+    )
+  }
+}
+
+finishNativeStartup()

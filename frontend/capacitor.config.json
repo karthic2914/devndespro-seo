@@ -4,8 +4,8 @@
     "webDir":  "dist",
     "plugins":  {
                     "SplashScreen":  {
-                                         "launchShowDuration":  200,
-                                         "launchAutoHide":  true,
+                                         "launchShowDuration":  0,
+                                         "launchAutoHide":  false,
                                          "backgroundColor":  "#ffffff",
                                          "showSpinner":  false
                                      },
