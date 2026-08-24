@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Numbered process / flow - clickable steps for guided full-page workflows.
  * compact: connected top-bar stepper (Test → Understand → Improve style)
  *
@@ -228,7 +228,7 @@ export default function ProcessSteps({ steps = [], style, title, compact = false
                 ) : null}
                 {clickable ? (
                   <div style={{ fontSize: 10, fontWeight: 700, color: active ? '#EA580C' : '#94A3B8', marginTop: 4 }}>
-                    Go >
+                    Go {'>'}
                   </div>
                 ) : null}
               </div>
