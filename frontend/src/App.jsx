@@ -207,29 +207,23 @@ function HomeRoute() {
 }
 export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
+  const [showSplash, setShowSplash] = useState(Capacitor.isNativePlatform())
   const { loading: authLoading } = useAuth()
 
-  // DEVNDESPRO_NATIVE_SPLASH_UNTIL_AUTH_READY
   useEffect(() => {
-    if (
-      !Capacitor.isNativePlatform() ||
-      authLoading
-    ) {
-      return
-    }
+    if (!Capacitor.isNativePlatform()) return
 
-    // Login or Sites is now ready behind the native splash.
-    const frame = requestAnimationFrame(() => {
-      SplashScreen.hide().catch(error => {
-        console.error(
-          'Failed to hide native splash:',
-          error
-        )
-      })
-    })
+    SplashScreen.hide()
 
-    return () => {
-      cancelAnimationFrame(frame)
+    // Keep the branded splash up until we actually know whether the
+    // person is logged in, instead of a blind timer that can hide it
+    // before the auth check finishes (which exposed a white flash).
+    if (!authLoading) {
+      const timer = setTimeout(() => {
+        setShowSplash(false)
+      }, 300)
+
+      return () => clearTimeout(timer)
     }
   }, [authLoading])
 
@@ -242,13 +236,9 @@ export default function App() {
   }
 
 
-  if (
-    Capacitor.isNativePlatform() &&
-    authLoading
-  ) {
+  if (showSplash) {
     return (
       <div
-        aria-label="DevnDespro is starting"
         style={{
           position: 'fixed',
           inset: 0,
