@@ -209,20 +209,18 @@ export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
   const { loading: authLoading } = useAuth()
 
-  // DEVNDESPRO_AUTH_READY_SPLASH
+  // DEVNDESPRO_SEAMLESS_BRANDED_SPLASH
   useEffect(() => {
-    if (
-      !Capacitor.isNativePlatform() ||
-      authLoading
-    ) {
+    if (!Capacitor.isNativePlatform()) {
       return
     }
 
-    // Login or Sites has rendered behind the native splash.
+    // The React branded splash is already rendered behind
+    // the native splash. Hide the native layer next frame.
     const frame = requestAnimationFrame(() => {
       SplashScreen.hide().catch(error => {
         console.error(
-          'Failed to hide splash screen:',
+          'Failed to hide native splash:',
           error
         )
       })
@@ -231,7 +229,7 @@ export default function App() {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [authLoading])
+  }, [])
 
   function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
     setSnackbar({ open: true, message, type, duration, ...options })
@@ -241,6 +239,36 @@ export default function App() {
     setSnackbar(s => ({ ...s, open: false }))
   }
 
+
+  if (
+    Capacitor.isNativePlatform() &&
+    authLoading
+  ) {
+    return (
+      <div
+        aria-label="DevnDespro is starting"
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 999999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: '#ffffff',
+        }}
+      >
+        <img
+          src="/splash.png"
+          alt="DevnDespro SEO"
+          style={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <SnackbarContext.Provider value={showSnackbar}>
