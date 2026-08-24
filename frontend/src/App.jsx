@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, createContext, useContext } from 'react'
+import { useState, useEffect, useMemo, useRef, createContext, useContext, Suspense, lazy } from 'react'
 import { SplashScreen } from '@capacitor/splash-screen'
 import { Capacitor } from '@capacitor/core'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
@@ -7,29 +7,29 @@ import { faCircleCheck, faCircleXmark, faTriangleExclamation, faCircleInfo, faXm
 import { useAuth } from './hooks/useAuth'
 import { canUseBacklinks, canUseKeywords, canUseAiAssistant, canUseColdEmails } from './utils/features'
 import Login from './pages/Login'
-import Landing from './pages/Landing'
-import MarketingPage from './pages/marketing/MarketingPage'
-import PricingPage from './pages/marketing/PricingPage'
+const Landing = lazy(() => import('./pages/Landing'))
+const MarketingPage = lazy(() => import('./pages/marketing/MarketingPage'))
+const PricingPage = lazy(() => import('./pages/marketing/PricingPage'))
 import Sites from './pages/Sites'
-import Dashboard from './pages/Dashboard'
-import Keywords from './pages/Keywords'
-import Backlinks from './pages/Backlinks'
-import Competitors from './pages/Competitors'
-import Actions from './pages/Actions'
-import AIVisibility from './pages/AIVisibility'
-import PublicAIVisibility from './pages/PublicAIVisibility'
-import SiteAudit from './pages/SiteAudit'
-import Alerts from './pages/Alerts'
-import Integrations from './pages/Integrations'
-import EmailReports from './pages/EmailReports'
-import ColdEmails from './pages/ColdEmails'
-import RankNo1 from './pages/RankNo1'
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Keywords = lazy(() => import('./pages/Keywords'))
+const Backlinks = lazy(() => import('./pages/Backlinks'))
+const Competitors = lazy(() => import('./pages/Competitors'))
+const Actions = lazy(() => import('./pages/Actions'))
+const AIVisibility = lazy(() => import('./pages/AIVisibility'))
+const PublicAIVisibility = lazy(() => import('./pages/PublicAIVisibility'))
+const SiteAudit = lazy(() => import('./pages/SiteAudit'))
+const Alerts = lazy(() => import('./pages/Alerts'))
+const Integrations = lazy(() => import('./pages/Integrations'))
+const EmailReports = lazy(() => import('./pages/EmailReports'))
+const ColdEmails = lazy(() => import('./pages/ColdEmails'))
+const RankNo1 = lazy(() => import('./pages/RankNo1'))
 import Layout from './components/Layout'
-import Users from './pages/Users'
+const Users = lazy(() => import('./pages/Users'))
 import AcceptInvite from './pages/AcceptInvite'
-import Settings from './pages/Settings'
-import Reports from './pages/Reports'
-import Tools from './pages/Tools'
+const Settings = lazy(() => import('./pages/Settings'))
+const Reports = lazy(() => import('./pages/Reports'))
+const Tools = lazy(() => import('./pages/Tools'))
 
 // -- Global Snackbar context --------------------------------------------------
 export const SnackbarContext = createContext(null)
@@ -266,6 +266,11 @@ export default function App() {
     <SnackbarContext.Provider value={showSnackbar}>
       <GlobalSnackbar snackbar={snackbar} onClose={closeSnackbar} />
       <BrowserRouter>
+        <Suspense fallback={
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', color: '#666', fontFamily: 'Syne,sans-serif' }}>
+            Loading...
+          </div>
+        }>
         <Routes>
           <Route path="/public/ai-visibility/:token" element={<PublicAIVisibility />} />
           <Route path="/login" element={<Login />} />
@@ -303,6 +308,7 @@ export default function App() {
             <Route path="reports" element={<Reports />} />
           </Route>
         </Routes>
+        </Suspense>
       </BrowserRouter>
     </SnackbarContext.Provider>
   )
