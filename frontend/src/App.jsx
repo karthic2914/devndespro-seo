@@ -209,14 +209,16 @@ export default function App() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', type: 'info', duration: 3500, engine: null })
   const { loading: authLoading } = useAuth()
 
-  // DEVNDESPRO_SEAMLESS_BRANDED_SPLASH
+  // DEVNDESPRO_NATIVE_SPLASH_UNTIL_AUTH_READY
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) {
+    if (
+      !Capacitor.isNativePlatform() ||
+      authLoading
+    ) {
       return
     }
 
-    // The React branded splash is already rendered behind
-    // the native splash. Hide the native layer next frame.
+    // Login or Sites is now ready behind the native splash.
     const frame = requestAnimationFrame(() => {
       SplashScreen.hide().catch(error => {
         console.error(
@@ -229,7 +231,7 @@ export default function App() {
     return () => {
       cancelAnimationFrame(frame)
     }
-  }, [])
+  }, [authLoading])
 
   function showSnackbar(message, type = 'info', duration = 3500, options = {}) {
     setSnackbar({ open: true, message, type, duration, ...options })

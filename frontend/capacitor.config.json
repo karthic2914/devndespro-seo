@@ -1,18 +1,21 @@
 {
-  "appId": "com.devndespro.seo",
-  "appName": "DevnDespro SEO",
-  "webDir": "dist",
-  "plugins": {
-    "SplashScreen": {
-      "launchShowDuration": 200,
-      "launchAutoHide": true,
-      "backgroundColor": "#ffffff",
-      "showSpinner": false
-    },
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "serverClientId": "476128701143-mbitsnsv351h5vsjdl3a2emkvorfatjf.apps.googleusercontent.com",
-      "forceCodeForRefreshToken": true
-    }
-  }
+    "appId":  "com.devndespro.seo",
+    "appName":  "DevnDespro SEO",
+    "webDir":  "dist",
+    "plugins":  {
+                    "SplashScreen":  {
+                                         "launchShowDuration":  0,
+                                         "launchAutoHide":  false,
+                                         "backgroundColor":  "#ffffff",
+                                         "showSpinner":  false
+                                     },
+                    "GoogleAuth":  {
+                                       "scopes":  [
+                                                      "profile",
+                                                      "email"
+                                                  ],
+                                       "serverClientId":  "476128701143-mbitsnsv351h5vsjdl3a2emkvorfatjf.apps.googleusercontent.com",
+                                       "forceCodeForRefreshToken":  true
+                                   }
+                }
 }
