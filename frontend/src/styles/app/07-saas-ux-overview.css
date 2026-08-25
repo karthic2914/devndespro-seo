@@ -607,3 +607,164 @@ textarea {
 
 /* DEVNDESPRO PROJECTS UX CLEANUP END */
 
+
+
+/* DEVNDESPRO RESPONSIVE HEALTH GAUGE START */
+.dd-health-gauge-progress {
+  animation: dd-health-gauge-draw 900ms cubic-bezier(.22, 1, .36, 1) both;
+  will-change: stroke-dasharray;
+}
+
+@keyframes dd-health-gauge-draw {
+  from { stroke-dasharray: 0 100; }
+  to { stroke-dasharray: var(--dd-health-target) 100; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-health-gauge-progress {
+    animation: none !important;
+  }
+}
+/* DEVNDESPRO RESPONSIVE HEALTH GAUGE END */
+
+.dd-health-gauge-needle {
+  animation: dd-health-gauge-needle-sweep 900ms cubic-bezier(.22, 1, .36, 1) both;
+  transform: rotate(var(--dd-gauge-angle-target));
+}
+
+@keyframes dd-health-gauge-needle-sweep {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(var(--dd-gauge-angle-target)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-health-gauge-needle {
+    animation: none !important;
+    transform: rotate(var(--dd-gauge-angle-target));
+  }
+}
+
+/* DEVNDESPRO SITE HEALTH SPEEDOMETER START */
+.dd-site-health-gauge {
+  position: relative;
+  width: min(100%, 250px);
+  min-width: 0;
+  margin: 0 auto;
+  padding-bottom: 25px;
+  isolation: isolate;
+}
+
+.dd-site-health-gauge svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.dd-site-health-gauge path {
+  fill: none;
+  stroke-width: 14;
+  stroke-linecap: round;
+}
+
+.dd-gauge-zone {
+  opacity: .18;
+}
+
+.dd-gauge-zone--red { stroke: #DC2626; }
+.dd-gauge-zone--amber { stroke: #F59E0B; }
+.dd-gauge-zone--green { stroke: #16A34A; }
+
+.dd-gauge-active {
+  filter: drop-shadow(0 2px 3px rgba(15, 23, 42, .12));
+}
+
+.dd-gauge-active--red { stroke: #DC2626; }
+.dd-gauge-active--amber { stroke: #F59E0B; }
+.dd-gauge-active--green { stroke: #16A34A; }
+
+.dd-gauge-needle {
+  will-change: transform;
+}
+
+.dd-gauge-needle line {
+  stroke: #172033;
+  stroke-width: 4;
+  stroke-linecap: round;
+}
+
+.dd-gauge-hub-ring {
+  fill: #fff;
+  stroke: #E2E8F0;
+  stroke-width: 3;
+}
+
+.dd-gauge-hub {
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, .24));
+}
+
+.dd-gauge-reading {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.dd-gauge-number {
+  font-size: 36px;
+  font-weight: 850;
+  line-height: 1;
+  letter-spacing: -.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.dd-gauge-total {
+  margin-left: 4px;
+  color: #52627A;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.dd-gauge-status {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.dd-site-health-gauge--compact {
+  width: min(100%, 220px);
+}
+
+.dd-site-health-gauge--compact .dd-gauge-number {
+  font-size: 31px;
+}
+
+@media (max-width: 639px) {
+  .dd-site-health-gauge {
+    width: min(100%, 245px);
+  }
+
+  .dd-gauge-number {
+    font-size: 34px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dd-gauge-active,
+  .dd-gauge-needle,
+  .dd-gauge-number {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+/* DEVNDESPRO SITE HEALTH SPEEDOMETER END */

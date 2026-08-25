@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -28,6 +28,8 @@ import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import toast from '../utils/toast'
+import MobileProjectOverview from './mobile-overview/MobileProjectOverview'
+import SiteHealthGauge from '../components/SiteHealthGauge'
 
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
@@ -97,7 +99,7 @@ export default function Dashboard() {
     if (stored) setSite(JSON.parse(stored))
 
     api.get(`/sites/${siteId}`).then(r => {
-      if (r.data) setSite(r.data)
+      if (r.data) setSite((current) => ({ ...(current || {}), ...r.data }))
     }).catch(() => {})
 
     api.get(`/sites/${siteId}/actions`).then(r => { if (Array.isArray(r.data)) setActions(r.data) }).catch(() => {})
@@ -696,7 +698,33 @@ export default function Dashboard() {
     </div>
   )
   return (
-    <div style={{ flex: 1 }}>
+    <>
+      <MobileProjectOverview
+        site={site}
+        siteId={siteId}
+        healthValue={healthValue}
+        previewAuditScores={previewAuditScores}
+        gscClicks={gscClicks}
+        gscImpressions={gscImpressions}
+        gscPosition={gscPosition}
+        gscSubLabel={gscSubLabel}
+        trackedKeywords={trackedKeywords}
+        overviewRecommendation={overviewRecommendation}
+        nextMoveMeta={nextMoveMeta}
+        nextMoveImpactColor={nextMoveImpactColor}
+        pendingCount={pendingCount}
+        fixItems={fixItems}
+        previewKeywords={previewKeywords}
+        keywords={keywords}
+        auditRunning={auditRunning}
+        onRefresh={loadDashboardData}
+        onRunAudit={handleRunAudit}
+        onRunFullAudit={runFullSiteAudit}
+        canRunFullAudit={canRunFullAudit}
+        onNextMove={handleNextMoveClick}
+        latestAudit={latestAudit}
+        multipageLatest={multipageLatest}
+      />      <div className="desktop-project-overview" style={{ flex: 1 }}>
       <AppProcessTopBar
         steps={OVERVIEW_PAGE_FLOW.map((s) => ({
           ...s,
@@ -1454,103 +1482,18 @@ export default function Dashboard() {
                     padding: '5px 0 4px',
                   }}>
                     <div style={{
-                      position: 'relative',
-                      height: 126,
+                      minWidth: 0,
+                      minHeight: 145,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                     }}>
-                      <svg
-                        viewBox="0 0 220 125"
-                        style={{
-                          width: '100%',
-                          maxWidth: 220,
-                          height: 125,
-                          overflow: 'visible',
-                        }}
-                      >
-                        <path
-                          d="M 28 102 A 82 82 0 0 1 192 102"
-                          fill="none"
-                          stroke="#E4E9F0"
-                          strokeWidth="13"
-                          strokeLinecap="round"
-                          pathLength="100"
-                        />
-                        <path
-                          d="M 28 102 A 82 82 0 0 1 192 102"
-                          fill="none"
-                          stroke={
-                            healthValue >= 90
-                              ? '#16A34A'
-                              : healthValue >= 80
-                              ? '#22C55E'
-                              : healthValue >= 60
-                              ? '#F97316'
-                              : '#DC2626'
-                          }
-                          strokeWidth="13"
-                          strokeLinecap="round"
-                          pathLength="100"
-                          strokeDasharray={`${Math.max(0, Math.min(100, Number(healthValue || 0)))} 100`}
-                        />
-                      </svg>
-
-                      <div style={{
-                        position: 'absolute',
-                        top: 52,
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        textAlign: 'center',
-                        minWidth: 90,
-                      }}>
-                        <div style={{
-                          fontSize: 31,
-                          lineHeight: 1,
-                          fontWeight: 800,
-                          color: T.text,
-                          letterSpacing: '-0.04em',
-                        }}>
-                          {healthValue}
-                        </div>
-
-                        <div style={{
-                          fontSize: 10,
-                          color: T.muted,
-                          fontWeight: 600,
-                          marginTop: 2,
-                        }}>
-                          /100
-                        </div>
-
-                        <div style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          marginTop: 6,
-                          padding: '3px 9px',
-                          borderRadius: 999,
-                          background:
-                            healthValue >= 80 ? '#F0FDF4'
-                            : healthValue >= 60 ? '#FFF7ED'
-                            : '#FEF2F2',
-                          color:
-                            healthValue >= 80 ? '#15803D'
-                            : healthValue >= 60 ? '#EA580C'
-                            : '#DC2626',
-                          fontSize: 8,
-                          fontWeight: 800,
-                        }}>
-                          {
-                            healthValue >= 90 ? 'Excellent'
-                            : healthValue >= 80 ? 'Strong'
-                            : healthValue >= 60 ? 'Needs Work'
-                            : 'Priority'
-                          }
-                        </div>
-                      </div>
+                      <SiteHealthGauge
+                        value={healthValue}
+                        compact
+                        className="dd-dashboard-health-gauge"
+                      />
                     </div>
-
                     <div style={{
                       borderLeft: '1px solid #E5E7EB',
                       paddingLeft: 12,
@@ -1680,10 +1623,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
-
-
-
-
