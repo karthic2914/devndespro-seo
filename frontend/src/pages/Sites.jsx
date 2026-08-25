@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -7,6 +7,7 @@ import {
   faPlus, faTag, faGlobe, faHourglassHalf, faXmark, faLightbulb,
   faCheck, faArrowRight, faEnvelope, faMagnifyingGlass,
   faChevronUp, faChevronDown, faTrash, faSliders,
+  faList, faTableCellsLarge, faEllipsisVertical, faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, T } from '../components/UI'
@@ -36,7 +37,16 @@ function SiteAvatar({ name, url }) {
 }
 
 export default function Sites() {
-  const [sites, setSites] = useState([])
+  const [sites, setSites] = useState(() => {
+    try {
+      const cachedSites = sessionStorage.getItem('devndespro_projects_cache')
+      const parsedSites = cachedSites ? JSON.parse(cachedSites) : []
+      return Array.isArray(parsedSites) ? parsedSites : []
+    }
+    catch {
+      return []
+    }
+  })
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ name: '', url: '', contactEmail: '', notifyAdmin: true })
@@ -59,7 +69,6 @@ export default function Sites() {
   const [errors, setErrors] = useState({})
   const { logout } = useAuth()
   const navigate = useNavigate()
-  const didLoadRef = useRef(false)
   const [confirmDelete, setConfirmDelete] = useState({ open: false, site: null, bulk: false })
   const [selectMode, setSelectMode] = useState(false)
   const [selectedIds, setSelectedIds] = useState([])
@@ -69,29 +78,98 @@ export default function Sites() {
   const [search, setSearch] = useState('')
   const [sortCol, setSortCol] = useState('created_at')
   const [sortDir, setSortDir] = useState('desc')
-  const [visibleCount, setVisibleCount] = useState(20)
+  const [visibleCount, setVisibleCount] = useState(5)
   const [pendingProjects, setPendingProjects] = useState([])
+  const [mobileFilter, setMobileFilter] = useState('all')
+  const [mobileView, setMobileView] = useState('list')
+  const [showMobileTop, setShowMobileTop] = useState(false)
+  const [mobileActionSite, setMobileActionSite] = useState(null)
 
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
   const authHeaders = token ? { Authorization: `Bearer ${token}` } : {}
 
-  const load = async () => {
+  // DEVNDESPRO_PROJECTS_RELIABLE_LOAD
+  const load = async ({ background = false } = {}) => {
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000)
+
+    if (!background) setLoading(true)
+
     try {
-      const res = await fetch(`${API_BASE}/sites`, { headers: authHeaders })
-      if (res.status === 401) { logout(); navigate('/login', { replace: true }); return }
+      const res = await fetch(`${API_BASE}/sites`, {
+        headers: authHeaders,
+        signal: controller.signal,
+        cache: 'no-store',
+      })
+
+      if (res.status === 401) {
+        logout()
+        navigate('/login', { replace: true })
+        return
+      }
+
+      if (!res.ok) {
+        throw new Error(`Projects request failed with ${res.status}`)
+      }
+
       const data = await res.json()
-      setSites(Array.isArray(data) ? data : [])
-      const sumRes = await fetch(`${API_BASE}/sites/summary`, { headers: authHeaders })
-      if (sumRes.ok) setSummary(await sumRes.json())
-    } catch { setSites([]) }
-    finally { setLoading(false) }
+      const nextSites = Array.isArray(data) ? data : []
+
+      setSites(nextSites)
+      sessionStorage.setItem(
+        'devndespro_projects_cache',
+        JSON.stringify(nextSites)
+      )
+
+      // Summary must never block the project list or its loading state.
+      fetch(`${API_BASE}/sites/summary`, {
+        headers: authHeaders,
+        cache: 'no-store',
+      })
+        .then(summaryResponse => summaryResponse.ok ? summaryResponse.json() : null)
+        .then(summaryData => {
+          if (summaryData) setSummary(summaryData)
+        })
+        .catch(() => {})
+    }
+    catch (error) {
+      if (error?.name !== 'AbortError') {
+        console.error('Projects loading failed:', error)
+      }
+
+      // Preserve cached/current projects instead of replacing them with zero.
+      setSites(currentSites => Array.isArray(currentSites) ? currentSites : [])
+    }
+    finally {
+      window.clearTimeout(timeoutId)
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    if (didLoadRef.current) return
-    didLoadRef.current = true
-    load()
+    let active = true
+    const hasCachedProjects = (() => {
+      try {
+        const cached = JSON.parse(
+          sessionStorage.getItem('devndespro_projects_cache') || '[]'
+        )
+        return Array.isArray(cached) && cached.length > 0
+      }
+      catch {
+        return false
+      }
+    })()
+
+    if (hasCachedProjects) setLoading(false)
+
+    Promise.resolve()
+      .then(() => active && load({ background: hasCachedProjects }))
+      .catch(() => active && setLoading(false))
+
+    return () => {
+      active = false
+    }
   }, [])
 
   useEffect(() => {
@@ -124,7 +202,121 @@ export default function Sites() {
       return sortDir === 'asc' ? av - bv : bv - av
     })
 
-  useEffect(() => { setVisibleCount(20) }, [search])
+  // DEVNDESPRO_MOBILE_TOP_VISIBILITY
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 639px)')
+    if (!mobileQuery.matches) return undefined
+
+    const candidates = [
+      window,
+      document.querySelector('.app-main'),
+      document.querySelector('.page-content'),
+      document.querySelector('.projects-mobile-view'),
+    ].filter(Boolean)
+
+    const updateTopVisibility = event => {
+      const target = event?.currentTarget || window
+      const scrollTop = target === window
+        ? (document.scrollingElement || document.documentElement).scrollTop
+        : target.scrollTop
+
+      setShowMobileTop(scrollTop > 420)
+    }
+
+    candidates.forEach(candidate => {
+      candidate.addEventListener('scroll', updateTopVisibility, { passive: true })
+    })
+
+    updateTopVisibility()
+
+    return () => {
+      candidates.forEach(candidate => {
+        candidate.removeEventListener('scroll', updateTopVisibility)
+      })
+    }
+  }, [])
+  const mobileHealthValues = safeSites
+    .map(site => Number(site.health))
+    .filter(Number.isFinite)
+
+  const mobileAverageHealth = mobileHealthValues.length
+    ? Math.round(
+        mobileHealthValues.reduce((sum, value) => sum + value, 0) /
+        mobileHealthValues.length
+      )
+    : 0
+
+  const mobileAttentionCount = safeSites.filter(site => {
+    const score = Number(site.health)
+    return Number.isFinite(score) && score < 60
+  }).length
+
+  const mobileHealthyCount = safeSites.filter(
+    site => Number(site.health) >= 80
+  ).length
+
+  const mobileKeywordCount = safeSites.reduce(
+    (sum, site) => sum + (Number(site.keyword_count) || 0),
+    0
+  )
+
+  const mobileFilteredSites = filteredSites.filter(site => {
+    const score = Number(site.health)
+    if (mobileFilter === 'attention') return Number.isFinite(score) && score < 60
+    if (mobileFilter === 'healthy') return Number.isFinite(score) && score >= 80
+    if (mobileFilter === 'unscored') return !Number.isFinite(score)
+    return true
+  })
+
+  useEffect(() => {
+    setVisibleCount(5)
+  }, [search, mobileFilter])
+
+  // DEVNDESPRO_MOBILE_PROJECTS_AUTO_LOAD
+  useEffect(() => {
+    const mobileQuery = window.matchMedia('(max-width: 639px)')
+    if (!mobileQuery.matches) return undefined
+
+    const candidates = [
+      window,
+      document.querySelector('.app-main'),
+      document.querySelector('.page-content'),
+      document.querySelector('.projects-mobile-view'),
+    ].filter(Boolean)
+
+    const revealNextProjects = event => {
+      const target = event?.currentTarget || window
+      let scrollTop
+      let clientHeight
+      let scrollHeight
+
+      if (target === window) {
+        const scrollingElement = document.scrollingElement || document.documentElement
+        scrollTop = scrollingElement.scrollTop
+        clientHeight = window.innerHeight
+        scrollHeight = scrollingElement.scrollHeight
+      }
+      else {
+        scrollTop = target.scrollTop
+        clientHeight = target.clientHeight
+        scrollHeight = target.scrollHeight
+      }
+
+      if (scrollTop + clientHeight >= scrollHeight - 220) {
+        setVisibleCount(current => Math.min(current + 5, mobileFilteredSites.length))
+      }
+    }
+
+    candidates.forEach(candidate => {
+      candidate.addEventListener('scroll', revealNextProjects, { passive: true })
+    })
+
+    return () => {
+      candidates.forEach(candidate => {
+        candidate.removeEventListener('scroll', revealNextProjects)
+      })
+    }
+  }, [mobileFilteredSites.length])
 
   function toggleSort(col) {
     if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -724,7 +916,239 @@ export default function Sites() {
           )}
         </Modal>
 
-        <div className="page-content">
+        {/* DEVNDESPRO MOBILE PROJECTS START */}
+        <main className="projects-mobile-view">
+          {/* DEVNDESPRO MOBILE PROJECTS STICKY SEARCH */}
+          <div className={`pm-sticky-search ${showMobileTop ? 'is-visible' : ''}`}>
+            <FontAwesomeIcon icon={faMagnifyingGlass} />
+            <input
+              type="search"
+              aria-label="Search projects"
+              placeholder="Search projects..."
+              value={search}
+              onChange={event => setSearch(event.target.value)}
+            />
+            {search ? (
+              <button type="button" aria-label="Clear search" onClick={() => setSearch('')}>
+                <FontAwesomeIcon icon={faXmark} />
+              </button>
+            ) : (
+              <span className="pm-sticky-filter" aria-hidden="true">
+                <FontAwesomeIcon icon={faSliders} />
+              </span>
+            )}
+          </div>
+          <section className="pm-heading">
+            <div>
+              <div className="pm-title-row">
+                <h1>Projects</h1>
+                <span>{safeSites.length}</span>
+              </div>
+              <p>{mobileFilteredSites.length} of {safeSites.length} sites</p>
+            </div>
+            <button className="pm-add" type="button" aria-label="Add project" onClick={() => setShowAdd(true)}>
+              <FontAwesomeIcon icon={faPlus} />
+            </button>
+          </section>
+
+          <section className="pm-kpis">
+            {[
+              ['TOTAL PROJECTS', safeSites.length, 'all your websites', 'purple', faGlobe],
+              ['AVERAGE SITE HEALTH', mobileAverageHealth, 'across scored projects', 'green', faBullseye],
+              ['NEEDING ATTENTION', mobileAttentionCount, 'health score below 60', 'orange', faPenToSquare],
+              ['TRACKED KEYWORDS', mobileKeywordCount, 'across all projects', 'blue', faLink],
+            ].map(([label, value, sub, tone, icon]) => (
+              <article key={label} className={`pm-kpi pm-kpi--${tone}`}>
+                <span className="pm-kpi-icon"><FontAwesomeIcon icon={icon} /></span>
+                <div>
+                  <span className="pm-kpi-label">{label}</span>
+                  <strong>{value}</strong>
+                  <small>{sub}</small>
+                </div>
+              </article>
+            ))}
+          </section>
+
+          <section className="pm-controls">
+            <div className="pm-search">
+              <FontAwesomeIcon icon={faMagnifyingGlass} />
+              <input type="search" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)} />
+              {search ? (
+                <button type="button" aria-label="Clear search" onClick={() => setSearch('')}>
+                  <FontAwesomeIcon icon={faXmark} />
+                </button>
+              ) : <FontAwesomeIcon icon={faSliders} />}
+            </div>
+
+            <div className="pm-tabs">
+              <button type="button" className={mobileFilter === 'all' ? 'is-active' : ''} onClick={() => setMobileFilter('all')}>All ({safeSites.length})</button>
+              <button type="button" className={mobileFilter === 'attention' ? 'is-active' : ''} onClick={() => setMobileFilter('attention')}><i className="pm-dot pm-dot--orange" />Attention ({mobileAttentionCount})</button>
+              <button type="button" className={mobileFilter === 'healthy' ? 'is-active' : ''} onClick={() => setMobileFilter('healthy')}><i className="pm-dot pm-dot--green" />Healthy ({mobileHealthyCount})</button>
+              <button type="button" className={mobileFilter === 'unscored' ? 'is-active' : ''} onClick={() => setMobileFilter('unscored')}>More <FontAwesomeIcon icon={faChevronDown} /></button>
+            </div>
+
+            <div className="pm-sort-row">
+              <div className="pm-sort">
+                <span>Sort by:</span>
+                <button type="button" onClick={() => toggleSort('created_at')}>Recently Updated <FontAwesomeIcon icon={sortDir === 'asc' ? faChevronUp : faChevronDown} /></button>
+              </div>
+              <div className="pm-view-toggle">
+                <button type="button" aria-label="List view" className={mobileView === 'list' ? 'is-active' : ''} onClick={() => setMobileView('list')}><FontAwesomeIcon icon={faList} /></button>
+                <button type="button" aria-label="Grid view" className={mobileView === 'grid' ? 'is-active' : ''} onClick={() => setMobileView('grid')}><FontAwesomeIcon icon={faTableCellsLarge} /></button>
+              </div>
+            </div>
+          </section>
+
+          <section className={`pm-list pm-list--${mobileView}`}>
+            {loading ? (
+              <div className="pm-empty"><FontAwesomeIcon icon={faHourglassHalf} />Loading projects...</div>
+            ) : mobileFilteredSites.length === 0 ? (
+              <div className="pm-empty">{search ? `No projects matching "${search}"` : 'No projects found'}</div>
+            ) : mobileFilteredSites.slice(0, visibleCount).map(site => {
+              const score = Number(site.health)
+              const healthTone = !Number.isFinite(score) ? 'neutral' : score >= 80 ? 'good' : score >= 60 ? 'fair' : 'low'
+              const healthLabel = healthTone === 'good' ? 'Good' : healthTone === 'fair' ? 'Fair' : healthTone === 'low' ? 'Low' : 'Not scored'
+              const date = site.updated_at || site.created_at
+              const dateLabel = date
+                ? `Updated ${new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}`
+                : 'Recently updated'
+
+              return (
+                <article key={site.id} className="pm-project" role="button" tabIndex={0} onClick={() => enter(site)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && enter(site)}>
+                  <div className="pm-project-main">
+                    <SiteFavicon name={site.name || '?'} url={site.url} size={42} radius={9} />
+                    <div className="pm-project-copy">
+                      <strong>{site.name}</strong>
+                      <span>{dateLabel}{' \u00B7 '}{Number(site.keyword_count || 0).toLocaleString()} keywords</span>
+                    </div>
+                  </div>
+                  <div className={`pm-health pm-health--${healthTone}`}>
+                    <strong>Health {Number.isFinite(score) ? score : '-'}</strong>
+                    <span><i />{healthLabel}</span>
+                  </div>
+                  <button type="button" className="pm-more" aria-label={`More actions for ${site.name}`} onClick={e => {
+                    e.stopPropagation()
+                    setMobileActionSite(site)
+                    if (navigator.vibrate) navigator.vibrate(10)
+                  }}><FontAwesomeIcon icon={faEllipsisVertical} /></button>
+                  <span className="pm-chevron" aria-hidden="true"><FontAwesomeIcon icon={faChevronRight} /></span>
+                </article>
+              )
+            })}
+          </section>
+          {!loading && mobileFilteredSites.length > 0 && (
+            <section className="pm-load-more pm-reference-footer">
+              <div className="pm-load-summary">
+                <div className="pm-loader" aria-hidden="true" />
+                <div className="pm-load-copy">
+                  <strong>
+                    Showing 1{'\u2013'}{Math.min(visibleCount, mobileFilteredSites.length)} of {mobileFilteredSites.length} projects
+                  </strong>
+                  <span>
+                    {visibleCount < mobileFilteredSites.length ? 'Scroll to load more' : 'All projects shown'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`pm-go-top ${showMobileTop ? 'is-visible' : ''}`}
+                aria-label="Go to top"
+                title="Go to top"
+                onClick={() => {
+                  const candidates = [
+                    document.scrollingElement,
+                    document.querySelector('.app-main'),
+                    document.querySelector('.page-content'),
+                    document.querySelector('.projects-mobile-view'),
+                  ].filter(Boolean)
+
+                  candidates.forEach(container => {
+                    if (typeof container.scrollTo === 'function') {
+                      container.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
+                    else {
+                      container.scrollTop = 0
+                    }
+                  })
+
+                  window.scrollTo({ top: 0, behavior: 'smooth' })
+                }}
+              >
+                <FontAwesomeIcon icon={faChevronUp} />
+              </button>
+            </section>
+          )}
+        {/* DEVNDESPRO MOBILE PROJECT ACTION SHEET */}
+          {mobileActionSite && (
+            <div
+              className="pm-sheet-backdrop"
+              role="presentation"
+              onClick={() => setMobileActionSite(null)}
+            >
+              <section
+                className="pm-action-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Actions for ${mobileActionSite.name}`}
+                onClick={event => event.stopPropagation()}
+              >
+                <div className="pm-sheet-handle" aria-hidden="true" />
+                <div className="pm-sheet-heading">
+                  <SiteFavicon
+                    name={mobileActionSite.name || '?'}
+                    url={mobileActionSite.url}
+                    size={44}
+                    radius={10}
+                  />
+                  <div>
+                    <strong>{mobileActionSite.name}</strong>
+                    <span>{mobileActionSite.url}</span>
+                  </div>
+                </div>
+
+                <div className="pm-sheet-actions">
+                  <button type="button" onClick={() => {
+                    const selectedSite = mobileActionSite
+                    setMobileActionSite(null)
+                    if (navigator.vibrate) navigator.vibrate(8)
+                    enter(selectedSite)
+                  }}>
+                    <span>Open project</span>
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+
+                  <button type="button" onClick={() => {
+                    const selectedSite = mobileActionSite
+                    setMobileActionSite(null)
+                    if (navigator.vibrate) navigator.vibrate(8)
+                    navigate(`/site/${selectedSite.id}/keywords`)
+                  }}>
+                    <span>View keywords</span>
+                    <FontAwesomeIcon icon={faChevronRight} />
+                  </button>
+
+                  {user?.id === 1 && (
+                    <button type="button" className="is-danger" onClick={() => {
+                      const selectedSite = mobileActionSite
+                      setMobileActionSite(null)
+                      setConfirmDelete({ open: true, site: selectedSite, bulk: false })
+                    }}>
+                      <span>Delete project</span>
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  )}
+                </div>
+
+                <button type="button" className="pm-sheet-cancel" onClick={() => setMobileActionSite(null)}>
+                  Cancel
+                </button>
+              </section>
+            </div>
+          )}
+        </main>
+        {/* DEVNDESPRO MOBILE PROJECTS END */}
+
+        <div className="page-content projects-desktop-view">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>Projects</h1>
