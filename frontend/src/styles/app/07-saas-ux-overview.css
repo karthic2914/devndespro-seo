@@ -895,3 +895,62 @@ textarea {
 }
 
 /* DEVNDESPRO RESPONSIVE HEALTH COCKPIT END */
+
+/* DEVNDESPRO DESKTOP HEALTH COCKPIT OVERFLOW FIX START */
+
+/*
+ * The health card lives in a narrow desktop side rail even on a wide screen.
+ * Size its internal columns from the card width, not from the viewport width.
+ * Mobile remains controlled by MobileProjectOverview.css.
+ */
+@media (min-width: 1100px) {
+  div:has(> div > .dd-dashboard-health-gauge) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: minmax(0, 1fr) 112px !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:first-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) .dd-dashboard-health-gauge {
+    width: 100% !important;
+    max-width: 248px !important;
+    min-width: 0 !important;
+    margin-inline: auto !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child {
+    width: 112px !important;
+    max-width: 112px !important;
+    min-width: 0 !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 11px 10px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div > * {
+    max-width: 100% !important;
+  }
+}
+
+/* DEVNDESPRO DESKTOP HEALTH COCKPIT OVERFLOW FIX END */
