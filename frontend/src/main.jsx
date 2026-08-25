@@ -96,6 +96,8 @@ queueMicrotask(() => {
 
 // DEVNDESPRO_SINGLE_SPLASH_CONTROLLER
 const finishNativeStartup = async () => {
+  // DEVNDESPRO_SPLASH_STARTED_AT
+  const startupStartedAt = performance.now()
   const startupSplash = document.getElementById(
     'devndespro-startup-splash'
   )
@@ -175,27 +177,25 @@ const finishNativeStartup = async () => {
       })
     })
 
-    const {
-      Capacitor,
-    } = await import('@capacitor/core')
+    // Android auto-hides into this branded static layer.
+    // DEVNDESPRO_MINIMUM_BRANDED_SPLASH
+    const splashElapsed =
+      performance.now() - startupStartedAt
 
-    if (Capacitor.isNativePlatform()) {
-      const {
-        SplashScreen,
-      } = await import('@capacitor/splash-screen')
+    const remainingSplashTime = Math.max(
+      0,
+      3400 - splashElapsed
+    )
 
-      await SplashScreen.hide({
-        fadeOutDuration: 160,
+    if (remainingSplashTime > 0) {
+      await new Promise((resolve) => {
+        window.setTimeout(
+          resolve,
+          remainingSplashTime
+        )
       })
     }
-
-    // The static branded splash remains underneath the
-    // native layer, preventing a white transition.
-    await new Promise((resolve) => {
-      window.setTimeout(resolve, 180)
-    })
-
-    if (startupSplash) {
+if (startupSplash) {
       startupSplash.style.opacity = '0'
       startupSplash.style.pointerEvents = 'none'
 

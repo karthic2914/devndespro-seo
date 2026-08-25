@@ -4,10 +4,11 @@
     "webDir":  "dist",
     "plugins":  {
                     "SplashScreen":  {
-                                         "launchShowDuration":  0,
-                                         "launchAutoHide":  false,
+                                         "launchShowDuration":  1300,
+                                         "launchAutoHide":  true,
                                          "backgroundColor":  "#ffffff",
-                                         "showSpinner":  false
+                                         "showSpinner":  false,
+                                         "launchFadeOutDuration":  120
                                      },
                     "GoogleAuth":  {
                                        "scopes":  [
