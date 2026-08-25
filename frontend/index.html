@@ -88,7 +88,36 @@
           transition: opacity 160ms ease-out;
         }
       }</style>
-  </head>
+  <!-- DEVNDESPRO NATIVE-ONLY STARTUP SPLASH START -->
+<script>
+  (() => {
+    const isCapacitorNativeOrigin =
+      window.location.hostname === 'localhost' &&
+      (
+        window.location.protocol === 'https:' ||
+        window.location.protocol === 'capacitor:'
+      )
+
+    if (isCapacitorNativeOrigin) {
+      document.documentElement.classList.add(
+        'devndespro-native-startup'
+      )
+    }
+  })()
+</script>
+<style>
+  /* Hidden in every normal browser, including seo.devndespro.com. */
+  #devndespro-startup-splash {
+    display: none !important;
+  }
+
+  /* Enabled only inside the installed Capacitor application. */
+  html.devndespro-native-startup #devndespro-startup-splash {
+    display: flex !important;
+  }
+</style>
+<!-- DEVNDESPRO NATIVE-ONLY STARTUP SPLASH END -->
+</head>
   <body>
     <!--
       Outside #root so React never wipes it on mount.
