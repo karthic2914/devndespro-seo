@@ -1504,3 +1504,41 @@
   }
 }
 /* DEVNDESPRO SITE HEALTH SPEEDOMETER END */
+
+/* DEVNDESPRO RESPONSIVE HEALTH COCKPIT START */
+@media (max-width: 639px) {
+  .mpo-health-card .dd-site-health-gauge .dd-gauge-status {
+    display: none !important;
+  }
+
+  .mpo-health-card .dd-site-health-gauge {
+    padding-bottom: 0 !important;
+  }
+
+  .mpo-health-card .mpo-health-score {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    flex-wrap: wrap !important;
+  }
+
+  .mpo-health-card .mpo-score-line {
+    display: none !important;
+  }
+
+  .mpo-health-card .mpo-health-status {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 24px !important;
+    margin: 0 !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+}
+/* DEVNDESPRO RESPONSIVE HEALTH COCKPIT END */

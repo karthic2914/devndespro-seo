@@ -768,3 +768,130 @@ textarea {
   }
 }
 /* DEVNDESPRO SITE HEALTH SPEEDOMETER END */
+
+/* DEVNDESPRO RESPONSIVE HEALTH COCKPIT START */
+
+/*
+ * Desktop and tablet health cockpit.
+ * :has() is supported by current Chrome, Android WebView, Edge and Safari.
+ * The selector is restricted to the container holding our shared gauge.
+ */
+@media (min-width: 640px) {
+  div:has(> div > .dd-dashboard-health-gauge) {
+    gap: 14px !important;
+    align-items: stretch !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:first-child {
+    min-width: 0 !important;
+    min-height: 178px !important;
+    padding: 10px 12px 6px !important;
+    border: 1px solid #E8ECF3 !important;
+    border-radius: 14px !important;
+    background:
+      radial-gradient(circle at 50% 20%, rgba(99, 102, 241, .06), transparent 56%),
+      linear-gradient(180deg, #FFFFFF 0%, #FBFCFF 100%) !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) .dd-dashboard-health-gauge {
+    width: min(100%, 260px) !important;
+  }
+
+  /* Convert warnings and healthy pages into clear metric tiles. */
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child {
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    border-left: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+    align-content: stretch !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div {
+    min-width: 0 !important;
+    min-height: 78px !important;
+    padding: 12px !important;
+    border: 1px solid #E6EAF1 !important;
+    border-radius: 12px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .045) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div:first-child {
+    border-top: 3px solid #F97316 !important;
+    background: linear-gradient(180deg, #FFF8F1 0%, #FFFFFF 54%) !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div:last-child {
+    border-top: 3px solid #16A34A !important;
+    background: linear-gradient(180deg, #F1FCF5 0%, #FFFFFF 54%) !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div > div:first-child {
+    font-size: 25px !important;
+    font-weight: 850 !important;
+    line-height: 1 !important;
+    letter-spacing: -.035em !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child > div > div:not(:first-child) {
+    margin-top: 7px !important;
+    color: #64748B !important;
+    font-size: 10px !important;
+    font-weight: 650 !important;
+    line-height: 1.3 !important;
+  }
+}
+
+/* Wide desktop: gauge and supporting metric tiles sit side by side. */
+@media (min-width: 1100px) {
+  div:has(> div > .dd-dashboard-health-gauge) {
+    grid-template-columns: minmax(210px, 1.3fr) minmax(170px, .7fr) !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:last-child {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Tablet: centred gauge first, then two equal metric tiles beneath it. */
+@media (min-width: 640px) and (max-width: 1099px) {
+  div:has(> div > .dd-dashboard-health-gauge) {
+    grid-template-columns: 1fr !important;
+  }
+
+  div:has(> div > .dd-dashboard-health-gauge) > div:first-child {
+    min-height: 190px !important;
+  }
+}
+
+/* Mobile uses its dedicated overview layout. Remove the duplicate badge
+   inside the dial; the clear status badge beside SITE HEALTH remains. */
+@media (max-width: 639px) {
+  .mpo-health-card .dd-site-health-gauge .dd-gauge-status {
+    display: none !important;
+  }
+
+  .mpo-health-card .dd-site-health-gauge {
+    padding-bottom: 0 !important;
+  }
+
+  .mpo-health-card .mpo-health-status {
+    display: inline-flex !important;
+    align-items: center !important;
+    min-height: 24px !important;
+    margin-top: 0 !important;
+    padding: 4px 10px !important;
+    border-radius: 999px !important;
+    font-size: 10px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* DEVNDESPRO RESPONSIVE HEALTH COCKPIT END */
