@@ -38,28 +38,23 @@ function useAnimatedScore(value, duration = 1500) {
       if (!startTime) startTime = timestamp
 
       const progress = Math.min((timestamp - startTime) / duration, 1)
-
-      // Smooth speedometer movement: gentle start, natural acceleration,
-      // and a soft stop without overshooting the real score.
       const eased = progress < 0.5
         ? 4 * progress * progress * progress
         : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
       const nextValue = startValue + difference * eased
+
       previousRef.current = nextValue
       setDisplayed(nextValue)
 
       if (progress < 1) {
         frameId = window.requestAnimationFrame(animate)
-      }
-      else {
+      } else {
         previousRef.current = target
         setDisplayed(target)
       }
     }
 
     frameId = window.requestAnimationFrame(animate)
-
     return () => window.cancelAnimationFrame(frameId)
   }, [target, duration])
 
@@ -73,6 +68,11 @@ export default function SiteHealthGauge({ value, className = '', compact = false
   const activeColor = scoreColor(animated)
   const targetColor = scoreColor(target)
   const needleAngle = -90 + animated * 1.8
+  const digitClass = rounded >= 100
+    ? 'dd-gauge-number--three-digits'
+    : rounded >= 10
+      ? 'dd-gauge-number--two-digits'
+      : 'dd-gauge-number--one-digit'
 
   const segments = useMemo(() => ({
     red: Math.min(animated, 40),
@@ -87,52 +87,18 @@ export default function SiteHealthGauge({ value, className = '', compact = false
       aria-label={`Site health ${Math.round(target)} out of 100`}
     >
       <svg viewBox="0 0 240 145" aria-hidden="true">
-        <path
-          className="dd-gauge-zone dd-gauge-zone--red"
-          d="M 30 112 A 90 90 0 0 1 210 112"
-          pathLength="100"
-          strokeDasharray="39 61"
-        />
-        <path
-          className="dd-gauge-zone dd-gauge-zone--amber"
-          d="M 30 112 A 90 90 0 0 1 210 112"
-          pathLength="100"
-          strokeDasharray="29 71"
-          strokeDashoffset="-40"
-        />
-        <path
-          className="dd-gauge-zone dd-gauge-zone--green"
-          d="M 30 112 A 90 90 0 0 1 210 112"
-          pathLength="100"
-          strokeDasharray="29 71"
-          strokeDashoffset="-70"
-        />
+        <path className="dd-gauge-zone dd-gauge-zone--red" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray="39 61" />
+        <path className="dd-gauge-zone dd-gauge-zone--amber" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray="29 71" strokeDashoffset="-40" />
+        <path className="dd-gauge-zone dd-gauge-zone--green" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray="29 71" strokeDashoffset="-70" />
 
         {segments.red > 0 && (
-          <path
-            className="dd-gauge-active dd-gauge-active--red"
-            d="M 30 112 A 90 90 0 0 1 210 112"
-            pathLength="100"
-            strokeDasharray={`${segments.red} 100`}
-          />
+          <path className="dd-gauge-active dd-gauge-active--red" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray={`${segments.red} 100`} />
         )}
         {segments.amber > 0 && (
-          <path
-            className="dd-gauge-active dd-gauge-active--amber"
-            d="M 30 112 A 90 90 0 0 1 210 112"
-            pathLength="100"
-            strokeDasharray={`${segments.amber} 100`}
-            strokeDashoffset="-40"
-          />
+          <path className="dd-gauge-active dd-gauge-active--amber" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray={`${segments.amber} 100`} strokeDashoffset="-40" />
         )}
         {segments.green > 0 && (
-          <path
-            className="dd-gauge-active dd-gauge-active--green"
-            d="M 30 112 A 90 90 0 0 1 210 112"
-            pathLength="100"
-            strokeDasharray={`${segments.green} 100`}
-            strokeDashoffset="-70"
-          />
+          <path className="dd-gauge-active dd-gauge-active--green" d="M 30 112 A 90 90 0 0 1 210 112" pathLength="100" strokeDasharray={`${segments.green} 100`} strokeDashoffset="-70" />
         )}
 
         <g
@@ -144,18 +110,13 @@ export default function SiteHealthGauge({ value, className = '', compact = false
         >
           <line x1="120" y1="112" x2="120" y2="46" />
         </g>
+
         <circle className="dd-gauge-hub-ring" cx="120" cy="112" r="8" />
-        <circle
-          className="dd-gauge-hub"
-          cx="120"
-          cy="112"
-          r="5"
-          style={{ fill: activeColor }}
-        />
+        <circle className="dd-gauge-hub" cx="120" cy="112" r="5" style={{ fill: activeColor }} />
       </svg>
 
       <div className="dd-gauge-reading">
-        <span className="dd-gauge-number" style={{ color: activeColor }}>
+        <span className={`dd-gauge-number ${digitClass}`} style={{ color: activeColor }}>
           {rounded}
         </span>
         <span className="dd-gauge-total">/100</span>

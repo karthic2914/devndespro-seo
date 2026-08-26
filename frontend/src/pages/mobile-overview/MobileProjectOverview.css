@@ -1542,3 +1542,88 @@
   }
 }
 /* DEVNDESPRO RESPONSIVE HEALTH COCKPIT END */
+
+/* DEVNDESPRO FITTED RESPONSIVE HEALTH GAUGE START */
+.dd-site-health-gauge {
+  width: min(100%, 260px) !important;
+  min-height: 176px;
+}
+
+.dd-gauge-reading {
+  top: 50% !important;
+  min-width: 88px;
+  justify-content: center;
+}
+
+.dd-gauge-number {
+  font-size: clamp(32px, 3vw, 38px) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.dd-gauge-number--three-digits {
+  font-size: clamp(28px, 2.55vw, 33px) !important;
+  letter-spacing: -0.065em !important;
+}
+
+.dd-gauge-total {
+  flex: 0 0 auto;
+}
+
+@media (min-width: 640px) and (max-width: 1099px) {
+  .dd-site-health-gauge {
+    width: min(100%, 250px) !important;
+  }
+}
+
+@media (max-width: 639px) {
+  .mpo-health-card .dd-site-health-gauge {
+    width: min(100%, 174px) !important;
+    min-height: 112px;
+    padding-bottom: 0 !important;
+    flex: 0 0 174px;
+  }
+
+  .mpo-health-card .dd-site-health-gauge svg {
+    width: 174px;
+    max-width: 100%;
+  }
+
+  .mpo-health-card .dd-gauge-reading {
+    top: 48% !important;
+    min-width: 62px;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    line-height: 1;
+  }
+
+  .mpo-health-card .dd-gauge-number {
+    font-size: 31px !important;
+  }
+
+  .mpo-health-card .dd-gauge-number--three-digits {
+    font-size: 27px !important;
+  }
+
+  .mpo-health-card .dd-gauge-total {
+    margin: 2px 0 0 !important;
+    font-size: 10px !important;
+    line-height: 1;
+  }
+
+  .mpo-health-card .dd-gauge-status {
+    display: none !important;
+  }
+}
+
+@media (max-width: 370px) {
+  .mpo-health-card .dd-site-health-gauge {
+    width: min(100%, 158px) !important;
+    flex-basis: 158px;
+  }
+
+  .mpo-health-card .dd-site-health-gauge svg {
+    width: 158px;
+  }
+}
+/* DEVNDESPRO FITTED RESPONSIVE HEALTH GAUGE END */
