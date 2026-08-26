@@ -961,3 +961,20 @@ and
   }
 
 }
+/* =========================================================
+   DEVNDESPRO - FINAL SITE AUDIT ACCENT CLEANUP
+   Hierarchy is now structural; decorative phase bars removed.
+   ========================================================= */
+
+@media (min-width: 768px) {
+  .phase2-audit-summary::before,
+  .phase3-decision-center::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .phase2-audit-summary,
+  .phase3-decision-center {
+    border-top-color: transparent !important;
+  }
+}
