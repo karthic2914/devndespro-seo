@@ -655,7 +655,7 @@ export default function SiteAudit() {
           setAuthorityDetails((prev) => {
             const existing = prev?.breakdown || {}
             // Do not overwrite calibrated server Link Score components
-            // with the simpler client estimate (e.g. dofollow ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ 100 at ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€šÃ‚Â¥70%).
+            // with the simpler client estimate (e.g. dofollow ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ 100 at ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â°ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¥70%).
             const hasServerLinkScore = Boolean(
               existing.domainDiversity ||
               existing.followNaturality ||
@@ -1074,7 +1074,7 @@ export default function SiteAudit() {
         )
       } else {
         showSnackbar(
-          `Audit completed ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
+          `Audit completed ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
           'success'
         )
       }
@@ -2499,10 +2499,9 @@ export default function SiteAudit() {
               <small>On-Page</small>
 
               <strong>
-                {categories.find(
-                  (item) =>
-                    item.name === 'On-Page SEO'
-                )?.score ?? '-'}
+                {multipageResults.categoryScores?.['On-Page SEO'] ??
+ multipageResults.categoryScores?.['On-Page'] ??
+ '-'}
               </strong>
             </span>
 
@@ -2510,10 +2509,9 @@ export default function SiteAudit() {
               <small>Technical</small>
 
               <strong>
-                {categories.find(
-                  (item) =>
-                    item.name === 'Technical SEO'
-                )?.score ?? '-'}
+                {multipageResults.categoryScores?.['Technical SEO'] ??
+ multipageResults.categoryScores?.['Technical'] ??
+ '-'}
               </strong>
             </span>
 
@@ -2521,10 +2519,9 @@ export default function SiteAudit() {
               <small>Content</small>
 
               <strong>
-                {categories.find(
-                  (item) =>
-                    item.name === 'Content Quality'
-                )?.score ?? '-'}
+                {multipageResults.categoryScores?.['Content Quality'] ??
+ multipageResults.categoryScores?.['Content'] ??
+ '-'}
               </strong>
             </span>
           </div>
@@ -3336,7 +3333,7 @@ export default function SiteAudit() {
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  External authority ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· 0-100
+                  External authority ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· 0-100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
@@ -3348,7 +3345,7 @@ export default function SiteAudit() {
                   {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  Our composite ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· verified links
+                  Our composite ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· verified links
                 </div>
               </div>
             </div>
