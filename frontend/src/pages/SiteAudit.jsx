@@ -655,7 +655,7 @@ export default function SiteAudit() {
           setAuthorityDetails((prev) => {
             const existing = prev?.breakdown || {}
             // Do not overwrite calibrated server Link Score components
-            // with the simpler client estimate (e.g. dofollow Ã¢â€ â€™ 100 at Ã¢â€°Â¥70%).
+            // with the simpler client estimate (e.g. dofollow ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ 100 at ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°Ãƒâ€šÃ‚Â¥70%).
             const hasServerLinkScore = Boolean(
               existing.domainDiversity ||
               existing.followNaturality ||
@@ -1074,7 +1074,7 @@ export default function SiteAudit() {
         )
       } else {
         showSnackbar(
-          `Audit completed Ã¢â‚¬â€ ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
+          `Audit completed ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
           'success'
         )
       }
@@ -2463,9 +2463,7 @@ export default function SiteAudit() {
             <strong>
               {Math.round(
                 Number(
-                  multipageResults.score ??
-                  auditData?.score ??
-                  0
+                  multipageResults.siteHealthPct ?? auditData?.score ?? 0
                 )
               )}
             </strong>
@@ -2476,21 +2474,21 @@ export default function SiteAudit() {
           <div className="site-audit-sticky-score__status">
             <span className="is-critical">
               {Number(
-                multipageResults.criticalCount || 0
+                multipageResults.critical ?? multipageResults.criticalCount ?? 0
               )}{' '}
               Critical
             </span>
 
             <span className="is-warning">
               {Number(
-                multipageResults.warningCount || 0
+                multipageResults.warnings ?? multipageResults.warningCount ?? 0
               )}{' '}
               Warnings
             </span>
 
             <span className="is-healthy">
               {Number(
-                multipageResults.healthyCount || 0
+                multipageResults.healthy ?? multipageResults.healthyCount ?? 0
               )}{' '}
               Healthy
             </span>
@@ -3338,7 +3336,7 @@ export default function SiteAudit() {
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  External authority Ã‚Â· 0-100
+                  External authority ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· 0-100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
@@ -3350,7 +3348,7 @@ export default function SiteAudit() {
                   {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  Our composite Ã‚Â· verified links
+                  Our composite ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· verified links
                 </div>
               </div>
             </div>
