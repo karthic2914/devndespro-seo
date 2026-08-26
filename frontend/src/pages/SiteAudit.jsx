@@ -37,7 +37,8 @@ import '../styles/site-audit/site-audit-phase2.css'
 import '../styles/site-audit/site-audit-phase3.css'
 import '../styles/site-audit/site-audit-phase4-5.css'
 import '../styles/site-audit/site-audit-phase6-7.css'
-import '../styles/site-audit/site-audit-final-mobile.css'
+import '../styles/site-audit/site-audit-final-mobile.css'
+
 import '../styles/site-audit/site-audit-sticky-score.css'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
@@ -519,32 +520,6 @@ export default function SiteAudit() {
   const auditSummaryStickyRef = useRef(null)
   const [stickyAuditVisible, setStickyAuditVisible] = useState(false)
 
-  useEffect(() => {
-    const target = auditSummaryStickyRef.current
-
-    if (
-      !target ||
-      typeof IntersectionObserver === 'undefined'
-    ) {
-      return
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setStickyAuditVisible(!entry.isIntersecting)
-      },
-      {
-        threshold: 0.05,
-        rootMargin: '-72px 0px 0px 0px',
-      }
-    )
-
-    observer.observe(target)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [multipageStatus, multipageResults])
   const [collapsedSections, setCollapsedSections] = useState({
     decisionCenter: false,
     fullSiteAudit: false,
@@ -680,7 +655,7 @@ export default function SiteAudit() {
           setAuthorityDetails((prev) => {
             const existing = prev?.breakdown || {}
             // Do not overwrite calibrated server Link Score components
-            // with the simpler client estimate (e.g. dofollow â†’ 100 at â‰¥70%).
+            // with the simpler client estimate (e.g. dofollow Ã¢â€ â€™ 100 at Ã¢â€°Â¥70%).
             const hasServerLinkScore = Boolean(
               existing.domainDiversity ||
               existing.followNaturality ||
@@ -800,6 +775,35 @@ export default function SiteAudit() {
   }, [showAuditMenu])
 
   const [multipageResults, setMultipageResults] = useState(null)
+
+  // DEVNDESPRO_STICKY_OBSERVER_SAFE_POSITION
+  useEffect(() => {
+    const target = auditSummaryStickyRef.current
+
+    if (
+      !target ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setStickyAuditVisible(!entry.isIntersecting)
+      },
+      {
+        threshold: 0.05,
+        rootMargin: '-72px 0px 0px 0px',
+      }
+    )
+
+    observer.observe(target)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [multipageStatus, multipageResults])
+
   const [multipageLatestPages, setMultipageLatestPages] = useState([])
   const [multipageBuckets, setMultipageBuckets] = useState(null)
   const [showDupTitles, setShowDupTitles] = useState(false)
@@ -1070,7 +1074,7 @@ export default function SiteAudit() {
         )
       } else {
         showSnackbar(
-          `Audit completed â€” ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
+          `Audit completed Ã¢â‚¬â€ ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
           'success'
         )
       }
@@ -3334,7 +3338,7 @@ export default function SiteAudit() {
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  External authority Â· 0-100
+                  External authority Ã‚Â· 0-100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
@@ -3346,7 +3350,7 @@ export default function SiteAudit() {
                   {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  Our composite Â· verified links
+                  Our composite Ã‚Â· verified links
                 </div>
               </div>
             </div>
