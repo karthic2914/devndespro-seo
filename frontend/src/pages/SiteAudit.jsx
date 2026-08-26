@@ -30,7 +30,8 @@ import MobileAuditInsights from './site-audit-mobile/MobileAuditInsights'
 import MobileProjectNav from './site-audit-mobile/MobileProjectNav'
 import './site-audit-mobile/MobileNativePolish.css'
 import ScoreInfoTip from '../components/ScoreInfoTip'
-import '../styles/site-audit/SiteAudit.mobile.css'
+import '../styles/site-audit/SiteAudit.mobile.css'
+
 import '../styles/site-audit/site-audit-hierarchy.css'
 import '../styles/site-audit/site-audit-phase2.css'
 import '../styles/site-audit/site-audit-phase3.css'
@@ -649,7 +650,7 @@ export default function SiteAudit() {
           setAuthorityDetails((prev) => {
             const existing = prev?.breakdown || {}
             // Do not overwrite calibrated server Link Score components
-            // with the simpler client estimate (e.g. dofollow → 100 at ≥70%).
+            // with the simpler client estimate (e.g. dofollow â†’ 100 at â‰¥70%).
             const hasServerLinkScore = Boolean(
               existing.domainDiversity ||
               existing.followNaturality ||
@@ -1039,7 +1040,7 @@ export default function SiteAudit() {
         )
       } else {
         showSnackbar(
-          `Audit completed — ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
+          `Audit completed â€” ~${words} words${h1Issue?.status === 'pass' ? ', H1 found' : ''}`,
           'success'
         )
       }
@@ -2408,68 +2409,6 @@ export default function SiteAudit() {
           }, 80)
         }}
       />
-      <div
-        className="site-audit-desktop-decision phase3-decision-center"
-        style={{
-          background: '#fff',
-          border: '1px solid #E5E7EB',
-          borderRadius: 12,
-          marginBottom: '1rem',
-        }}
-      >
-        <div style={{
-          padding: '12px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          borderBottom: collapsedSections.decisionCenter
-            ? 'none'
-            : '1px solid #F3F4F6',
-        }}>
-          <div style={{
-            fontSize: 12,
-            fontWeight: 800,
-            color: '#374151',
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          }}>
-            Decision Center
-          </div>
-
-          <button
-            type="button"
-            onClick={() => toggleSection('decisionCenter')}
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              border: '1px solid #E5E7EB',
-              background: '#fff',
-              cursor: 'pointer',
-              color: '#6B7280',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <FontAwesomeIcon
-              icon={collapsedSections.decisionCenter
-                ? faChevronRight
-                : faChevronDown}
-            />
-          </button>
-        </div>
-
-        {!collapsedSections.decisionCenter && (
-          <DecisionCenter
-            auditData={auditData}
-            multipageResults={multipageResults}
-            authorityScore={authorityScore}
-            domainRank={domainRank}
-            authorityDetails={authorityDetails}
-          />
-        )}
-      </div>
 
       {multipageStatus === 'complete' && multipageResults && (
         <div
@@ -2892,6 +2831,70 @@ export default function SiteAudit() {
       
       {/* DEVNDESPRO_MOBILE_AUDIT_FINDINGS_SLOT */}
       <div className="mobile-audit-findings-slot">
+      {/* DEVNDESPRO_DESKTOP_DECISION_AFTER_FULL_AUDIT */}
+      <div
+        className="site-audit-desktop-decision phase3-decision-center"
+        style={{
+          background: '#fff',
+          border: '1px solid #E5E7EB',
+          borderRadius: 12,
+          marginBottom: '1rem',
+        }}
+      >
+        <div style={{
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          borderBottom: collapsedSections.decisionCenter
+            ? 'none'
+            : '1px solid #F3F4F6',
+        }}>
+          <div style={{
+            fontSize: 12,
+            fontWeight: 800,
+            color: '#374151',
+            textTransform: 'uppercase',
+            letterSpacing: '0.04em',
+          }}>
+            Decision Center
+          </div>
+
+          <button
+            type="button"
+            onClick={() => toggleSection('decisionCenter')}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              border: '1px solid #E5E7EB',
+              background: '#fff',
+              cursor: 'pointer',
+              color: '#6B7280',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <FontAwesomeIcon
+              icon={collapsedSections.decisionCenter
+                ? faChevronRight
+                : faChevronDown}
+            />
+          </button>
+        </div>
+
+        {!collapsedSections.decisionCenter && (
+          <DecisionCenter
+            auditData={auditData}
+            multipageResults={multipageResults}
+            authorityScore={authorityScore}
+            domainRank={domainRank}
+            authorityDetails={authorityDetails}
+          />
+        )}
+      </div>
+
 <MobileAuditResults
         auditData={auditData}
         multipageResults={multipageResults}
@@ -3212,7 +3215,7 @@ export default function SiteAudit() {
                   {domainRank ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  External authority · 0-100
+                  External authority Â· 0-100
                 </div>
               </div>
               <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 10, padding: '12px 14px' }}>
@@ -3224,7 +3227,7 @@ export default function SiteAudit() {
                   {authorityScore ?? '-'}<span style={{ fontSize: 14, fontWeight: 500, color: '#9CA3AF' }}>/100</span>
                 </div>
                 <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
-                  Our composite · verified links
+                  Our composite Â· verified links
                 </div>
               </div>
             </div>
