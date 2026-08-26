@@ -37,7 +37,8 @@ import '../styles/site-audit/site-audit-phase2.css'
 import '../styles/site-audit/site-audit-phase3.css'
 import '../styles/site-audit/site-audit-phase4-5.css'
 import '../styles/site-audit/site-audit-phase6-7.css'
-import '../styles/site-audit/site-audit-final-mobile.css'
+import '../styles/site-audit/site-audit-final-mobile.css'
+import '../styles/site-audit/site-audit-sticky-score.css'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
 
@@ -515,6 +516,35 @@ function IssueSparkline({ checkId, history }) {
 
 /* DEVNDESPRO_SITE_AUDIT_PHASE6_7 */
 export default function SiteAudit() {
+  const auditSummaryStickyRef = useRef(null)
+  const [stickyAuditVisible, setStickyAuditVisible] = useState(false)
+
+  useEffect(() => {
+    const target = auditSummaryStickyRef.current
+
+    if (
+      !target ||
+      typeof IntersectionObserver === 'undefined'
+    ) {
+      return
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setStickyAuditVisible(!entry.isIntersecting)
+      },
+      {
+        threshold: 0.05,
+        rootMargin: '-72px 0px 0px 0px',
+      }
+    )
+
+    observer.observe(target)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [multipageStatus, multipageResults])
   const [collapsedSections, setCollapsedSections] = useState({
     decisionCenter: false,
     fullSiteAudit: false,
@@ -2410,8 +2440,97 @@ export default function SiteAudit() {
         }}
       />
 
-      {multipageStatus === 'complete' && multipageResults && (
+            {/* DEVNDESPRO_STICKY_AUDIT_SCORE */}
+      {stickyAuditVisible &&
+      multipageStatus === 'complete' &&
+      multipageResults ? (
+        <button
+          type="button"
+          className="site-audit-sticky-score"
+          onClick={() =>
+            auditSummaryStickyRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            })
+          }
+          aria-label="Return to Site Audit summary"
+        >
+          <div className="site-audit-sticky-score__health">
+            <strong>
+              {Math.round(
+                Number(
+                  multipageResults.score ??
+                  auditData?.score ??
+                  0
+                )
+              )}
+            </strong>
+
+            <span>Site Health</span>
+          </div>
+
+          <div className="site-audit-sticky-score__status">
+            <span className="is-critical">
+              {Number(
+                multipageResults.criticalCount || 0
+              )}{' '}
+              Critical
+            </span>
+
+            <span className="is-warning">
+              {Number(
+                multipageResults.warningCount || 0
+              )}{' '}
+              Warnings
+            </span>
+
+            <span className="is-healthy">
+              {Number(
+                multipageResults.healthyCount || 0
+              )}{' '}
+              Healthy
+            </span>
+          </div>
+
+          <div className="site-audit-sticky-score__categories">
+            <span>
+              <small>On-Page</small>
+
+              <strong>
+                {categories.find(
+                  (item) =>
+                    item.name === 'On-Page SEO'
+                )?.score ?? '-'}
+              </strong>
+            </span>
+
+            <span>
+              <small>Technical</small>
+
+              <strong>
+                {categories.find(
+                  (item) =>
+                    item.name === 'Technical SEO'
+                )?.score ?? '-'}
+              </strong>
+            </span>
+
+            <span>
+              <small>Content</small>
+
+              <strong>
+                {categories.find(
+                  (item) =>
+                    item.name === 'Content Quality'
+                )?.score ?? '-'}
+              </strong>
+            </span>
+          </div>
+        </button>
+      ) : null}
+{multipageStatus === 'complete' && multipageResults && (
         <div
+          ref={auditSummaryStickyRef}
           className="site-audit-desktop-full-results phase2-audit-summary"
           style={{
           background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,

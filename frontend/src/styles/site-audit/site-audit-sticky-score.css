@@ -1,0 +1,296 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   Sticky Site Audit Score Summary
+   ========================================================== */
+
+.site-audit-sticky-score {
+  position: sticky;
+  top: 52px;
+  z-index: 35;
+
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 24px;
+
+  margin: 0 0 12px;
+  padding: 11px 18px;
+
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.97);
+
+  box-shadow:
+    0 6px 24px rgba(15, 23, 42, 0.08),
+    0 1px 3px rgba(15, 23, 42, 0.06);
+
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  animation: siteAuditStickyIn 160ms ease-out;
+}
+
+
+/* ==========================================================
+   HEALTH
+   ========================================================== */
+
+.site-audit-sticky-score__health {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-audit-sticky-score__health strong {
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 800;
+  color: #d97706;
+}
+
+.site-audit-sticky-score__health span {
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 700;
+  color: #475569;
+}
+
+
+/* ==========================================================
+   STATUS
+   ========================================================== */
+
+.site-audit-sticky-score__status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.site-audit-sticky-score__status span {
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 700;
+
+  white-space: nowrap;
+}
+
+.site-audit-sticky-score__status .is-critical {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.site-audit-sticky-score__status .is-warning {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.site-audit-sticky-score__status .is-healthy {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+
+/* ==========================================================
+   CATEGORY SCORES
+   ========================================================== */
+
+.site-audit-sticky-score__categories {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 28px;
+}
+
+.site-audit-sticky-score__categories span {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.site-audit-sticky-score__categories small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.site-audit-sticky-score__categories strong {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media (max-width: 1024px) {
+
+  .site-audit-sticky-score {
+    gap: 14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .site-audit-sticky-score__categories {
+    gap: 16px;
+  }
+
+}
+
+
+/* ==========================================================
+   MOBILE BROWSER / ANDROID / IOS
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  .site-audit-sticky-score {
+    position: sticky;
+
+    top:
+      calc(
+        112px +
+        env(safe-area-inset-top, 0px)
+      );
+
+    z-index: 45;
+
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+
+    width: calc(100% - 20px);
+
+    margin:
+      0 10px
+      10px;
+
+    padding: 10px 12px;
+
+    border-radius: 12px;
+
+    min-height: 52px;
+
+    touch-action: manipulation;
+  }
+
+  .site-audit-sticky-score__health {
+    gap: 6px;
+  }
+
+  .site-audit-sticky-score__health strong {
+    font-size: 23px;
+  }
+
+  .site-audit-sticky-score__health span {
+    font-size: 11px;
+  }
+
+  .site-audit-sticky-score__status {
+    justify-content: flex-end;
+    gap: 5px;
+  }
+
+  .site-audit-sticky-score__status span {
+    padding: 5px 6px;
+
+    font-size: 10px;
+  }
+
+  /*
+   * Critical is already highly visible inside the
+   * full Audit Overview. Keep the sticky mobile
+   * strip compact.
+   */
+  .site-audit-sticky-score__status .is-critical {
+    display: none;
+  }
+
+  .site-audit-sticky-score__categories {
+    grid-column: 1 / -1;
+
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+
+    gap: 6px;
+
+    padding-top: 8px;
+
+    border-top: 1px solid #eef2f7;
+  }
+
+  .site-audit-sticky-score__categories span {
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .site-audit-sticky-score__categories small {
+    font-size: 9px;
+  }
+
+  .site-audit-sticky-score__categories strong {
+    font-size: 12px;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL PHONE
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+  .site-audit-sticky-score {
+    width: calc(100% - 14px);
+
+    margin-left: 7px;
+    margin-right: 7px;
+
+    padding: 9px 10px;
+  }
+
+  .site-audit-sticky-score__status .is-healthy {
+    display: none;
+  }
+
+}
+
+
+/* ==========================================================
+   ANIMATION
+   ========================================================== */
+
+@keyframes siteAuditStickyIn {
+
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+  .site-audit-sticky-score {
+    animation: none;
+  }
+
+}
