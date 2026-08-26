@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -14,6 +14,7 @@ import UsageBar from './UsageBar'
 import SiteFavicon from './SiteFavicon'
 import ScoreInfoTip from './ScoreInfoTip'
 import { canUseBacklinks, canUseAiAssistant, canUseColdEmails } from '../utils/features'
+import MobileProjectBottomNav from './mobile/MobileProjectBottomNav'
 
 const NAV = [
   { to: '',              label: 'Overview',      icon: faChartSimple,      end: true },
@@ -309,6 +310,8 @@ export default function Layout() {
       <div className="app-main">
         {!hideGlobalUsageBar && <UsageBar />}
         <Outlet />
+        {/* DEVNDESPRO_SHARED_MOBILE_PROJECT_NAV */}
+        <MobileProjectBottomNav />
       </div>
 
     </div>

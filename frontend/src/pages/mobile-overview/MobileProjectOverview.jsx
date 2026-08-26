@@ -20,6 +20,10 @@ import {
   faEllipsisVertical,
   faLink,
   faWandMagicSparkles,
+  faPlug,
+  faEnvelope,
+  faPaperPlane,
+  faUsers,
 } from '@fortawesome/free-solid-svg-icons'
 import './MobileProjectOverview.css'
 import SiteHealthGauge from '../../components/SiteHealthGauge'
@@ -568,12 +572,13 @@ export default function MobileProjectOverview({
               <div className="mpo-project-copy"><strong>{projectName}</strong><span>{domain}</span></div>
             </div>
             <div className="mpo-sheet-links">
-              <SheetLink label="Backlinks" onClick={() => navigate(`/site/${siteId}/backlinks`)} />
-              <SheetLink label="AI Visibility" onClick={() => navigate(`/site/${siteId}/ai-visibility`)} />
-              <SheetLink label="Integrations" onClick={() => navigate(`/site/${siteId}/integrations`)} />
-              <SheetLink label="Email reports" onClick={() => navigate(`/site/${siteId}/email-reports`)} />
-              <SheetLink label="Cold email" onClick={() => navigate(`/site/${siteId}/cold-emails`)} />
-              <SheetLink label="Competitors" onClick={() => navigate(`/site/${siteId}/competitors`)} />
+              {/* DEVNDESPRO MOBILE MORE MENU ICONS */}
+              <SheetLink icon={faLink} label="Backlinks" onClick={() => navigate(`/site/${siteId}/backlinks`)} />
+              <SheetLink icon={faWandMagicSparkles} label="AI Visibility" onClick={() => navigate(`/site/${siteId}/ai-visibility`)} />
+              <SheetLink icon={faPlug} label="Integrations" onClick={() => navigate(`/site/${siteId}/integrations`)} />
+              <SheetLink icon={faEnvelope} label="Email reports" onClick={() => navigate(`/site/${siteId}/email-reports`)} />
+              <SheetLink icon={faPaperPlane} label="Cold email" onClick={() => navigate(`/site/${siteId}/cold-emails`)} />
+              <SheetLink icon={faUsers} label="Competitors" onClick={() => navigate(`/site/${siteId}/competitors`)} />
             </div>
             <button type="button" className="mpo-sheet-close" onClick={() => setMoreOpen(false)}>Close</button>
           </section>
@@ -613,11 +618,16 @@ function NavItem({ active = false, icon, label, onClick }) {
   )
 }
 
-function SheetLink({ label, onClick }) {
+function SheetLink({ icon, label, onClick }) {
   return (
     <button type="button" onClick={onClick}>
-      <span>{label}</span>
-      <FontAwesomeIcon icon={faChevronRight} />
+      <span className="mpo-sheet-link-main">
+        <span className="mpo-sheet-link-icon" aria-hidden="true">
+          <FontAwesomeIcon icon={icon} />
+        </span>
+        <span>{label}</span>
+      </span>
+      <FontAwesomeIcon className="mpo-sheet-link-chevron" icon={faChevronRight} />
     </button>
   )
 }

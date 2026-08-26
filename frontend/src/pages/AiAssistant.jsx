@@ -25,7 +25,7 @@ const QUICK = [
   'What should I prioritize this week?',
 ]
 
-// â”€â”€ Chat Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 function ChatTab({ siteId }) {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')

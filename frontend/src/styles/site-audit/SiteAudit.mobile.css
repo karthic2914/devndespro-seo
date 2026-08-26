@@ -1,0 +1,249 @@
+/* ==========================================================
+   DEVNDESPRO SEO - MOBILE SITE AUDIT
+   Desktop/tablet remain unchanged
+   ========================================================== */
+
+.mobile-site-audit-header {
+  display: none;
+}
+
+@media (max-width: 767px) {
+
+  .audit-desktop-header {
+    display: none !important;
+  }
+
+  .site-audit-content {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .mobile-site-audit-header {
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  .mobile-audit-page {
+    width: 100%;
+  }
+
+  .mobile-audit-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .mobile-audit-heading-copy {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-audit-heading h1 {
+    margin: 0;
+    color: #111827;
+    font-size: 24px;
+    line-height: 1.15;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  .mobile-audit-url {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    margin-top: 6px;
+
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.35;
+    text-decoration: none;
+  }
+
+  .mobile-audit-url span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-audit-scan {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 7px;
+
+    color: #8b97aa;
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+  /* Secondary actions */
+
+  .mobile-audit-secondary-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .mobile-audit-secondary-button {
+    min-width: 0;
+    min-height: 62px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 9px 5px;
+
+    border: 1px solid #e5eaf2;
+    border-radius: 13px;
+    background: #ffffff;
+
+    color: #66738a;
+
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+
+    box-shadow: 0 2px 8px rgba(17, 24, 39, 0.035);
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-audit-secondary-button svg {
+    color: #637089;
+    font-size: 16px;
+  }
+
+  .mobile-audit-secondary-button:active {
+    transform: scale(0.98);
+    background: #f8fafc;
+  }
+
+  /* Main actions */
+
+  .mobile-audit-primary-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .mobile-audit-action {
+    min-width: 0;
+    min-height: 48px;
+
+    border: 0;
+    border-radius: 13px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    padding: 0 10px;
+
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-audit-action-email {
+    color: #ffffff;
+    background: linear-gradient(
+      135deg,
+      #ff7a00 0%,
+      #f25c05 100%
+    );
+
+    box-shadow:
+      0 5px 14px rgba(249, 115, 22, 0.18);
+  }
+
+  .mobile-audit-rerun-group {
+    min-width: 0;
+    min-height: 48px;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 42px;
+
+    border-radius: 13px;
+    overflow: hidden;
+
+    background: linear-gradient(
+      135deg,
+      #6d35f5 0%,
+      #5828d8 100%
+    );
+
+    box-shadow:
+      0 5px 14px rgba(99, 52, 220, 0.18);
+  }
+
+  .mobile-audit-rerun-main,
+  .mobile-audit-rerun-menu {
+    border: 0;
+    background: transparent;
+    color: #ffffff;
+
+    font-family: inherit;
+
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-audit-rerun-main {
+    min-width: 0;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+
+    padding: 0 7px;
+
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .mobile-audit-rerun-main span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-audit-rerun-menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-left:
+      1px solid rgba(255, 255, 255, 0.25);
+  }
+
+  .mobile-audit-action:disabled,
+  .mobile-audit-rerun-main:disabled,
+  .mobile-audit-rerun-menu:disabled,
+  .mobile-audit-secondary-button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .mobile-audit-share-message {
+    margin-top: 8px;
+
+    color: #778399;
+    font-size: 10px;
+    text-align: center;
+  }
+}

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
+import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -24,7 +24,19 @@ import AuditIssueRow from '../components/audit/AuditIssueRow'
 import AuditSpeedPanel from '../components/audit/AuditSpeedPanel'
 import MultipageScoreBanner from '../components/audit/MultipageScoreBanner'
 import DecisionCenter from '../components/dashboard/DecisionCenter'
+import MobileAuditDecisionCenter from './site-audit-mobile/MobileAuditDecisionCenter'
+import MobileAuditResults from './site-audit-mobile/MobileAuditResults'
+import MobileAuditInsights from './site-audit-mobile/MobileAuditInsights'
+import MobileProjectNav from './site-audit-mobile/MobileProjectNav'
+import './site-audit-mobile/MobileNativePolish.css'
 import ScoreInfoTip from '../components/ScoreInfoTip'
+import '../styles/site-audit/SiteAudit.mobile.css'
+import '../styles/site-audit/site-audit-hierarchy.css'
+import '../styles/site-audit/site-audit-phase2.css'
+import '../styles/site-audit/site-audit-phase3.css'
+import '../styles/site-audit/site-audit-phase4-5.css'
+import '../styles/site-audit/site-audit-phase6-7.css'
+import '../styles/site-audit/site-audit-final-mobile.css'
 
 const CAT_ORDER = ['On-Page SEO', 'Technical SEO', 'Content Quality', 'Page Speed', 'Server & Security', 'Advanced SEO', 'AI Snippet', 'AEO']
 
@@ -381,7 +393,10 @@ function TabBar({ tabs, active, onChange }) {
   }
 
   return (
-    <div style={{ position: 'relative', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+    <div
+      className="site-audit-desktop-tabbar"
+      style={{ position: 'relative', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: 6 }}
+    >
       <button
         onClick={() => scrollTabs('left')}
         style={{
@@ -492,6 +507,12 @@ function IssueSparkline({ checkId, history }) {
   )
 }
 
+
+/* DEVNDESPRO_SITE_AUDIT_HIERARCHY_PHASE1 */
+
+/* DEVNDESPRO_SITE_AUDIT_PHASE4_5 */
+
+/* DEVNDESPRO_SITE_AUDIT_PHASE6_7 */
 export default function SiteAudit() {
   const [collapsedSections, setCollapsedSections] = useState({
     decisionCenter: false,
@@ -699,6 +720,7 @@ export default function SiteAudit() {
   }, [siteId])
   const [showAuditMenu, setShowAuditMenu] = useState(false)
   const auditMenuAnchorRef = useRef(null)
+  const mobileAuditMenuAnchorRef = useRef(null)
   const [auditMenuPos, setAuditMenuPos] = useState({ top: 0, left: 0, width: 260 })
   const [multipageStatus, setMultipageStatus] = useState(null)
   const [multipageProgress, setMultipageProgress] = useState(null)
@@ -709,18 +731,37 @@ export default function SiteAudit() {
 
   useLayoutEffect(() => {
     if (!showAuditMenu) return
+
     const place = () => {
-      const el = auditMenuAnchorRef.current
+      const isMobile = window.innerWidth <= 767
+
+      const el = isMobile
+        ? mobileAuditMenuAnchorRef.current
+        : auditMenuAnchorRef.current
+
       if (!el) return
+
       const rect = el.getBoundingClientRect()
       const width = Math.min(280, window.innerWidth - 16)
+
       let left = rect.right - width
-      left = Math.max(8, Math.min(left, window.innerWidth - width - 8))
-      setAuditMenuPos({ top: rect.bottom + 6, left, width })
+      left = Math.max(
+        8,
+        Math.min(left, window.innerWidth - width - 8)
+      )
+
+      setAuditMenuPos({
+        top: rect.bottom + 6,
+        left,
+        width,
+      })
     }
+
     place()
+
     window.addEventListener('resize', place)
     window.addEventListener('scroll', place, true)
+
     return () => {
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', place, true)
@@ -1912,10 +1953,140 @@ export default function SiteAudit() {
           },
         }))}
       />
-    <div ref={captureRef} style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}>
+    <div
+      ref={captureRef}
+      className="site-audit-content"
+      style={{ padding: 'clamp(1rem, 4vw, 1.5rem) clamp(0.75rem, 4vw, 2rem)' }}
+    >
 
+      {/* DEVNDESPRO_MOBILE_SITE_AUDIT_HEADER */}
+      <div className="mobile-site-audit-header">
+        <div className="mobile-audit-page">
+
+          <div className="mobile-audit-heading">
+            <div className="mobile-audit-heading-copy">
+              <h1>Site Audit</h1>
+
+              {auditData.url && (
+                <a
+                  className="mobile-audit-url"
+                  href={auditData.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <span>{auditData.url}</span>
+                  <FontAwesomeIcon icon={faExternalLink} />
+                </a>
+              )}
+
+              <div className="mobile-audit-scan">
+                <FontAwesomeIcon icon={faClock} />
+                <span>Last scanned: {scannedDate}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mobile-audit-secondary-actions">
+
+            <button
+              type="button"
+              className="mobile-audit-secondary-button"
+              onClick={downloadSnapshot}
+              disabled={exporting}
+            >
+              <FontAwesomeIcon icon={faCamera} />
+              <span>{exporting ? 'Capturing' : 'Screenshot'}</span>
+            </button>
+
+            <button
+              type="button"
+              className="mobile-audit-secondary-button"
+              onClick={shareSnapshot}
+              disabled={exporting}
+            >
+              <FontAwesomeIcon icon={faShareNodes} />
+              <span>Share</span>
+            </button>
+
+            <button
+              type="button"
+              className="mobile-audit-secondary-button"
+              onClick={() => navigate(`/site/${siteId}/actions`)}
+            >
+              <FontAwesomeIcon icon={faPenToSquare} />
+              <span>Actions</span>
+            </button>
+
+          </div>
+
+          <div className="mobile-audit-primary-actions">
+
+            <button
+              type="button"
+              className="mobile-audit-action mobile-audit-action-email"
+              onClick={() => setShowEmailModal(true)}
+            >
+              <FontAwesomeIcon icon={faEnvelope} />
+              <span>Send summary</span>
+            </button>
+
+            <div
+              className="mobile-audit-rerun-group"
+              ref={mobileAuditMenuAnchorRef}
+            >
+
+              <button
+                type="button"
+                className="mobile-audit-rerun-main"
+                onClick={rerunCompleteAudit}
+                disabled={
+                  running ||
+                  exporting ||
+                  multipageStatus === 'running'
+                }
+              >
+                <FontAwesomeIcon
+                  icon={faArrowsRotate}
+                  style={{
+                    animation: running
+                      ? 'spin 1s linear infinite'
+                      : 'none',
+                  }}
+                />
+
+                <span>
+                  {running ? 'Scanning...' : 'Re-run audit'}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="mobile-audit-rerun-menu"
+                aria-label="Choose audit type"
+                onClick={() => setShowAuditMenu((value) => !value)}
+                disabled={
+                  running ||
+                  exporting ||
+                  multipageStatus === 'running'
+                }
+              >
+                <FontAwesomeIcon icon={faChevronDown} />
+              </button>
+
+            </div>
+
+          </div>
+
+          {!!shareMsg && (
+            <div className="mobile-audit-share-message">
+              {shareMsg}
+            </div>
+          )}
+
+        </div>
+      </div>
       {/* Page header */}
-      <div id="audit-section-run" className='audit-page-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
+      <div id="audit-section-run" className='audit-page-header audit-desktop-header' style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: 10 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#111827', margin: 0 }}>Site Audit</h1>
           <div style={{ fontSize: 12, color: '#9CA3AF', marginTop: 3, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1978,8 +2149,21 @@ export default function SiteAudit() {
                     onClick={() => { setShowAuditMenu(false); runAudit() }}
                     style={{ display: 'block', width: '100%', textAlign: 'left', padding: '10px 14px', border: 'none', borderBottom: '1px solid #F3F4F6', background: '#fff', cursor: 'pointer', fontFamily: 'inherit' }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827' }}>Quick Audit</div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Homepage only - a few seconds</div>
+                    <div className="mobile-audit-option-row">
+                      <span className="mobile-audit-option-icon quick">
+                        <FontAwesomeIcon icon={faPlay} />
+                      </span>
+
+                      <span className="mobile-audit-option-copy">
+                        <strong>Quick Audit</strong>
+                        <small>Homepage only - a few seconds</small>
+                      </span>
+
+                      <FontAwesomeIcon
+                        className="mobile-audit-option-chevron"
+                        icon={faChevronRight}
+                      />
+                    </div>
                   </button>
                   <button
                     onClick={() => { if (!canRunFullAudit) return; setShowAuditMenu(false); runMultipageAudit() }}
@@ -1992,8 +2176,25 @@ export default function SiteAudit() {
                       fontFamily: 'inherit',
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: canRunFullAudit ? '#111827' : '#9CA3AF' }}>Full Site Audit <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700 }}>BETA</span></div>
-                    <div style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>Up to 100 pages - a few minutes</div>
+                    <div className="mobile-audit-option-row">
+                      <span className="mobile-audit-option-icon full">
+                        <FontAwesomeIcon icon={faMagnifyingGlassChart} />
+                      </span>
+
+                      <span className="mobile-audit-option-copy">
+                        <strong>
+                          Full Site Audit
+                          <em className="mobile-audit-beta">BETA</em>
+                        </strong>
+
+                        <small>Up to 100 pages - a few minutes</small>
+                      </span>
+
+                      <FontAwesomeIcon
+                        className="mobile-audit-option-chevron"
+                        icon={faChevronRight}
+                      />
+                    </div>
                   </button>
                 </div>
               </>,
@@ -2138,12 +2339,84 @@ export default function SiteAudit() {
         </div>
       )}
 
-      <div style={{
-        background: '#fff',
-        border: '1px solid #E5E7EB',
-        borderRadius: 12,
-        marginBottom: '1rem',
-      }}>
+      {/* DEVNDESPRO_MOBILE_PROJECT_NAV */}
+      <MobileProjectNav
+        siteId={siteId}
+      />
+      
+      {/* DEVNDESPRO_FINAL_MOBILE_ORDER */}
+      {/* DEVNDESPRO_MOBILE_AUDIT_OVERVIEW_SLOT */}
+      <div className="mobile-audit-overview-slot">
+<MobileAuditResults
+        auditData={auditData}
+        multipageResults={multipageResults}
+        categories={categories}
+        tabOptions={tabOptions}
+        activeTab={activeTab}
+        visibleIssues={visibleIssues}
+        onTabChange={(id) => {
+          setActiveTab(id)
+          setExpandedIdx(null)
+        }}
+        onIssueOpen={(issue) => {
+          setExpandedIdx(
+            issue?._idx ?? null
+          )
+        }}
+        onViewCrawledPages={() => {
+          setShowCrawledPages(true)
+
+          window.setTimeout(() => {
+            document
+              .querySelector(
+                '.site-audit-desktop-full-results'
+              )
+              ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
+          }, 80)
+        }}
+      />
+      </div>
+{/* DEVNDESPRO_MOBILE_DECISION_CENTER */}
+      <MobileAuditDecisionCenter
+        auditData={auditData}
+        multipageResults={multipageResults}
+        authorityScore={authorityScore}
+        domainRank={domainRank}
+        categories={categories}
+        allIssues={allIssues}
+        onIssueOpen={(issue) => {
+          setActiveTab(
+            issue.status === 'error'
+              ? 'errors'
+              : issue.status === 'warning'
+                ? 'warnings'
+                : 'all'
+          )
+
+          setExpandedIdx(
+            issue._idx ?? null
+          )
+
+          window.setTimeout(() => {
+            auditIssuesRef.current?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start',
+            })
+          }, 80)
+        }}
+      />
+      <div
+        className="site-audit-desktop-decision phase3-decision-center"
+        style={{
+          background: '#fff',
+          border: '1px solid #E5E7EB',
+          borderRadius: 12,
+          marginBottom: '1rem',
+        }}
+      >
         <div style={{
           padding: '12px 16px',
           display: 'flex',
@@ -2199,7 +2472,9 @@ export default function SiteAudit() {
       </div>
 
       {multipageStatus === 'complete' && multipageResults && (
-        <div style={{
+        <div
+          className="site-audit-desktop-full-results phase2-audit-summary"
+          style={{
           background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
           padding: '16px 18px', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
         }}>
@@ -2614,7 +2889,60 @@ export default function SiteAudit() {
         </div>
       )}
 
+      
+      {/* DEVNDESPRO_MOBILE_AUDIT_FINDINGS_SLOT */}
+      <div className="mobile-audit-findings-slot">
+<MobileAuditResults
+        auditData={auditData}
+        multipageResults={multipageResults}
+        categories={categories}
+        tabOptions={tabOptions}
+        activeTab={activeTab}
+        visibleIssues={visibleIssues}
+        onTabChange={(id) => {
+          setActiveTab(id)
+          setExpandedIdx(null)
+        }}
+        onIssueOpen={(issue) => {
+          setExpandedIdx(
+            issue?._idx ?? null
+          )
+        }}
+        onViewCrawledPages={() => {
+          setShowCrawledPages(true)
+
+          window.setTimeout(() => {
+            document
+              .querySelector(
+                '.site-audit-desktop-full-results'
+              )
+              ?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+              })
+          }, 80)
+        }}
+      />
+      </div>
+{/* DEVNDESPRO_MOBILE_AUDIT_INSIGHTS */}
+      <MobileAuditInsights
+        auditData={auditData}
+        categories={categories}
+        cronEnabled={cronEnabled}
+        onCronToggle={toggleCron}
+
+        domainRank={domainRank}
+        authorityScore={authorityScore}
+        authorityUpdatedAt={authorityUpdatedAt}
+        refreshingAuthority={refreshingAuthority}
+        onRefreshAuthority={refreshAuthorityScore}
+
+        crawl={crawl}
+        fmtMs={fmtMs}
+        fmtBytes={fmtBytes}
+      />
       <div
+        className="site-audit-desktop-ai"
         style={{
           background: '#fff',
           borderRadius: 12,
@@ -2686,7 +3014,9 @@ export default function SiteAudit() {
           />
         )}
       </div>
-      <AuditSpeedPanel speed={auditData.speed} />
+      <div className="site-audit-desktop-speed">
+  <AuditSpeedPanel speed={auditData.speed} />
+</div>
 
       {crawl && (
         <div>
@@ -2848,7 +3178,9 @@ export default function SiteAudit() {
           </Modal>
 
           {/* Domain Rank + Link Score */}
-          <div style={{
+          <div
+            className="site-audit-desktop-authority"
+            style={{
             background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '1rem',
             padding: 'clamp(10px, 3vw, 14px) clamp(10px, 3vw, 16px)',
@@ -2904,7 +3236,9 @@ export default function SiteAudit() {
           </div>
 
           {/* Crawl snapshot */}
-          <div style={{
+          <div
+            className="site-audit-desktop-crawl"
+            style={{
             background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB',
             boxShadow: '0 1px 3px rgba(0,0,0,0.04)', marginBottom: '1rem', padding: '12px 14px',
           }}>
@@ -2956,7 +3290,12 @@ export default function SiteAudit() {
 
       <TabBar tabs={tabOptions} active={activeTab} onChange={(id) => { setActiveTab(id); setExpandedIdx(null) }} />
 
-      <div id="audit-section-issues" ref={issuesRef} style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+      <div
+        id="audit-section-issues"
+        ref={issuesRef}
+        className="site-audit-desktop-issues"
+        style={{ background: '#fff', borderRadius: 12, border: '1px solid #E5E7EB', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+      >
         {visibleIssues.length === 0 ? (
           <div style={{ padding: '3rem', textAlign: 'center', color: '#9CA3AF', fontSize: 13 }}>
             No issues in this category.

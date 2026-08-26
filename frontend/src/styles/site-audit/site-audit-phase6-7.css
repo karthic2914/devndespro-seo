@@ -1,0 +1,963 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   SITE AUDIT UX - PHASE 6 + 7
+
+   Phase 6:
+   AI Visibility
+   Domain Authority
+   Crawl Snapshot
+
+   Phase 7:
+   Final responsive / native polish
+
+   Desktop
+   Tablet
+   Mobile browser
+   Android
+   iOS
+   ========================================================== */
+
+
+/* ==========================================================
+   GLOBAL SITE AUDIT RHYTHM
+   ========================================================== */
+
+.site-audit-desktop-full-results,
+.site-audit-desktop-decision {
+  scroll-margin-top: 92px;
+}
+
+
+/* ==========================================================
+   DESKTOP
+   ========================================================== */
+
+@media (min-width: 1101px) {
+
+  /*
+   * Keep major sections visually separated without
+   * excessive vertical space.
+   */
+
+  .site-audit-desktop-full-results {
+    margin-bottom: 18px !important;
+  }
+
+
+  .site-audit-desktop-decision {
+    margin-bottom: 18px !important;
+  }
+
+
+  /*
+   * Supporting intelligence should not compete
+   * with Full Site Audit.
+   */
+
+  .site-audit-desktop-full-results
+  ~ div {
+    scroll-margin-top: 92px;
+  }
+
+
+  /*
+   * Improve readability of supporting data cards.
+   */
+
+  .site-audit-desktop-full-results
+  table,
+  .site-audit-desktop-decision
+  table {
+    width: 100%;
+  }
+
+
+  .site-audit-desktop-full-results
+  td,
+  .site-audit-desktop-full-results
+  th,
+  .site-audit-desktop-decision
+  td,
+  .site-audit-desktop-decision
+  th {
+    vertical-align: middle;
+  }
+
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media
+(min-width: 768px)
+and
+(max-width: 1100px) {
+
+  /*
+   * Tablet should retain desktop information density
+   * but use slightly tighter spacing.
+   */
+
+  .site-audit-desktop-full-results,
+  .site-audit-desktop-decision {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+
+  .site-audit-desktop-full-results {
+    margin-bottom: 15px !important;
+  }
+
+
+  .site-audit-desktop-decision {
+    margin-bottom: 15px !important;
+  }
+
+
+  /*
+   * Prevent long audit text from forcing
+   * horizontal overflow.
+   */
+
+  .site-audit-desktop-full-results *,
+  .site-audit-desktop-decision * {
+    min-width: 0;
+  }
+
+}
+
+
+/* ==========================================================
+   MOBILE
+   PHASE 6 - SUPPORTING INSIGHTS
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  /* --------------------------------------------------------
+     Main insights wrapper
+     -------------------------------------------------------- */
+
+  .mai-root,
+  .mobile-audit-insights {
+    position: relative;
+
+    margin:
+      0 12px
+      14px !important;
+
+    border:
+      1px solid #e2e6ed;
+
+    border-radius:
+      16px;
+
+    overflow:
+      hidden;
+
+    background:
+      #ffffff;
+
+    box-shadow:
+      0 2px 10px
+      rgba(
+        15,
+        23,
+        42,
+        0.045
+      );
+  }
+
+
+  /* --------------------------------------------------------
+     Insight section headings
+     -------------------------------------------------------- */
+
+  .mai-header,
+  .mai-section-header {
+    padding:
+      15px 14px
+      11px !important;
+  }
+
+
+  .mai-header h2,
+  .mai-section-header h2 {
+    margin:
+      0 !important;
+
+    color:
+      #172033 !important;
+
+    font-size:
+      17px !important;
+
+    line-height:
+      1.25 !important;
+
+    font-weight:
+      800 !important;
+
+    letter-spacing:
+      -0.012em;
+  }
+
+
+  .mai-header p,
+  .mai-section-header p {
+    margin:
+      4px 0 0 !important;
+
+    color:
+      #8290a4 !important;
+
+    font-size:
+      11px !important;
+
+    line-height:
+      1.45 !important;
+  }
+
+
+  /* ========================================================
+     AI VISIBILITY
+     ======================================================== */
+
+  .mai-ai,
+  .mai-ai-visibility {
+    position: relative;
+
+    padding:
+      0 14px
+      14px !important;
+  }
+
+
+  .mai-ai-card,
+  .mai-visibility-card {
+    padding:
+      13px !important;
+
+    border:
+      1px solid #e5e9f0 !important;
+
+    border-radius:
+      13px !important;
+
+    background:
+      #ffffff !important;
+
+    box-shadow:
+      none !important;
+  }
+
+
+  /*
+   * Primary AI score.
+   */
+
+  .mai-ai-score,
+  .mai-visibility-score {
+    color:
+      #172033 !important;
+
+    font-size:
+      26px !important;
+
+    line-height:
+      1 !important;
+
+    font-weight:
+      850 !important;
+
+    letter-spacing:
+      -0.025em;
+  }
+
+
+  .mai-ai-label,
+  .mai-visibility-label {
+    color:
+      #657289 !important;
+
+    font-size:
+      11px !important;
+
+    font-weight:
+      750 !important;
+  }
+
+
+  /*
+   * AI platform grid.
+   */
+
+  .mai-platform-grid,
+  .mai-ai-grid {
+    display:
+      grid !important;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      ) !important;
+
+    gap:
+      8px !important;
+
+    margin-top:
+      10px !important;
+  }
+
+
+  .mai-platform,
+  .mai-ai-platform {
+    min-width: 0;
+
+    min-height:
+      74px;
+
+    padding:
+      10px !important;
+
+    border:
+      1px solid #e7eaf0 !important;
+
+    border-radius:
+      11px !important;
+
+    background:
+      #fafbfc !important;
+  }
+
+
+  .mai-platform strong,
+  .mai-ai-platform strong {
+    color:
+      #263349 !important;
+
+    font-size:
+      12px !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  .mai-platform span,
+  .mai-ai-platform span {
+    color:
+      #7d899c !important;
+
+    font-size:
+      10px !important;
+
+    line-height:
+      1.35 !important;
+  }
+
+
+  /*
+   * Coming soon platforms should look intentionally
+   * unavailable rather than broken.
+   */
+
+  .mai-platform.disabled,
+  .mai-platform.coming-soon,
+  .mai-ai-platform.disabled,
+  .mai-ai-platform.coming-soon {
+    opacity:
+      0.62;
+  }
+
+
+  /* ========================================================
+     DOMAIN AUTHORITY
+     ======================================================== */
+
+  .mai-authority,
+  .mai-domain-authority {
+    padding:
+      14px !important;
+
+    border-top:
+      1px solid #edf0f5;
+  }
+
+
+  .mai-authority-grid,
+  .mai-domain-grid {
+    display:
+      grid !important;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      ) !important;
+
+    gap:
+      8px !important;
+  }
+
+
+  .mai-authority-card,
+  .mai-domain-card {
+    min-width:
+      0;
+
+    padding:
+      12px !important;
+
+    border:
+      1px solid #e5e9f0 !important;
+
+    border-radius:
+      12px !important;
+
+    background:
+      #ffffff !important;
+
+    box-shadow:
+      none !important;
+  }
+
+
+  .mai-authority-card span,
+  .mai-domain-card span {
+    color:
+      #748096 !important;
+
+    font-size:
+      10px !important;
+
+    font-weight:
+      700 !important;
+  }
+
+
+  .mai-authority-card strong,
+  .mai-domain-card strong {
+    display:
+      block;
+
+    margin-top:
+      5px;
+
+    color:
+      #172033 !important;
+
+    font-size:
+      23px !important;
+
+    line-height:
+      1 !important;
+
+    font-weight:
+      850 !important;
+  }
+
+
+  /*
+   * Refresh Authority action.
+   */
+
+  .mai-refresh,
+  .mai-refresh-authority {
+    min-height:
+      40px !important;
+
+    margin-top:
+      10px !important;
+
+    padding:
+      0 12px !important;
+
+    border:
+      1px solid #ded8fb !important;
+
+    border-radius:
+      10px !important;
+
+    background:
+      #f8f6ff !important;
+
+    color:
+      #5d48d8 !important;
+
+    font-size:
+      11px !important;
+
+    font-weight:
+      800 !important;
+
+    box-shadow:
+      none !important;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  .mai-refresh:active,
+  .mai-refresh-authority:active {
+    background:
+      #f0ecff !important;
+  }
+
+
+  /* ========================================================
+     CRAWL SNAPSHOT
+     ======================================================== */
+
+  .mai-crawl,
+  .mai-crawl-snapshot {
+    padding:
+      14px !important;
+
+    border-top:
+      1px solid #edf0f5;
+  }
+
+
+  .mai-crawl-grid,
+  .mai-snapshot-grid {
+    display:
+      grid !important;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      ) !important;
+
+    gap:
+      8px !important;
+  }
+
+
+  .mai-crawl-item,
+  .mai-snapshot-item {
+    min-width:
+      0;
+
+    padding:
+      10px !important;
+
+    border:
+      1px solid #e7eaf0 !important;
+
+    border-radius:
+      10px !important;
+
+    background:
+      #fafbfc !important;
+  }
+
+
+  .mai-crawl-item span,
+  .mai-snapshot-item span {
+    display:
+      block;
+
+    color:
+      #8290a4 !important;
+
+    font-size:
+      9px !important;
+
+    line-height:
+      1.25 !important;
+
+    font-weight:
+      700 !important;
+
+    text-transform:
+      uppercase;
+
+    letter-spacing:
+      0.035em;
+  }
+
+
+  .mai-crawl-item strong,
+  .mai-snapshot-item strong {
+    display:
+      block;
+
+    overflow:
+      hidden;
+
+    margin-top:
+      5px;
+
+    color:
+      #263349 !important;
+
+    font-size:
+      11px !important;
+
+    line-height:
+      1.35 !important;
+
+    font-weight:
+      750 !important;
+
+    text-overflow:
+      ellipsis;
+  }
+
+
+  /*
+   * Final URL / robots rows can span the full width.
+   */
+
+  .mai-crawl-item.wide,
+  .mai-snapshot-item.wide {
+    grid-column:
+      1 / -1;
+  }
+
+
+  /* ========================================================
+     PHASE 7
+     FINAL MOBILE RESPONSIVE POLISH
+     ======================================================== */
+
+
+  /*
+   * Prevent horizontal page movement.
+   */
+
+  html,
+  body {
+    max-width:
+      100%;
+
+    overflow-x:
+      hidden;
+  }
+
+
+  /*
+   * Consistent box sizing throughout audit.
+   */
+
+  .mars-root *,
+  .msadc-root *,
+  .mai-root *,
+  .mobile-audit-insights * {
+    box-sizing:
+      border-box;
+  }
+
+
+  /*
+   * Consistent text wrapping.
+   */
+
+  .mars-root,
+  .msadc-root,
+  .mai-root,
+  .mobile-audit-insights {
+    overflow-wrap:
+      anywhere;
+  }
+
+
+  /*
+   * URLs should wrap rather than stretch screen.
+   */
+
+  .mars-root a,
+  .msadc-root a,
+  .mai-root a,
+  .mobile-audit-insights a {
+    max-width:
+      100%;
+
+    overflow-wrap:
+      anywhere;
+
+    word-break:
+      break-word;
+  }
+
+
+  /*
+   * Native tap targets.
+   */
+
+  .mars-root button,
+  .msadc-root button,
+  .mai-root button,
+  .mobile-audit-insights button {
+    touch-action:
+      manipulation;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  /*
+   * Inputs / selects should not trigger unwanted
+   * iOS zoom where they exist.
+   */
+
+  .mars-root input,
+  .mars-root select,
+  .msadc-root input,
+  .msadc-root select,
+  .mai-root input,
+  .mai-root select,
+  .mobile-audit-insights input,
+  .mobile-audit-insights select {
+    font-size:
+      16px;
+  }
+
+
+  /*
+   * Ensure cards do not touch screen edges.
+   */
+
+  .mars-root,
+  .msadc-root,
+  .mai-root,
+  .mobile-audit-insights {
+    max-width:
+      calc(100% - 24px);
+  }
+
+
+  /*
+   * Bottom spacing for shared native navigation.
+   */
+
+  body.shared-mobile-project-nav-active
+  .app-main {
+    padding-bottom:
+      calc(
+        84px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      ) !important;
+  }
+
+
+  /*
+   * Native bottom safe area.
+   */
+
+  .smpn-bottom-nav {
+    padding-bottom:
+      max(
+        6px,
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      ) !important;
+  }
+
+
+  /*
+   * Bottom sheets should respect iPhone safe area.
+   */
+
+  .smpn-sheet,
+  .overview-audit-menu {
+    padding-bottom:
+      env(
+        safe-area-inset-bottom,
+        0px
+      );
+  }
+
+
+  /*
+   * Smooth native-feeling scrolling.
+   */
+
+  .smpn-sheet-scroll,
+  .mars-filter-row {
+    -webkit-overflow-scrolling:
+      touch;
+  }
+
+
+  /*
+   * Prevent accidental text selection on nav controls.
+   */
+
+  .smpn-bottom-nav button,
+  .mars-filter-chip {
+    user-select:
+      none;
+
+    -webkit-user-select:
+      none;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+  .mai-root,
+  .mobile-audit-insights {
+    margin-left:
+      9px !important;
+
+    margin-right:
+      9px !important;
+
+    max-width:
+      calc(100% - 18px);
+  }
+
+
+  .mai-ai,
+  .mai-ai-visibility,
+  .mai-authority,
+  .mai-domain-authority,
+  .mai-crawl,
+  .mai-crawl-snapshot {
+    padding-left:
+      10px !important;
+
+    padding-right:
+      10px !important;
+  }
+
+
+  .mai-platform-grid,
+  .mai-ai-grid,
+  .mai-authority-grid,
+  .mai-domain-grid,
+  .mai-crawl-grid,
+  .mai-snapshot-grid {
+    gap:
+      6px !important;
+  }
+
+}
+
+
+/* ==========================================================
+   VERY NARROW MOBILE
+   ========================================================== */
+
+@media (max-width: 340px) {
+
+  /*
+   * Keep two-column metrics where practical but
+   * reduce card spacing for very narrow devices.
+   */
+
+  .mai-platform,
+  .mai-ai-platform,
+  .mai-authority-card,
+  .mai-domain-card,
+  .mai-crawl-item,
+  .mai-snapshot-item {
+    padding:
+      8px !important;
+  }
+
+
+  .mai-authority-card strong,
+  .mai-domain-card strong {
+    font-size:
+      21px !important;
+  }
+
+}
+
+
+/* ==========================================================
+   LANDSCAPE MOBILE
+   ========================================================== */
+
+@media
+(max-width: 900px)
+and
+(orientation: landscape) {
+
+  .mars-root,
+  .msadc-root,
+  .mai-root,
+  .mobile-audit-insights {
+    max-width:
+      calc(100% - 28px);
+  }
+
+
+  .mai-platform-grid,
+  .mai-ai-grid,
+  .mai-authority-grid,
+  .mai-domain-grid {
+    grid-template-columns:
+      repeat(
+        4,
+        minmax(0, 1fr)
+      ) !important;
+  }
+
+}
+
+
+/* ==========================================================
+   ACCESSIBILITY
+   ========================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .mars-root *,
+  .msadc-root *,
+  .mai-root *,
+  .mobile-audit-insights *,
+  .smpn-bottom-nav *,
+  .smpn-sheet * {
+    scroll-behavior:
+      auto !important;
+
+    transition-duration:
+      0.01ms !important;
+
+    animation-duration:
+      0.01ms !important;
+
+    animation-iteration-count:
+      1 !important;
+  }
+
+}
+
+
+/* ==========================================================
+   TOUCH DEVICE
+   ========================================================== */
+
+@media (hover: none) and (pointer: coarse) {
+
+  .mars-root button:hover,
+  .msadc-root button:hover,
+  .mai-root button:hover,
+  .mobile-audit-insights button:hover {
+    transform:
+      none !important;
+  }
+
+}

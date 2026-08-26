@@ -1,0 +1,581 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   Mobile Site Audit - Phase 2 + Phase 3
+   Decision Center + Today's Mission
+   ========================================================== */
+
+.msadc-root {
+  display: none;
+}
+
+@media (max-width: 767px) {
+
+  /*
+   * Desktop DecisionCenter stays mounted for desktop/tablet
+   * but is removed from mobile layout.
+   */
+  .site-audit-desktop-decision {
+    display: none !important;
+  }
+
+  .msadc-root {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 14px;
+
+    --msadc-text: #182235;
+    --msadc-muted: #7c899f;
+    --msadc-border: #e6eaf1;
+    --msadc-surface: #ffffff;
+    --msadc-page: #f7f8fb;
+
+    --msadc-purple: #6735e8;
+    --msadc-blue: #2563eb;
+    --msadc-green: #16a34a;
+    --msadc-orange: #ea6908;
+    --msadc-red: #dc2626;
+  }
+
+
+  /* ========================================================
+     Base cards
+     ======================================================== */
+
+  .msadc-card {
+    border: 1px solid var(--msadc-border);
+    border-radius: 16px;
+
+    background: var(--msadc-surface);
+
+    box-shadow:
+      0 2px 10px rgba(28, 38, 59, 0.035);
+
+    overflow: hidden;
+  }
+
+
+  /* ========================================================
+     Decision Center
+     ======================================================== */
+
+  .msadc-decision {
+    padding: 16px;
+  }
+
+  .msadc-section-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+
+    margin-bottom: 14px;
+  }
+
+  .msadc-section-header h2,
+  .msadc-mission-header h2 {
+    margin: 0;
+
+    color: var(--msadc-text);
+
+    font-size: 16px;
+    line-height: 1.2;
+    font-weight: 800;
+
+    letter-spacing: -0.015em;
+  }
+
+  .msadc-section-header p,
+  .msadc-mission-header p {
+    margin: 4px 0 0;
+
+    color: var(--msadc-muted);
+
+    font-size: 11px;
+    line-height: 1.35;
+  }
+
+
+  /* Growth score */
+
+  .msadc-growth-score {
+    flex-shrink: 0;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    text-align: right;
+  }
+
+  .msadc-growth-score > span {
+    color: #8a96a9;
+
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .msadc-growth-score strong {
+    margin-top: 2px;
+
+    font-size: 27px;
+    line-height: 1;
+    font-weight: 850;
+  }
+
+  .msadc-growth-score strong small {
+    margin-left: 2px;
+
+    color: #a1aabc;
+
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .msadc-growth-score em {
+    margin-top: 3px;
+
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+  }
+
+  .msadc-growth-score.good strong,
+  .msadc-growth-score.good em {
+    color: var(--msadc-green);
+  }
+
+  .msadc-growth-score.fair strong,
+  .msadc-growth-score.fair em {
+    color: var(--msadc-orange);
+  }
+
+  .msadc-growth-score.poor strong,
+  .msadc-growth-score.poor em {
+    color: var(--msadc-red);
+  }
+
+
+  /* ========================================================
+     Metric grid
+     ======================================================== */
+
+  .msadc-metric-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 9px;
+  }
+
+  .msadc-metric-card {
+    position: relative;
+
+    min-width: 0;
+    min-height: 116px;
+
+    padding: 12px;
+
+    border: 1px solid #edf0f5;
+    border-radius: 13px;
+
+    background:
+      linear-gradient(
+        180deg,
+        #ffffff 0%,
+        #fbfcfe 100%
+      );
+  }
+
+  .msadc-metric-card::before {
+    content: '';
+
+    position: absolute;
+    top: 12px;
+    right: 12px;
+
+    width: 7px;
+    height: 7px;
+
+    border-radius: 999px;
+
+    background: #cbd3df;
+  }
+
+  .msadc-metric-card.good::before {
+    background: var(--msadc-green);
+  }
+
+  .msadc-metric-card.fair::before {
+    background: var(--msadc-orange);
+  }
+
+  .msadc-metric-card.poor::before {
+    background: var(--msadc-red);
+  }
+
+  .msadc-metric-label {
+    padding-right: 13px;
+
+    color: #66748b;
+
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 750;
+  }
+
+  .msadc-metric-number {
+    margin-top: 12px;
+
+    color: var(--msadc-text);
+
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 850;
+  }
+
+  .msadc-metric-number small {
+    margin-left: 2px;
+
+    color: #a3adbd;
+
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .msadc-metric-card.good
+  .msadc-metric-number {
+    color: var(--msadc-green);
+  }
+
+  .msadc-metric-card.fair
+  .msadc-metric-number {
+    color: var(--msadc-orange);
+  }
+
+  .msadc-metric-card.poor
+  .msadc-metric-number {
+    color: var(--msadc-red);
+  }
+
+  .msadc-metric-status {
+    margin-top: 7px;
+
+    color: #69778e;
+
+    font-size: 9px;
+    line-height: 1.2;
+    font-weight: 800;
+  }
+
+  .msadc-metric-card.good
+  .msadc-metric-status {
+    color: var(--msadc-green);
+  }
+
+  .msadc-metric-card.fair
+  .msadc-metric-status {
+    color: var(--msadc-orange);
+  }
+
+  .msadc-metric-card.poor
+  .msadc-metric-status {
+    color: var(--msadc-red);
+  }
+
+  .msadc-metric-hint {
+    margin-top: 5px;
+
+    color: #a0aabb;
+
+    font-size: 8.5px;
+    line-height: 1.25;
+  }
+
+
+  /* ========================================================
+     Today's Mission
+     ======================================================== */
+
+  .msadc-mission {
+    padding: 15px;
+  }
+
+  .msadc-mission-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-bottom: 11px;
+  }
+
+  .msadc-priority-count {
+    flex-shrink: 0;
+
+    padding: 6px 9px;
+
+    border-radius: 999px;
+
+    background: #f0ebff;
+    color: #6331dc;
+
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+
+  /* Mission rows */
+
+  .msadc-mission-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .msadc-mission-row {
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+
+    display: grid;
+
+    grid-template-columns:
+      30px
+      minmax(0, 1fr)
+      auto;
+
+    align-items: center;
+    gap: 9px;
+
+    padding: 9px 8px;
+
+    border: 1px solid #f0f2f6;
+    border-radius: 12px;
+
+    background: #fbfcfe;
+
+    text-align: left;
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .msadc-mission-row:active {
+    background: #f6f7fb;
+
+    transform: scale(0.995);
+  }
+
+
+  /* Priority number */
+
+  .msadc-mission-number {
+    width: 28px;
+    height: 28px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+  .msadc-mission-number.critical {
+    background: #fff0f0;
+    color: var(--msadc-red);
+  }
+
+  .msadc-mission-number.warning {
+    background: #fff7e8;
+    color: #d97706;
+  }
+
+
+  /* Main issue copy */
+
+  .msadc-mission-copy {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .msadc-mission-copy strong {
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    color: #202a3d;
+
+    font-size: 11px;
+    line-height: 1.32;
+    font-weight: 750;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .msadc-mission-copy small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    color: #929db0;
+
+    font-size: 9px;
+  }
+
+
+  /* Right-side severity */
+
+  .msadc-mission-meta {
+    min-width: 52px;
+
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, auto)
+      10px;
+
+    grid-template-rows:
+      auto
+      auto;
+
+    align-items: center;
+
+    column-gap: 5px;
+
+    text-align: right;
+  }
+
+  .msadc-mission-meta em {
+    grid-column: 1;
+    grid-row: 1;
+
+    justify-self: end;
+
+    padding: 3px 6px;
+
+    border-radius: 6px;
+
+    font-size: 8px;
+    line-height: 1.1;
+    font-style: normal;
+    font-weight: 850;
+  }
+
+  .msadc-mission-meta em.critical {
+    background: #fff0f0;
+    color: var(--msadc-red);
+  }
+
+  .msadc-mission-meta em.warning {
+    background: #fff7e8;
+    color: #d97706;
+  }
+
+  .msadc-mission-meta small {
+    grid-column: 1;
+    grid-row: 2;
+
+    margin-top: 4px;
+
+    color: #9aa5b7;
+
+    font-size: 8px;
+  }
+
+  .msadc-mission-meta b {
+    grid-column: 2;
+    grid-row: 1 / 3;
+
+    color: #8591a5;
+
+    font-size: 21px;
+    line-height: 1;
+    font-weight: 400;
+  }
+
+
+  /* ========================================================
+     Empty state
+     ======================================================== */
+
+  .msadc-empty {
+    min-height: 110px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    border: 1px dashed #dfe6ee;
+    border-radius: 12px;
+
+    background: #fafcfb;
+
+    text-align: center;
+  }
+
+  .msadc-empty-icon {
+    width: 30px;
+    height: 30px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 7px;
+
+    border-radius: 999px;
+
+    background: #e9f8ef;
+    color: var(--msadc-green);
+
+    font-size: 15px;
+    font-weight: 900;
+  }
+
+  .msadc-empty strong {
+    color: var(--msadc-text);
+
+    font-size: 11px;
+  }
+
+  .msadc-empty span {
+    max-width: 250px;
+
+    margin-top: 4px;
+
+    color: var(--msadc-muted);
+
+    font-size: 9px;
+    line-height: 1.4;
+  }
+}
+
+/* DEVNDESPRO MISSION CHEVRON FIX */
+@media (max-width: 767px) {
+
+  .msadc-row-chevron {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    justify-self: center;
+    color: #8793a6;
+    font-size: 13px;
+  }
+
+}

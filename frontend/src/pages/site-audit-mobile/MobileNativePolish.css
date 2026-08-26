@@ -1,0 +1,739 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   MOBILE NATIVE POLISH
+
+   Scope:
+   - Typography/readability
+   - Native audit selector bottom sheet
+   - Mobile only <= 767px
+
+   Desktop/tablet untouched.
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  /* ========================================================
+     1. SITE AUDIT PAGE HEADER
+     ======================================================== */
+
+  .mobile-audit-heading h1 {
+    font-size: 24px !important;
+    line-height: 1.2 !important;
+  }
+
+  .mobile-audit-url {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  .mobile-audit-scan {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+
+  /* Top secondary actions */
+
+  .mobile-audit-secondary-button {
+    min-height: 64px !important;
+
+    font-size: 12px !important;
+    line-height: 1.2 !important;
+
+    font-weight: 700 !important;
+  }
+
+  .mobile-audit-secondary-button svg {
+    font-size: 17px !important;
+  }
+
+
+  /* Main actions */
+
+  .mobile-audit-action,
+  .mobile-audit-rerun-main {
+    min-height: 50px !important;
+
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  /* ========================================================
+     2. PROJECT NAVIGATION
+     ======================================================== */
+
+  .mpnav-item {
+    min-width: 64px !important;
+    height: 54px !important;
+
+    font-size: 10.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .mpnav-icon {
+    font-size: 14px !important;
+  }
+
+
+  /* ========================================================
+     3. DECISION CENTER
+     ======================================================== */
+
+  .msadc-section-header h2,
+  .msadc-mission-header h2 {
+    font-size: 18px !important;
+    line-height: 1.25 !important;
+  }
+
+  .msadc-section-header p,
+  .msadc-mission-header p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+
+  .msadc-metric-label {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+  }
+
+  .msadc-metric-number {
+    font-size: 28px !important;
+  }
+
+  .msadc-metric-number small {
+    font-size: 11px !important;
+  }
+
+  .msadc-metric-status {
+    font-size: 11px !important;
+    line-height: 1.3 !important;
+  }
+
+  .msadc-metric-hint {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+  .msadc-metric-card {
+    min-height: 128px !important;
+    padding: 14px !important;
+  }
+
+
+  /* Today's Mission */
+
+  .msadc-priority-count {
+    font-size: 10px !important;
+
+    padding:
+      6px 9px !important;
+  }
+
+  .msadc-mission-row {
+    min-height: 72px !important;
+
+    padding:
+      11px 9px !important;
+  }
+
+  .msadc-mission-copy strong {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  .msadc-mission-copy small {
+    font-size: 11px !important;
+  }
+
+  .msadc-mission-meta em {
+    font-size: 10px !important;
+  }
+
+  .msadc-mission-meta small {
+    font-size: 10px !important;
+  }
+
+
+  /* ========================================================
+     4. FULL SITE AUDIT
+     ======================================================== */
+
+  .mars-card-heading h2 {
+    font-size: 18px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mars-card-heading p {
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+  .mars-kicker {
+    font-size: 10px !important;
+  }
+
+  .mars-beta {
+    font-size: 10px !important;
+  }
+
+
+  .mars-health-copy > span {
+    font-size: 12px !important;
+  }
+
+  .mars-health-copy > strong {
+    font-size: 19px !important;
+  }
+
+  .mars-health-copy small {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+
+  .mars-status-card small {
+    font-size: 10px !important;
+  }
+
+
+  .mars-category-score span {
+    font-size: 11px !important;
+  }
+
+  .mars-category-score strong {
+    font-size: 12px !important;
+  }
+
+
+  .mars-view-pages span {
+    font-size: 12px !important;
+  }
+
+  .mars-view-pages strong {
+    font-size: 10px !important;
+  }
+
+
+  /* Audit filters */
+
+  .mars-filter-chip {
+    min-height: 38px !important;
+
+    font-size: 11px !important;
+
+    padding:
+      0 13px !important;
+  }
+
+  .mars-filter-chip strong {
+    font-size: 9.5px !important;
+  }
+
+
+  /* Issue rows */
+
+  .mars-issue-main {
+    min-height: 78px !important;
+  }
+
+  .mars-issue-copy strong {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+  }
+
+  .mars-issue-copy small {
+    font-size: 11px !important;
+  }
+
+  .mars-issue-right em {
+    font-size: 10px !important;
+  }
+
+  .mars-issue-right small {
+    font-size: 10px !important;
+  }
+
+  .mars-issue-detail {
+    font-size: 12px !important;
+    line-height: 1.55 !important;
+  }
+
+  .mars-issue-detail strong {
+    font-size: 12px !important;
+  }
+
+
+  /* ========================================================
+     5. AI VISIBILITY
+     ======================================================== */
+
+  .mais-heading h2 {
+    font-size: 18px !important;
+    line-height: 1.25 !important;
+  }
+
+  .mais-heading p {
+    max-width: 260px !important;
+
+    font-size: 12px !important;
+    line-height: 1.45 !important;
+  }
+
+  .mais-kicker {
+    font-size: 10px !important;
+  }
+
+
+  .mais-primary-score,
+  .mais-authority-score {
+    min-height: 116px !important;
+
+    padding: 14px !important;
+  }
+
+  .mais-primary-score > span,
+  .mais-authority-score > span {
+    font-size: 12px !important;
+  }
+
+  .mais-primary-score strong,
+  .mais-authority-score strong {
+    font-size: 28px !important;
+  }
+
+  .mais-primary-score strong small,
+  .mais-authority-score strong small {
+    font-size: 10px !important;
+  }
+
+  .mais-primary-score em,
+  .mais-authority-score em {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+
+  /* AI engines */
+
+  .mais-engine-row {
+    min-height: 62px !important;
+
+    padding:
+      11px 12px !important;
+  }
+
+  .mais-engine-row strong {
+    font-size: 12px !important;
+  }
+
+  .mais-engine-row small {
+    font-size: 11px !important;
+  }
+
+  .mais-engine-row > span {
+    font-size: 18px !important;
+  }
+
+  .mais-engine-row > span small {
+    font-size: 10px !important;
+  }
+
+  .mais-engine-row > em {
+    font-size: 11px !important;
+  }
+
+
+  .mais-tracking-note {
+    min-height: 42px !important;
+  }
+
+  .mais-tracking-note span,
+  .mais-tracking-note strong {
+    font-size: 11px !important;
+  }
+
+
+  /* ========================================================
+     6. DOMAIN AUTHORITY
+     ======================================================== */
+
+  .mais-refresh {
+    min-height: 38px !important;
+
+    font-size: 11px !important;
+
+    padding:
+      0 11px !important;
+  }
+
+  .mais-updated {
+    font-size: 10px !important;
+  }
+
+
+  /* ========================================================
+     7. CRAWL SNAPSHOT
+     ======================================================== */
+
+  .mais-crawl-item {
+    min-height: 70px !important;
+
+    padding: 12px !important;
+  }
+
+  .mais-crawl-item span,
+  .mais-crawl-wide span {
+    font-size: 11px !important;
+  }
+
+  .mais-crawl-item strong {
+    font-size: 16px !important;
+  }
+
+  .mais-crawl-wide strong {
+    font-size: 12px !important;
+    line-height: 1.4 !important;
+  }
+
+
+  .mais-robots-warning strong {
+    font-size: 12px !important;
+  }
+
+  .mais-robots-warning span {
+    font-size: 11px !important;
+    line-height: 1.45 !important;
+  }
+
+
+  /* ========================================================
+     8. MORE PROJECT TOOLS SHEET
+     ======================================================== */
+
+  .mpnav-sheet-header strong {
+    font-size: 18px !important;
+  }
+
+  .mpnav-sheet-header span {
+    font-size: 12px !important;
+  }
+
+  .mpnav-group h3 {
+    font-size: 10px !important;
+  }
+
+  .mpnav-tool {
+    min-height: 68px !important;
+  }
+
+  .mpnav-tool-copy strong {
+    font-size: 13px !important;
+  }
+
+  .mpnav-tool-copy small {
+    font-size: 11px !important;
+  }
+
+
+  /* ========================================================
+     9. NATIVE MOBILE AUDIT SELECTOR
+     Quick Audit / Full Site Audit
+     ======================================================== */
+
+  .overview-audit-menu-backdrop {
+    position: fixed !important;
+
+    inset: 0 !important;
+
+    z-index: 99990 !important;
+
+    background:
+      rgba(
+        15,
+        23,
+        42,
+        0.46
+      ) !important;
+
+    backdrop-filter:
+      blur(2px);
+
+    -webkit-backdrop-filter:
+      blur(2px);
+  }
+
+
+  .overview-audit-menu {
+    position: fixed !important;
+
+    top: auto !important;
+
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+
+    width: 100% !important;
+    max-width: none !important;
+
+    padding:
+      9px
+      10px
+      calc(
+        12px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      ) !important;
+
+    border:
+      0 !important;
+
+    border-radius:
+      20px
+      20px
+      0
+      0 !important;
+
+    background:
+      #ffffff !important;
+
+    box-shadow:
+      0 -16px 40px
+      rgba(
+        15,
+        23,
+        42,
+        0.20
+      ) !important;
+
+    overflow:
+      hidden !important;
+
+    z-index:
+      99999 !important;
+
+    animation:
+      devndespro-audit-sheet-in
+      0.22s
+      ease-out;
+  }
+
+
+  /*
+   * Creates native-looking drag handle
+   * without changing JSX.
+   */
+
+  .overview-audit-menu::before {
+    content: '';
+
+    display: block;
+
+    width: 38px;
+    height: 4px;
+
+    margin:
+      0 auto
+      8px;
+
+    border-radius:
+      999px;
+
+    background:
+      #d4dae4;
+  }
+
+
+  .overview-audit-menu button {
+    min-height: 72px !important;
+
+    padding:
+      13px
+      14px !important;
+
+    border-radius:
+      12px !important;
+
+    text-align:
+      left !important;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  .overview-audit-menu button +
+  button {
+    margin-top:
+      5px !important;
+  }
+
+
+  .overview-audit-menu
+  button > div:first-child {
+    font-size:
+      15px !important;
+
+    line-height:
+      1.3 !important;
+
+    font-weight:
+      800 !important;
+
+    color:
+      #172033 !important;
+  }
+
+
+  .overview-audit-menu
+  button > div:nth-child(2) {
+    margin-top:
+      4px !important;
+
+    font-size:
+      12px !important;
+
+    line-height:
+      1.4 !important;
+
+    color:
+      #7c899d !important;
+  }
+
+
+  .overview-audit-menu
+  button:active {
+    background:
+      #f4f5f8 !important;
+  }
+
+
+  @keyframes
+  devndespro-audit-sheet-in {
+
+    from {
+      transform:
+        translateY(35px);
+
+      opacity: 0;
+    }
+
+    to {
+      transform:
+        translateY(0);
+
+      opacity: 1;
+    }
+
+  }
+
+}
+
+/* DEVNDESPRO AUDIT OPTION ICONS */
+@media (max-width: 767px) {
+
+  .overview-audit-menu button {
+    display: block !important;
+  }
+
+  .mobile-audit-option-row {
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns:
+      42px
+      minmax(0, 1fr)
+      18px;
+
+    align-items: center;
+
+    gap: 12px;
+  }
+
+
+  .mobile-audit-option-icon {
+    width: 40px;
+    height: 40px;
+
+    display: inline-grid;
+
+    place-items: center;
+
+    border-radius: 11px;
+
+    font-size: 16px;
+  }
+
+
+  .mobile-audit-option-icon.quick {
+    background: #eef2ff;
+    color: #5b45e8;
+  }
+
+
+  .mobile-audit-option-icon.full {
+    background: #fff3e8;
+    color: #ea6908;
+  }
+
+
+  .mobile-audit-option-copy {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+
+  .mobile-audit-option-copy strong {
+    color: #172033 !important;
+
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  .mobile-audit-option-copy small {
+    color: #7c899d !important;
+
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+  }
+
+
+  .mobile-audit-beta {
+    display: inline-block;
+
+    margin-left: 5px;
+
+    color: #f97316;
+
+    font-size: 9px;
+
+    font-style: normal;
+    font-weight: 800;
+
+    vertical-align: middle;
+  }
+
+
+  .mobile-audit-option-chevron {
+    justify-self: end;
+
+    color: #98a3b5;
+
+    font-size: 13px;
+  }
+
+}

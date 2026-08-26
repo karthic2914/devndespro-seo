@@ -1,0 +1,737 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   SITE AUDIT UX - PHASE 3
+
+   Decision Center
+   Desktop + Tablet + Mobile
+   ========================================================== */
+
+
+/* ==========================================================
+   DESKTOP
+   ========================================================== */
+
+.phase3-decision-center {
+  position: relative;
+
+  overflow: hidden;
+
+  border:
+    1px solid #e2e6ed !important;
+
+  border-radius:
+    14px !important;
+
+  background:
+    #ffffff !important;
+
+  box-shadow:
+    0 2px 8px
+    rgba(15, 23, 42, 0.04) !important;
+}
+
+
+/*
+ * Decision Center is intentionally secondary
+ * to the Full Site Audit summary.
+ */
+
+.phase3-decision-center::before {
+  content: '';
+
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 3px;
+  height: 100%;
+
+  background:
+    #6546ed;
+
+  opacity:
+    0.72;
+}
+
+
+/*
+ * Desktop heading row
+ */
+
+.phase3-decision-center
+> div:first-child {
+  min-height:
+    52px;
+
+  padding-left:
+    18px !important;
+
+  background:
+    #fbfbfd;
+}
+
+
+/*
+ * Give the Decision Center content
+ * comfortable spacing.
+ */
+
+.phase3-decision-center
+> div:nth-child(2) {
+  position:
+    relative;
+}
+
+
+/* ==========================================================
+   TABLET
+   ========================================================== */
+
+@media
+(min-width: 768px)
+and
+(max-width: 1100px) {
+
+  .phase3-decision-center {
+    border-radius:
+      13px !important;
+  }
+
+  .phase3-decision-center
+  > div:first-child {
+    min-height:
+      50px;
+  }
+
+}
+
+
+/* ==========================================================
+   MOBILE DECISION CENTER
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  /*
+   * Main Decision Center section
+   */
+
+  .msadc-root {
+    position:
+      relative;
+
+    margin:
+      0 12px
+      14px !important;
+
+    padding:
+      0 !important;
+
+    border:
+      1px solid #e2e6ed;
+
+    border-radius:
+      16px;
+
+    overflow:
+      hidden;
+
+    background:
+      #ffffff;
+
+    box-shadow:
+      0 2px 10px
+      rgba(
+        15,
+        23,
+        42,
+        0.045
+      );
+  }
+
+
+  /*
+   * Secondary accent compared with the
+   * stronger Full Site Audit purple top line.
+   */
+
+  .msadc-root::before {
+    content: '';
+
+    position:
+      absolute;
+
+    top: 0;
+    left: 0;
+
+    width:
+      3px;
+
+    height:
+      100%;
+
+    background:
+      #6546ed;
+
+    opacity:
+      0.72;
+
+    z-index:
+      1;
+  }
+
+
+  /* ========================================================
+     DECISION CENTER HEADER
+     ======================================================== */
+
+  .msadc-section-header {
+    padding:
+      17px 16px
+      12px !important;
+
+    background:
+      #fbfbfd;
+  }
+
+
+  .msadc-section-header h2 {
+    margin:
+      0 !important;
+
+    color:
+      #172033 !important;
+
+    font-size:
+      18px !important;
+
+    line-height:
+      1.25 !important;
+
+    font-weight:
+      800 !important;
+
+    letter-spacing:
+      -0.015em;
+  }
+
+
+  .msadc-section-header p {
+    margin:
+      4px 0 0 !important;
+
+    color:
+      #7b879b !important;
+
+    font-size:
+      12px !important;
+
+    line-height:
+      1.45 !important;
+  }
+
+
+  /* ========================================================
+     2 X 2 METRIC GRID
+     ======================================================== */
+
+  .msadc-metric-grid {
+    display:
+      grid !important;
+
+    grid-template-columns:
+      repeat(
+        2,
+        minmax(0, 1fr)
+      ) !important;
+
+    gap:
+      9px !important;
+
+    padding:
+      12px 14px
+      13px !important;
+  }
+
+
+  .msadc-metric-card {
+    min-width:
+      0;
+
+    min-height:
+      124px !important;
+
+    padding:
+      13px !important;
+
+    border:
+      1px solid #e5e9f0 !important;
+
+    border-radius:
+      13px !important;
+
+    background:
+      #ffffff !important;
+
+    box-shadow:
+      none !important;
+  }
+
+
+  /*
+   * Remove overly strong card treatments.
+   * The values are important, but they should
+   * not compete with the Full Audit score.
+   */
+
+  .msadc-metric-card::before,
+  .msadc-metric-card::after {
+    box-shadow:
+      none !important;
+  }
+
+
+  .msadc-metric-label {
+    color:
+      #657289 !important;
+
+    font-size:
+      11px !important;
+
+    line-height:
+      1.25 !important;
+
+    font-weight:
+      750 !important;
+  }
+
+
+  .msadc-metric-number {
+    margin-top:
+      7px !important;
+
+    color:
+      #172033 !important;
+
+    font-size:
+      27px !important;
+
+    line-height:
+      1 !important;
+
+    font-weight:
+      850 !important;
+
+    letter-spacing:
+      -0.025em;
+  }
+
+
+  .msadc-metric-number small {
+    color:
+      #9aa4b5 !important;
+
+    font-size:
+      10px !important;
+
+    font-weight:
+      650 !important;
+  }
+
+
+  .msadc-metric-status {
+    margin-top:
+      7px !important;
+
+    font-size:
+      10px !important;
+
+    line-height:
+      1.3 !important;
+
+    font-weight:
+      750 !important;
+  }
+
+
+  .msadc-metric-hint {
+    margin-top:
+      4px !important;
+
+    color:
+      #8a95a7 !important;
+
+    font-size:
+      10px !important;
+
+    line-height:
+      1.35 !important;
+  }
+
+
+  /* ========================================================
+     DIGITAL GROWTH
+     ======================================================== */
+
+  /*
+   * Digital Growth is useful, but it is a
+   * composite strategic score. Site Health
+   * remains the primary diagnostic score.
+   */
+
+  .msadc-growth,
+  .msadc-digital-growth {
+    margin:
+      0 14px
+      13px !important;
+
+    min-height:
+      48px;
+
+    padding:
+      10px 12px !important;
+
+    border:
+      1px solid #e7eaf0 !important;
+
+    border-radius:
+      11px !important;
+
+    background:
+      #f8f7ff !important;
+
+    box-shadow:
+      none !important;
+  }
+
+
+  .msadc-growth strong,
+  .msadc-digital-growth strong {
+    color:
+      #4f3fc7 !important;
+
+    font-size:
+      13px !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  .msadc-growth span,
+  .msadc-digital-growth span {
+    color:
+      #748096 !important;
+
+    font-size:
+      11px !important;
+  }
+
+
+  /* ========================================================
+     AUTHORITY / INTELLIGENCE AREA
+     ======================================================== */
+
+  .msadc-authority,
+  .msadc-intelligence {
+    margin:
+      0 14px
+      13px !important;
+
+    padding:
+      13px !important;
+
+    border:
+      1px solid #e7eaf0 !important;
+
+    border-radius:
+      12px !important;
+
+    background:
+      #fafbfc !important;
+  }
+
+
+  .msadc-authority strong,
+  .msadc-intelligence strong {
+    color:
+      #28354a !important;
+
+    font-size:
+      12px !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  .msadc-authority p,
+  .msadc-intelligence p {
+    color:
+      #7a879b !important;
+
+    font-size:
+      11px !important;
+
+    line-height:
+      1.45 !important;
+  }
+
+
+  /* ========================================================
+     TODAY'S MISSION HEADER
+     ======================================================== */
+
+  .msadc-mission {
+    border-top:
+      1px solid #edf0f5;
+
+    padding-top:
+      2px;
+  }
+
+
+  .msadc-mission-header {
+    padding:
+      14px 14px
+      10px !important;
+  }
+
+
+  .msadc-mission-header h2 {
+    margin:
+      0 !important;
+
+    color:
+      #172033 !important;
+
+    font-size:
+      16px !important;
+
+    line-height:
+      1.25 !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  .msadc-mission-header p {
+    margin:
+      3px 0 0 !important;
+
+    color:
+      #8490a3 !important;
+
+    font-size:
+      11px !important;
+
+    line-height:
+      1.4 !important;
+  }
+
+
+  .msadc-priority-count {
+    min-width:
+      28px;
+
+    min-height:
+      25px;
+
+    padding:
+      4px 8px !important;
+
+    border-radius:
+      999px !important;
+
+    background:
+      #f0ecff !important;
+
+    color:
+      #6546ed !important;
+
+    font-size:
+      10px !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  /* ========================================================
+     MISSION ROWS
+     ======================================================== */
+
+  .msadc-mission-list {
+    padding:
+      0 14px
+      14px !important;
+  }
+
+
+  .msadc-mission-row {
+    min-height:
+      68px !important;
+
+    padding:
+      10px 10px !important;
+
+    border:
+      1px solid #e7eaf0 !important;
+
+    border-radius:
+      11px !important;
+
+    background:
+      #ffffff !important;
+  }
+
+
+  .msadc-mission-row
+  + .msadc-mission-row {
+    margin-top:
+      7px !important;
+  }
+
+
+  .msadc-mission-copy {
+    min-width:
+      0;
+  }
+
+
+  .msadc-mission-copy strong {
+    display:
+      -webkit-box;
+
+    overflow:
+      hidden;
+
+    color:
+      #263349 !important;
+
+    font-size:
+      12px !important;
+
+    line-height:
+      1.35 !important;
+
+    font-weight:
+      750 !important;
+
+    -webkit-line-clamp:
+      2;
+
+    -webkit-box-orient:
+      vertical;
+  }
+
+
+  .msadc-mission-copy small {
+    color:
+      #8792a5 !important;
+
+    font-size:
+      10px !important;
+  }
+
+
+  .msadc-mission-meta {
+    flex-shrink:
+      0;
+  }
+
+
+  .msadc-mission-meta em {
+    font-size:
+      9px !important;
+
+    font-style:
+      normal !important;
+
+    font-weight:
+      800 !important;
+  }
+
+
+  .msadc-mission-meta small {
+    font-size:
+      9px !important;
+  }
+
+
+  .msadc-row-chevron {
+    color:
+      #9aa5b6 !important;
+
+    font-size:
+      12px !important;
+  }
+
+}
+
+
+/* ==========================================================
+   SMALL MOBILE
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+  .msadc-root {
+    margin-left:
+      9px !important;
+
+    margin-right:
+      9px !important;
+  }
+
+
+  .msadc-metric-grid {
+    gap:
+      7px !important;
+
+    padding-left:
+      10px !important;
+
+    padding-right:
+      10px !important;
+  }
+
+
+  .msadc-metric-card {
+    min-height:
+      118px !important;
+
+    padding:
+      11px !important;
+  }
+
+
+  .msadc-metric-number {
+    font-size:
+      25px !important;
+  }
+
+
+  .msadc-growth,
+  .msadc-digital-growth,
+  .msadc-authority,
+  .msadc-intelligence {
+    margin-left:
+      10px !important;
+
+    margin-right:
+      10px !important;
+  }
+
+
+  .msadc-mission-list {
+    padding-left:
+      10px !important;
+
+    padding-right:
+      10px !important;
+  }
+
+}

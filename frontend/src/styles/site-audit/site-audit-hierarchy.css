@@ -1,0 +1,73 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   Site Audit UX - Phase 1
+
+   Information hierarchy
+   Desktop + tablet + mobile
+
+   1. Full Site Audit
+   2. Decision Center
+   3. Today's Mission
+   ========================================================== */
+
+
+/*
+ * Desktop/tablet
+ */
+
+.site-audit-desktop-full-results {
+  position: relative;
+}
+
+.site-audit-desktop-decision {
+  position: relative;
+}
+
+
+/*
+ * Phase 1 visual hierarchy
+ *
+ * Full audit gets stronger visual importance because it is
+ * the primary diagnostic result.
+ */
+
+.site-audit-desktop-full-results {
+  border-color: #dfe3eb !important;
+
+  box-shadow:
+    0 2px 8px
+    rgba(15, 23, 42, 0.055) !important;
+}
+
+
+.site-audit-desktop-decision {
+  box-shadow:
+    0 1px 3px
+    rgba(15, 23, 42, 0.04);
+}
+
+
+/*
+ * Mobile
+ */
+
+@media (max-width: 767px) {
+
+  /*
+   * Mobile Full Site Audit is the primary diagnostic card.
+   */
+
+  .mobile-audit-results {
+    position: relative;
+  }
+
+
+  /*
+   * Decision Center becomes secondary intelligence.
+   */
+
+  .mobile-audit-decision-center {
+    position: relative;
+  }
+
+}

@@ -1,0 +1,499 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   MOBILE PROJECT NAVIGATION
+   ========================================================== */
+
+.mpnav-root,
+.mpnav-overlay {
+  display: none;
+}
+
+
+@media (max-width: 767px) {
+
+  /* ========================================================
+     QUICK PROJECT NAVIGATION
+     ======================================================== */
+
+  .mpnav-root {
+    position: sticky;
+
+    top: 0;
+
+    z-index: 120;
+
+    display: block;
+
+    margin:
+      0 -10px
+      14px;
+
+    padding:
+      7px 10px;
+
+    border-top:
+      1px solid #edf0f4;
+
+    border-bottom:
+      1px solid #e7eaf0;
+
+    background:
+      rgba(255,255,255,0.96);
+
+    backdrop-filter:
+      blur(14px);
+
+    -webkit-backdrop-filter:
+      blur(14px);
+  }
+
+
+  .mpnav-scroll {
+    display: flex;
+
+    gap: 5px;
+
+    overflow-x: auto;
+
+    padding-bottom: 1px;
+
+    scrollbar-width: none;
+
+    scroll-snap-type:
+      x proximity;
+  }
+
+  .mpnav-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+
+  .mpnav-item {
+    flex:
+      0 0 auto;
+
+    min-width: 61px;
+    height: 52px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    gap: 4px;
+
+    padding:
+      5px 8px;
+
+    border:
+      1px solid transparent;
+
+    border-radius: 11px;
+
+    background:
+      transparent;
+
+    color: #778397;
+
+    font-family: inherit;
+
+    font-size: 8px;
+
+    font-weight: 750;
+
+    cursor: pointer;
+
+    scroll-snap-align:
+      start;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  .mpnav-item:active {
+    background:
+      #f5f3fb;
+  }
+
+
+  .mpnav-icon {
+    width: 25px;
+    height: 23px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 7px;
+
+    font-size: 13px;
+  }
+
+
+  .mpnav-item.active {
+    border-color:
+      #ddd3fb;
+
+    background:
+      #f3efff;
+
+    color: #6435d8;
+  }
+
+
+  .mpnav-item.active
+  .mpnav-icon {
+    background:
+      #e6ddff;
+
+    color: #6335d7;
+  }
+
+
+  /* ========================================================
+     OVERLAY
+     ======================================================== */
+
+  .mpnav-overlay {
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 99990;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: center;
+
+    background:
+      rgba(17,24,39,0.38);
+
+    backdrop-filter:
+      blur(2px);
+
+    -webkit-backdrop-filter:
+      blur(2px);
+  }
+
+
+  /* ========================================================
+     BOTTOM SHEET
+     ======================================================== */
+
+  .mpnav-sheet {
+    width: 100%;
+
+    max-height:
+      min(
+        82vh,
+        720px
+      );
+
+    display: flex;
+
+    flex-direction: column;
+
+    overflow: hidden;
+
+    border-radius:
+      22px
+      22px
+      0
+      0;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 -12px 40px
+      rgba(17,24,39,0.16);
+
+    animation:
+      mpnav-slide-up
+      0.22s ease-out;
+  }
+
+
+  @keyframes mpnav-slide-up {
+
+    from {
+      transform:
+        translateY(30px);
+
+      opacity: 0;
+    }
+
+    to {
+      transform:
+        translateY(0);
+
+      opacity: 1;
+    }
+
+  }
+
+
+  .mpnav-sheet-handle {
+    width: 38px;
+    height: 4px;
+
+    flex-shrink: 0;
+
+    margin:
+      8px auto
+      5px;
+
+    border-radius:
+      999px;
+
+    background:
+      #d7dce5;
+  }
+
+
+  .mpnav-sheet-header {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    padding:
+      8px 16px
+      13px;
+
+    border-bottom:
+      1px solid #edf0f4;
+  }
+
+
+  .mpnav-sheet-header > div {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+  }
+
+
+  .mpnav-sheet-header strong {
+    color: #1d2738;
+
+    font-size: 16px;
+
+    font-weight: 850;
+  }
+
+
+  .mpnav-sheet-header span {
+    color: #8c97a9;
+
+    font-size: 9px;
+  }
+
+
+  .mpnav-close {
+    width: 34px;
+    height: 34px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border:
+      1px solid #e6e9ef;
+
+    border-radius: 10px;
+
+    background: #f9fafb;
+
+    color: #667286;
+
+    font-size: 13px;
+
+    cursor: pointer;
+  }
+
+
+  /* ========================================================
+     SHEET CONTENT
+     ======================================================== */
+
+  .mpnav-sheet-content {
+    overflow-y: auto;
+
+    overscroll-behavior:
+      contain;
+
+    padding:
+      6px 15px
+      calc(
+        20px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      );
+  }
+
+
+  .mpnav-group {
+    padding-top: 13px;
+  }
+
+
+  .mpnav-group h3 {
+    margin:
+      0 0
+      7px;
+
+    padding-left: 3px;
+
+    color: #929daf;
+
+    font-size: 8px;
+
+    font-weight: 850;
+
+    letter-spacing:
+      0.08em;
+
+    text-transform:
+      uppercase;
+  }
+
+
+  .mpnav-tool-list {
+    overflow: hidden;
+
+    border:
+      1px solid #eaedf2;
+
+    border-radius:
+      13px;
+
+    background: #fff;
+  }
+
+
+  .mpnav-tool {
+    width: 100%;
+
+    min-height: 61px;
+
+    display: grid;
+
+    grid-template-columns:
+      36px
+      minmax(0,1fr)
+      14px;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding:
+      9px 11px;
+
+    border: 0;
+
+    background: #fff;
+
+    text-align: left;
+
+    font-family: inherit;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+
+  .mpnav-tool +
+  .mpnav-tool {
+    border-top:
+      1px solid #f0f2f5;
+  }
+
+
+  .mpnav-tool:active {
+    background:
+      #f9fafc;
+  }
+
+
+  .mpnav-tool-icon {
+    width: 35px;
+    height: 35px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background:
+      #f1edff;
+
+    color:
+      #6736db;
+
+    font-size: 13px;
+  }
+
+
+  .mpnav-tool-copy {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 3px;
+  }
+
+
+  .mpnav-tool-copy strong {
+    color: #273247;
+
+    font-size: 10px;
+
+    font-weight: 800;
+  }
+
+
+  .mpnav-tool-copy small {
+    overflow: hidden;
+
+    color: #909bad;
+
+    font-size: 8.5px;
+
+    text-overflow:
+      ellipsis;
+
+    white-space:
+      nowrap;
+  }
+
+
+  .mpnav-chevron {
+    color: #a0a9b8;
+
+    font-size: 10px;
+  }
+
+}

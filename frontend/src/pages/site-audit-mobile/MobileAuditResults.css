@@ -1,0 +1,1009 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   MOBILE SITE AUDIT - PHASE 4 + 5
+   ========================================================== */
+
+.mars-root {
+  display: none;
+}
+
+@media (max-width: 767px) {
+
+  /*
+   * Hide the original desktop/tablet sections only
+   * when the viewport is mobile.
+   */
+
+  .site-audit-desktop-full-results,
+  .site-audit-desktop-tabbar,
+  .site-audit-desktop-issues {
+    display: none !important;
+  }
+
+
+  .mars-root {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    margin-bottom: 14px;
+
+    --mars-text: #172033;
+    --mars-muted: #7d899d;
+    --mars-border: #e6eaf1;
+
+    --mars-purple: #6734e8;
+    --mars-green: #16a34a;
+    --mars-orange: #ea6908;
+    --mars-red: #dc2626;
+  }
+
+
+  /* ========================================================
+     CARD
+     ======================================================== */
+
+  .mars-card {
+    overflow: hidden;
+
+    border: 1px solid var(--mars-border);
+    border-radius: 16px;
+
+    background: #ffffff;
+
+    box-shadow:
+      0 2px 10px
+      rgba(24, 33, 52, 0.035);
+  }
+
+  .mars-full-audit,
+  .mars-issues {
+    padding: 15px;
+  }
+
+
+  /* ========================================================
+     CARD HEADING
+     ======================================================== */
+
+  .mars-card-heading {
+    display: flex;
+
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 12px;
+
+    margin-bottom: 14px;
+  }
+
+  .mars-kicker {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #8053e8;
+
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 850;
+
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .mars-card-heading h2 {
+    margin: 0;
+
+    color: var(--mars-text);
+
+    font-size: 16px;
+    line-height: 1.2;
+
+    font-weight: 850;
+    letter-spacing: -0.015em;
+  }
+
+  .mars-card-heading p {
+    margin: 4px 0 0;
+
+    color: var(--mars-muted);
+
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .mars-beta {
+    padding: 5px 8px;
+
+    border-radius: 999px;
+
+    background: #fff1e8;
+    color: #e85e08;
+
+    font-size: 8px;
+    line-height: 1;
+
+    font-weight: 850;
+  }
+
+
+  /* ========================================================
+     HEALTH SCORE
+     ======================================================== */
+
+  .mars-health-area {
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 12px;
+
+    margin-bottom: 11px;
+
+    border: 1px solid #edf0f5;
+    border-radius: 14px;
+
+    background:
+      linear-gradient(
+        135deg,
+        #fcfbff 0%,
+        #ffffff 65%
+      );
+  }
+
+
+  .mars-health-ring {
+    --mars-ring-color:
+      #9ca3af;
+
+    width: 86px;
+    height: 86px;
+
+    flex-shrink: 0;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+      conic-gradient(
+        var(--mars-ring-color)
+        calc(
+          var(--mars-score) * 1%
+        ),
+        #eef1f5 0
+      );
+
+    position: relative;
+  }
+
+  .mars-health-ring::after {
+    content: '';
+
+    position: absolute;
+
+    inset: 8px;
+
+    border-radius: 50%;
+
+    background: #ffffff;
+  }
+
+  .mars-health-ring.good {
+    --mars-ring-color:
+      var(--mars-green);
+  }
+
+  .mars-health-ring.fair {
+    --mars-ring-color:
+      var(--mars-orange);
+  }
+
+  .mars-health-ring.poor {
+    --mars-ring-color:
+      var(--mars-red);
+  }
+
+
+  .mars-health-inner {
+    position: relative;
+    z-index: 1;
+
+    display: flex;
+
+    align-items: baseline;
+    justify-content: center;
+  }
+
+  .mars-health-inner strong {
+    color: var(--mars-text);
+
+    font-size: 25px;
+    line-height: 1;
+
+    font-weight: 900;
+  }
+
+  .mars-health-inner span {
+    margin-left: 2px;
+
+    color: #99a3b4;
+
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+
+  .mars-health-copy {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+  }
+
+  .mars-health-copy > span {
+    color: #7f8ba0;
+
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .mars-health-copy > strong {
+    margin-top: 4px;
+
+    font-size: 18px;
+    line-height: 1.15;
+
+    font-weight: 850;
+  }
+
+  .mars-health-copy > strong.good {
+    color: var(--mars-green);
+  }
+
+  .mars-health-copy > strong.fair {
+    color: var(--mars-orange);
+  }
+
+  .mars-health-copy > strong.poor {
+    color: var(--mars-red);
+  }
+
+  .mars-health-copy small {
+    margin-top: 4px;
+
+    color: #9ba5b5;
+
+    font-size: 9px;
+  }
+
+
+  /* ========================================================
+     CRITICAL / WARNINGS / HEALTHY
+     ======================================================== */
+
+  .mars-status-grid {
+    display: grid;
+
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+
+    gap: 7px;
+
+    margin-bottom: 13px;
+  }
+
+  .mars-status-card {
+    position: relative;
+
+    min-width: 0;
+
+    padding: 10px 7px;
+
+    border: 1px solid #edf0f4;
+    border-radius: 11px;
+
+    background: #fbfcfd;
+
+    text-align: center;
+  }
+
+  .mars-status-dot {
+    position: absolute;
+
+    top: 8px;
+    right: 8px;
+
+    width: 6px;
+    height: 6px;
+
+    border-radius: 999px;
+  }
+
+  .mars-status-card strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--mars-text);
+
+    font-size: 20px;
+    line-height: 1;
+
+    font-weight: 850;
+  }
+
+  .mars-status-card small {
+    display: block;
+
+    margin-top: 5px;
+
+    color: #8793a6;
+
+    font-size: 8px;
+    font-weight: 750;
+  }
+
+
+  .mars-status-card.critical
+  .mars-status-dot {
+    background: var(--mars-red);
+  }
+
+  .mars-status-card.critical
+  strong {
+    color: var(--mars-red);
+  }
+
+
+  .mars-status-card.warning
+  .mars-status-dot {
+    background: var(--mars-orange);
+  }
+
+  .mars-status-card.warning
+  strong {
+    color: var(--mars-orange);
+  }
+
+
+  .mars-status-card.healthy
+  .mars-status-dot {
+    background: var(--mars-green);
+  }
+
+  .mars-status-card.healthy
+  strong {
+    color: var(--mars-green);
+  }
+
+
+  /* ========================================================
+     CATEGORY SCORES
+     ======================================================== */
+
+  .mars-category-scores {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 10px;
+  }
+
+  .mars-category-score > div:first-child {
+    display: flex;
+
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+
+    margin-bottom: 5px;
+  }
+
+  .mars-category-score span {
+    color: #68758a;
+
+    font-size: 9px;
+    font-weight: 700;
+  }
+
+  .mars-category-score strong {
+    color: #354056;
+
+    font-size: 10px;
+    font-weight: 850;
+  }
+
+  .mars-score-track {
+    width: 100%;
+    height: 5px;
+
+    overflow: hidden;
+
+    border-radius: 999px;
+
+    background: #edf0f4;
+  }
+
+  .mars-score-track > span {
+    display: block;
+
+    height: 100%;
+
+    border-radius: inherit;
+
+    background: #adb6c5;
+  }
+
+  .mars-score-track > span.good {
+    background: var(--mars-green);
+  }
+
+  .mars-score-track > span.fair {
+    background: var(--mars-orange);
+  }
+
+  .mars-score-track > span.poor {
+    background: var(--mars-red);
+  }
+
+
+  /* ========================================================
+     VIEW CRAWLED PAGES
+     ======================================================== */
+
+  .mars-view-pages {
+    width: 100%;
+    min-height: 43px;
+
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      auto
+      15px;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 14px;
+
+    padding: 0 11px;
+
+    border: 1px solid #e8eaf0;
+    border-radius: 11px;
+
+    background: #fafbfe;
+
+    color: #536077;
+
+    font-family: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+  }
+
+  .mars-view-pages span {
+    font-size: 10px;
+    font-weight: 750;
+  }
+
+  .mars-view-pages strong {
+    min-width: 25px;
+
+    padding: 4px 7px;
+
+    border-radius: 999px;
+
+    background: #eee9ff;
+
+    color: #6635d9;
+
+    font-size: 9px;
+    text-align: center;
+  }
+
+  .mars-view-pages b {
+    color: #8692a6;
+
+    font-size: 19px;
+    font-weight: 400;
+  }
+
+
+  /* ========================================================
+     ISSUE TOTAL
+     ======================================================== */
+
+  .mars-total-issues {
+    min-width: 31px;
+    height: 31px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 10px;
+
+    background: #f0ebff;
+    color: #6435db;
+
+    font-size: 11px;
+    font-weight: 850;
+  }
+
+
+  /* ========================================================
+     FILTER CHIPS
+     ======================================================== */
+
+  .mars-tab-scroller {
+    display: flex;
+
+    gap: 6px;
+
+    overflow-x: auto;
+
+    margin:
+      0 -15px
+      12px;
+
+    padding:
+      0 15px
+      3px;
+
+    scrollbar-width: none;
+
+    scroll-snap-type:
+      x proximity;
+  }
+
+  .mars-tab-scroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mars-filter-chip {
+    flex-shrink: 0;
+
+    min-height: 34px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    gap: 6px;
+
+    padding: 0 11px;
+
+    border: 1px solid #e5e9ef;
+    border-radius: 999px;
+
+    background: #ffffff;
+    color: #738096;
+
+    font-family: inherit;
+
+    font-size: 9px;
+    font-weight: 750;
+
+    white-space: nowrap;
+
+    scroll-snap-align: start;
+
+    cursor: pointer;
+  }
+
+  .mars-filter-chip strong {
+    min-width: 17px;
+
+    padding: 2px 5px;
+
+    border-radius: 999px;
+
+    background: #edf0f4;
+
+    color: #687488;
+
+    font-size: 8px;
+  }
+
+  .mars-filter-chip.selected {
+    border-color: #7b55e8;
+
+    background: #f2eeff;
+    color: #6536d8;
+  }
+
+  .mars-filter-chip.selected strong {
+    background: #6a3bd8;
+    color: #ffffff;
+  }
+
+  .mars-filter-chip.errors.selected {
+    border-color: #f4bbbb;
+
+    background: #fff1f1;
+    color: #c92525;
+  }
+
+  .mars-filter-chip.errors.selected strong {
+    background: #dc2626;
+  }
+
+  .mars-filter-chip.warnings.selected {
+    border-color: #f4d49f;
+
+    background: #fff8eb;
+    color: #c86808;
+  }
+
+  .mars-filter-chip.warnings.selected strong {
+    background: #e7790a;
+  }
+
+  .mars-filter-chip.passed.selected {
+    border-color: #b9e2c6;
+
+    background: #effbf3;
+    color: #14833d;
+  }
+
+  .mars-filter-chip.passed.selected strong {
+    background: #16a34a;
+  }
+
+
+  /* ========================================================
+     ISSUE ROWS
+     ======================================================== */
+
+  .mars-issue-list {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 7px;
+  }
+
+  .mars-issue-row {
+    overflow: hidden;
+
+    border: 1px solid #edf0f4;
+    border-radius: 12px;
+
+    background: #ffffff;
+  }
+
+  .mars-issue-main {
+    width: 100%;
+    min-width: 0;
+    min-height: 70px;
+
+    display: grid;
+
+    grid-template-columns:
+      29px
+      minmax(0, 1fr)
+      auto;
+
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 9px 8px;
+
+    border: 0;
+
+    background: #ffffff;
+
+    font-family: inherit;
+
+    text-align: left;
+
+    cursor: pointer;
+
+    -webkit-tap-highlight-color:
+      transparent;
+  }
+
+  .mars-issue-main:active {
+    background: #fafbfc;
+  }
+
+
+  /* severity */
+
+  .mars-severity-icon {
+    width: 27px;
+    height: 27px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    font-size: 11px;
+    font-weight: 900;
+  }
+
+  .mars-severity-icon.critical {
+    background: #fff0f0;
+    color: #dc2626;
+  }
+
+  .mars-severity-icon.warning {
+    background: #fff7e8;
+    color: #dc7309;
+  }
+
+  .mars-severity-icon.passed {
+    background: #ebf9f0;
+    color: #16a34a;
+  }
+
+
+  /* copy */
+
+  .mars-issue-copy {
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 4px;
+  }
+
+  .mars-issue-copy strong {
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    color: #202a3d;
+
+    font-size: 10.5px;
+    line-height: 1.35;
+
+    font-weight: 750;
+
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .mars-issue-copy small {
+    overflow: hidden;
+
+    color: #929caf;
+
+    font-size: 8.5px;
+
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+
+  /* right metadata */
+
+  .mars-issue-right {
+    min-width: 55px;
+
+    display: grid;
+
+    grid-template-columns:
+      minmax(0, auto)
+      11px;
+
+    grid-template-rows:
+      auto
+      auto;
+
+    align-items: center;
+
+    column-gap: 4px;
+
+    text-align: right;
+  }
+
+  .mars-issue-right em {
+    grid-column: 1;
+    grid-row: 1;
+
+    justify-self: end;
+
+    padding: 3px 6px;
+
+    border-radius: 6px;
+
+    font-size: 7.5px;
+    line-height: 1;
+
+    font-style: normal;
+    font-weight: 850;
+  }
+
+  .mars-issue-right em.critical {
+    background: #fff0f0;
+    color: #dc2626;
+  }
+
+  .mars-issue-right em.warning {
+    background: #fff7e8;
+    color: #d46e07;
+  }
+
+  .mars-issue-right em.passed {
+    background: #ebf9f0;
+    color: #168a43;
+  }
+
+  .mars-issue-right small {
+    grid-column: 1;
+    grid-row: 2;
+
+    margin-top: 4px;
+
+    color: #9aa5b5;
+
+    font-size: 7.5px;
+  }
+
+  .mars-issue-right b {
+    grid-column: 2;
+    grid-row: 1 / 3;
+
+    color: #8995a8;
+
+    font-size: 19px;
+    line-height: 1;
+
+    font-weight: 400;
+
+    transform-origin: center;
+
+    transition:
+      transform 0.15s ease;
+  }
+
+  .mars-issue-right b.expanded {
+    transform: rotate(90deg);
+  }
+
+
+  /* issue expanded */
+
+  .mars-issue-detail {
+    padding:
+      11px 12px
+      12px 46px;
+
+    border-top:
+      1px solid #edf0f4;
+
+    background: #fafbfc;
+
+    color: #566276;
+
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .mars-issue-detail > div +
+  div {
+    margin-top: 9px;
+  }
+
+  .mars-issue-detail strong {
+    display: block;
+
+    margin-bottom: 3px;
+
+    color: #344054;
+
+    font-size: 9px;
+  }
+
+  .mars-issue-detail p {
+    margin: 0;
+
+    word-break: break-word;
+  }
+
+
+  /* ========================================================
+     EMPTY ISSUES
+     ======================================================== */
+
+  .mars-no-issues {
+    min-height: 130px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    border: 1px dashed #dde3eb;
+    border-radius: 12px;
+
+    background: #fafcfb;
+
+    text-align: center;
+  }
+
+  .mars-no-issues > div {
+    width: 31px;
+    height: 31px;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 7px;
+
+    border-radius: 50%;
+
+    background: #eaf8ef;
+    color: #16a34a;
+
+    font-weight: 900;
+  }
+
+  .mars-no-issues strong {
+    color: #253044;
+
+    font-size: 10px;
+  }
+
+  .mars-no-issues span {
+    margin-top: 4px;
+
+    color: #8b96a8;
+
+    font-size: 9px;
+  }
+
+}
+
+/* DEVNDESPRO MOBILE CHEVRON FIX */
+@media (max-width: 767px) {
+
+  .mars-row-chevron {
+    flex-shrink: 0;
+    color: #8b97aa;
+    font-size: 13px;
+    transition: transform 0.15s ease;
+  }
+
+  .mars-row-chevron.expanded {
+    transform: rotate(90deg);
+  }
+
+  .mars-view-pages .mars-row-chevron {
+    justify-self: end;
+  }
+
+  .mars-issue-right .mars-row-chevron {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    align-self: center;
+    justify-self: center;
+  }
+
+}

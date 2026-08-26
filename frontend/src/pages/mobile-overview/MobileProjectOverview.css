@@ -1627,3 +1627,56 @@
   }
 }
 /* DEVNDESPRO FITTED RESPONSIVE HEALTH GAUGE END */
+
+/* DEVNDESPRO MOBILE MORE MENU ICONS */
+@media (max-width: 639px) {
+  .mpo-sheet-link-main {
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .mpo-sheet-link-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: inline-grid;
+    place-items: center;
+    border-radius: 9px;
+    background: #f1efff;
+    color: #6547ed;
+    font-size: 14px;
+  }
+
+  .mpo-sheet-links button:nth-child(2) .mpo-sheet-link-icon {
+    background: #f5efff;
+    color: #7c3aed;
+  }
+
+  .mpo-sheet-links button:nth-child(3) .mpo-sheet-link-icon {
+    background: #ecfdf5;
+    color: #059669;
+  }
+
+  .mpo-sheet-links button:nth-child(4) .mpo-sheet-link-icon {
+    background: #eef2ff;
+    color: #4f46e5;
+  }
+
+  .mpo-sheet-links button:nth-child(5) .mpo-sheet-link-icon {
+    background: #fff7ed;
+    color: #ea580c;
+  }
+
+  .mpo-sheet-links button:nth-child(6) .mpo-sheet-link-icon {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .mpo-sheet-link-chevron {
+    flex: 0 0 auto;
+    color: #64748b;
+    font-size: 12px;
+  }
+}

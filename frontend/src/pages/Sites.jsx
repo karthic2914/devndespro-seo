@@ -260,13 +260,52 @@ export default function Sites() {
     0
   )
 
-  const mobileFilteredSites = filteredSites.filter(site => {
-    const score = Number(site.health)
-    if (mobileFilter === 'attention') return Number.isFinite(score) && score < 60
-    if (mobileFilter === 'healthy') return Number.isFinite(score) && score >= 80
-    if (mobileFilter === 'unscored') return !Number.isFinite(score)
-    return true
-  })
+  // DEVNDESPRO_MOBILE_PROJECTS_FILTER_FIX_V3
+  const mobileFilteredSites = safeSites
+    .filter(site => {
+      const query = search.trim().toLowerCase()
+
+      if (!query) return true
+
+      const name = String(site?.name || '').toLowerCase()
+      const url = String(site?.url || '').toLowerCase()
+      const domain = String(site?.domain || '').toLowerCase()
+
+      return (
+        name.includes(query) ||
+        url.includes(query) ||
+        domain.includes(query)
+      )
+    })
+    .filter(site => {
+      const score = Number(site.health)
+
+      if (mobileFilter === 'attention') {
+        return Number.isFinite(score) && score < 60
+      }
+
+      if (mobileFilter === 'healthy') {
+        return Number.isFinite(score) && score >= 80
+      }
+
+      return true
+    })
+    .sort((a, b) => {
+      const dateA = new Date(
+        a?.updated_at || a?.created_at || 0
+      ).getTime()
+
+      const dateB = new Date(
+        b?.updated_at || b?.created_at || 0
+      ).getTime()
+
+      const valueA = Number.isFinite(dateA) ? dateA : 0
+      const valueB = Number.isFinite(dateB) ? dateB : 0
+
+      return sortDir === 'asc'
+        ? valueA - valueB
+        : valueB - valueA
+    })
 
   useEffect(() => {
     setVisibleCount(5)
@@ -772,7 +811,7 @@ export default function Sites() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>
                     Locale: {discoverData.meta?.locale?.locationName || 'United States'}
                     {discoverData.meta?.importedCount != null && (
-                      <> Ãƒâ€šÃ‚Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                      <> ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
                     )}
                   </div>
 
@@ -834,10 +873,10 @@ export default function Sites() {
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
                                   <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                                     {item.position ? `#${item.position}` : 'No pos'}
-                                    {' Ãƒâ€šÃ‚Â· '}Vol {Number(item.volume || 0).toLocaleString()}
-                                    {' Ãƒâ€šÃ‚Â· '}{item.difficulty || 'Medium'}
-                                    {item.opportunity ? ` Ãƒâ€šÃ‚Â· ${item.opportunity}` : ''}
-                                    {item.source ? ` Ãƒâ€šÃ‚Â· ${item.source}` : ''}
+                                    {' ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? ` ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${item.opportunity}` : ''}
+                                    {item.source ? ` ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· ${item.source}` : ''}
                                   </div>
                                   {bucket.mode === 'how' && item.how && (
                                     <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
@@ -984,7 +1023,6 @@ export default function Sites() {
               <button type="button" className={mobileFilter === 'all' ? 'is-active' : ''} onClick={() => setMobileFilter('all')}>All ({safeSites.length})</button>
               <button type="button" className={mobileFilter === 'attention' ? 'is-active' : ''} onClick={() => setMobileFilter('attention')}><i className="pm-dot pm-dot--orange" />Attention ({mobileAttentionCount})</button>
               <button type="button" className={mobileFilter === 'healthy' ? 'is-active' : ''} onClick={() => setMobileFilter('healthy')}><i className="pm-dot pm-dot--green" />Healthy ({mobileHealthyCount})</button>
-              <button type="button" className={mobileFilter === 'unscored' ? 'is-active' : ''} onClick={() => setMobileFilter('unscored')}>More <FontAwesomeIcon icon={faChevronDown} /></button>
             </div>
 
             <div className="pm-sort-row">

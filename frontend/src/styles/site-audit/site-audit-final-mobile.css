@@ -1,0 +1,901 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   FINAL MOBILE SITE AUDIT UX
+
+   MOBILE ONLY
+
+   Final hierarchy:
+   1. Audit Overview
+   2. Decision Center
+   3. Today's Mission
+   4. Audit Findings
+   5. AI Visibility
+   6. Domain Authority
+   7. Crawl Snapshot
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+
+  /* ========================================================
+     GLOBAL MOBILE READABILITY
+     ======================================================== */
+
+  .mobile-audit-overview-slot,
+  .mobile-audit-findings-slot,
+  .msadc-root,
+  .mais-root {
+    font-size: 14px;
+  }
+
+
+  /*
+   * Never allow useful supporting text to become
+   * microscopic on a phone.
+   */
+
+  .mobile-audit-overview-slot small,
+  .mobile-audit-findings-slot small,
+  .msadc-root small,
+  .mais-root small {
+    line-height: 1.4;
+  }
+
+
+  /* ========================================================
+     SPLIT MobileAuditResults VISUALLY
+     ======================================================== */
+
+  /*
+   * First instance = Audit Overview only.
+   */
+
+  .mobile-audit-overview-slot
+  .mars-issues {
+    display: none !important;
+  }
+
+
+  /*
+   * Second instance = Audit Findings only.
+   *
+   * Hide the duplicated Full Site Audit summary.
+   */
+
+  .mobile-audit-findings-slot
+  .mars-card-heading,
+
+  .mobile-audit-findings-slot
+  .mars-health,
+
+  .mobile-audit-findings-slot
+  .mars-status-grid,
+
+  .mobile-audit-findings-slot
+  .mars-category-list,
+
+  .mobile-audit-findings-slot
+  .mars-view-pages {
+    display: none !important;
+  }
+
+
+  /*
+   * Remove unnecessary empty shell spacing around
+   * the findings-only instance.
+   */
+
+  .mobile-audit-findings-slot
+  .mars-root {
+    padding-top: 0 !important;
+  }
+
+
+  .mobile-audit-findings-slot
+  .mars-issues {
+    border-top: 0 !important;
+
+    padding-top: 16px !important;
+  }
+
+
+  /* ========================================================
+     COMMON SECTION WIDTH
+     ======================================================== */
+
+  .mobile-audit-overview-slot
+  .mars-root,
+
+  .mobile-audit-findings-slot
+  .mars-root,
+
+  .msadc-root,
+
+  .mais-root {
+    width: auto !important;
+
+    max-width: none !important;
+
+    margin-left: 12px !important;
+    margin-right: 12px !important;
+    margin-bottom: 14px !important;
+
+    box-sizing: border-box;
+  }
+
+
+  /* ========================================================
+     AUDIT OVERVIEW
+     ======================================================== */
+
+  .mars-card-heading {
+    padding:
+      18px 16px
+      13px !important;
+  }
+
+
+  .mars-kicker {
+    font-size: 11px !important;
+
+    line-height: 1.2 !important;
+
+    font-weight: 800 !important;
+
+    letter-spacing: 0.06em !important;
+  }
+
+
+  .mars-card-heading h2 {
+    margin-top: 4px !important;
+
+    font-size: 20px !important;
+
+    line-height: 1.25 !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  .mars-card-heading p {
+    margin-top: 5px !important;
+
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  /* Site health */
+
+  .mars-health {
+    min-height: 112px !important;
+
+    padding: 16px !important;
+  }
+
+
+  .mars-health-copy > span {
+    font-size: 13px !important;
+
+    line-height: 1.35 !important;
+
+    font-weight: 700 !important;
+  }
+
+
+  .mars-health-copy > strong {
+    font-size: 21px !important;
+
+    line-height: 1.2 !important;
+  }
+
+
+  .mars-health-copy small {
+    font-size: 12px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  /* Critical / Warning / Healthy */
+
+  .mars-status-card {
+    min-height: 78px !important;
+
+    padding: 11px 7px !important;
+  }
+
+
+  .mars-status-card strong {
+    font-size: 22px !important;
+
+    line-height: 1 !important;
+  }
+
+
+  .mars-status-card small {
+    font-size: 11px !important;
+
+    line-height: 1.3 !important;
+  }
+
+
+  /* SEO score rows */
+
+  .mars-category-score {
+    min-height: 52px !important;
+  }
+
+
+  .mars-category-score span {
+    font-size: 13px !important;
+
+    font-weight: 700 !important;
+  }
+
+
+  .mars-category-score strong {
+    font-size: 13px !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  /* Crawled pages */
+
+  .mars-view-pages {
+    min-height: 52px !important;
+
+    padding:
+      0 13px !important;
+  }
+
+
+  .mars-view-pages span {
+    font-size: 13px !important;
+
+    font-weight: 750 !important;
+  }
+
+
+  .mars-view-pages strong {
+    font-size: 12px !important;
+  }
+
+
+  /* ========================================================
+     DECISION CENTER
+     ======================================================== */
+
+  .msadc-section-header {
+    padding:
+      18px 16px
+      13px !important;
+  }
+
+
+  .msadc-section-header h2 {
+    font-size: 20px !important;
+
+    line-height: 1.25 !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  .msadc-section-header p {
+    margin-top: 5px !important;
+
+    font-size: 13px !important;
+
+    line-height: 1.45 !important;
+  }
+
+
+  .msadc-metric-grid {
+    gap: 10px !important;
+
+    padding:
+      13px 14px
+      14px !important;
+  }
+
+
+  .msadc-metric-card {
+    min-height: 118px !important;
+
+    padding: 13px !important;
+  }
+
+
+  .msadc-metric-label {
+    font-size: 12px !important;
+
+    line-height: 1.35 !important;
+
+    font-weight: 700 !important;
+  }
+
+
+  .msadc-metric-number {
+    margin-top: 8px !important;
+
+    font-size: 29px !important;
+
+    line-height: 1 !important;
+  }
+
+
+  .msadc-metric-number small {
+    font-size: 11px !important;
+  }
+
+
+  .msadc-metric-status {
+    margin-top: 7px !important;
+
+    font-size: 11px !important;
+
+    line-height: 1.3 !important;
+  }
+
+
+  .msadc-metric-hint {
+    margin-top: 5px !important;
+
+    font-size: 11px !important;
+
+    line-height: 1.35 !important;
+  }
+
+
+  /* ========================================================
+     TODAY'S MISSION
+     ======================================================== */
+
+  .msadc-mission-header h2 {
+    font-size: 18px !important;
+
+    line-height: 1.25 !important;
+  }
+
+
+  .msadc-mission-header p {
+    font-size: 12px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  .msadc-priority-count {
+    font-size: 11px !important;
+
+    min-width: 30px !important;
+
+    min-height: 27px !important;
+  }
+
+
+  .msadc-mission-row {
+    min-height: 82px !important;
+
+    padding: 12px 11px !important;
+  }
+
+
+  .msadc-mission-copy strong {
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+
+    -webkit-line-clamp: 3 !important;
+  }
+
+
+  .msadc-mission-copy small {
+    margin-top: 5px !important;
+
+    font-size: 11px !important;
+  }
+
+
+  .msadc-mission-meta em {
+    font-size: 10px !important;
+
+    min-height: 22px !important;
+  }
+
+
+  .msadc-mission-meta small {
+    font-size: 10px !important;
+  }
+
+
+  /* ========================================================
+     AUDIT FINDINGS
+     ======================================================== */
+
+  .mars-issues-header {
+    padding:
+      0 16px
+      13px !important;
+  }
+
+
+  .mars-issues-header h2 {
+    font-size: 20px !important;
+
+    line-height: 1.25 !important;
+  }
+
+
+  .mars-issues-header p {
+    margin-top: 5px !important;
+
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  /*
+   * Fix first filter being clipped.
+   */
+
+  .mars-filter-row {
+    width: 100% !important;
+
+    margin: 0 !important;
+
+    padding:
+      0 16px
+      13px !important;
+
+    scroll-padding-left: 16px !important;
+    scroll-padding-right: 16px !important;
+
+    box-sizing: border-box;
+
+    overflow-x: auto !important;
+  }
+
+
+  .mars-filter-row::before,
+  .mars-filter-row::after {
+    content: '';
+
+    flex: 0 0 1px;
+  }
+
+
+  .mars-filter-chip {
+    min-height: 40px !important;
+
+    padding:
+      0 14px !important;
+
+    font-size: 12px !important;
+
+    line-height: 1 !important;
+
+    font-weight: 750 !important;
+  }
+
+
+  .mars-filter-chip strong {
+    font-size: 10px !important;
+  }
+
+
+  /* Issue cards */
+
+  .mars-issue-list {
+    padding:
+      0 16px
+      16px !important;
+  }
+
+
+  .mars-issue-row {
+    min-height: 94px !important;
+
+    padding:
+      13px 12px !important;
+  }
+
+
+  .mars-issue-row
+  + .mars-issue-row {
+    margin-top: 10px !important;
+  }
+
+
+  .mars-issue-copy strong {
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+
+    -webkit-line-clamp: 3 !important;
+  }
+
+
+  .mars-issue-copy small {
+    margin-top: 5px !important;
+
+    font-size: 11px !important;
+
+    line-height: 1.35 !important;
+  }
+
+
+  .mars-issue-right {
+    min-width: 72px !important;
+  }
+
+
+  .mars-issue-right em {
+    min-height: 22px !important;
+
+    padding:
+      3px 7px !important;
+
+    font-size: 10px !important;
+  }
+
+
+  .mars-issue-right small {
+    margin-top: 5px !important;
+
+    font-size: 10px !important;
+
+    line-height: 1.25 !important;
+  }
+
+
+  .mars-row-chevron {
+    font-size: 13px !important;
+  }
+
+
+  /* Expanded detail */
+
+  .mars-issue-details,
+  .mars-issue-detail {
+    padding: 13px !important;
+
+    font-size: 12px !important;
+
+    line-height: 1.55 !important;
+  }
+
+
+  /* ========================================================
+     AI VISIBILITY
+     Real component uses MAIS classes
+     ======================================================== */
+
+  .mais-root {
+    overflow: hidden;
+  }
+
+
+  .mais-heading {
+    padding:
+      18px 16px
+      13px !important;
+  }
+
+
+  .mais-kicker {
+    font-size: 11px !important;
+
+    font-weight: 800 !important;
+  }
+
+
+  .mais-heading h2 {
+    font-size: 20px !important;
+
+    line-height: 1.25 !important;
+  }
+
+
+  .mais-heading p {
+    margin-top: 5px !important;
+
+    max-width: none !important;
+
+    font-size: 13px !important;
+
+    line-height: 1.45 !important;
+  }
+
+
+  .mais-primary-score,
+  .mais-authority-score {
+    min-height: 116px !important;
+
+    padding: 14px !important;
+  }
+
+
+  .mais-primary-score > span,
+  .mais-authority-score > span {
+    font-size: 12px !important;
+
+    line-height: 1.3 !important;
+  }
+
+
+  .mais-primary-score strong,
+  .mais-authority-score strong {
+    font-size: 29px !important;
+  }
+
+
+  .mais-primary-score strong small,
+  .mais-authority-score strong small {
+    font-size: 11px !important;
+  }
+
+
+  .mais-primary-score em,
+  .mais-authority-score em {
+    font-size: 11px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  /*
+   * Engine rows are currently too tall relative
+   * to the tiny text. Increase text and reduce waste.
+   */
+
+  .mais-engine-row {
+    min-height: 64px !important;
+
+    padding:
+      11px 13px !important;
+  }
+
+
+  .mais-engine-row strong {
+    font-size: 13px !important;
+  }
+
+
+  .mais-engine-row small {
+    margin-top: 3px !important;
+
+    font-size: 11px !important;
+  }
+
+
+  .mais-engine-row > span {
+    font-size: 18px !important;
+  }
+
+
+  .mais-engine-row > span small {
+    font-size: 10px !important;
+  }
+
+
+  .mais-engine-row > em {
+    font-size: 11px !important;
+  }
+
+
+  .mais-tracking-note {
+    min-height: 44px !important;
+
+    padding:
+      0 12px !important;
+  }
+
+
+  .mais-tracking-note span,
+  .mais-tracking-note strong {
+    font-size: 11px !important;
+  }
+
+
+  /* ========================================================
+     DOMAIN AUTHORITY
+     ======================================================== */
+
+  .mais-refresh {
+    min-height: 40px !important;
+
+    padding:
+      0 12px !important;
+
+    font-size: 12px !important;
+
+    font-weight: 750 !important;
+  }
+
+
+  /*
+   * Add safe ASCII CSS icon.
+   * \21BB = clockwise open circle arrow.
+   */
+
+  .mais-refresh::before {
+    content: "\21BB";
+
+    margin-right: 6px;
+
+    font-size: 15px;
+
+    line-height: 1;
+  }
+
+
+  .mais-updated {
+    font-size: 11px !important;
+  }
+
+
+  /* ========================================================
+     CRAWL SNAPSHOT
+     ======================================================== */
+
+  .mais-crawl-item {
+    min-height: 78px !important;
+
+    padding: 12px !important;
+  }
+
+
+  .mais-crawl-item span,
+  .mais-crawl-wide span {
+    font-size: 11px !important;
+
+    line-height: 1.3 !important;
+  }
+
+
+  .mais-crawl-item strong {
+    margin-top: 6px !important;
+
+    font-size: 17px !important;
+
+    line-height: 1.15 !important;
+  }
+
+
+  .mais-crawl-wide strong {
+    margin-top: 5px !important;
+
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  .mais-robots-warning strong {
+    font-size: 13px !important;
+  }
+
+
+  .mais-robots-warning span {
+    font-size: 12px !important;
+
+    line-height: 1.45 !important;
+  }
+
+
+  /* ========================================================
+     TOP SITE AUDIT HEADER
+     ======================================================== */
+
+  .mobile-audit-heading h1 {
+    font-size: 25px !important;
+
+    line-height: 1.2 !important;
+  }
+
+
+  .mobile-audit-url {
+    font-size: 13px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  .mobile-audit-scan {
+    font-size: 12px !important;
+
+    line-height: 1.4 !important;
+  }
+
+
+  .mobile-audit-secondary-button {
+    font-size: 12px !important;
+  }
+
+
+  .mobile-audit-action,
+  .mobile-audit-rerun-main {
+    font-size: 13px !important;
+  }
+
+
+  /* ========================================================
+     BOTTOM NAVIGATION
+     Keep current native pattern
+     ======================================================== */
+
+  .smpn-bottom-nav button span {
+    font-size: 10.5px !important;
+
+    line-height: 1.15 !important;
+  }
+
+
+  .smpn-bottom-nav button svg {
+    font-size: 17px !important;
+  }
+
+
+  /* ========================================================
+     CONTENT ABOVE FIXED NAV
+     ======================================================== */
+
+  body.shared-mobile-project-nav-active
+  .app-main {
+    padding-bottom:
+      calc(
+        88px +
+        env(
+          safe-area-inset-bottom,
+          0px
+        )
+      ) !important;
+  }
+
+
+}
+
+
+/* ==========================================================
+   SMALL PHONE
+   ========================================================== */
+
+@media (max-width: 380px) {
+
+  .mobile-audit-overview-slot
+  .mars-root,
+
+  .mobile-audit-findings-slot
+  .mars-root,
+
+  .msadc-root,
+
+  .mais-root {
+    margin-left: 9px !important;
+    margin-right: 9px !important;
+  }
+
+
+  .mars-filter-row,
+  .mars-issue-list {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+
+  .mars-filter-row {
+    scroll-padding-left: 12px !important;
+  }
+
+
+  .mars-issue-copy strong,
+  .msadc-mission-copy strong {
+    font-size: 12.5px !important;
+  }
+
+}
