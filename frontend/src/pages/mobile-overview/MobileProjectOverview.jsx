@@ -31,19 +31,27 @@ const impactClass = (impact) => {
   return 'is-medium'
 }
 
-const projectImage = (site) =>
-  site?.favicon_url ||
-  site?.faviconUrl ||
-  site?.favicon ||
-  site?.logo_url ||
-  site?.logoUrl ||
-  site?.logo ||
-  site?.icon_url ||
-  site?.iconUrl ||
-  site?.icon ||
-  site?.image_url ||
-  site?.image ||
-  null
+const projectImages = (site, domain) => {
+  const candidates = [
+    site?.favicon_url,
+    site?.faviconUrl,
+    site?.favicon,
+    site?.logo_url,
+    site?.logoUrl,
+    site?.logo,
+    site?.icon_url,
+    site?.iconUrl,
+    site?.icon,
+    site?.image_url,
+    site?.image,
+    domain ? `https://${domain}/favicon.ico` : null,
+    domain
+      ? `https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`
+      : null,
+  ]
+
+  return [...new Set(candidates.filter(Boolean))]
+}
 
 const projectDomain = (site) => {
   const raw = site?.url || site?.domain || site?.website || ''
@@ -95,8 +103,17 @@ export default function MobileProjectOverview({
   }, [])
 
   const domain = projectDomain(site)
-  const image = projectImage(site)
+  const imageCandidates = useMemo(
+    () => projectImages(site, domain),
+    [site, domain]
+  )
+  const [imageIndex, setImageIndex] = useState(0)
+  const image = imageCandidates[imageIndex] || null
   const projectName = site?.name || domain || 'Project'
+
+  useEffect(() => {
+    setImageIndex(0)
+  }, [siteId, domain])
 
   const lastUpdated = useMemo(() => {
     const raw =
@@ -149,7 +166,13 @@ export default function MobileProjectOverview({
         <div className="mpo-project-identity">
           <div className="mpo-project-logo">
             {image ? (
-              <img src={image} alt="" />
+              <img
+                key={image}
+                src={image}
+                alt=""
+                referrerPolicy="no-referrer"
+                onError={() => setImageIndex((current) => current + 1)}
+              />
             ) : (
               <span>{projectName.slice(0, 1).toUpperCase()}</span>
             )}
