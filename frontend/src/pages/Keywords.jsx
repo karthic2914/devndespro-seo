@@ -310,7 +310,7 @@ import {
         const imported = data?.meta?.importedCount || 0
         toast.success(
           imported > 0
-            ? `Discovery complete Ã¢â‚¬â€ tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
+            ? `Discovery complete - tracked ${imported} ranking keyword${imported === 1 ? '' : 's'}`
             : 'Discovery complete'
         )
         load()
@@ -3017,7 +3017,7 @@ import {
               </OrangeBtn>
             </div>
             <div style={{ marginTop: 8, fontSize: 11, color: T.muted, lineHeight: 1.45 }}>
-              AI Suggestions are creative ideas from Claude (estimated volume) Ã¢â‚¬â€ not live ranking data.
+              AI Suggestions are creative ideas from Claude (estimated volume) - not live ranking data.
               Use <strong style={{ fontWeight: 700 }}>Rediscover keywords</strong> for real search / project inventory.
             </div>
 
