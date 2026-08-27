@@ -15,6 +15,8 @@
 import api from '../utils/api'
 import toast from '../utils/toast'
 import ScoreInfoTip from '../components/ScoreInfoTip'
+import MobileKeywordGap from './keywords-mobile/MobileKeywordGap'
+import '../styles/keywords-mobile-native.css'
 import {
   resolveRankMovement,
   formatRankMovementDisplay,
@@ -202,6 +204,26 @@ import {
     const [aiOverviewMap, setAiOverviewMap] = useState({})
     const [aiOverviewLoading, setAiOverviewLoading] = useState(false)
     const [aiOverviewMeta, setAiOverviewMeta] = useState(null)
+    // DEVNDESPRO_KEYWORDS_MOBILE_STATE_FINAL
+    const [isKeywordsMobile, setIsKeywordsMobile] = useState(() =>
+      typeof window !== 'undefined'
+        ? window.matchMedia('(max-width: 767px)').matches
+        : false
+    )
+    const [mobileDiscoverTab, setMobileDiscoverTab] = useState('visibility')
+    const [mobileKeywordMenu, setMobileKeywordMenu] = useState(null)
+
+    useEffect(() => {
+      if (typeof window === 'undefined') return undefined
+
+      const media = window.matchMedia('(max-width: 767px)')
+      const sync = () => setIsKeywordsMobile(media.matches)
+
+      sync()
+      media.addEventListener?.('change', sync)
+
+      return () => media.removeEventListener?.('change', sync)
+    }, [])
 
     const applyResearchPayload = (data, queryFallback = '') => {
       const matching = data.matching || data.suggestions || []
@@ -767,6 +789,1163 @@ import {
       rank: hasRanks,
     }
 
+    // DEVNDESPRO_KEYWORDS_NATIVE_MOBILE_VIEW_FINAL
+    if (isKeywordsMobile) {
+      const discoverBuckets = {
+        visibility: {
+          items: discovery?.alreadyRanking || [],
+          mode: 'tracked',
+        },
+        ideas: {
+          items: discovery?.goodToHave || [],
+          mode: 'add',
+        },
+        opportunities: {
+          items: discovery?.howToGetThem || [],
+          mode: 'how',
+        },
+      }
+
+      const activeDiscover =
+        discoverBuckets[mobileDiscoverTab] || discoverBuckets.visibility
+
+      const flowTarget = {
+        gap: 'kw-section-gap',
+        discover: 'kw-section-discovery',
+        research: 'kw-section-research',
+        track: 'kw-section-tracked',
+        rank: 'kwm-ranks',
+      }
+
+      const scrollToMobileStep = (id) => {
+        setScrollFlowId(id)
+
+        document
+          .getElementById(flowTarget[id])
+          ?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start',
+          })
+      }
+
+      return (
+        <div className="kwm-page fade-in">
+          <div className="kwm-flow-shell">
+            <div className="kwm-flow">
+              {KEYWORDS_PAGE_FLOW.map((step, index) => {
+                const active = scrollFlowId === step.id
+                const done = Boolean(doneMap[step.id])
+
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    className={`kwm-flow-step ${active ? 'active' : ''} ${done ? 'done' : ''}`}
+                    onClick={() => scrollToMobileStep(step.id)}
+                  >
+                    <span className="kwm-flow-number">
+                      {done && !active ? 'OK' : index + 1}
+                    </span>
+                    <span>{step.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          <header className="kwm-header">
+            <div>
+              <h1>Keywords</h1>
+              <p>Discover, research and track search opportunities</p>
+            </div>
+
+            <button
+              type="button"
+              className="kwm-icon-action"
+              onClick={runAutoDiscover}
+              disabled={discoverRunning}
+              aria-label="Rediscover keywords"
+            >
+              <FontAwesomeIcon
+                icon={
+                  discoverRunning
+                    ? faArrowsRotate
+                    : faMagnifyingGlass
+                }
+                spin={discoverRunning}
+              />
+            </button>
+          </header>
+
+          <main className="kwm-content">
+            <section
+              id="kw-section-gap"
+              className="kwm-section"
+            >
+              <div className="kwm-section-heading">
+                <div>
+                  <span className="kwm-kicker">STEP 1</span>
+                  <h2>Keyword Gap</h2>
+                  <p>
+                    Find valuable searches your competitors already rank for.
+                  </p>
+                </div>
+              </div>
+
+              <MobileKeywordGap
+                siteId={siteId}
+                onAdded={load}
+              />
+            </section>
+
+            <section
+              id="kw-section-discovery"
+              className="kwm-section"
+            >
+              <div className="kwm-section-heading">
+                <div>
+                  <span className="kwm-kicker">STEP 2</span>
+                  <h2>Discover</h2>
+                  <p>
+                    Explore current visibility and new opportunities.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="kwm-secondary-action"
+                  onClick={runAutoDiscover}
+                  disabled={discoverRunning}
+                >
+                  <FontAwesomeIcon
+                    icon={
+                      discoverRunning
+                        ? faArrowsRotate
+                        : faMagnifyingGlass
+                    }
+                    spin={discoverRunning}
+                  />
+                  {discoverRunning ? 'Running' : 'Refresh'}
+                </button>
+              </div>
+
+              {!discovery ? (
+                <div className="kwm-empty-card">
+                  <FontAwesomeIcon icon={faBolt} />
+                  <strong>Discover keyword opportunities</strong>
+                  <p>
+                    Build a keyword set from your existing visibility and
+                    search opportunities.
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={runAutoDiscover}
+                    disabled={discoverRunning}
+                  >
+                    {discoverRunning
+                      ? 'Discovering...'
+                      : 'Discover keywords'}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="kwm-segmented">
+                    {[
+                      [
+                        'visibility',
+                        `Visibility ${(discovery.alreadyRanking || []).length}`,
+                      ],
+                      [
+                        'ideas',
+                        `Ideas ${(discovery.goodToHave || []).length}`,
+                      ],
+                      [
+                        'opportunities',
+                        `Opportunities ${(discovery.howToGetThem || []).length}`,
+                      ],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={
+                          mobileDiscoverTab === id
+                            ? 'active'
+                            : ''
+                        }
+                        onClick={() => setMobileDiscoverTab(id)}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="kwm-card-list">
+                    {!activeDiscover.items.length ? (
+                      <div className="kwm-empty-small">
+                        No keywords in this group yet.
+                      </div>
+                    ) : (
+                      activeDiscover.items
+                        .slice(0, 20)
+                        .map((item, index) => {
+                          const key = String(item.keyword || '')
+                            .toLowerCase()
+                            .trim()
+
+                          const isAdded =
+                            addedKeywords.has(key) ||
+                            item.tracked
+
+                          const isAdding =
+                            addingKeywords.has(key)
+
+                          return (
+                            <article
+                              className="kwm-keyword-card"
+                              key={`${mobileDiscoverTab}-${key}-${index}`}
+                            >
+                              <div className="kwm-keyword-card-top">
+                                <div className="kwm-keyword-title">
+                                  {item.keyword}
+                                </div>
+
+                                {isAdded ? (
+                                  <span className="kwm-state-pill success">
+                                    Tracked
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="kwm-mini-add"
+                                    disabled={isAdding}
+                                    onClick={() =>
+                                      addDiscoveryKeyword(item)
+                                    }
+                                  >
+                                    {isAdding ? 'Adding' : '+ Add'}
+                                  </button>
+                                )}
+                              </div>
+
+                              <div className="kwm-meta-row">
+                                <span>
+                                  {item.position
+                                    ? `Rank #${item.position}`
+                                    : 'Not ranked'}
+                                </span>
+
+                                <span>
+                                  Vol{' '}
+                                  {Number(
+                                    item.volume || 0
+                                  ).toLocaleString()}
+                                </span>
+
+                                <span>
+                                  {item.difficulty ||
+                                    'Medium'}
+                                </span>
+                              </div>
+
+                              {activeDiscover.mode ===
+                                'how' &&
+                              item.how ? (
+                                <p className="kwm-card-note">
+                                  {cleanDiscoveryText(
+                                    item.how
+                                  )}
+                                </p>
+                              ) : null}
+
+                              {activeDiscover.mode ===
+                                'add' &&
+                              item.why ? (
+                                <p className="kwm-card-note">
+                                  {cleanDiscoveryText(
+                                    item.why
+                                  )}
+                                </p>
+                              ) : null}
+                            </article>
+                          )
+                        })
+                    )}
+                  </div>
+                </>
+              )}
+            </section>
+
+            <section
+              id="kw-section-research"
+              className="kwm-section"
+            >
+              <div className="kwm-section-heading">
+                <div>
+                  <span className="kwm-kicker">STEP 3</span>
+                  <h2>Research</h2>
+                  <p>
+                    Validate volume, difficulty, intent and opportunity.
+                  </p>
+                </div>
+              </div>
+
+              <div className="kwm-search-card">
+                <label className="kwm-label">
+                  Seed keyword
+                </label>
+
+                <div className="kwm-search-input-wrap">
+                  <FontAwesomeIcon
+                    icon={faMagnifyingGlass}
+                  />
+
+                  <input
+                    value={dfsQuery}
+                    onChange={(event) =>
+                      setDfsQuery(event.target.value)
+                    }
+                    onKeyDown={(event) =>
+                      event.key === 'Enter' &&
+                      searchDataForSEO()
+                    }
+                    placeholder="e.g. app development norway"
+                  />
+                </div>
+
+                <div className="kwm-two-col">
+                  <select
+                    value={researchLocation}
+                    onChange={(event) => {
+                      const code = Number(
+                        event.target.value
+                      )
+
+                      setResearchLocation(code)
+
+                      const location =
+                        RESEARCH_LOCATIONS.find(
+                          (item) =>
+                            item.code === code
+                        )
+
+                      if (location) {
+                        setResearchLanguage(
+                          location.language
+                        )
+                      }
+                    }}
+                  >
+                    {RESEARCH_LOCATIONS.map(
+                      (location) => (
+                        <option
+                          key={location.code}
+                          value={location.code}
+                        >
+                          {location.name}
+                        </option>
+                      )
+                    )}
+                  </select>
+
+                  <select
+                    value={researchLanguage}
+                    onChange={(event) =>
+                      setResearchLanguage(
+                        event.target.value
+                      )
+                    }
+                  >
+                    <option value="English">
+                      English
+                    </option>
+                    <option value="Norwegian">
+                      Norwegian
+                    </option>
+                    <option value="German">
+                      German
+                    </option>
+                  </select>
+                </div>
+
+                <button
+                  type="button"
+                  className="kwm-primary-button"
+                  onClick={searchDataForSEO}
+                  disabled={
+                    dfsLoading ||
+                    !dfsQuery.trim()
+                  }
+                >
+                  <FontAwesomeIcon
+                    icon={
+                      dfsLoading
+                        ? faArrowsRotate
+                        : faMagnifyingGlass
+                    }
+                    spin={dfsLoading}
+                  />
+
+                  {dfsLoading
+                    ? 'Searching...'
+                    : 'Search keywords'}
+                </button>
+              </div>
+
+              {dfsMatching.length > 0 ||
+              dfsRelated.length > 0 ||
+              dfsQuestions.length > 0 ? (
+                <>
+                  <div className="kwm-segmented">
+                    {RESEARCH_TABS.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        className={
+                          researchTab === tab.id
+                            ? 'active'
+                            : ''
+                        }
+                        onClick={() =>
+                          setResearchTab(tab.id)
+                        }
+                      >
+                        {tab.label}{' '}
+                        {
+                          (
+                            researchLists[
+                              tab.id
+                            ] || []
+                          ).length
+                        }
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="kwm-filter-strip">
+                    <input
+                      value={researchFilter}
+                      onChange={(event) =>
+                        setResearchFilter(
+                          event.target.value
+                        )
+                      }
+                      placeholder="Filter results"
+                    />
+
+                    <select
+                      value={researchSort}
+                      onChange={(event) =>
+                        setResearchSort(
+                          event.target.value
+                        )
+                      }
+                    >
+                      <option value="volume">
+                        Volume
+                      </option>
+                      <option value="difficulty">
+                        Easy first
+                      </option>
+                      <option value="opportunity">
+                        Opportunity
+                      </option>
+                      <option value="cpc">
+                        CPC
+                      </option>
+                      <option value="alpha">
+                        A-Z
+                      </option>
+                    </select>
+                  </div>
+
+                  <div className="kwm-stat-strip">
+                    <span>
+                      <strong>
+                        {researchTotals.count}
+                      </strong>{' '}
+                      results
+                    </span>
+
+                    <span>
+                      <strong>
+                        {researchTotals.volume.toLocaleString()}
+                      </strong>{' '}
+                      volume
+                    </span>
+
+                    <span>
+                      <strong>
+                        {researchTotals.avgKd}
+                      </strong>{' '}
+                      avg KD
+                    </span>
+                  </div>
+
+                  <div className="kwm-card-list">
+                    {visibleResearch
+                      .slice(0, 30)
+                      .map((suggestion, index) => {
+                        const key =
+                          suggestion.keyword
+                            .toLowerCase()
+                            .trim()
+
+                        const isAdded =
+                          addedKeywords.has(key)
+
+                        const isAdding =
+                          addingKeywords.has(key)
+
+                        return (
+                          <article
+                            className="kwm-keyword-card"
+                            key={`${researchTab}-${key}-${index}`}
+                          >
+                            <div className="kwm-keyword-card-top">
+                              <div>
+                                <div className="kwm-keyword-title">
+                                  {
+                                    suggestion.keyword
+                                  }
+                                </div>
+
+                                <div className="kwm-pill-row">
+                                  <IntentBadge
+                                    intent={
+                                      suggestion.intent
+                                    }
+                                  />
+
+                                  <OpportunityTag
+                                    volume={
+                                      suggestion.volume
+                                    }
+                                    difficulty={
+                                      suggestion.difficultyScore ||
+                                      suggestion.difficulty
+                                    }
+                                  />
+                                </div>
+                              </div>
+
+                              {isAdded ? (
+                                <span className="kwm-state-pill success">
+                                  Added
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="kwm-mini-add"
+                                  disabled={
+                                    isAdding ||
+                                    bulkAdding
+                                  }
+                                  onClick={() =>
+                                    addDfsSuggestion(
+                                      suggestion
+                                    )
+                                  }
+                                >
+                                  {isAdding
+                                    ? 'Adding'
+                                    : '+ Track'}
+                                </button>
+                              )}
+                            </div>
+
+                            <div className="kwm-metric-grid">
+                              <div>
+                                <span>Volume</span>
+                                <strong>
+                                  {suggestion.volume?.toLocaleString() ||
+                                    '-'}
+                                </strong>
+                              </div>
+
+                              <div>
+                                <span>KD</span>
+                                <strong>
+                                  {suggestion.difficultyScore ??
+                                    '-'}
+                                </strong>
+                              </div>
+
+                              <div>
+                                <span>CPC</span>
+                                <strong>
+                                  $
+                                  {Number(
+                                    suggestion.cpc || 0
+                                  ).toFixed(2)}
+                                </strong>
+                              </div>
+                            </div>
+
+                            {suggestion.parentTopic ? (
+                              <p className="kwm-card-note">
+                                Parent:{' '}
+                                {
+                                  suggestion.parentTopic
+                                }
+                              </p>
+                            ) : null}
+                          </article>
+                        )
+                      })}
+                  </div>
+                </>
+              ) : null}
+            </section>
+
+            <section
+              id="kw-section-tracked"
+              className="kwm-section"
+            >
+              <div className="kwm-section-heading">
+                <div>
+                  <span className="kwm-kicker">STEP 4</span>
+                  <h2>Track List</h2>
+                  <p>
+                    Manage the keywords you monitor.
+                  </p>
+                </div>
+
+                <span className="kwm-count-badge">
+                  {keywords.length}
+                </span>
+              </div>
+
+              <div className="kwm-add-card">
+                <input
+                  value={form.keyword}
+                  onChange={(event) =>
+                    setForm((previous) => ({
+                      ...previous,
+                      keyword: event.target.value,
+                    }))
+                  }
+                  onKeyDown={(event) =>
+                    event.key === 'Enter' && add()
+                  }
+                  placeholder="Add keyword"
+                />
+
+                <div className="kwm-two-col">
+                  <input
+                    type="number"
+                    value={form.volume}
+                    onChange={(event) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        volume: event.target.value,
+                      }))
+                    }
+                    placeholder="Volume"
+                  />
+
+                  <select
+                    value={form.difficulty}
+                    onChange={(event) =>
+                      setForm((previous) => ({
+                        ...previous,
+                        difficulty:
+                          event.target.value,
+                      }))
+                    }
+                  >
+                    <option>Easy</option>
+                    <option>Medium</option>
+                    <option>Hard</option>
+                  </select>
+                </div>
+
+                <div className="kwm-two-col">
+                  <button
+                    type="button"
+                    className="kwm-primary-button"
+                    onClick={add}
+                    disabled={adding}
+                  >
+                    <FontAwesomeIcon icon={faPlus} />
+                    {adding ? 'Adding...' : 'Add'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="kwm-secondary-button"
+                    onClick={generateAiSuggestions}
+                    disabled={aiLoading}
+                  >
+                    <FontAwesomeIcon
+                      icon={faWandMagicSparkles}
+                    />
+                    {aiLoading
+                      ? 'Thinking...'
+                      : 'AI ideas'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="kwm-track-tools">
+                <div className="kwm-search-input-wrap">
+                  <FontAwesomeIcon
+                    icon={faMagnifyingGlass}
+                  />
+
+                  <input
+                    value={trackedSearch}
+                    onChange={(event) =>
+                      setTrackedSearch(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Search tracked keywords"
+                  />
+                </div>
+
+                <div className="kwm-chip-scroll">
+                  {[
+                    'all',
+                    'High Value',
+                    'Quick Win',
+                    'Long Tail',
+                    'Standard',
+                    'High Competition',
+                    'Low Priority',
+                  ].map((tier) => (
+                    <button
+                      type="button"
+                      key={tier}
+                      className={
+                        trackedTier === tier
+                          ? 'active'
+                          : ''
+                      }
+                      onClick={() =>
+                        setTrackedTier(tier)
+                      }
+                    >
+                      {tier === 'all'
+                        ? `All ${keywords.length}`
+                        : `${tier} ${
+                            trackedTierCounts[
+                              tier
+                            ] || 0
+                          }`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="kwm-stat-strip">
+                <span>
+                  <strong>{keywords.length}</strong>{' '}
+                  tracked
+                </span>
+                <span>
+                  <strong>{checkedCount}</strong>{' '}
+                  checked
+                </span>
+                <span>
+                  <strong>{firstPageCount}</strong>{' '}
+                  page 1
+                </span>
+              </div>
+
+              <div className="kwm-card-list">
+                {visibleTrackedKeywords.map(
+                  (keyword) => {
+                    const rank =
+                      getPersistedRank(keyword)
+
+                    const movement =
+                      getMovementDisplay(rank)
+
+                    const posLabel =
+                      formatRankPositionLabel(rank)
+
+                    return (
+                      <article
+                        className="kwm-track-card"
+                        key={keyword.id}
+                      >
+                        <div className="kwm-track-card-head">
+                          <div>
+                            <div className="kwm-keyword-title">
+                              {keyword.keyword}
+                            </div>
+
+                            <div className="kwm-pill-row">
+                              <OpportunityTag
+                                volume={
+                                  keyword.volume
+                                }
+                                difficulty={
+                                  keyword.difficulty
+                                }
+                              />
+
+                              <Badge
+                                status={
+                                  keyword.difficulty
+                                }
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            className="kwm-more-button"
+                            onClick={() =>
+                              setMobileKeywordMenu(
+                                keyword
+                              )
+                            }
+                          >
+                            More
+                          </button>
+                        </div>
+
+                        <div className="kwm-rank-hero">
+                          <div>
+                            <span>
+                              Current rank
+                            </span>
+
+                            <strong>
+                              {posLabel.label}
+                            </strong>
+
+                            <small>
+                              {posLabel.sub}
+                            </small>
+                          </div>
+
+                          <div
+                            className="kwm-rank-change"
+                            style={{
+                              color:
+                                movement.color,
+                            }}
+                          >
+                            <span>Movement</span>
+                            <strong>
+                              {movement.label}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <div className="kwm-metric-grid">
+                          <div>
+                            <span>Volume</span>
+                            <strong>
+                              {keyword.volume?.toLocaleString() ||
+                                0}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>Page 1</span>
+                            <strong>
+                              {!rank.checked
+                                ? '-'
+                                : rank.inFirstPage
+                                  ? 'Yes'
+                                  : 'No'}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>Checked</span>
+                            <strong>
+                              {rank.checkedAt
+                                ? new Date(
+                                    rank.checkedAt
+                                  ).toLocaleDateString()
+                                : 'Never'}
+                            </strong>
+                          </div>
+                        </div>
+                      </article>
+                    )
+                  }
+                )}
+              </div>
+
+              {visibleTrackedAll.length >
+              TRACKED_PAGE_SIZE ? (
+                <button
+                  type="button"
+                  className="kwm-show-more"
+                  onClick={() =>
+                    setTrackedShowAll(
+                      (value) => !value
+                    )
+                  }
+                >
+                  {trackedShowAll
+                    ? 'Show less'
+                    : `Show all ${visibleTrackedAll.length}`}
+                </button>
+              ) : null}
+            </section>
+
+            <section
+              id="kwm-ranks"
+              className="kwm-section"
+            >
+              <div className="kwm-section-heading">
+                <div>
+                  <span className="kwm-kicker">STEP 5</span>
+                  <h2>Check Ranks</h2>
+                  <p>
+                    Refresh current search visibility.
+                  </p>
+                </div>
+              </div>
+
+              <div className="kwm-rank-summary">
+                <div className="kwm-rank-summary-top">
+                  <select
+                    value={engine}
+                    onChange={(event) =>
+                      setEngine(event.target.value)
+                    }
+                  >
+                    {ENGINES.map((item) => (
+                      <option
+                        key={item.value}
+                        value={item.value}
+                      >
+                        {item.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="kwm-rank-summary-grid">
+                  <div>
+                    <span>Tracked</span>
+                    <strong>
+                      {keywords.length}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Checked</span>
+                    <strong>
+                      {checkedCount}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Page 1</span>
+                    <strong>
+                      {firstPageCount}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>Not checked</span>
+                    <strong>
+                      {notCheckedCount}
+                    </strong>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="kwm-primary-button kwm-rank-primary"
+                  onClick={refreshFirstPage}
+                  disabled={
+                    checking ||
+                    !keywords.length
+                  }
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowsRotate}
+                    spin={checking}
+                  />
+
+                  {checking
+                    ? 'Checking rankings...'
+                    : 'Check rankings now'}
+                </button>
+
+                <button
+                  type="button"
+                  className="kwm-secondary-button kwm-rank-secondary"
+                  onClick={runWeeklyScanReport}
+                  disabled={
+                    scanRunning ||
+                    !keywords.length
+                  }
+                >
+                  <FontAwesomeIcon
+                    icon={faChartLine}
+                  />
+
+                  {scanRunning
+                    ? 'Running weekly scan...'
+                    : 'Weekly scan report'}
+                </button>
+              </div>
+
+              {scanReport?.report ? (
+                <div className="kwm-scan-result">
+                  <strong>Latest weekly scan</strong>
+
+                  <div className="kwm-metric-grid">
+                    <div>
+                      <span>Checked</span>
+                      <strong>
+                        {
+                          scanReport.report
+                            .checkedKeywords
+                        }
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Entered</span>
+                      <strong>
+                        {(
+                          scanReport.report
+                            .transitions || []
+                        ).filter(
+                          (item) =>
+                            item.action ===
+                            'entered'
+                        ).length}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Dropped</span>
+                      <strong>
+                        {(
+                          scanReport.report
+                            .transitions || []
+                        ).filter(
+                          (item) =>
+                            item.action ===
+                            'dropped'
+                        ).length}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </section>
+          </main>
+
+          {mobileKeywordMenu ? (
+            <div
+              className="kwm-sheet-backdrop"
+              onClick={(event) => {
+                if (
+                  event.target ===
+                  event.currentTarget
+                ) {
+                  setMobileKeywordMenu(null)
+                }
+              }}
+            >
+              <div className="kwm-bottom-sheet">
+                <div className="kwm-sheet-handle" />
+
+                <strong>
+                  {mobileKeywordMenu.keyword}
+                </strong>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTrackedSearch(
+                      mobileKeywordMenu.keyword
+                    )
+                    setMobileKeywordMenu(null)
+                    scrollToMobileStep('track')
+                  }}
+                >
+                  View in track list
+                </button>
+
+                <button
+                  type="button"
+                  className="danger"
+                  onClick={() => {
+                    confirmDelete(
+                      mobileKeywordMenu
+                    )
+                    setMobileKeywordMenu(null)
+                  }}
+                >
+                  Remove keyword
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setMobileKeywordMenu(null)
+                  }
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+
+          {deleteConfirm ? (
+            <div
+              className="kwm-sheet-backdrop"
+              onClick={(event) => {
+                if (
+                  event.target ===
+                  event.currentTarget
+                ) {
+                  setDeleteConfirm(null)
+                }
+              }}
+            >
+              <div className="kwm-bottom-sheet">
+                <div className="kwm-sheet-handle" />
+
+                <strong>Remove keyword?</strong>
+
+                <p>{deleteConfirm.keyword}</p>
+
+                <small>
+                  Tracking history for this
+                  keyword will be removed.
+                </small>
+
+                <button
+                  type="button"
+                  className="danger filled"
+                  onClick={remove}
+                  disabled={deleting}
+                >
+                  {deleting
+                    ? 'Removing...'
+                    : 'Remove keyword'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setDeleteConfirm(null)
+                  }
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      )
+    }
     return (
       <div className="fade-in">
         <AppProcessTopBar
