@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { faChevronLeft, faChevronRight, faCheck } from '@fortawesome/free-solid-svg-icons'
 import './MobileAuditResults.css'
 
 const safeNumber = (value) => {
@@ -92,6 +92,34 @@ export default function MobileAuditResults({
 }) {
   const [expandedKey, setExpandedKey] =
     useState(null)
+
+  // DEVNDESPRO_SMART_TAB_STATE_FINAL
+  const tabScrollerRef = useRef(null)
+  const [canScrollTabsLeft, setCanScrollTabsLeft] = useState(false)
+  const [canScrollTabsRight, setCanScrollTabsRight] = useState(false)
+
+  const updateTabScrollState = () => {
+    const el = tabScrollerRef.current
+    if (!el) return
+
+    const maxScrollLeft = Math.max(0, el.scrollWidth - el.clientWidth)
+
+    setCanScrollTabsLeft(el.scrollLeft > 4)
+    setCanScrollTabsRight(el.scrollLeft < maxScrollLeft - 4)
+  }
+
+  const scrollTabs = (direction) => {
+    const el = tabScrollerRef.current
+    if (!el) return
+
+    const amount = Math.max(180, Math.round(el.clientWidth * 0.70))
+
+    el.scrollBy({
+      left: direction === 'left' ? -amount : amount,
+      behavior: 'smooth',
+    })
+  }
+
 
   const pagesTotal =
     safeNumber(
@@ -228,6 +256,29 @@ export default function MobileAuditResults({
       return sorted
     }, [tabOptions])
 
+  // DEVNDESPRO_SMART_TAB_EFFECT_FINAL
+  useEffect(() => {
+    const el = tabScrollerRef.current
+    if (!el) return
+
+    const handleScroll = () => updateTabScrollState()
+    const handleResize = () => updateTabScrollState()
+
+    updateTabScrollState()
+
+    el.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('resize', handleResize)
+
+    const timer = window.setTimeout(updateTabScrollState, 80)
+
+    return () => {
+      window.clearTimeout(timer)
+      el.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [mobileTabs])
+
+
   const toggleIssue = (issue) => {
     const key =
       issue?._idx ??
@@ -294,7 +345,7 @@ export default function MobileAuditResults({
               <div className="mars-health-inner">
 
                 <strong>
-                  {health ?? 'â€“'}
+                  {health ?? '-'}
                 </strong>
 
                 <span>
@@ -365,7 +416,7 @@ export default function MobileAuditResults({
               <span className="mars-status-dot" />
 
               <strong>
-                {healthyCount ?? 'â€“'}
+                {healthyCount ?? '-'}
               </strong>
 
               <small>
@@ -393,7 +444,7 @@ export default function MobileAuditResults({
                     </span>
 
                     <strong>
-                      {value ?? 'â€“'}
+                      {value ?? '-'}
                     </strong>
                   </div>
 
@@ -493,7 +544,21 @@ export default function MobileAuditResults({
         </header>
 
 
-        <div className="mars-tab-scroller">
+        {/* DEVNDESPRO_SMART_TAB_UI_FINAL */}
+        <div className={`mars-tab-shell ${canScrollTabsLeft ? 'can-scroll-left' : ''} ${canScrollTabsRight ? 'can-scroll-right' : ''}`}>
+
+          {canScrollTabsLeft && (
+            <button
+              type="button"
+              className="mars-tab-arrow mars-tab-arrow-left"
+              aria-label="Scroll filters left"
+              onClick={() => scrollTabs('left')}
+            >
+              <FontAwesomeIcon icon={faChevronLeft} aria-hidden="true" />
+            </button>
+          )}
+
+          <div ref={tabScrollerRef} className="mars-tab-scroller">
 
           {mobileTabs.map((tab) => {
 
@@ -534,6 +599,19 @@ export default function MobileAuditResults({
 
         </div>
 
+          {canScrollTabsRight && (
+            <button
+              type="button"
+              className="mars-tab-arrow mars-tab-arrow-right"
+              aria-label="Scroll filters right"
+              onClick={() => scrollTabs('right')}
+            >
+              <FontAwesomeIcon icon={faChevronRight} aria-hidden="true" />
+            </button>
+          )}
+
+        </div>
+
 
         <div className="mars-issue-list">
 
@@ -542,7 +620,7 @@ export default function MobileAuditResults({
             <div className="mars-no-issues">
 
               <div>
-                âœ“
+                OK
               </div>
 
               <strong>
@@ -602,15 +680,7 @@ export default function MobileAuditResults({
                           }`
                         }
                       >
-                        {
-                          severity ===
-                          'critical'
-                            ? '!'
-                            : severity ===
-                              'warning'
-                              ? '!'
-                              : 'âœ“'
-                        }
+                        {severity === 'passed' ? 'OK' : '!'}
                       </span>
 
 

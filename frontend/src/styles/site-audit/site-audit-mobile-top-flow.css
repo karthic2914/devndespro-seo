@@ -1,0 +1,113 @@
+/* ==========================================================
+   DEVNDESPRO SEO
+   Mobile Site Audit Flow
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  .site-audit-content {
+    padding-top: 12px !important;
+  }
+
+  /*
+   * Keep process steps in one clean row.
+   */
+  .app-process-topbar,
+  .process-topbar,
+  .process-flow,
+  .process-steps {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    scrollbar-width: none;
+
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app-process-topbar::-webkit-scrollbar,
+  .process-topbar::-webkit-scrollbar,
+  .process-flow::-webkit-scrollbar,
+  .process-steps::-webkit-scrollbar {
+    display: none;
+  }
+
+  /*
+   * Better mobile tap targets.
+   */
+  .app-process-topbar button,
+  .process-topbar button,
+  .process-flow button,
+  .process-steps button {
+    min-height: 38px !important;
+    min-width: max-content;
+
+    padding: 6px 9px !important;
+
+    flex-shrink: 0;
+
+    white-space: nowrap;
+
+    touch-action: manipulation;
+  }
+
+  /*
+   * Progress step numbers.
+   */
+  .app-process-topbar button > span:first-child,
+  .process-topbar button > span:first-child {
+    flex-shrink: 0;
+  }
+
+  /*
+   * Ensure smooth scroll targets are not hidden
+   * behind the sticky top navigation.
+   */
+  #mobile-audit-run-target {
+    scroll-margin-top:
+      calc(
+        124px +
+        env(safe-area-inset-top, 0px)
+      );
+  }
+
+  #mobile-audit-findings-target {
+    scroll-margin-top:
+      calc(
+        132px +
+        env(safe-area-inset-top, 0px)
+      );
+  }
+
+}
+
+
+/* Smaller phones */
+
+@media (max-width: 390px) {
+
+  .app-process-topbar button,
+  .process-topbar button,
+  .process-flow button,
+  .process-steps button {
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+
+}
+/* DEVNDESPRO MOBILE REVIEW ISSUES ANCHOR V3 */
+@media (max-width: 767px) {
+
+  .mobile-review-issues-anchor {
+    display: block;
+
+    width: 100%;
+    height: 1px;
+
+    scroll-margin-top:
+      calc(
+        145px +
+        env(safe-area-inset-top, 0px)
+      );
+  }
+
+}

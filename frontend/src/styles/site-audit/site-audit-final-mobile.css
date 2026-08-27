@@ -899,3 +899,102 @@
   }
 
 }
+/* ==========================================================
+   DEVNDESPRO FINAL MOBILE ISSUE FILTER FIX
+   ========================================================== */
+
+@media (max-width: 767px) {
+
+  .mars-filter-row {
+    display: flex !important;
+    align-items: center !important;
+
+    gap: 8px !important;
+
+    width: 100% !important;
+    max-width: 100% !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    padding:
+      4px 14px
+      8px 14px !important;
+
+    margin:
+      0 !important;
+
+    box-sizing: border-box !important;
+
+    scroll-padding-left: 14px !important;
+    scroll-padding-right: 14px !important;
+
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+
+    touch-action: pan-x;
+  }
+
+  .mars-filter-row::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /*
+   * Remove pseudo spacers from older phase CSS.
+   * They are causing left/right clipping.
+   */
+  .mars-filter-row::before,
+  .mars-filter-row::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .mars-filter-chip {
+    flex:
+      0 0 auto !important;
+
+    min-width: max-content !important;
+    max-width: none !important;
+
+    height: 40px !important;
+    min-height: 40px !important;
+
+    padding:
+      0 14px !important;
+
+    margin: 0 !important;
+
+    border-radius: 999px !important;
+
+    white-space: nowrap !important;
+
+    scroll-snap-align: start;
+
+    touch-action: manipulation;
+  }
+
+  /*
+   * Make sure first and last chips have visible breathing room.
+   */
+  .mars-filter-chip:first-child {
+    margin-left: 0 !important;
+  }
+
+  .mars-filter-chip:last-child {
+    margin-right: 2px !important;
+  }
+
+  /*
+   * The findings card must not clip the horizontal filter row.
+   */
+  .mars-findings,
+  .mars-findings-section,
+  .mars-issues-section,
+  .mobile-audit-findings-slot {
+    overflow-x: visible !important;
+  }
+
+}

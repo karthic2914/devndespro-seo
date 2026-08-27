@@ -29,9 +29,9 @@ export const APP_SEO_JOURNEY = [
   },
   {
     id: 'actions',
-    label: 'Action Plan',
-    hint: 'Fix highest-impact tasks',
-    path: 'actions',
+    label: 'Actions',
+    hint: 'Turn issues into tasks',
+    sectionId: 'audit-section-actions-desktop',
   },
 ]
 
@@ -164,9 +164,9 @@ export const AUDIT_PAGE_FLOW = [
   },
   {
     id: 'actions',
-    label: 'Action Plan',
+    label: 'Actions',
     hint: 'Turn issues into tasks',
-    path: 'actions',
+    sectionId: 'audit-section-actions-desktop',
   },
   {
     id: 'recheck',
