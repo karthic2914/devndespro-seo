@@ -16,7 +16,7 @@ const BUSINESS_TERMS = [
   'webutvikling', 'webshop', 'e-commerce', 'ecommerce',
 ]
 
-// Known false positives  platform/tool names that pass the business-term
+// Known false positives - platform/tool names that pass the business-term
 // or commercial-intent check but aren't real content opportunities.
 const EXCLUDED_TERMS = [
   'uniweb', 'rcube', 'kontrollpanel', 'websupporten',
@@ -131,7 +131,7 @@ async function dfsPost(authHeader, path, payload) {
     [payload],
     {
       headers: { Authorization: `Basic ${authHeader}`, 'Content-Type': 'application/json' },
-      timeout: 30000,
+      timeout: 15000,
     }
   )
   const task = data?.tasks?.[0]
@@ -181,7 +181,7 @@ function buildWhy(item, seed) {
   if (item.difficultyScore != null) parts.push(`KD ${item.difficultyScore}`)
   if (item.intent) parts.push(`${item.intent} intent`)
   if (item.volume) parts.push(`${Number(item.volume).toLocaleString()} searches/mo`)
-  // Use ASCII separator only â€” Unicode middot gets mojibake'd in some DB/client paths
+  // Use ASCII separator only - Unicode middot gets mojibake'd in some DB/client paths
   return parts.join(' | ') || 'Adjacent opportunity for your niche'
 }
 
@@ -724,12 +724,28 @@ async function runKeywordGap({ siteId, competitorDomains = [], locationCode = nu
 
   const perDomainLimit = Math.max(30, Math.min(150, Number(limit) || 80))
 
-  const [yours, ...compLists] = await Promise.all([
-    fetchDfsRankedKeywords({ authHeader, domain: yourDomain, location, limit: perDomainLimit }),
-    ...domains.map((domain) =>
-      fetchDfsRankedKeywords({ authHeader, domain, location, limit: perDomainLimit })
-    ),
-  ])
+  const withHardTimeout = (promise, ms, label) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) =>
+        setTimeout(() => {
+          const err = new Error(`${label} took too long. Try fewer competitors or try again.`)
+          err.status = 504
+          reject(err)
+        }, ms)
+      ),
+    ])
+
+  const [yours, ...compLists] = await withHardTimeout(
+    Promise.all([
+      fetchDfsRankedKeywords({ authHeader, domain: yourDomain, location, limit: perDomainLimit }),
+      ...domains.map((domain) =>
+        fetchDfsRankedKeywords({ authHeader, domain, location, limit: perDomainLimit })
+      ),
+    ]),
+    20000,
+    'Keyword gap lookup'
+  )
 
   const yourMap = new Map(yours.map((k) => [keywordKey(k.keyword), k]))
   const competitorMaps = domains.map((domain, i) => ({
@@ -761,6 +777,8 @@ async function runKeywordGap({ siteId, competitorDomains = [], locationCode = nu
       .map((c) => c.map.get(key))
       .find(Boolean)
 
+    const relevant = isRelevantKeyword(base.keyword, base.intent)
+
     const row = {
       keyword: base.keyword,
       volume: base.volume || best.volume || 0,
@@ -771,7 +789,15 @@ async function runKeywordGap({ siteId, competitorDomains = [], locationCode = nu
       bestCompetitor: best.domain,
       bestCompetitorPosition: best.position,
       competitors: fromCompetitors,
-      opportunity: opportunityTag(base.volume || 0, base.difficultyScore || 50),
+      relevance: relevant,
+      opportunity: relevant
+        ? opportunityTag(base.volume || 0, base.difficultyScore || 50)
+        : {
+            label: 'Low relevance',
+            color: '#64748b',
+            bg: '#f1f5f9',
+            score: 0,
+          },
     }
 
     if (yoursItem == null) {
@@ -802,16 +828,21 @@ async function runKeywordGap({ siteId, competitorDomains = [], locationCode = nu
   shared.sort(byOpp)
   uniqueToYou.sort((a, b) => (b.volume || 0) - (a.volume || 0))
 
+  // Keyword Gap should surface SEO/business opportunities,
+  // not every unrelated phrase a competitor happens to rank for.
+  const relevantMissing = missing.filter((row) => row.relevance !== false)
+  const relevantShared = shared.filter((row) => row.relevance !== false)
+
   return {
     yourDomain,
     competitors: domains,
     location: location.name || location.code,
-    missing: missing.slice(0, 100),
-    shared: shared.slice(0, 50),
+    missing: relevantMissing.slice(0, 100),
+    shared: relevantShared.slice(0, 50),
     uniqueToYou: uniqueToYou.slice(0, 50),
     counts: {
-      missing: missing.length,
-      shared: shared.length,
+      missing: relevantMissing.length,
+      shared: relevantShared.length,
       uniqueToYou: uniqueToYou.length,
     },
   }

@@ -16,6 +16,7 @@ import api from '../utils/api'
 import toast from '../utils/toast'
 import ScoreInfoTip from '../components/ScoreInfoTip'
 import MobileKeywordGap from './keywords-mobile/MobileKeywordGap'
+import MobileBottomSelect from './keywords-mobile/MobileBottomSelect'
 import '../styles/keywords-mobile-native.css'
 import {
   resolveRankMovement,
@@ -159,6 +160,10 @@ import {
     const [keywords, setKeywords] = useState([])
     const [loading, setLoading] = useState(true)
     const [form, setForm] = useState({ keyword: '', volume: '', difficulty: 'Easy' })
+    const [keywordAddErrors, setKeywordAddErrors] = useState({
+      keyword: '',
+      volume: '',
+    })
     const [adding, setAdding] = useState(false)
     const [engine, setEngine] = useState('google')
     const [checking, setChecking] = useState(false)
@@ -212,6 +217,7 @@ import {
     )
     const [mobileDiscoverTab, setMobileDiscoverTab] = useState('visibility')
     const [mobileKeywordMenu, setMobileKeywordMenu] = useState(null)
+    const [difficultySheetOpen, setDifficultySheetOpen] = useState(false)
 
     useEffect(() => {
       if (typeof window === 'undefined') return undefined
@@ -665,28 +671,146 @@ import {
 
     useEffect(() => { setPage1Data(null); setPage1Map({}) }, [engine])
 
-    const add = async () => {
-      if (!form.keyword.trim()) return
-      const key = form.keyword.toLowerCase().trim()
-      if (addedKeywords.has(key)) { toast('Already tracked', { icon: '\u2139\uFE0F' }); return }
-      setAdding(true)
-      try {
-        await api.post(`/sites/${siteId}/keywords`, {
-          keyword: form.keyword.trim(), volume: parseInt(form.volume) || 0,
-          difficulty: form.difficulty, position: null,
-        })
-        setForm({ keyword: '', volume: '', difficulty: 'Easy' })
-      toast.success('Keyword added successfully')
-        load()
-      } catch (e) {
-        const msg = e.response?.data?.error || ''
-        if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already')) {
-          toast('Already tracked', { icon: '\u2139\uFE0F' })
-        } else {
-          toast.error('Failed to add keyword')
+
+    const validateKeywordAddForm = () => {
+      const errors = {
+        keyword: '',
+        volume: '',
+      }
+
+      const keyword = String(form.keyword || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+
+      const rawVolume = String(form.volume ?? '').trim()
+
+      if (!keyword) {
+        errors.keyword = 'Enter a keyword'
+      }
+      else if (keyword.length > 255) {
+        errors.keyword = 'Keyword must be 255 characters or fewer'
+      }
+      else if (/\.(com|no|net|org|io|co)$/i.test(keyword)) {
+        errors.keyword = 'Enter a search keyword, not a domain'
+      }
+
+      if (rawVolume) {
+        const parsedVolume = Number(rawVolume)
+
+        if (!Number.isFinite(parsedVolume)) {
+          errors.volume = 'Enter a valid volume'
+        }
+        else if (parsedVolume < 0) {
+          errors.volume = 'Volume cannot be negative'
+        }
+        else if (!Number.isInteger(parsedVolume)) {
+          errors.volume = 'Volume must be a whole number'
         }
       }
-      setAdding(false)
+
+      setKeywordAddErrors(errors)
+
+      return {
+        valid: !errors.keyword && !errors.volume,
+        keyword,
+        volume: rawVolume ? Number(rawVolume) : 0,
+        firstError: errors.keyword || errors.volume || '',
+      }
+    }
+
+    const add = async () => {
+      if (adding) return
+
+      const validation = validateKeywordAddForm()
+
+      if (!validation.valid) {
+        toast.error(
+          validation.firstError || 'Check the keyword details'
+        )
+        return
+      }
+
+      const key = validation.keyword.toLowerCase()
+
+      if (addedKeywords.has(key)) {
+        setKeywordAddErrors((previous) => ({
+          ...previous,
+          keyword: 'This keyword is already tracked',
+        }))
+
+        toast('Already tracked')
+        return
+      }
+
+      setAdding(true)
+
+      try {
+        await api.post(`/sites/${siteId}/keywords`, {
+          keyword: validation.keyword,
+          volume: validation.volume,
+          difficulty: form.difficulty,
+          position: null,
+        })
+
+        setForm({
+          keyword: '',
+          volume: '',
+          difficulty: 'Easy',
+        })
+
+        setKeywordAddErrors({
+          keyword: '',
+          volume: '',
+        })
+
+        toast.success('Keyword added successfully')
+
+        await load()
+      }
+      catch (error) {
+        const message =
+          error.response?.data?.error ||
+          'Failed to add keyword'
+
+        const lower = message.toLowerCase()
+
+        if (
+          lower.includes('duplicate') ||
+          lower.includes('already')
+        ) {
+          setKeywordAddErrors((previous) => ({
+            ...previous,
+            keyword: 'This keyword is already tracked',
+          }))
+
+          toast('Already tracked')
+        }
+        else if (
+          lower.includes('domain') ||
+          lower.includes('keyword')
+        ) {
+          setKeywordAddErrors((previous) => ({
+            ...previous,
+            keyword: message,
+          }))
+
+          toast.error(message)
+        }
+        else if (lower.includes('volume')) {
+          setKeywordAddErrors((previous) => ({
+            ...previous,
+            volume: message,
+          }))
+
+          toast.error(message)
+        }
+        else {
+          toast.error(message)
+        }
+      }
+      finally {
+        setAdding(false)
+      }
     }
 
     const updatePos = async (id, position) => {
@@ -1114,12 +1238,17 @@ import {
                 </div>
 
                 <div className="kwm-two-col">
-                  <select
+                  <MobileBottomSelect
+                    label="Market"
+                    kind="market"
                     value={researchLocation}
-                    onChange={(event) => {
-                      const code = Number(
-                        event.target.value
-                      )
+                    options={RESEARCH_LOCATIONS.map((location) => ({
+                      value: location.code,
+                      label: location.name,
+                      description: location.language,
+                    }))}
+                    onChange={(value) => {
+                      const code = Number(value)
 
                       setResearchLocation(code)
 
@@ -1135,37 +1264,31 @@ import {
                         )
                       }
                     }}
-                  >
-                    {RESEARCH_LOCATIONS.map(
-                      (location) => (
-                        <option
-                          key={location.code}
-                          value={location.code}
-                        >
-                          {location.name}
-                        </option>
-                      )
-                    )}
-                  </select>
+                  />
 
-                  <select
+                  <MobileBottomSelect
+                    label="Language"
+                    kind="language"
                     value={researchLanguage}
-                    onChange={(event) =>
-                      setResearchLanguage(
-                        event.target.value
-                      )
-                    }
-                  >
-                    <option value="English">
-                      English
-                    </option>
-                    <option value="Norwegian">
-                      Norwegian
-                    </option>
-                    <option value="German">
-                      German
-                    </option>
-                  </select>
+                    options={[
+                      {
+                        value: 'English',
+                        label: 'English',
+                        description: 'English search results',
+                      },
+                      {
+                        value: 'Norwegian',
+                        label: 'Norwegian',
+                        description: 'Norwegian search results',
+                      },
+                      {
+                        value: 'German',
+                        label: 'German',
+                        description: 'German search results',
+                      },
+                    ]}
+                    onChange={setResearchLanguage}
+                  />
                 </div>
 
                 <button
@@ -1233,30 +1356,39 @@ import {
                       placeholder="Filter results"
                     />
 
-                    <select
+                    <MobileBottomSelect
+                      label="Sort results"
+                      kind="sort"
                       value={researchSort}
-                      onChange={(event) =>
-                        setResearchSort(
-                          event.target.value
-                        )
-                      }
-                    >
-                      <option value="volume">
-                        Volume
-                      </option>
-                      <option value="difficulty">
-                        Easy first
-                      </option>
-                      <option value="opportunity">
-                        Opportunity
-                      </option>
-                      <option value="cpc">
-                        CPC
-                      </option>
-                      <option value="alpha">
-                        A-Z
-                      </option>
-                    </select>
+                      options={[
+                        {
+                          value: 'volume',
+                          label: 'Volume',
+                          description: 'Highest search volume first',
+                        },
+                        {
+                          value: 'difficulty',
+                          label: 'Easy first',
+                          description: 'Lowest keyword difficulty first',
+                        },
+                        {
+                          value: 'opportunity',
+                          label: 'Opportunity',
+                          description: 'Best SEO opportunity first',
+                        },
+                        {
+                          value: 'cpc',
+                          label: 'CPC',
+                          description: 'Highest cost per click first',
+                        },
+                        {
+                          value: 'alpha',
+                          label: 'A-Z',
+                          description: 'Alphabetical order',
+                        },
+                      ]}
+                      onChange={setResearchSort}
+                    />
                   </div>
 
                   <div className="kwm-stat-strip">
@@ -1417,47 +1549,98 @@ import {
               </div>
 
               <div className="kwm-add-card">
-                <input
-                  value={form.keyword}
-                  onChange={(event) =>
-                    setForm((previous) => ({
-                      ...previous,
-                      keyword: event.target.value,
-                    }))
-                  }
-                  onKeyDown={(event) =>
-                    event.key === 'Enter' && add()
-                  }
-                  placeholder="Add keyword"
-                />
-
-                <div className="kwm-two-col">
+                <div className="keyword-add-field">
                   <input
-                    type="number"
-                    value={form.volume}
-                    onChange={(event) =>
+                    value={form.keyword}
+                    className={keywordAddErrors.keyword ? 'keyword-add-invalid' : ''}
+                    aria-invalid={Boolean(keywordAddErrors.keyword)}
+                    onChange={(event) => {
                       setForm((previous) => ({
                         ...previous,
-                        volume: event.target.value,
+                        keyword: event.target.value,
                       }))
+
+                      if (keywordAddErrors.keyword) {
+                        setKeywordAddErrors((previous) => ({
+                          ...previous,
+                          keyword: '',
+                        }))
+                      }
+                    }}
+                    onKeyDown={(event) =>
+                      event.key === 'Enter' && add()
                     }
-                    placeholder="Volume"
+                    placeholder="Add keyword"
                   />
 
-                  <select
-                    value={form.difficulty}
-                    onChange={(event) =>
-                      setForm((previous) => ({
-                        ...previous,
-                        difficulty:
-                          event.target.value,
-                      }))
-                    }
+                  {keywordAddErrors.keyword ? (
+                    <small className="keyword-add-error">
+                      {keywordAddErrors.keyword}
+                    </small>
+                  ) : null}
+                </div>
+
+                <div className="kwm-two-col">
+                  <div className="keyword-add-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      inputMode="numeric"
+                      value={form.volume}
+                      className={keywordAddErrors.volume ? 'keyword-add-invalid' : ''}
+                      aria-invalid={Boolean(keywordAddErrors.volume)}
+                      onChange={(event) => {
+                        setForm((previous) => ({
+                          ...previous,
+                          volume: event.target.value,
+                        }))
+
+                        if (keywordAddErrors.volume) {
+                          setKeywordAddErrors((previous) => ({
+                            ...previous,
+                            volume: '',
+                          }))
+                        }
+                      }}
+                      placeholder="Volume"
+                    />
+
+                    {keywordAddErrors.volume ? (
+                      <small className="keyword-add-error">
+                        {keywordAddErrors.volume}
+                      </small>
+                    ) : null}
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`kwm-difficulty-trigger ${form.difficulty.toLowerCase()}`}
+                    onClick={() => setDifficultySheetOpen(true)}
                   >
-                    <option>Easy</option>
-                    <option>Medium</option>
-                    <option>Hard</option>
-                  </select>
+                    <span className="kwm-difficulty-trigger-left">
+                      <span className={`kwm-difficulty-icon ${form.difficulty.toLowerCase()}`}>
+                        <FontAwesomeIcon
+                          icon={
+                            form.difficulty === 'Easy'
+                              ? faCircleCheck
+                              : form.difficulty === 'Medium'
+                                ? faChartLine
+                                : faBolt
+                          }
+                        />
+                      </span>
+
+                      <span className="kwm-difficulty-trigger-copy">
+                        <small>Difficulty</small>
+                        <strong>{form.difficulty}</strong>
+                      </span>
+                    </span>
+
+                    <span className="kwm-difficulty-chevron">
+                      Select
+                    </span>
+                  </button>
                 </div>
 
                 <div className="kwm-two-col">
@@ -1465,7 +1648,7 @@ import {
                     type="button"
                     className="kwm-primary-button"
                     onClick={add}
-                    disabled={adding}
+                    disabled={adding || !form.keyword.trim()}
                   >
                     <FontAwesomeIcon icon={faPlus} />
                     {adding ? 'Adding...' : 'Add'}
@@ -1707,21 +1890,17 @@ import {
 
               <div className="kwm-rank-summary">
                 <div className="kwm-rank-summary-top">
-                  <select
+                  <MobileBottomSelect
+                    label="Search engine"
+                    kind="engine"
                     value={engine}
-                    onChange={(event) =>
-                      setEngine(event.target.value)
-                    }
-                  >
-                    {ENGINES.map((item) => (
-                      <option
-                        key={item.value}
-                        value={item.value}
-                      >
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={ENGINES.map((item) => ({
+                      value: item.value,
+                      label: item.label,
+                      description: 'Ranking source',
+                    }))}
+                    onChange={setEngine}
+                  />
                 </div>
 
                 <div className="kwm-rank-summary-grid">
@@ -1840,7 +2019,96 @@ import {
             </section>
           </main>
 
-          {mobileKeywordMenu ? (
+                    {/* DEVNDESPRO_DIFFICULTY_BOTTOM_SHEET */}
+          {difficultySheetOpen ? (
+            <div
+              className="kwm-sheet-backdrop"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setDifficultySheetOpen(false)
+                }
+              }}
+            >
+              <div className="kwm-bottom-sheet kwm-difficulty-sheet">
+                <div className="kwm-sheet-handle" />
+
+                <div className="kwm-difficulty-sheet-heading">
+                  <strong>Select difficulty</strong>
+                  <span>Choose the competition level</span>
+                </div>
+
+                {[
+                  {
+                    value: 'Easy',
+                    title: 'Easy',
+                    description: 'Lower competition',
+                    icon: faCircleCheck,
+                  },
+                  {
+                    value: 'Medium',
+                    title: 'Medium',
+                    description: 'Moderate competition',
+                    icon: faChartLine,
+                  },
+                  {
+                    value: 'Hard',
+                    title: 'Hard',
+                    description: 'Highly competitive',
+                    icon: faBolt,
+                  },
+                ].map((option) => {
+                  const selected =
+                    form.difficulty === option.value
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`kwm-difficulty-option ${option.value.toLowerCase()} ${selected ? 'selected' : ''}`}
+                      onClick={() => {
+                        setForm((previous) => ({
+                          ...previous,
+                          difficulty: option.value,
+                        }))
+
+                        setDifficultySheetOpen(false)
+                      }}
+                    >
+                      <span className="kwm-difficulty-option-left">
+                        <span className={`kwm-difficulty-icon ${option.value.toLowerCase()}`}>
+                          <FontAwesomeIcon icon={option.icon} />
+                        </span>
+
+                        <span className="kwm-difficulty-option-copy">
+                          <strong>{option.title}</strong>
+                          <small>{option.description}</small>
+                        </span>
+                      </span>
+
+                      <span
+                        className={`kwm-difficulty-radio ${selected ? 'selected' : ''}`}
+                      >
+                        {selected ? (
+                          <FontAwesomeIcon icon={faCircleCheck} />
+                        ) : null}
+                      </span>
+                    </button>
+                  )
+                })}
+
+                <button
+                  type="button"
+                  className="kwm-difficulty-cancel"
+                  onClick={() =>
+                    setDifficultySheetOpen(false)
+                  }
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+{mobileKeywordMenu ? (
             <div
               className="kwm-sheet-backdrop"
               onClick={(event) => {
@@ -2174,29 +2442,56 @@ import {
                 onKeyDown={e => e.key === 'Enter' && searchDataForSEO()}
                 style={{ flex: 2, minWidth: 220 }}
               />
-              <select
-                value={researchLocation}
-                onChange={(e) => {
-                  const code = Number(e.target.value)
-                  setResearchLocation(code)
-                  const loc = RESEARCH_LOCATIONS.find((l) => l.code === code)
-                  if (loc) setResearchLanguage(loc.language)
-                }}
-                style={{ width: 160, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff', color: T.text2 }}
-              >
-                {RESEARCH_LOCATIONS.map((l) => (
-                  <option key={l.code} value={l.code}>{l.name}</option>
-                ))}
-              </select>
-              <select
-                value={researchLanguage}
-                onChange={(e) => setResearchLanguage(e.target.value)}
-                style={{ width: 130, border: `1px solid ${T.border}`, borderRadius: 8, padding: '8px 10px', fontSize: 12, background: '#fff', color: T.text2 }}
-              >
-                <option value="English">English</option>
-                <option value="Norwegian">Norwegian</option>
-                <option value="German">German</option>
-              </select>
+              <MobileBottomSelect
+                    label="Market"
+                    kind="market"
+                    value={researchLocation}
+                    options={RESEARCH_LOCATIONS.map((location) => ({
+                      value: location.code,
+                      label: location.name,
+                      description: location.language,
+                    }))}
+                    onChange={(value) => {
+                      const code = Number(value)
+
+                      setResearchLocation(code)
+
+                      const location =
+                        RESEARCH_LOCATIONS.find(
+                          (item) =>
+                            item.code === code
+                        )
+
+                      if (location) {
+                        setResearchLanguage(
+                          location.language
+                        )
+                      }
+                    }}
+                  />
+              <MobileBottomSelect
+                    label="Language"
+                    kind="language"
+                    value={researchLanguage}
+                    options={[
+                      {
+                        value: 'English',
+                        label: 'English',
+                        description: 'English search results',
+                      },
+                      {
+                        value: 'Norwegian',
+                        label: 'Norwegian',
+                        description: 'Norwegian search results',
+                      },
+                      {
+                        value: 'German',
+                        label: 'German',
+                        description: 'German search results',
+                      },
+                    ]}
+                    onChange={setResearchLanguage}
+                  />
               <OrangeBtn onClick={searchDataForSEO} disabled={dfsLoading || !dfsQuery.trim()}>
                 {dfsLoading
                   ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Searching...</>
@@ -2409,17 +2704,39 @@ import {
                       onChange={(e) => setResearchFilter(e.target.value)}
                       style={{ width: 150, fontSize: 12 }}
                     />
-                    <select
+                    <MobileBottomSelect
+                      label="Sort results"
+                      kind="sort"
                       value={researchSort}
-                      onChange={(e) => setResearchSort(e.target.value)}
-                      style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, background: '#fff', color: T.text2 }}
-                    >
-                      <option value="volume">Sort: Volume</option>
-                      <option value="difficulty">Sort: KD (easy first)</option>
-                      <option value="opportunity">Sort: Opportunity</option>
-                      <option value="cpc">Sort: CPC</option>
-                      <option value="alpha">Sort: A-Z</option>
-                    </select>
+                      options={[
+                        {
+                          value: 'volume',
+                          label: 'Volume',
+                          description: 'Highest search volume first',
+                        },
+                        {
+                          value: 'difficulty',
+                          label: 'Easy first',
+                          description: 'Lowest keyword difficulty first',
+                        },
+                        {
+                          value: 'opportunity',
+                          label: 'Opportunity',
+                          description: 'Best SEO opportunity first',
+                        },
+                        {
+                          value: 'cpc',
+                          label: 'CPC',
+                          description: 'Highest cost per click first',
+                        },
+                        {
+                          value: 'alpha',
+                          label: 'A-Z',
+                          description: 'Alphabetical order',
+                        },
+                      ]}
+                      onChange={setResearchSort}
+                    />
                     <select
                       value={minVolume}
                       onChange={(e) => setMinVolume(Number(e.target.value))}
@@ -2632,12 +2949,64 @@ import {
           <Card padding="1.25rem">
             <SectionLabel>Add keyword manually</SectionLabel>
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <input placeholder="Keyword" value={form.keyword} onChange={e => setForm(p => ({ ...p, keyword: e.target.value }))} onKeyDown={e => e.key === 'Enter' && add()} style={{ flex: 2, minWidth: 200 }} />
-              <input placeholder="Vol/mo" value={form.volume} onChange={e => setForm(p => ({ ...p, volume: e.target.value }))} style={{ width: 90 }} type="number" />
+              <div className="keyword-add-field" style={{ flex: 2, minWidth: 200 }}>
+                <input
+                  placeholder="Keyword"
+                  value={form.keyword}
+                  className={keywordAddErrors.keyword ? 'keyword-add-invalid' : ''}
+                  aria-invalid={Boolean(keywordAddErrors.keyword)}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, keyword: e.target.value }))
+
+                    if (keywordAddErrors.keyword) {
+                      setKeywordAddErrors((previous) => ({
+                        ...previous,
+                        keyword: '',
+                      }))
+                    }
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && add()}
+                  style={{ width: '100%' }}
+                />
+
+                {keywordAddErrors.keyword ? (
+                  <small className="keyword-add-error">
+                    {keywordAddErrors.keyword}
+                  </small>
+                ) : null}
+              </div>
+              <div className="keyword-add-field" style={{ width: 110 }}>
+                <input
+                  placeholder="Vol/mo"
+                  value={form.volume}
+                  className={keywordAddErrors.volume ? 'keyword-add-invalid' : ''}
+                  aria-invalid={Boolean(keywordAddErrors.volume)}
+                  onChange={(e) => {
+                    setForm((p) => ({ ...p, volume: e.target.value }))
+
+                    if (keywordAddErrors.volume) {
+                      setKeywordAddErrors((previous) => ({
+                        ...previous,
+                        volume: '',
+                      }))
+                    }
+                  }}
+                  style={{ width: '100%' }}
+                  type="number"
+                  min="0"
+                  step="1"
+                />
+
+                {keywordAddErrors.volume ? (
+                  <small className="keyword-add-error">
+                    {keywordAddErrors.volume}
+                  </small>
+                ) : null}
+              </div>
               <select value={form.difficulty} onChange={e => setForm(p => ({ ...p, difficulty: e.target.value }))} style={{ width: 110 }}>
                 <option>Easy</option><option>Medium</option><option>Hard</option>
               </select>
-              <OrangeBtn onClick={add} disabled={adding}>
+              <OrangeBtn onClick={add} disabled={adding || !form.keyword.trim()}>
                 {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add</>}
               </OrangeBtn>
               <OrangeBtn onClick={generateAiSuggestions} disabled={aiLoading}>
@@ -2702,9 +3071,17 @@ import {
                 Tracked Keywords ({keywords.length})
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                <select value={engine} onChange={e => setEngine(e.target.value)} style={{ border: `1px solid ${T.border}`, borderRadius: 8, padding: '6px 9px', fontSize: 12, color: T.text2, background: '#fff' }}>
-                  {ENGINES.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-                </select>
+                <MobileBottomSelect
+                    label="Search engine"
+                    kind="engine"
+                    value={engine}
+                    options={ENGINES.map((item) => ({
+                      value: item.value,
+                      label: item.label,
+                      description: 'Ranking source',
+                    }))}
+                    onChange={setEngine}
+                  />
                 <OrangeBtn onClick={refreshFirstPage} disabled={checking || !keywords.length}>
                   {checking ? <><FontAwesomeIcon icon={faArrowsRotate} spin style={{ marginRight: 6 }} />Checking...</> : <><FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} />Check Page 1</>}
                 </OrangeBtn>

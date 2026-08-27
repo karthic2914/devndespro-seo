@@ -10,6 +10,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import api from '../../utils/api'
 import toast from '../../utils/toast'
+import MobileBottomSelect from './MobileBottomSelect'
 
 const LOCATIONS = [
   { code: 2578, name: 'Norway' },
@@ -54,6 +55,7 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
   const [result, setResult] = useState(null)
   const [view, setView] = useState('missing')
   const [addingKey, setAddingKey] = useState(null)
+  const [trackedKeywordKeys, setTrackedKeywordKeys] = useState(() => new Set())
 
   useEffect(() => {
     if (!siteId) return
@@ -133,6 +135,38 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
     setDiscovering(false)
   }
 
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadTrackedKeywordKeys() {
+      try {
+        const { data } = await api.get(`/sites/${siteId}/keywords`)
+
+        if (cancelled) return
+
+        setTrackedKeywordKeys(
+          new Set(
+            (Array.isArray(data) ? data : [])
+              .map((item) =>
+                String(item?.keyword || '')
+                  .toLowerCase()
+                  .trim()
+              )
+              .filter(Boolean)
+          )
+        )
+      } catch {
+        // Existing page behaviour remains available even if refresh fails.
+      }
+    }
+
+    loadTrackedKeywordKeys()
+
+    return () => {
+      cancelled = true
+    }
+  }, [siteId])
   const compare = async () => {
     const domains = []
 
@@ -192,6 +226,11 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
         difficulty: row.difficulty || 'Medium',
         position: row.yourPosition || null,
       })
+      setTrackedKeywordKeys((previous) => {
+        const next = new Set(previous)
+        next.add(String(row.keyword || '').toLowerCase().trim())
+        return next
+      })
 
       toast.success(`Tracked: ${row.keyword}`)
       onAdded?.()
@@ -228,16 +267,21 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
 
         <div className="kwm-gap-field">
           <span className="kwm-gap-field-label">Market</span>
-          <select
+          <MobileBottomSelect
+            label="Market"
+            kind="market"
             value={locationCode}
-            onChange={(event) => setLocationCode(Number(event.target.value))}
-          >
-            {LOCATIONS.map((location) => (
-              <option key={location.code} value={location.code}>
-                {location.name}
-              </option>
-            ))}
-          </select>
+            options={LOCATIONS.map((location) => ({
+              value: location.code,
+              label: location.name,
+              description: 'Keyword gap market',
+            }))}
+            onChange={(value) =>
+              setLocationCode(
+                Number(value)
+              )
+            }
+          />
         </div>
 
         <div className="kwm-gap-competitor-heading">
@@ -383,8 +427,8 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
                   {view !== 'unique' ? (
                     <button
                       type="button"
-                      className="kwm-gap-track"
-                      disabled={addingKey === row.keyword}
+                      className={`kwm-gap-track ${trackedKeywordKeys.has(String(row.keyword || '').toLowerCase().trim()) ? 'is-tracked' : addingKey === row.keyword ? 'is-tracking' : ''}`}
+                      disabled={addingKey === row.keyword || trackedKeywordKeys.has(String(row.keyword || '').toLowerCase().trim())}
                       onClick={() => addKeyword(row)}
                     >
                       <FontAwesomeIcon
@@ -395,7 +439,11 @@ export default function MobileKeywordGap({ siteId, onAdded }) {
                         }
                         spin={addingKey === row.keyword}
                       />
-                      {addingKey === row.keyword ? 'Tracking...' : 'Track keyword'}
+                      {trackedKeywordKeys.has(String(row.keyword || '').toLowerCase().trim())
+  ? '✓ Tracked'
+  : addingKey === row.keyword
+    ? 'Tracking...'
+    : 'Track keyword'}
                     </button>
                   ) : null}
                 </article>
