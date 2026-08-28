@@ -8,6 +8,7 @@ import AppProcessTopBar from '../components/AppProcessTopBar'
 import { ACTIONS_PAGE_FLOW } from '../constants/pageFlows'
 import useProcessScrollSpy from '../hooks/useProcessScrollSpy'
 import api from '../utils/api'
+import MobileActionPlan from './actions-mobile/MobileActionPlan'
 
 function impactRank(impact) {
   const i = String(impact || '').toLowerCase()
@@ -392,6 +393,7 @@ export default function Actions() {
           },
         }))}
       />
+      <div className="actions-desktop-layout">
       <div className="page-content">
       <PageHeader
         title="Action Plan"
@@ -539,6 +541,26 @@ export default function Actions() {
         </div>
       )}
       </div>
+      </div>
+
+      <MobileActionPlan
+        actions={actions}
+        pending={pending}
+        completed={completed}
+        next={next}
+        doFirst={doFirst}
+        doThen={doThen}
+        doLater={doLater}
+        loading={loading}
+        syncing={syncing}
+        form={form}
+        setForm={setForm}
+        adding={adding}
+        onAdd={add}
+        onRefresh={refreshFromAudit}
+        onToggle={toggle}
+        onAskAiFix={askAiFix}
+      />
 
       <Modal
         open={Boolean(fixAction)}
