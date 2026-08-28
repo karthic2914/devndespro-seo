@@ -343,6 +343,9 @@ export default function Actions() {
   )
   const completed = actions.filter((a) => a.done)
   const done = completed.length
+  const completionPercent = actions.length
+    ? Math.round((done / actions.length) * 100)
+    : 0
   const next = pending[0] || null
   const doFirst = pending.filter((a) => bucketFor(a.impact) === 'first')
   const doThen = pending.filter((a) => bucketFor(a.impact) === 'then')
@@ -429,10 +432,82 @@ export default function Actions() {
         <span style={{ fontSize: 11, fontWeight: 800, background: '#F1F5F9', color: '#64748B', borderRadius: 99, padding: '4px 10px' }}>
           Later ({doLater.length})
         </span>
-        <span style={{ fontSize: 11, color: T.muted, marginLeft: 'auto' }}>
-          {done}/{actions.length} done
-        </span>
       </div>
+
+      {!loading && actions.length > 0 ? (
+        <Card
+          padding="1rem 1.25rem"
+          style={{
+            marginBottom: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 18,
+            border: `1px solid ${T.border}`,
+          }}
+        >
+          <div
+            role="img"
+            aria-label={`${completionPercent}% completed`}
+            style={{
+              width: 76,
+              height: 76,
+              borderRadius: '50%',
+              flexShrink: 0,
+              background: `conic-gradient(#10B981 ${completionPercent * 3.6}deg, #D1FAE5 0deg)`,
+              display: 'grid',
+              placeItems: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: '50%',
+                background: '#FFFFFF',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                lineHeight: 1.05,
+              }}
+            >
+              <strong style={{ fontSize: 20, color: T.text }}>{done}</strong>
+              <span style={{ marginTop: 4, fontSize: 10, color: T.muted }}>
+                of {actions.length}
+              </span>
+            </div>
+          </div>
+
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#059669' }}>
+              {completionPercent}% completed
+            </div>
+            <div style={{ marginTop: 6, fontSize: 12, color: T.muted }}>
+              Numbered by ranking impact
+            </div>
+            <div style={{ marginTop: 5, fontSize: 12, color: T.muted }}>
+              {pending.length > 0 ? 'Start at #1 and work down' : 'All actions completed'}
+            </div>
+          </div>
+
+          <div
+            aria-hidden="true"
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 12,
+              flexShrink: 0,
+              display: 'grid',
+              placeItems: 'center',
+              background: '#EDE9FE',
+              color: '#6D4AFF',
+              fontSize: 16,
+            }}
+          >
+            <FontAwesomeIcon icon={faCheck} />
+          </div>
+        </Card>
+      ) : null}
 
       {!loading && next ? (
         <Card
