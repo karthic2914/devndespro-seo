@@ -1197,3 +1197,94 @@ a.bl-spam-disavow-btn {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* Compact backlink summary UX */
+.bl-primary-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.bl-health-summary {
+  margin-bottom: 14px;
+  padding: 16px;
+  border: 1px solid var(--dark4);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.bl-health-summary__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.bl-health-summary__head div > strong,
+.bl-health-summary__head div > span { display: block; }
+.bl-health-summary__head div > span {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.bl-health-summary__bar {
+  display: flex;
+  width: 100%;
+  height: 10px;
+  margin: 14px 0 12px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #EEF2F7;
+}
+
+.bl-health-segment { min-width: 0; }
+.bl-health-segment--good, .is-good { background: #16A34A; }
+.bl-health-segment--ok, .is-ok { background: #F59E0B; }
+.bl-health-segment--risk, .is-risk { background: #C2410C; }
+.bl-health-segment--spam, .is-spam { background: #DC2626; }
+
+.bl-health-summary__legend {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.bl-health-summary__legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bl-health-summary__legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.bl-health-summary__meta {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .bl-primary-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .bl-health-summary__legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+}
+
+@media (max-width: 390px) {
+  .bl-health-summary__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

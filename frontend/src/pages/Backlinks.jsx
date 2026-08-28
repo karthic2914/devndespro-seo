@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -399,6 +399,7 @@ export default function Backlinks() {
 
   const live     = backlinks.filter(b => b.status === 'Live').length
   const dofollow = backlinks.filter(b => (b.type || 'dofollow') === 'dofollow').length
+  const nofollow = Math.max(0, backlinks.length - dofollow)
   const ahrefsBacklinks = Number(integrations?.ahrefs?.latest?.backlinks || 0)
   const ahrefsRefDomains = Number(integrations?.ahrefs?.latest?.ref_domains || 0)
   const bestPicks = [...backlinks]
@@ -478,13 +479,7 @@ export default function Backlinks() {
       <LinkDeskModes
         active={viewParam}
         counts={{
-          tracked: backlinks.length,
-          health: qualitySummary.good + qualitySummary.ok,
-          dead: backlinks.filter((b) =>
-            b.is_broken === true ||
-            Number(b.http_status) >= 400 ||
-            String(b.verification_status || '').toLowerCase() === 'broken'
-          ).length,
+          health: qualitySummary.risk + qualitySummary.spam,
         }}
         onChange={setDeskView}
       />
@@ -512,17 +507,36 @@ export default function Backlinks() {
         }}
         overviewContent={
           <>
-      <div className="bl-metric-strip">
-        <MetricCard label="Total" value={backlinks.length} scoreKey="trackedTotal" />
-        <MetricCard label="Good" value={qualitySummary.good} accent="var(--green)" scoreKey="good" />
-        <MetricCard label="OK" value={qualitySummary.ok} accent="var(--amber)" scoreKey="ok" />
-        <MetricCard label="Risk" value={qualitySummary.risk} accent="#c2410c" scoreKey="risk" />
-        <MetricCard label="Spam" value={qualitySummary.spam} accent="var(--red)" scoreKey="spam" />
-        <MetricCard label="Dofollow" value={dofollow} accent="var(--blue)" scoreKey="dofollow" />
-        <MetricCard label="Live" value={live} accent="var(--blue)" scoreKey="live" />
-        {ahrefsBacklinks > 0 && <MetricCard label="Estimated backlinks" value={ahrefsBacklinks.toLocaleString()} accent="var(--purple)" scoreKey="estimatedBacklinks" />}
-        {ahrefsRefDomains > 0 && <MetricCard label="Ref domains" value={ahrefsRefDomains.toLocaleString()} accent="var(--blue)" scoreKey="referringDomainsCount" />}
-      </div>
+      <section className="bl-health-summary">
+        <div className="bl-health-summary__head">
+          <div>
+            <strong>Link health</strong>
+            <span>Quality of all tracked backlinks</span>
+          </div>
+          <strong>{backlinks.length} tracked</strong>
+        </div>
+
+        <div
+          className="bl-health-summary__bar"
+          aria-label={`${qualitySummary.good} good, ${qualitySummary.ok} OK, ${qualitySummary.risk} risk and ${qualitySummary.spam} spam`}
+        >
+          <span className="bl-health-segment bl-health-segment--good" style={{ flexGrow: qualitySummary.good }} />
+          <span className="bl-health-segment bl-health-segment--ok" style={{ flexGrow: qualitySummary.ok }} />
+          <span className="bl-health-segment bl-health-segment--risk" style={{ flexGrow: qualitySummary.risk }} />
+          <span className="bl-health-segment bl-health-segment--spam" style={{ flexGrow: qualitySummary.spam }} />
+        </div>
+
+        <div className="bl-health-summary__legend">
+          <span><i className="is-good" />Good <strong>{qualitySummary.good}</strong></span>
+          <span><i className="is-ok" />OK <strong>{qualitySummary.ok}</strong></span>
+          <span><i className="is-risk" />Risk <strong>{qualitySummary.risk}</strong></span>
+          <span><i className="is-spam" />Spam <strong>{qualitySummary.spam}</strong></span>
+        </div>
+
+        <p className="bl-health-summary__meta">
+          {dofollow} dofollow Â· {nofollow} nofollow Â· {live} live
+        </p>
+      </section>
 
       <Card style={{ marginBottom: 14 }}>
         <div className="bl-intake">

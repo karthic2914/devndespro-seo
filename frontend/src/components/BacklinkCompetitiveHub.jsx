@@ -15,6 +15,7 @@ import { Card, MetricCard, OrangeBtn, GhostBtn } from './UI'
 import CollapsibleSection from './CollapsibleSection'
 import api from '../utils/api'
 import toast from '../utils/toast'
+import { summarizeBacklinkQuality } from '../utils/backlinkQuality'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -737,6 +738,42 @@ export default function BacklinkCompetitiveHub({
 
   const tab = activeTab || 'overview'
 
+  const qualitySummary = useMemo(
+    () => summarizeBacklinkQuality(backlinks),
+    [backlinks]
+  )
+
+  const localLive = useMemo(
+    () => backlinks.filter((link) =>
+      link.is_live === true ||
+      String(link.status || '').toLowerCase() === 'live'
+    ).length,
+    [backlinks]
+  )
+
+  const localDomains = useMemo(() => {
+    const domains = backlinks
+      .map((link) => {
+        const raw = link.source_domain || link.name || link.url || ''
+        try {
+          const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+          return new URL(url).hostname.replace(/^www\./i, '').toLowerCase()
+        } catch {
+          return String(raw).trim().toLowerCase()
+        }
+      })
+      .filter(Boolean)
+
+    return new Set(domains).size
+  }, [backlinks])
+
+  const summary = {
+    live: Number(backlinkSummary?.totalBacklinks ?? localLive),
+    domains: Number(backlinkSummary?.referringDomains ?? localDomains),
+    new30d: Number(backlinkSummary?.new30d ?? 0),
+    attention: qualitySummary.risk + qualitySummary.spam,
+  }
+
   return (
     <div>
       <TabBar
@@ -750,21 +787,12 @@ export default function BacklinkCompetitiveHub({
 
       {tab === 'overview' && (
         <>
-          {backlinkSummary && (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-              gap: 10,
-              marginBottom: 12,
-            }}>
-              <MetricCard label="Live backlinks" value={backlinkSummary.totalBacklinks || 0} scoreKey="liveBacklinks" />
-              <MetricCard label="Referring domains" value={backlinkSummary.referringDomains || 0} accent="var(--blue)" scoreKey="referringDomainsCount" />
-              <MetricCard label="Broken" value={backlinkSummary.broken || brokenCount || 0} accent="var(--red)" scoreKey="brokenBacklinks" />
-              <MetricCard label="Lost" value={backlinkSummary.lost || 0} accent="var(--amber)" scoreKey="lostBacklinks" />
-              <MetricCard label="New 30d" value={backlinkSummary.new30d || 0} accent="var(--purple)" scoreKey="newBacklinks30d" />
-              <MetricCard label="Opportunities" value={backlinkSummary.opportunities || 0} accent="var(--orange)" scoreKey="backlinkOpportunities" />
-            </div>
-          )}
+          <div className="bl-primary-summary">
+            <MetricCard label="Live backlinks" value={summary.live} scoreKey="liveBacklinks" />
+            <MetricCard label="Referring domains" value={summary.domains} accent="var(--blue)" scoreKey="referringDomainsCount" />
+            <MetricCard label="New 30d" value={summary.new30d} accent="var(--purple)" scoreKey="newBacklinks30d" />
+            <MetricCard label="Needs attention" value={summary.attention} accent="var(--red)" scoreKey="spam" />
+          </div>
           {overviewContent}
         </>
       )}
