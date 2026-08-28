@@ -26,6 +26,7 @@ const TABS = [
 function TabBar({ active, onChange, counts = {} }) {
   return (
     <div
+      className="bl-hub-tabs"
       role="tablist"
       style={{
         display: 'flex',
@@ -43,6 +44,7 @@ function TabBar({ active, onChange, counts = {} }) {
         const count = counts[tab.id]
         return (
           <button
+            className={`bl-hub-tab${isActive ? ' bl-hub-tab--active' : ''}`}
             key={tab.id}
             type="button"
             role="tab"

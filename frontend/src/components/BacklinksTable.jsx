@@ -1059,7 +1059,7 @@ export default function BacklinksTable({
                               : ''
                       }
                     >
-                      <td className="bl-td-domain">
+                      <td className="bl-td-domain" data-label="Referring page">
                         <div className="bl-domain-name">
                           <span className="bl-domain-name__host">{host || b.name || '-'}</span>
                           {qualityKey === 'spam' && (
@@ -1081,7 +1081,7 @@ export default function BacklinksTable({
                         </div>
                       </td>
 
-                      <td className="bl-td-anchor">
+                      <td className="bl-td-anchor" data-label="Anchor">
                         <span className="bl-anchor-text">
                           {b.anchor || <em className="bl-no-anchor">No anchor text</em>}
                         </span>
@@ -1092,23 +1092,23 @@ export default function BacklinksTable({
                         )}
                       </td>
 
-                      <td className="bl-td-center">
+                      <td className="bl-td-center" data-label="DR">
                         <DrBadge dr={getDomainRank(b)} />
                       </td>
 
-                      <td className="bl-td-center">
+                      <td className="bl-td-center" data-label="Quality">
                         <QualityBadge backlink={b} />
                       </td>
 
-                      <td className="bl-td-center">
+                      <td className="bl-td-center" data-label="Type">
                         <TypeBadge type={b.type} />
                       </td>
 
-                      <td className="bl-td-center">
+                      <td className="bl-td-center" data-label="Status">
                         <StatusBadge status={b.status} id={b.id} onChange={onUpdateStatus} />
                       </td>
 
-                      <td className="bl-td-actions">
+                      <td className="bl-td-actions" data-label="Actions">
                         <RowActionsMenu
                           backlink={b}
                           onRemove={onRemove}

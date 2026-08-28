@@ -262,7 +262,7 @@ export default function BacklinksInsightPanels({
         marginBottom: 14,
       }}
     >
-      <div style={panelStyle}>
+      <div className="bl-insight-panel bl-insight-panel--growth" style={panelStyle}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
             <div style={{ fontSize: 13, fontWeight: 800, color: '#0F172A' }}>Backlink growth</div>
@@ -352,7 +352,7 @@ export default function BacklinksInsightPanels({
         </div>
       </div>
 
-      <div id="bl-source-sites" style={{ ...panelStyle, scrollMarginTop: 88 }}>
+      <div id="bl-source-sites" className="bl-insight-panel bl-insight-panel--sources" style={{ ...panelStyle, scrollMarginTop: 88 }}>
         <PanelHeader
           title="Source sites"
           actionLabel={domainLimit <= 5 ? 'View all →' : 'Show less'}
@@ -399,7 +399,7 @@ export default function BacklinksInsightPanels({
         ))}
       </div>
 
-      <div id="bl-link-phrases" style={{ ...panelStyle, scrollMarginTop: 88 }}>
+      <div id="bl-link-phrases" className="bl-insight-panel bl-insight-panel--phrases" style={{ ...panelStyle, scrollMarginTop: 88 }}>
         <PanelHeader
           title="Link phrases"
           actionLabel={anchorLimit <= 5 ? 'View all →' : 'Show less'}
