@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './AIVisibility.css'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -218,6 +218,7 @@ export default function AIVisibility() {
   const [selectedQuestionResults, setSelectedQuestionResults] = useState([])
   const [loadingQuestionResults, setLoadingQuestionResults] = useState(false)
   const [selectedAnswerEngine, setSelectedAnswerEngine] = useState(null)
+  const [mobileResponseEngine, setMobileResponseEngine] = useState('chatgpt')
   // In-memory cache: first view hits API/DB, later views of the same
   // question reuse this until a Test/Re-test refreshes it.
   const questionResultsCacheRef = useRef({})
@@ -656,7 +657,7 @@ export default function AIVisibility() {
   function chipLabel(tab) {
     if (tab === 'All Questions') return `All (${flatQuestions.length})`
     const count = combinedQuestionSets.find(s => s.product === tab)?.questions?.length || 0
-    const short = tab.length > 24 ? `${tab.slice(0, 22)}â€¦` : tab
+    const short = tab.length > 24 ? `${tab.slice(0, 22)}...` : tab
     return `${short} (${count})`
   }
 
@@ -1407,7 +1408,7 @@ export default function AIVisibility() {
                           </div>
                           <div style={{ fontSize: 10, color: '#9CA3AF' }}>
                             {new Date(s.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            {' Â· '}{s.questionsTested || 0} tested
+                            {' | '}{s.questionsTested || 0} tested
                           </div>
                         </div>
                         <div style={{ fontSize: 11, fontWeight: 800, color: (s.score || 0) >= 60 ? '#16A34A' : (s.score || 0) >= 30 ? '#D97706' : '#DC2626' }}>
@@ -1435,7 +1436,7 @@ export default function AIVisibility() {
           <span style={{ fontWeight: 800 }}>Active session</span>
           <span style={{ fontWeight: 700 }}>{currentSession.name}</span>
           <span style={{ color: '#C2410C', fontSize: 11.5 }}>
-            {currentSession.questionsTested || 0} tested Â· score {currentSession.score || 0}%
+            {currentSession.questionsTested || 0} tested | score {currentSession.score || 0}%
           </span>
           <span style={{ fontSize: 11, opacity: 0.85 }}>
             New tests save here
@@ -1503,7 +1504,7 @@ export default function AIVisibility() {
               </div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
                 {currentQuestionsTested}/{currentQuestionTotal || 0} questions tested
-                {summaryPeriod?.periodLabel ? ` Â· ${summaryPeriod.periodLabel}` : ''}
+                {summaryPeriod?.periodLabel ? ` | ${summaryPeriod.periodLabel}` : ''}
               </div>
             </div>
           </div>
@@ -1574,7 +1575,7 @@ export default function AIVisibility() {
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 14, fontWeight: 800, color: '#0F172A' }}>Test Question</div>
               <div style={{ fontSize: 12, color: '#64748B', marginTop: 1 }}>
-                {testedQuestionsCount} tested Â· {readyQuestionsCount} ready Â· {flatQuestions.length} total
+                {testedQuestionsCount} tested | {readyQuestionsCount} ready | {flatQuestions.length} total
               </div>
             </div>
           </div>
@@ -1625,7 +1626,7 @@ export default function AIVisibility() {
               className="ai-question-search"
               value={questionSearch}
               onChange={e => setQuestionSearch(e.target.value)}
-              placeholder="Searchâ€¦"
+              placeholder="Search..."
             />
 
             <button
@@ -1921,63 +1922,90 @@ export default function AIVisibility() {
                   )} of {filteredQuestions.length} questions
                 </span>
 
-                <div className="ai-question-pagination">
+                <>
+                  <div className="ai-question-pagination ai-question-pagination--desktop">
+                    {safeQuestionPage > 1 && (
+                      <button
+                        type="button"
+                        className="ai-page-button"
+                        onClick={() => setQuestionPage(page => Math.max(page - 1, 1))}
+                        aria-label="Previous page"
+                      >
+                        &lt;
+                      </button>
+                    )}
 
-                  {safeQuestionPage > 1 && (
-                    <button
-                      type="button"
-                      className="ai-page-button"
-                      onClick={() =>
-                        setQuestionPage(page =>
-                          Math.max(page - 1, 1)
-                        )
-                      }
-                      aria-label="Previous page"
-                    >
-                      &lt;
-                    </button>
-                  )}
+                    {Array.from(
+                      { length: questionPageCount },
+                      (_, index) => index + 1
+                    ).map(page => (
+                      <button
+                        key={page}
+                        type="button"
+                        className={
+                          'ai-page-button' +
+                          (safeQuestionPage === page ? ' active' : '')
+                        }
+                        onClick={() => setQuestionPage(page)}
+                      >
+                        {page}
+                      </button>
+                    ))}
 
-                  {Array.from(
-                    { length: questionPageCount },
-                    (_, index) => index + 1
-                  ).map(page => (
-                    <button
-                      key={page}
-                      type="button"
-                      className={
-                        'ai-page-button' +
-                        (
-                          safeQuestionPage === page
-                            ? ' active'
-                            : ''
-                        )
-                      }
-                      onClick={() => setQuestionPage(page)}
-                    >
-                      {page}
-                    </button>
-                  ))}
-
-                  {safeQuestionPage < questionPageCount && (
-                    <button
-                      type="button"
-                      className="ai-page-button"
-                      onClick={() =>
-                        setQuestionPage(page =>
-                          Math.min(
-                            page + 1,
-                            questionPageCount
+                    {safeQuestionPage < questionPageCount && (
+                      <button
+                        type="button"
+                        className="ai-page-button"
+                        onClick={() =>
+                          setQuestionPage(page =>
+                            Math.min(page + 1, questionPageCount)
                           )
-                        )
-                      }
-                      aria-label="Next page"
-                    >
-                      &gt;
-                    </button>
-                  )}
+                        }
+                        aria-label="Next page"
+                      >
+                        &gt;
+                      </button>
+                    )}
+                  </div>
 
-                </div>
+                  <div className="ai-question-pagination--mobile">
+                    <button
+                      type="button"
+                      disabled={safeQuestionPage <= 1}
+                      onClick={() => {
+                        setQuestionPage(Math.max(safeQuestionPage - 1, 1))
+                        requestAnimationFrame(() =>
+                          document
+                            .querySelector('.ai-question-panel')
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        )
+                      }}
+                    >
+                      Previous
+                    </button>
+
+                    <span aria-live="polite">
+                      Page <strong>{safeQuestionPage}</strong> of {questionPageCount}
+                    </span>
+
+                    <button
+                      type="button"
+                      disabled={safeQuestionPage >= questionPageCount}
+                      onClick={() => {
+                        setQuestionPage(
+                          Math.min(safeQuestionPage + 1, questionPageCount)
+                        )
+                        requestAnimationFrame(() =>
+                          document
+                            .querySelector('.ai-question-panel')
+                            ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        )
+                      }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
               </div>
             </section>
 
@@ -1997,6 +2025,29 @@ export default function AIVisibility() {
 
                 <div className="ai-response-selected-question">
                   {selectedQuestion || 'Select a question to view AI responses'}
+                </div>
+
+                <div className="ai-response-mobile-tabs" role="tablist" aria-label="AI response engine">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mobileResponseEngine === 'chatgpt'}
+                    className={mobileResponseEngine === 'chatgpt' ? 'active' : ''}
+                    onClick={() => setMobileResponseEngine('chatgpt')}
+                  >
+                    <ChatGPTLogo size={18} />
+                    ChatGPT
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={mobileResponseEngine === 'claude'}
+                    className={mobileResponseEngine === 'claude' ? 'active' : ''}
+                    onClick={() => setMobileResponseEngine('claude')}
+                  >
+                    <ClaudeLogo size={18} />
+                    Claude
+                  </button>
                 </div>
 
                 <div className="ai-response-engine-grid">
@@ -2047,7 +2098,8 @@ export default function AIVisibility() {
                         return (
                           <div
                             key={engine}
-                            className="ai-response-engine-card"
+                            className={'ai-response-engine-card' + (mobileResponseEngine === engine ? ' ai-mobile-engine-active' : '')}
+                            data-engine={engine}
                           >
                             <div className="ai-response-engine-top">
                               <div className="ai-response-engine-name">
@@ -2099,7 +2151,8 @@ export default function AIVisibility() {
                       return (
                         <div
                           key={engine}
-                          className="ai-response-engine-card"
+                          className={'ai-response-engine-card' + (mobileResponseEngine === engine ? ' ai-mobile-engine-active' : '')}
+                            data-engine={engine}
                         >
                           <div className="ai-response-engine-top">
 
@@ -2562,7 +2615,7 @@ export default function AIVisibility() {
                 opacity: deletingQuestion ? 0.75 : 1,
               }}
             >
-              {deletingQuestion ? 'Deletingâ€¦' : 'Delete question'}
+              {deletingQuestion ? 'Deleting...' : 'Delete question'}
             </button>
           </>
         }
@@ -2633,7 +2686,7 @@ export default function AIVisibility() {
                 opacity: savingEditQuestion || !editQuestionDraft.trim() ? 0.7 : 1,
               }}
             >
-              {savingEditQuestion ? 'Savingâ€¦' : 'Save changes'}
+              {savingEditQuestion ? 'Saving...' : 'Save changes'}
             </button>
           </>
         }
@@ -2643,7 +2696,7 @@ export default function AIVisibility() {
           onChange={(e) => setEditQuestionDraft(e.target.value)}
           rows={4}
           autoFocus
-          placeholder="Enter the questionâ€¦"
+          placeholder="Enter the question..."
           style={{
             width: '100%',
             boxSizing: 'border-box',
@@ -2664,7 +2717,7 @@ export default function AIVisibility() {
         open={showAllAnswersModal}
         onClose={() => setShowAllAnswersModal(false)}
         title="All AI answers"
-        subtitle={`${testedQuestionsCount} tested Â· ${readyQuestionsCount} ready Â· click a question to open responses`}
+        subtitle={`${testedQuestionsCount} tested | ${readyQuestionsCount} ready | click a question to open responses`}
         width={720}
         closeOnOverlayClick
         footer={
@@ -2768,7 +2821,7 @@ export default function AIVisibility() {
                     <span>
                       ChatGPT: {chatgptRank ? `#${chatgptRank}` : 'Not mentioned'}
                     </span>
-                    <span>Â·</span>
+                    <span>|</span>
                     <span>
                       Claude: {claudeRank ? `#${claudeRank}` : 'Not mentioned'}
                     </span>

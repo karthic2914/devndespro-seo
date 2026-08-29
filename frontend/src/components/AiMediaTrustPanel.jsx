@@ -19,6 +19,7 @@ import api from '../utils/api'
 import { Card, SectionLabel, OrangeBtn, T } from './UI'
 import { canUseColdEmails } from '../utils/features'
 import { useAuth } from '../hooks/useAuth'
+import MobileSelect from './MobileSelect'
 
 const STATUS_OPTIONS = [
   { value: 'discovered', label: 'Discovered' },
@@ -230,7 +231,7 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl, onOutletC
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select
+          <MobileSelect label="Choose market"
             value={market}
             onChange={(e) => setMarket(e.target.value)}
             title="Target market"
@@ -239,7 +240,7 @@ export default function AiMediaTrustPanel({ siteId, siteName, siteUrl, onOutletC
             <option value="nordic">Market: Nordic</option>
             <option value="europe">Market: Europe</option>
             <option value="global">Market: Global</option>
-          </select>
+          </MobileSelect>
           <input
             value={niche}
             onChange={(e) => setNiche(e.target.value)}

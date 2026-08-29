@@ -601,3 +601,15 @@
   }
 
 }
+/* DEVNDESPRO_DYNAMIC_CURRENT_TAB */
+.smpn-bottom-nav > button {
+  min-width: 0;
+}
+
+.smpn-bottom-nav > button > span {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
