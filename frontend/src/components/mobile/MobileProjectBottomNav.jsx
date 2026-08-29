@@ -192,7 +192,7 @@ export default function MobileProjectBottomNav() {
 
   const go = (path = '') => {
     setMoreOpen(false)
-    navigate(path ? `${projectBase}/${path}` : projectBase)
+    navigate(path ? `${projectBase}/${path}` : projectBase, { replace: true })
   }
 
   const tabs = [

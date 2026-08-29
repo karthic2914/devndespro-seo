@@ -176,7 +176,14 @@ async function initDB() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    -- Compatibility migrations for older deployments
+        -- Email report frequency migrations
+    ALTER TABLE email_report_settings ADD COLUMN IF NOT EXISTS frequency TEXT DEFAULT 'daily';
+    ALTER TABLE email_report_settings ADD COLUMN IF NOT EXISTS send_weekday INTEGER DEFAULT 1;
+    ALTER TABLE email_report_settings ADD COLUMN IF NOT EXISTS send_month_day INTEGER DEFAULT 1;
+    UPDATE email_report_settings SET frequency='daily' WHERE frequency IS NULL OR frequency NOT IN ('daily','weekly','monthly');
+    UPDATE email_report_settings SET send_weekday=1 WHERE send_weekday IS NULL OR send_weekday < 0 OR send_weekday > 6;
+    UPDATE email_report_settings SET send_month_day=1 WHERE send_month_day IS NULL OR send_month_day < 1 OR send_month_day > 28;
+-- Compatibility migrations for older deployments
     ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS site_id INTEGER;
     ALTER TABLE seo_metrics ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
     ALTER TABLE keywords ADD COLUMN IF NOT EXISTS site_id INTEGER;
