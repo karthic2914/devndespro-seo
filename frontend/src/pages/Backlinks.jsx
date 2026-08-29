@@ -534,7 +534,7 @@ export default function Backlinks() {
         </div>
 
         <p className="bl-health-summary__meta">
-          {dofollow} dofollow Â· {nofollow} nofollow Â· {live} live
+          {dofollow} dofollow | {nofollow} nofollow | {live} live
         </p>
       </section>
 
