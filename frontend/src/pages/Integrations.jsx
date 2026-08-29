@@ -117,7 +117,7 @@ export default function Integrations() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState('analytics')
-  const [expandedCard, setExpandedCard] = useState('gsc')
+  const [expandedCard, setExpandedCard] = useState(null)
   const [ga4Form, setGa4Form] = useState({ propertyId: '', measurementId: '' })
   const [manual, setManual] = useState({ dr: '', backlinks: '', refDomains: '', organicTraffic: '', organicKeywords: '' })
   const [csvText, setCsvText] = useState('')

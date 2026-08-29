@@ -35,3 +35,143 @@
   .integration-premium-card-body{padding:0 13px 14px}.integration-fields.two-columns,.integration-fields.metrics-grid{grid-template-columns:1fr}
   .integration-premium-card input,.integration-premium-card textarea{font-size:16px;min-height:48px}.integration-actions button{min-height:44px}
 }
+/* DEVNDESPRO: EQUAL INTEGRATION CARDS START */
+
+/* Premium summary tiles */
+.integrations-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  width: min(100%, 690px);
+}
+
+.integrations-summary > div {
+  position: relative;
+  min-width: 0;
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 14px 16px 12px;
+  overflow: hidden;
+  border: 1px solid #e5e7f2;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 8px 22px rgba(28, 39, 76, 0.06);
+}
+
+.integrations-summary > div::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+  background: #6d4aff;
+}
+
+.integrations-summary > div:nth-child(1)::before { background: #16a66a; }
+.integrations-summary > div:nth-child(2)::before { background: #6d4aff; }
+.integrations-summary > div:nth-child(3)::before { background: #f59e0b; }
+
+.integrations-summary > div strong {
+  color: #17213a;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.integrations-summary > div span {
+  color: #687694;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Equal compact cards on desktop and tablet */
+.integrations-premium-grid {
+  align-items: stretch;
+}
+
+.integration-premium-card {
+  align-self: stretch;
+  min-height: 0;
+  height: auto;
+}
+
+.integration-premium-card-head {
+  min-height: 88px;
+  height: 100%;
+  cursor: pointer;
+}
+
+.integration-premium-card:not(.is-expanded) .integration-premium-card-body {
+  display: none;
+}
+
+.integration-premium-card.is-expanded {
+  grid-column: 1 / -1;
+}
+
+.integration-premium-card.is-expanded .integration-premium-card-head {
+  height: auto;
+  min-height: 82px;
+  border-bottom: 1px solid #edf0f7;
+}
+
+.integration-premium-card.is-expanded .integration-premium-card-body {
+  display: block;
+  padding-top: 18px;
+}
+
+.integration-premium-card.is-expanded .integration-premium-chevron {
+  transform: rotate(180deg);
+}
+
+.integration-premium-chevron {
+  display: inline-flex;
+  transition: transform 180ms ease;
+}
+
+.integration-premium-name small {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .integrations-summary {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .integrations-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .integrations-summary > div {
+    min-height: 66px;
+    padding: 10px 8px 9px 11px;
+    border-radius: 11px;
+    box-shadow: none;
+  }
+
+  .integrations-summary > div strong {
+    font-size: 19px;
+  }
+
+  .integrations-summary > div span {
+    font-size: 9px;
+    line-height: 1.2;
+  }
+
+  .integration-premium-card-head {
+    min-height: 72px;
+  }
+
+  .integration-premium-card.is-expanded .integration-premium-card-head {
+    min-height: 72px;
+  }
+}
+
+/* DEVNDESPRO: EQUAL INTEGRATION CARDS END */
