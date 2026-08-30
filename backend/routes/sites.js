@@ -423,7 +423,7 @@ async function bumpSiteHealth(siteId, delta) {
   return Number(m[0]?.health) || null
 }
 
-/** Mark done → remove from pending/banner focus and increase site health. */
+/** Mark done â†’ remove from pending/banner focus and increase site health. */
 router.put('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -455,8 +455,8 @@ router.delete('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
 /**
  * Reconcile Action Plan with latest audit:
  * - health = audit score
- * - new issues → pending tasks
- * - fixed issues → auto-complete / remove from banner focus
+ * - new issues â†’ pending tasks
+ * - fixed issues â†’ auto-complete / remove from banner focus
  */
 router.post('/:siteId/actions/sync-from-audit', auth, verifySite, async (req, res) => {
   try {
@@ -644,7 +644,7 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
     let discovered = []
     let source = 'mixed'
 
-    // 1) Ranking-overlap (try NO + US — small markets can return empty)
+    // 1) Ranking-overlap (try NO + US â€” small markets can return empty)
     const authHeader = getDataForSEOAuthSites()
     if (authHeader) {
       for (const locationCode of [2578, 2840]) {
@@ -701,7 +701,7 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
       console.warn('Backlink competitors discover skipped:', e.message)
     }
 
-    // NOTE: outbound crawl links are NOT treated as competitors (partners/blogs/tools ≠ rivals)
+    // NOTE: outbound crawl links are NOT treated as competitors (partners/blogs/tools â‰  rivals)
 
     // Dedupe
     const byDomain = new Map()
@@ -744,7 +744,7 @@ Website: ${site.url}
 What we do (must match competitors to this niche):
 ${businessContext}
 
-Task: From the candidates below, keep ONLY genuine direct or close competitors — companies that sell the SAME core services to similar customers (e.g. web design, web development, SEO / digital marketing agencies).
+Task: From the candidates below, keep ONLY genuine direct or close competitors â€” companies that sell the SAME core services to similar customers (e.g. web design, web development, SEO / digital marketing agencies).
 
 EXCLUDE:
 - Blogs, personal sites, SaaS tools, directories, job boards, news sites
@@ -770,7 +770,7 @@ Return ONLY valid JSON:
 }
 
 Candidates:
-${candidateList || '(none — invent up to 6 real niche competitors instead)'}`
+${candidateList || '(none â€” invent up to 6 real niche competitors instead)'}`
 
       const r = await anthropic.messages.create({
         model: 'claude-sonnet-5',
@@ -883,7 +883,7 @@ Return ONLY valid JSON:
         name: d.name,
         dr: Number(d.dr || 0),
         title: d.title || '',
-        summary: d.summary || 'Competitor candidate from search/backlink data — verify niche fit',
+        summary: d.summary || 'Competitor candidate from search/backlink data â€” verify niche fit',
         industry: 'Digital / marketing related (verify)',
         location: '',
         notes: `Auto-fill fallback: ${d.notes || d.source || ''}`.slice(0, 280),
