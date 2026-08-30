@@ -1,5 +1,6 @@
 const express = require('express')
 const cron = require('node-cron')
+const dns = require('dns').promises
 const { pool } = require('../clients')
 const { auth, verifySite } = require('../middleware')
 const { sendSiteReport, sendRankScanReportEmail } = require('../utils/email')
@@ -7,6 +8,59 @@ const { scanSiteKeywordTransitions } = require('../utils/serp')
 const { SUPPORTED_ENGINES } = require('../utils/helpers')
 
 const router = express.Router()
+
+const RESERVED_EMAIL_DOMAINS = new Set([
+  'example.com',
+  'example.net',
+  'example.org',
+  'invalid',
+  'localhost',
+  'test',
+])
+
+function normalizeEmail(email) {
+  return String(email || '').trim().toLowerCase()
+}
+
+function hasValidEmailFormat(email) {
+  if (!email || email.length > 254) return false
+  const parts = email.split('@')
+  if (parts.length !== 2) return false
+  const [local, domain] = parts
+  if (!local || local.length > 64 || !domain || domain.length > 253) return false
+  if (local.startsWith('.') || local.endsWith('.') || local.includes('..')) return false
+  if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(local)) return false
+  if (!/^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/i.test(domain)) return false
+  return true
+}
+
+async function validateRecipientEmail(value) {
+  const email = normalizeEmail(value)
+  if (!hasValidEmailFormat(email)) {
+    return { valid: false, email, error: 'Enter a valid email address' }
+  }
+
+  const domain = email.slice(email.lastIndexOf('@') + 1)
+  if (RESERVED_EMAIL_DOMAINS.has(domain)) {
+    return { valid: false, email, error: 'Use a real email domain' }
+  }
+
+  try {
+    const records = await Promise.race([
+      dns.resolveMx(domain),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('EMAIL_DNS_TIMEOUT')), 5000)),
+    ])
+    const canReceiveMail = records.some(record => record.exchange && record.exchange !== '.')
+    if (!canReceiveMail) {
+      return { valid: false, email, error: 'This email domain cannot receive mail' }
+    }
+  } catch (error) {
+    console.warn(`Email domain validation failed for ${domain}:`, error.code || error.message)
+    return { valid: false, email, error: 'Email domain could not be verified' }
+  }
+
+  return { valid: true, email }
+}
 
 function buildRankSummaryAlertMessage(report) {
   if (!report) return 'Weekly rank scan completed.'
@@ -43,12 +97,30 @@ router.get('/:siteId/email-report', auth, verifySite, async (req, res) => {
   })
 })
 
+router.post('/:siteId/email-report/validate-recipient', auth, verifySite, async (req, res) => {
+  const result = await validateRecipientEmail(req.body?.email)
+  if (!result.valid) return res.status(400).json({ error: result.error })
+  res.json({ valid: true, email: result.email })
+})
 router.put('/:siteId/email-report', auth, verifySite, async (req, res) => {
   const enabled = !!req.body.enabled
-  const recipients = (Array.isArray(req.body.recipients) ? req.body.recipients : [])
-    .map(email => String(email).trim().toLowerCase())
-    .filter(email => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    .slice(0, 20)
+  const requestedRecipients = (Array.isArray(req.body.recipients) ? req.body.recipients : [])
+    .map(normalizeEmail)
+    .filter(Boolean)
+
+  if (requestedRecipients.length > 20) {
+    return res.status(400).json({ error: 'A maximum of 20 recipients is allowed' })
+  }
+
+  const recipients = [...new Set(requestedRecipients)]
+  const validations = await Promise.all(recipients.map(validateRecipientEmail))
+  const invalidRecipient = validations.find(result => !result.valid)
+  if (invalidRecipient) {
+    return res.status(400).json({
+      error: invalidRecipient.error,
+      invalid_email: invalidRecipient.email,
+    })
+  }
   const { frequency, sendHour, sendWeekday, sendMonthDay } = normalizeSchedule(req.body)
 
   const { rows } = await pool.query(

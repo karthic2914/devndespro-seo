@@ -185,3 +185,25 @@
   .er-status-card:last-child { grid-column: auto; }
   .er-delivery-copy small { max-width: 150px; }
 }
+/* EMAIL_RECIPIENT_VALIDATION */
+.er-add-recipient input[aria-invalid="true"] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.er-field-error {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 6px;
+  color: #b91c1c;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+@media (max-width: 640px) {
+  .er-field-error {
+    font-size: 0.75rem;
+  }
+}

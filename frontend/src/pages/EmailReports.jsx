@@ -55,6 +55,8 @@ export default function EmailReports() {
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [newEmail, setNewEmail] = useState('')
+  const [emailError, setEmailError] = useState('')
+  const [validatingEmail, setValidatingEmail] = useState(false)
   const [smtpOk, setSmtpOk] = useState(null)
 
   const fetchSettings = useCallback(async () => {
@@ -130,30 +132,49 @@ export default function EmailReports() {
         last_sent_at: data.last_sent_at,
       })
       toast.success('Settings saved')
-    } catch {
-      toast.error('Failed to save settings')
+      return true
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to save settings')
+      return false
     } finally {
       setSaving(false)
     }
   }
 
-  const addEmail = () => {
+  const addEmail = async () => {
+    if (validatingEmail || saving) return
+
     const email = newEmail.trim().toLowerCase()
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      toast.error('Enter a valid email address')
+    setEmailError('')
+
+    if (!email) {
+      setEmailError('Enter an email address')
       return
     }
     if (settings.recipients.includes(email)) {
-      toast.error('Email already added')
+      setEmailError('This recipient is already added')
       return
     }
 
-    const updated = { ...settings, recipients: [...settings.recipients, email] }
-    setSettings(updated)
-    setNewEmail('')
-    save(updated)
+    setValidatingEmail(true)
+    try {
+      const { data } = await api.post(`/sites/${siteId}/email-report/validate-recipient`, { email })
+      const validatedEmail = data.email
+      const updated = { ...settings, recipients: [...settings.recipients, validatedEmail] }
+      const saved = await save(updated)
+      if (saved) {
+        setSettings(updated)
+        setNewEmail('')
+        setEmailError('')
+      }
+    } catch (error) {
+      const message = error.response?.data?.error || 'Email address could not be verified'
+      setEmailError(message)
+      toast.error(message)
+    } finally {
+      setValidatingEmail(false)
+    }
   }
-
   const removeEmail = email => {
     const updated = {
       ...settings,
@@ -395,14 +416,27 @@ export default function EmailReports() {
                 inputMode="email"
                 autoCapitalize="none"
                 autoCorrect="off"
+                autoComplete="email"
+                spellCheck={false}
+                maxLength={254}
                 value={newEmail}
-                onChange={event => setNewEmail(event.target.value)}
-                onKeyDown={event => event.key === 'Enter' && addEmail()}
-                placeholder="customer@example.com"
+                aria-invalid={emailError ? 'true' : 'false'}
+                aria-describedby={emailError ? 'er-email-error' : undefined}
+                onChange={event => {
+                  setNewEmail(event.target.value)
+                  if (emailError) setEmailError('')
+                }}
+                onKeyDown={event => {
+                  if (event.key !== 'Enter') return
+                  event.preventDefault()
+                  addEmail()
+                }}
+                placeholder="name@company.com"
               />
+              {emailError && <small id="er-email-error" className="er-field-error" role="alert">{emailError}</small>}
             </label>
-            <Button onClick={addEmail} disabled={saving || !newEmail.trim()}>
-              <FontAwesomeIcon icon={faPlus} /> Add recipient
+            <Button onClick={addEmail} disabled={saving || validatingEmail || !newEmail.trim()}>
+              <FontAwesomeIcon icon={faPlus} /> {validatingEmail ? 'Checking...' : 'Add recipient'}
             </Button>
           </div>
 

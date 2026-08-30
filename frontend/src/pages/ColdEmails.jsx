@@ -1,19 +1,38 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
-import useAdminSettings from '../hooks/useAdminSettings'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faPaperPlane, faTrash } from '@fortawesome/free-solid-svg-icons'
-import { Card, SectionLabel, OrangeBtn, PageHeader, EmptyState } from '../components/UI'
+import {
+  faPaperPlane,
+  faTrash,
+  faChevronDown,
+  faChevronRight,
+  faCheck,
+  faClock,
+  faEnvelope,
+  faPenToSquare,
+  faReply,
+  faUsers,
+  faXmark,
+  faWandMagicSparkles,
+} from '@fortawesome/free-solid-svg-icons'
+import useAdminSettings from '../hooks/useAdminSettings'
+import toast from '../utils/toast'
 import api from '../utils/api'
+import '../styles/app/11-cold-emails.css'
 
 const STATUS_OPTIONS = [
   { value: 'sent', label: 'Sent' },
   { value: 'replied', label: 'Replied' },
   { value: 'follow-up', label: 'Follow-up' },
   { value: 'interested', label: 'Interested' },
-  { value: 'not-interested', label: 'Not Interested' },
+  { value: 'not-interested', label: 'Not interested' },
   { value: 'bounced', label: 'Bounced' },
 ]
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 function toCapitalizedName(value) {
   return String(value || '')
@@ -23,21 +42,9 @@ function toCapitalizedName(value) {
 
 function defaultForm() {
   return {
-    name: '',
-    email: '',
-    company: '',
-    website: '',
-    status: 'sent',
-    sentAt: new Date().toISOString().slice(0, 10),
-    subject: '',
-    message: '',
-    notes: '',
+    name: '', email: '', company: '', website: '', status: 'sent',
+    sentAt: new Date().toISOString().slice(0, 10), subject: '', message: '', notes: '',
   }
-}
-
-function toDateInputValue(value) {
-  if (!value) return ''
-  return String(value).slice(0, 10)
 }
 
 function defaultSubject(name) {
@@ -46,47 +53,46 @@ function defaultSubject(name) {
 }
 
 function defaultMessage(name, website) {
-  const safeName = String(name || '').trim()
   const safeWebsite = String(website || '').trim()
   return [
-    'Hi,',
-    '',
+    'Hi,', '',
     safeWebsite
-      ? `I came across your website (${safeWebsite}) while looking for restaurants online and had a quick look.`
-      : 'I came across your website while looking for restaurants online and had a quick look.',
-    '',
-    'I noticed your site feels a bit slow on mobile and a couple of small SEO things could be improved.',
-    '',
-    'I ran a quick check using my tool.',
-    '',
-    'Happy to share a short report if you are interested.',
-    '',
-    'https://www.seo.devndespro.com',
-    '',
-    'Regards,',
-    'www.devndespro.com',
+      ? `I came across your website (${safeWebsite}) and had a quick look.`
+      : 'I came across your website and had a quick look.',
+    '', 'I noticed a few opportunities that could improve its visibility in Google and AI search.',
+    '', 'I ran a quick check using my tool and would be happy to share a short report.',
+    '', 'https://www.seo.devndespro.com', '', 'Regards,', 'www.devndespro.com',
   ].join('\n')
 }
 
-function followupSubject(name) {
-  const safeName = String(name || '').trim()
-  return safeName ? `Following up: SEO report for ${safeName}` : 'Following up: SEO report'
+function followupMessage(website) {
+  return [
+    'Hi,', '',
+    website ? `Following up on my previous note about ${website}.` : 'Following up on my previous note about your website.',
+    '', 'If helpful, I can share a quick SEO report with practical fixes.',
+    '', 'Regards,', 'www.devndespro.com',
+  ].join('\n')
 }
 
-function followupMessage(name, website) {
-  const safeWebsite = String(website || '').trim()
-  return [
-    'Hi,',
-    '',
-    safeWebsite
-      ? `Following up on my previous note about ${safeWebsite}.`
-      : 'Following up on my previous note about your website.',
-    '',
-    'If helpful, I can share a quick SEO report with practical fixes.',
-    '',
-    'Regards,',
-    'www.devndespro.com',
-  ].join('\n')
+function SelectSheet({ open, title, options, value, onSelect, onClose }) {
+  if (!open) return null
+  return createPortal(
+    <div className="cex-sheet-layer" role="presentation" onClick={onClose}>
+      <section className="cex-sheet" role="dialog" aria-modal="true" aria-label={title} onClick={event => event.stopPropagation()}>
+        <div className="cex-sheet-handle" />
+        <header><h2>{title}</h2><button type="button" onClick={onClose} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header>
+        <div className="cex-sheet-options">
+          {options.map(option => (
+            <button type="button" key={option.value} className={String(value) === String(option.value) ? 'is-selected' : ''} onClick={() => { onSelect(option.value); onClose() }}>
+              <span><strong>{option.label}</strong>{option.description && <small>{option.description}</small>}</span>
+              <span className="cex-radio">{String(value) === String(option.value) && <span />}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+    </div>,
+    document.body
+  )
 }
 
 export default function ColdEmails() {
@@ -96,396 +102,310 @@ export default function ColdEmails() {
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [savingId, setSavingId] = useState(null)
   const [draftId, setDraftId] = useState(null)
   const [selectedSiteId, setSelectedSiteId] = useState('')
   const [composeMode, setComposeMode] = useState('first')
-  const [savingId, setSavingId] = useState(null)
+  const [activeTab, setActiveTab] = useState('compose')
   const [form, setForm] = useState(defaultForm)
+  const [formErrors, setFormErrors] = useState({})
+  const [draftState, setDraftState] = useState('saved')
+  const [projectSheetOpen, setProjectSheetOpen] = useState(false)
+  const [reviewOpen, setReviewOpen] = useState(false)
+
+  const pendingRows = useMemo(() => rows.filter(row => String(row.status || '').toLowerCase() === 'draft'), [rows])
+  const sentRows = useMemo(() => rows.filter(row => String(row.status || '').toLowerCase() !== 'draft'), [rows])
+  const repliedCount = sentRows.filter(row => ['replied', 'interested'].includes(String(row.status || '').toLowerCase())).length
+  const followupCount = sentRows.filter(row => String(row.status || '').toLowerCase() === 'follow-up').length
+  const selectedProject = projects.find(project => String(project.id) === String(selectedSiteId))
+
+  const updateForm = patch => {
+    setForm(previous => ({ ...previous, ...patch }))
+    setFormErrors(previous => {
+      const next = { ...previous }
+      Object.keys(patch).forEach(key => delete next[key])
+      return next
+    })
+    setDraftState('saving')
+  }
+
+  useEffect(() => {
+    if (draftState !== 'saving') return undefined
+    const timer = window.setTimeout(() => {
+      localStorage.setItem('devndespro-cold-email-draft', JSON.stringify({ form, selectedSiteId, draftId, composeMode }))
+      setDraftState('saved')
+    }, 600)
+    return () => window.clearTimeout(timer)
+  }, [form, selectedSiteId, draftId, composeMode, draftState])
 
   useEffect(() => {
     const draft = location.state
     if (!draft?.draftSubject && !draft?.draftBody) return
-    setForm((prev) => ({
-      ...prev,
-      company: draft.draftToHint || prev.company,
-      subject: draft.draftSubject || prev.subject,
-      message: draft.draftBody || prev.message,
-      notes: draft.draftToHint ? `AI media outreach: ${draft.draftToHint}` : prev.notes,
+    setForm(previous => ({
+      ...previous,
+      company: draft.draftToHint || previous.company,
+      subject: draft.draftSubject || previous.subject,
+      message: draft.draftBody || previous.message,
+      notes: draft.draftToHint ? `AI media outreach: ${draft.draftToHint}` : previous.notes,
     }))
+    setActiveTab('compose')
   }, [location.state])
 
-  const pendingRows = rows.filter((r) => String(r.status || '').toLowerCase() === 'draft')
-  const sentRows = rows.filter((r) => String(r.status || '').toLowerCase() !== 'draft')
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined
+    let listener
+    let cancelled = false
+    CapacitorApp.addListener('backButton', () => {
+      if (projectSheetOpen) setProjectSheetOpen(false)
+      else if (reviewOpen) setReviewOpen(false)
+      else document.activeElement?.blur?.()
+    }).then(result => { if (cancelled) result.remove(); else listener = result })
+    return () => { cancelled = true; listener?.remove() }
+  }, [projectSheetOpen, reviewOpen])
 
   const resetComposer = (siteId = '') => {
     setDraftId(null)
     setComposeMode('first')
     setSelectedSiteId(siteId ? String(siteId) : '')
     setForm(defaultForm())
+    setFormErrors({})
+    setActiveTab('compose')
   }
 
-  const openDraftInComposer = (draft) => {
+  const openDraftInComposer = draft => {
     setDraftId(draft.id)
     setComposeMode('first')
     setSelectedSiteId(String(draft.site_id))
     setForm({
-      name: draft.name || '',
-      email: draft.email || '',
-      company: draft.company || '',
-      website: draft.website || draft.site_url || '',
-      status: 'sent',
+      name: draft.name || '', email: draft.email || '', company: draft.company || '',
+      website: draft.website || draft.site_url || '', status: 'sent',
       sentAt: new Date().toISOString().slice(0, 10),
       subject: defaultSubject(draft.name),
-      message: defaultMessage(draft.name, draft.website || draft.site_url),
-      notes: draft.notes || '',
+      message: defaultMessage(draft.name, draft.website || draft.site_url), notes: draft.notes || '',
     })
+    setActiveTab('compose')
   }
 
-  const openFollowupInComposer = (row) => {
+  const openFollowupInComposer = row => {
     setDraftId(row.id)
     setComposeMode('followup')
     setSelectedSiteId(String(row.site_id))
     setForm({
-      name: row.name || '',
-      email: row.email || '',
-      company: row.company || '',
-      website: row.website || row.site_url || '',
-      status: 'follow-up',
+      name: row.name || '', email: row.email || '', company: row.company || '',
+      website: row.website || row.site_url || '', status: 'follow-up',
       sentAt: new Date().toISOString().slice(0, 10),
-      subject: followupSubject(row.name),
-      message: followupMessage(row.name, row.website || row.site_url),
-      notes: row.notes || '',
+      subject: `Following up: SEO report for ${row.name || 'your website'}`,
+      message: followupMessage(row.website || row.site_url), notes: row.notes || '',
     })
+    setActiveTab('compose')
   }
 
   const load = async () => {
     setLoading(true)
     try {
-      const [prospectsRes, projectsRes] = await Promise.all([
-        api.get('/sites/cold-emails'),
-        api.get('/sites'),
-      ])
-      const list = Array.isArray(prospectsRes?.data) ? prospectsRes.data : []
-      const sites = Array.isArray(projectsRes?.data) ? projectsRes.data : []
+      const [prospectsResponse, projectsResponse] = await Promise.all([api.get('/sites/cold-emails'), api.get('/sites')])
+      const list = Array.isArray(prospectsResponse?.data) ? prospectsResponse.data : []
+      const sites = Array.isArray(projectsResponse?.data) ? projectsResponse.data : []
       setRows(list)
       setProjects(sites)
-
-      const draft = list.find((r) => String(r.status || '').toLowerCase() === 'draft')
-      if (draft) {
-        openDraftInComposer(draft)
-      } else {
-        resetComposer(sites[0]?.id || '')
-      }
-    } catch {
+      const draft = list.find(row => String(row.status || '').toLowerCase() === 'draft')
+      if (draft) openDraftInComposer(draft)
+      else resetComposer(sites[0]?.id || '')
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to load cold email data')
       setRows([])
       setProjects([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  useEffect(() => {
-    load()
-  }, [])
+  useEffect(() => { load() }, [])
 
-  const sendEmail = async () => {
-    if (!settings.cold_emails_enabled) {
-      alert('Cold email sending is currently disabled by admin.')
-      return
+  const validateComposer = () => {
+    const errors = {}
+    if (!selectedSiteId) errors.project = 'Choose a project'
+    if (!form.name.trim()) errors.name = 'Enter a contact name'
+    if (!EMAIL_PATTERN.test(form.email.trim())) errors.email = 'Enter a valid email address'
+    if (!form.subject.trim()) errors.subject = 'Enter an email subject'
+    if (!form.message.trim()) errors.message = 'Enter an email message'
+    setFormErrors(errors)
+    if (Object.keys(errors).length) {
+      toast.error('Check the highlighted fields')
+      return false
     }
-    if (!form.name.trim() || !String(form.email || '').trim()) return
-    const numericSiteId = Number(selectedSiteId)
-    if (!numericSiteId) return
+    return true
+  }
 
+  const openReview = () => {
+    if (!settings.cold_emails_enabled) return toast.error('Cold email sending is disabled by admin')
+    if (validateComposer()) setReviewOpen(true)
+  }
+
+  const confirmSend = async () => {
     setSending(true)
-    const subject = String(form.subject || '').trim() || defaultSubject(form.name)
-    const message = String(form.message || '').trim() || defaultMessage(form.name, form.website)
     try {
       const payload = {
-        siteId: numericSiteId,
-        name: toCapitalizedName(form.name).trim(),
-        email: String(form.email || '').trim(),
-        company: form.company,
-        website: form.website,
-        status: composeMode === 'followup' ? 'follow-up' : 'sent',
-        sentAt: form.sentAt,
-        notes: form.notes,
+        siteId: Number(selectedSiteId), name: toCapitalizedName(form.name).trim(), email: form.email.trim().toLowerCase(),
+        company: form.company.trim(), website: form.website.trim(),
+        status: composeMode === 'followup' ? 'follow-up' : 'sent', sentAt: form.sentAt, notes: form.notes,
       }
-      if (draftId) {
-        const { data } = await api.put(`/sites/cold-emails/${draftId}`, payload)
-        setRows((prev) => prev.map((r) => (r.id === draftId ? data : r)))
-      } else {
-        const { data } = await api.post('/sites/cold-emails', payload)
-        setRows((prev) => [data, ...prev])
-      }
-
-      const mailto = `mailto:${encodeURIComponent(String(form.email || '').trim())}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(message)}`
+      if (draftId) await api.put(`/sites/cold-emails/${draftId}`, payload)
+      else await api.post('/sites/cold-emails', payload)
+      const mailto = `mailto:${encodeURIComponent(payload.email)}?subject=${encodeURIComponent(form.subject)}&body=${encodeURIComponent(form.message)}`
+      setReviewOpen(false)
       window.location.href = mailto
-
       await load()
-    } catch {
-      // keep quiet; existing UX pattern in app does not use inline errors for all pages
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to prepare email')
+    } finally {
+      setSending(false)
     }
-    setSending(false)
   }
 
-  const saveProspect = async (row) => {
+  const saveLocalDraft = () => {
+    localStorage.setItem('devndespro-cold-email-draft', JSON.stringify({ form, selectedSiteId, draftId, composeMode }))
+    setDraftState('saved')
+    toast.success('Draft saved')
+  }
+
+  const updateRow = (id, patch) => setRows(previous => previous.map(row => row.id === id ? { ...row, ...patch } : row))
+
+  const saveProspect = async row => {
     setSavingId(row.id)
     try {
       const { data } = await api.put(`/sites/cold-emails/${row.id}`, {
-        name: toCapitalizedName(row.name),
-        email: row.email,
-        company: row.company,
-        website: row.website,
-        status: row.status,
-        sentAt: row.sent_at ? String(row.sent_at).slice(0, 10) : null,
-        notes: row.notes,
+        name: toCapitalizedName(row.name), email: row.email, company: row.company, website: row.website,
+        status: row.status, sentAt: row.sent_at ? String(row.sent_at).slice(0, 10) : null, notes: row.notes,
       })
-      setRows((prev) => prev.map((r) => (r.id === row.id ? data : r)))
-    } catch {
-      // keep quiet; existing UX pattern in app does not use inline errors for all pages
+      setRows(previous => previous.map(item => item.id === row.id ? data : item))
+      toast.success('Contact updated')
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to update contact')
+    } finally {
+      setSavingId(null)
     }
-    setSavingId(null)
   }
 
-  const removeProspect = async (id) => {
+  const removeProspect = async id => {
+    if (!window.confirm('Delete this contact?')) return
     try {
       await api.delete(`/sites/cold-emails/${id}`)
-      setRows((prev) => prev.filter((r) => r.id !== id))
-    } catch {
-      // keep quiet; existing UX pattern in app does not use inline errors for all pages
+      setRows(previous => previous.filter(row => row.id !== id))
+      toast.success('Contact deleted')
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to delete contact')
     }
   }
 
-  const updateRow = (id, patch) => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)))
-  }
+  const projectOptions = projects.map(project => ({ value: String(project.id), label: project.name, description: project.url }))
 
   return (
-    <div className="fade-in page-content">
+    <div className="cold-email-page fade-in page-content">
+      <header className="cex-page-header">
+        <div className="cex-heading"><span><FontAwesomeIcon icon={faPaperPlane} /></span><div><h1>Cold Email</h1><p>Turn qualified prospects into conversations</p></div></div>
+        <button type="button" className="cex-primary cex-desktop-new" onClick={() => resetComposer(projects[0]?.id || '')}><FontAwesomeIcon icon={faPenToSquare} /> New email</button>
+      </header>
+
       {!settings.cold_emails_enabled && !settingsLoading && (
-        <div style={{ background: '#fffbe6', color: '#b45309', padding: '12px 18px', borderRadius: 8, marginBottom: 18, fontWeight: 600 }}>
-          Cold email sending is currently <b>disabled</b> by admin. You can still draft and save prospects, but emails will not be sent.
-        </div>
+        <div className="cex-warning">Sending is disabled by admin. You can still prepare and save drafts.</div>
       )}
-      <PageHeader
-        title="Cold Email Prospects"
-        subtitle="Common across all projects. New projects appear as pending drafts, then move to history after you send."
-        action={(
-          <div style={{
-            fontSize: 11,
-            fontWeight: 700,
-            color: 'var(--orange)',
-            background: 'var(--orange-dim)',
-            border: '1px solid rgba(230,106,57,0.18)',
-            borderRadius: 999,
-            padding: '6px 10px',
-            letterSpacing: '0.04em',
-            textTransform: 'uppercase',
-          }}>
-            Owner Only
-          </div>
-        )}
-      />
 
-      <>
+      <section className="cex-summary" aria-label="Cold email summary">
+        <article><small>Drafts</small><strong>{pendingRows.length}</strong></article>
+        <article><small>Follow-ups</small><strong>{followupCount}</strong></article>
+        <article><small>Sent</small><strong>{sentRows.length}</strong></article>
+        <article className="is-success"><small>Replies</small><strong>{repliedCount}</strong></article>
+      </section>
 
-          <Card style={{ marginBottom: 14 }}>
-            <SectionLabel>Pending contacts (not sent yet)</SectionLabel>
-            {loading ? <EmptyState message="Loading pending contacts..." /> : pendingRows.length === 0 ? (
-              <EmptyState message="No pending contacts. Add a new project to auto-create a draft here." />
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 860 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Project</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Name</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Email</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Website</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendingRows.map((row) => (
-                      <tr key={row.id}>
-                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.site_name || '-'}</td>
-                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.name || '-'}</td>
-                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>{row.email || '-'}</td>
-                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', color: 'var(--muted)' }}>{row.website || row.site_url || '-'}</td>
-                        <td style={{ padding: '10px 12px', borderTop: '1px solid var(--dark4)', whiteSpace: 'nowrap' }}>
-                          <OrangeBtn onClick={() => openDraftInComposer(row)}>Prepare First Email</OrangeBtn>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+      <nav className="cex-tabs" aria-label="Cold email sections">
+        {[
+          ['prospects', 'Prospects'], ['compose', 'Compose'], ['history', 'History'],
+        ].map(([id, label]) => <button type="button" key={id} className={activeTab === id ? 'is-active' : ''} aria-selected={activeTab === id} onClick={() => setActiveTab(id)}>{label}</button>)}
+      </nav>
 
-          <Card style={{ marginBottom: 14 }}>
-            <SectionLabel>Compose email</SectionLabel>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(180px, 1fr))', gap: 10 }}>
-              <select value={selectedSiteId} onChange={(e) => setSelectedSiteId(e.target.value)}>
-                <option value="">Select project</option>
-                {projects.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <input
-                placeholder="Name *"
-                value={form.name}
-                onChange={(e) => setForm((p) => ({ ...p, name: toCapitalizedName(e.target.value) }))}
-              />
-              <input
-                placeholder="Email"
-                value={form.email}
-                onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))}
-              />
-              <input
-                placeholder="Company"
-                value={form.company}
-                onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
-              />
-              <input
-                placeholder="Website"
-                value={form.website}
-                onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))}
-              />
-              <input
-                placeholder="Email subject"
-                value={form.subject}
-                onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
-              />
-              <input
-                type="date"
-                value={toDateInputValue(form.sentAt)}
-                onChange={(e) => setForm((p) => ({ ...p, sentAt: e.target.value }))}
-              />
+      {activeTab === 'prospects' && (
+        <section className="cex-panel cex-prospect-page">
+          <div className="cex-section-header"><div><h2>Prospects</h2><p>Pending contacts ready to prepare</p></div><span>{pendingRows.length} ready</span></div>
+          {loading ? <div className="cex-empty">Loading prospects...</div> : pendingRows.length === 0 ? (
+            <div className="cex-empty"><FontAwesomeIcon icon={faUsers} /><strong>No pending contacts</strong><p>New project drafts will appear here automatically.</p></div>
+          ) : <div className="cex-prospect-list">{pendingRows.map(row => (
+            <button type="button" key={row.id} className="cex-prospect-row" onClick={() => openDraftInComposer(row)}>
+              <span className="cex-avatar">{String(row.name || row.site_name || 'P')[0].toUpperCase()}</span>
+              <span><strong>{row.name || row.site_name || 'New prospect'}</strong><small>{row.email || row.website || row.site_url || 'Contact details required'}</small></span>
+              <FontAwesomeIcon icon={faChevronRight} />
+            </button>
+          ))}</div>}
+        </section>
+      )}
+
+      {activeTab === 'compose' && (
+        <section className="cex-compose-grid">
+          <aside className="cex-panel cex-compose-prospects">
+            <div className="cex-section-header"><div><h2>Prospects</h2><p>Ready to contact</p></div><span>{pendingRows.length}</span></div>
+            {pendingRows.length === 0 ? <div className="cex-empty is-compact">No pending contacts</div> : pendingRows.map(row => (
+              <button type="button" key={row.id} className={`cex-prospect-row ${draftId === row.id ? 'is-selected' : ''}`} onClick={() => openDraftInComposer(row)}>
+                <span className="cex-avatar">{String(row.name || row.site_name || 'P')[0].toUpperCase()}</span>
+                <span><strong>{row.name || row.site_name}</strong><small>{row.email || row.website || 'Add details'}</small></span>
+              </button>
+            ))}
+          </aside>
+
+          <article className="cex-panel cex-composer">
+            <div className="cex-section-header"><div><h2>{composeMode === 'followup' ? 'Compose follow-up' : 'Compose email'}</h2><p>Personalized outreach that is ready to review</p></div><span className="cex-save-state"><FontAwesomeIcon icon={draftState === 'saved' ? faCheck : faClock} />{draftState === 'saved' ? 'Saved' : 'Saving...'}</span></div>
+            <div className="cex-fields">
+              <label className={formErrors.project ? 'has-error' : ''}>Project
+                <button type="button" className="cex-select-trigger" onClick={() => setProjectSheetOpen(true)}><span>{selectedProject?.name || 'Choose project'}</span><FontAwesomeIcon icon={faChevronDown} /></button>
+                {formErrors.project && <small>{formErrors.project}</small>}
+              </label>
+              <label className={formErrors.email ? 'has-error' : ''}>Recipient<input type="email" inputMode="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} value={form.email} onChange={event => updateForm({ email: event.target.value })} placeholder="name@company.com" />{formErrors.email && <small>{formErrors.email}</small>}</label>
+              <label className={formErrors.name ? 'has-error' : ''}>Contact name<input value={form.name} onChange={event => updateForm({ name: toCapitalizedName(event.target.value) })} placeholder="Contact name" />{formErrors.name && <small>{formErrors.name}</small>}</label>
+              <label>Company<input value={form.company} onChange={event => updateForm({ company: event.target.value })} placeholder="Company" /></label>
+              <label>Website<input type="url" inputMode="url" value={form.website} onChange={event => updateForm({ website: event.target.value })} placeholder="https://company.com" /></label>
+              <label>Send date<input type="date" value={String(form.sentAt || '').slice(0, 10)} onChange={event => updateForm({ sentAt: event.target.value })} /></label>
+              <label className={`is-wide ${formErrors.subject ? 'has-error' : ''}`}>Subject<input value={form.subject} onChange={event => updateForm({ subject: event.target.value })} placeholder="Email subject" />{formErrors.subject && <small>{formErrors.subject}</small>}</label>
             </div>
-            <textarea
-              placeholder="Email content to send"
-              value={form.message}
-              onChange={(e) => setForm((p) => ({ ...p, message: e.target.value }))}
-              rows={4}
-              style={{ width: '100%', marginTop: 10 }}
-            />
-            <textarea
-              placeholder="Internal notes"
-              value={form.notes}
-              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-              rows={3}
-              style={{ width: '100%', marginTop: 10 }}
-            />
-            <div style={{ marginTop: 10, display: 'flex', justifyContent: 'flex-end' }}>
-              <OrangeBtn onClick={sendEmail} disabled={sending || !selectedSiteId || !form.name.trim() || !String(form.email || '').trim()}>
-                {sending ? 'Sending...' : <><FontAwesomeIcon icon={faPaperPlane} style={{ marginRight: 6 }} />Send Email</>}
-              </OrangeBtn>
-            </div>
-          </Card>
+            <div className="cex-message-head"><strong>Message</strong><span><button type="button" onClick={() => updateForm({ subject: defaultSubject(form.name), message: defaultMessage(form.name, form.website) })}>Use template</button><button type="button"><FontAwesomeIcon icon={faWandMagicSparkles} /> Improve with AI</button></span></div>
+            <label className={`cex-message ${formErrors.message ? 'has-error' : ''}`}><textarea rows="7" value={form.message} onChange={event => updateForm({ message: event.target.value })} placeholder="Write your email..." />{formErrors.message && <small>{formErrors.message}</small>}</label>
+            <details className="cex-notes"><summary>Internal notes</summary><textarea rows="3" value={form.notes} onChange={event => updateForm({ notes: event.target.value })} placeholder="Notes are not included in the email" /></details>
+            <footer className="cex-compose-actions"><span className="cex-verified"><FontAwesomeIcon icon={faEnvelope} />Review recipient before sending</span><div><button type="button" className="cex-secondary" onClick={saveLocalDraft}>Save draft</button><button type="button" className="cex-primary" onClick={openReview} disabled={sending}>Review &amp; send</button></div></footer>
+          </article>
+        </section>
+      )}
 
-          <Card>
-            <SectionLabel>Sent and follow-up history</SectionLabel>
-            {loading ? <EmptyState message="Loading prospects..." /> : sentRows.length === 0 ? (
-              <EmptyState message="No contacts yet. Add your first cold email contact above." />
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0, minWidth: 1120 }}>
-                  <thead>
-                    <tr>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Project</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Name</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Email</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Company</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Website</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Status</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Sent Date</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Notes</th>
-                      <th style={{ textAlign: 'left', padding: '10px 12px', fontSize: 12, color: 'var(--muted)', fontWeight: 700 }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sentRows.map((row) => (
-                      <tr key={row.id}>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', color: 'var(--text)' }}>
-                          {row.site_name || '-'}
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <input value={row.name || ''} onChange={(e) => updateRow(row.id, { name: e.target.value })} />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <input value={row.email || ''} onChange={(e) => updateRow(row.id, { email: e.target.value })} />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <input value={row.company || ''} onChange={(e) => updateRow(row.id, { company: e.target.value })} />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <input value={row.website || ''} onChange={(e) => updateRow(row.id, { website: e.target.value })} />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <select value={row.status || 'sent'} onChange={(e) => updateRow(row.id, { status: e.target.value })}>
-                            {STATUS_OPTIONS.map((o) => (
-                              <option key={o.value} value={o.value}>{o.label}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)' }}>
-                          <input
-                            type="date"
-                            value={toDateInputValue(row.sent_at)}
-                            onChange={(e) => updateRow(row.id, { sent_at: e.target.value })}
-                          />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', minWidth: 220 }}>
-                          <textarea
-                            rows={2}
-                            value={row.notes || ''}
-                            onChange={(e) => updateRow(row.id, { notes: e.target.value })}
-                            style={{ width: '100%' }}
-                          />
-                        </td>
-                        <td style={{ padding: '10px 12px', verticalAlign: 'top', borderTop: '1px solid var(--dark4)', whiteSpace: 'nowrap' }}>
-                          <div style={{ display: 'flex', gap: 8 }}>
-                            <button
-                              onClick={() => openFollowupInComposer(row)}
-                              style={{
-                                background: 'transparent',
-                                color: 'var(--orange)',
-                                border: '1px solid var(--orange)',
-                                borderRadius: 8,
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Follow-up
-                            </button>
-                            <OrangeBtn onClick={() => saveProspect(row)} disabled={savingId === row.id || !String(row.name || '').trim()}>
-                              {savingId === row.id ? 'Saving...' : 'Save'}
-                            </OrangeBtn>
-                            <button
-                              onClick={() => removeProspect(row.id)}
-                              style={{
-                                background: 'transparent',
-                                color: 'var(--red)',
-                                border: '1px solid var(--red)',
-                                borderRadius: 8,
-                                padding: '8px 12px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              <FontAwesomeIcon icon={faTrash} style={{ marginRight: 6 }} />Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </Card>
+      {activeTab === 'history' && (
+        <section className="cex-panel">
+          <div className="cex-section-header"><div><h2>History</h2><p>Sent emails, replies and follow-ups</p></div><span>{sentRows.length}</span></div>
+          {loading ? <div className="cex-empty">Loading history...</div> : sentRows.length === 0 ? <div className="cex-empty"><FontAwesomeIcon icon={faEnvelope} /><strong>No sent emails yet</strong></div> : (
+            <div className="cex-history-list">{sentRows.map(row => (
+              <details className="cex-history-card" key={row.id}>
+                <summary><span className="cex-avatar">{String(row.name || 'C')[0].toUpperCase()}</span><span><strong>{row.name}</strong><small>{row.company || row.site_name} Â· {row.email}</small></span><span className={`cex-status is-${row.status}`}>{STATUS_OPTIONS.find(option => option.value === row.status)?.label || row.status}</span><FontAwesomeIcon icon={faChevronDown} /></summary>
+                <div className="cex-history-editor">
+                  <label>Name<input value={row.name || ''} onChange={event => updateRow(row.id, { name: event.target.value })} /></label>
+                  <label>Email<input type="email" value={row.email || ''} onChange={event => updateRow(row.id, { email: event.target.value })} /></label>
+                  <label>Company<input value={row.company || ''} onChange={event => updateRow(row.id, { company: event.target.value })} /></label>
+                  <label>Status<select value={row.status || 'sent'} onChange={event => updateRow(row.id, { status: event.target.value })}>{STATUS_OPTIONS.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                  <label className="is-wide">Notes<textarea rows="2" value={row.notes || ''} onChange={event => updateRow(row.id, { notes: event.target.value })} /></label>
+                  <div className="cex-history-actions"><button type="button" onClick={() => openFollowupInComposer(row)}><FontAwesomeIcon icon={faReply} /> Follow-up</button><button type="button" className="cex-primary" onClick={() => saveProspect(row)} disabled={savingId === row.id}>{savingId === row.id ? 'Saving...' : 'Save'}</button><button type="button" className="is-danger" onClick={() => removeProspect(row.id)}><FontAwesomeIcon icon={faTrash} /> Delete</button></div>
+                </div>
+              </details>
+            ))}</div>
+          )}
+        </section>
+      )}
 
-      </>
+      <SelectSheet open={projectSheetOpen} title="Choose project" options={projectOptions} value={selectedSiteId} onClose={() => setProjectSheetOpen(false)} onSelect={value => { setSelectedSiteId(value); setDraftState('saving'); setFormErrors(previous => ({ ...previous, project: undefined })) }} />
+
+      {reviewOpen && createPortal(
+        <div className="cex-review-layer" role="presentation" onClick={() => setReviewOpen(false)}>
+          <section className="cex-review" role="dialog" aria-modal="true" aria-label="Review email" onClick={event => event.stopPropagation()}>
+            <header><div><h2>Review email</h2><p>Confirm everything before opening your email app</p></div><button type="button" onClick={() => setReviewOpen(false)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header>
+            <dl><div><dt>To</dt><dd>{form.name} &lt;{form.email}&gt;</dd></div><div><dt>Subject</dt><dd>{form.subject}</dd></div></dl>
+            <pre>{form.message}</pre>
+            <footer><button type="button" className="cex-secondary" onClick={() => setReviewOpen(false)}>Back to edit</button><button type="button" className="cex-primary" onClick={confirmSend} disabled={sending}><FontAwesomeIcon icon={faPaperPlane} />{sending ? 'Preparing...' : 'Open email app'}</button></footer>
+          </section>
+        </div>, document.body
+      )}
     </div>
   )
 }
