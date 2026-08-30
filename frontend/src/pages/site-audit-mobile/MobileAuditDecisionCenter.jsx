@@ -50,7 +50,7 @@ const metricValue = (value) => {
   const number = safeNumber(value)
 
   return number == null
-    ? 'â€“'
+    ? '–'
     : number
 }
 
@@ -430,7 +430,7 @@ export default function MobileAuditDecisionCenter({
           <div className="msadc-empty">
 
             <div className="msadc-empty-icon">
-              âœ“
+              ✓
             </div>
 
             <strong>

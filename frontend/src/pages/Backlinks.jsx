@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { App as CapacitorApp } from '@capacitor/app'
+import { Capacitor } from '@capacitor/core'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus, faSpider, faRotate, faWandMagicSparkles, faCloudArrowUp, faStar, faLock } from '@fortawesome/free-solid-svg-icons'
@@ -91,7 +93,7 @@ export default function Backlinks() {
       return
     }
     if (viewParam === 'pulse') {
-      scrollTo('bl-section-hub')
+      scrollTo('bl-page-top')
     }
   }, [viewParam])
 
@@ -124,6 +126,40 @@ export default function Backlinks() {
       })
       .finally(() => setLoading(false))
   useEffect(() => { load() }, [siteId])
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return undefined
+
+    let backListener
+    let cancelled = false
+
+    CapacitorApp.addListener('backButton', () => {
+      const activeElement = document.activeElement
+
+      // Dismiss a focused input or the soft keyboard, then remain here.
+      if (activeElement instanceof HTMLElement) activeElement.blur()
+    }).then(listener => {
+      if (cancelled) listener.remove()
+      else backListener = listener
+    })
+
+    const stopEmulatorEscape = event => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      event.stopPropagation()
+
+      const activeElement = document.activeElement
+      if (activeElement instanceof HTMLElement) activeElement.blur()
+    }
+
+    document.addEventListener('keydown', stopEmulatorEscape, true)
+
+    return () => {
+      cancelled = true
+      backListener?.remove()
+      document.removeEventListener('keydown', stopEmulatorEscape, true)
+    }
+  }, [])
 
   const normalizeUrl = (raw) => {
     const v = String(raw || '').trim()
@@ -453,9 +489,10 @@ export default function Backlinks() {
           },
         }))}
       />
-      <div className="page-content">
+      <div id="bl-page-top" className="page-content">
       <button
         type="button"
+        className="page-back-link"
         onClick={() => navigate(`/site/${siteId}`)}
         style={{
           border: 'none',
@@ -468,7 +505,7 @@ export default function Backlinks() {
           cursor: 'pointer'
         }}
       >
-        ← Back to Overview
+        &larr; Back to Overview
       </button>
 
       <PageHeader
@@ -536,6 +573,48 @@ export default function Backlinks() {
         <p className="bl-health-summary__meta">
           {dofollow} dofollow | {nofollow} nofollow | {live} live
         </p>
+      </section>
+
+      <details className="bl-more-analyses">
+        <summary>
+          <span>
+            <strong>More analyses</strong>
+            <small>Health / Sources / Anchors / Dead ends</small>
+          </span>
+          <span className="bl-more-analyses__chevron" aria-hidden="true" />
+        </summary>
+        <div className="bl-more-analyses__grid">
+          <button type="button" onClick={() => setDeskView('health')}>Link health</button>
+          <button type="button" onClick={() => setDeskView('sources')}>Sources</button>
+          <button type="button" onClick={() => setDeskView('phrases')}>Anchors</button>
+          <button type="button" onClick={() => setDeskView('dead')}>Dead ends</button>
+        </div>
+      </details>
+
+      <section className="bl-mobile-recent" aria-label="Recent backlink changes">
+        <h2>Recent changes</h2>
+        <button
+          type="button"
+          onClick={() => {
+            setToolTab('overview')
+            setDeskView('tracked')
+          }}
+        >
+          <span className="bl-mobile-recent__icon is-positive" aria-hidden="true">+</span>
+          <span><strong>{Number(backlinkSummary?.new30d ?? 0)} new backlinks</strong><small>Last 30 days</small></span>
+          <span className="bl-mobile-row-chevron" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setToolTab('overview')
+            setDeskView('health')
+          }}
+        >
+          <span className="bl-mobile-recent__icon is-warning" aria-hidden="true">!</span>
+          <span><strong>{qualitySummary.risk + qualitySummary.spam} links need review</strong><small>Quality check</small></span>
+          <span className="bl-mobile-row-chevron" aria-hidden="true" />
+        </button>
       </section>
 
       <Card style={{ marginBottom: 14 }}>
@@ -612,7 +691,7 @@ export default function Backlinks() {
                   {adding ? 'Adding...' : <><FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} />Add prospect</>}
                 </OrangeBtn>
                 <p className="bl-form-help bl-form-help--inline">
-                  Outreach target only - won’t count toward live backlinks until a real URL is verified.
+                  Outreach target only - won't count toward live backlinks until a real URL is verified.
                 </p>
               </div>
             ) : (
@@ -749,10 +828,10 @@ export default function Backlinks() {
             </div>
             <div style={{ fontSize: 12, color: 'var(--muted)', marginTop: 2 }}>
               Grade each link as Good / OK / Risk / Spam from quality + DR signals.
-              {' · '}
+              {' / '}
               {Object.entries(QUALITY_META).map(([k, meta], i) => (
                 <span key={k}>
-                  {i > 0 ? ' · ' : ''}
+                  {i > 0 ? ' / ' : ''}
                   <strong style={{ color: meta.color }}>{meta.label}</strong>
                 </span>
               ))}

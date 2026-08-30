@@ -1,4 +1,4 @@
-﻿import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
+import { useState, useMemo, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -11,6 +11,7 @@ import { useAuth } from '../hooks/useAuth'
 import toast from '../utils/toast'
 import api from '../utils/api'
 import ScoreInfoTip from './ScoreInfoTip'
+import MobileSelect from './MobileSelect'
 import {
   classifyBacklink,
   getDomainRank,
@@ -772,16 +773,17 @@ export default function BacklinksTable({
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <select
+          <MobileSelect
             className="bl-status-filter"
             value={statusFilter}
             onChange={e => setStatusFilter(e.target.value)}
+            label="Filter by status"
           >
             <option value="All">All statuses</option>
-            <option>Todo</option>
-            <option>Pending</option>
-            <option>Live</option>
-          </select>
+            <option value="Todo">Todo</option>
+            <option value="Pending">Pending</option>
+            <option value="Live">Live</option>
+          </MobileSelect>
           <button
             type="button"
             className="bl-export-btn"
@@ -1135,11 +1137,15 @@ export default function BacklinksTable({
               >
                 <FontAwesomeIcon icon={faChevronLeft} />
               </button>
+              <span className="bl-pager-mobile-page">
+                Page {safePage} of {totalPages}
+              </span>
+
               {pageNumbers.map(n => (
                 <button
                   key={n}
                   type="button"
-                  className={`bl-pager-btn${n === safePage ? ' bl-pager-btn--active' : ''}`}
+                  className={`bl-pager-btn bl-pager-page-number${n === safePage ? ' bl-pager-btn--active' : ''}`}
                   onClick={() => setPage(n)}
                 >
                   {n}

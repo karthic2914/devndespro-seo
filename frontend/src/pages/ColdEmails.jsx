@@ -380,7 +380,7 @@ export default function ColdEmails() {
           {loading ? <div className="cex-empty">Loading history...</div> : sentRows.length === 0 ? <div className="cex-empty"><FontAwesomeIcon icon={faEnvelope} /><strong>No sent emails yet</strong></div> : (
             <div className="cex-history-list">{sentRows.map(row => (
               <details className="cex-history-card" key={row.id}>
-                <summary><span className="cex-avatar">{String(row.name || 'C')[0].toUpperCase()}</span><span><strong>{row.name}</strong><small>{row.company || row.site_name} Â· {row.email}</small></span><span className={`cex-status is-${row.status}`}>{STATUS_OPTIONS.find(option => option.value === row.status)?.label || row.status}</span><FontAwesomeIcon icon={faChevronDown} /></summary>
+                <summary><span className="cex-avatar">{String(row.name || 'C')[0].toUpperCase()}</span><span><strong>{row.name}</strong><small>{row.company || row.site_name} · {row.email}</small></span><span className={`cex-status is-${row.status}`}>{STATUS_OPTIONS.find(option => option.value === row.status)?.label || row.status}</span><FontAwesomeIcon icon={faChevronDown} /></summary>
                 <div className="cex-history-editor">
                   <label>Name<input value={row.name || ''} onChange={event => updateRow(row.id, { name: event.target.value })} /></label>
                   <label>Email<input type="email" value={row.email || ''} onChange={event => updateRow(row.id, { email: event.target.value })} /></label>

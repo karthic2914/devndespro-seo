@@ -1288,3 +1288,603 @@ a.bl-spam-disavow-btn {
     flex-direction: column;
   }
 }
+/* DEVNDESPRO: Backlinks best mobile UX */
+.bl-hub-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 4px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.bl-hub-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #475569;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.bl-hub-tab--active {
+  background: #0b1f36;
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+}
+
+.bl-hub-tab__mobile { display: none; }
+
+.bl-hub-tab__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.bl-hub-tab--active .bl-hub-tab__count {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.bl-more-analyses,
+.bl-mobile-recent { display: none; }
+
+@media (max-width: 639px) {
+  .page-content {
+    padding-inline: 12px;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  /* Desktop discovery grid is replaced by progressive disclosure on phones. */
+  .link-desk { display: none; }
+
+  .bl-hub-tabs {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 4px;
+    border-radius: 13px;
+  }
+
+  .bl-hub-tab {
+    gap: 4px;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 6px 3px;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+
+  .bl-hub-tab__desktop { display: none; }
+  .bl-hub-tab__mobile { display: inline; }
+
+  .bl-hub-tab__count {
+    min-width: 17px;
+    height: 17px;
+    padding-inline: 4px;
+    font-size: 9px;
+  }
+
+  .bl-primary-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .bl-health-summary {
+    margin-bottom: 12px;
+    padding: 14px;
+  }
+
+  .bl-more-analyses {
+    display: block;
+    margin: 0 0 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #fff;
+  }
+
+  .bl-more-analyses summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    padding: 10px 13px;
+    color: #172033;
+    cursor: pointer;
+    list-style: none;
+    touch-action: manipulation;
+  }
+
+  .bl-more-analyses summary::-webkit-details-marker { display: none; }
+  .bl-more-analyses summary > span:first-child { min-width: 0; }
+  .bl-more-analyses summary strong,
+  .bl-more-analyses summary small { display: block; }
+  .bl-more-analyses summary strong { font-size: 13px; }
+  .bl-more-analyses summary small {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #7c8da8;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bl-more-analyses__chevron {
+    color: #64748b;
+    font-size: 26px;
+    transition: transform 160ms ease;
+  }
+  .bl-more-analyses[open] .bl-more-analyses__chevron { transform: rotate(90deg); }
+
+  .bl-more-analyses__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+    padding: 0 10px 10px;
+  }
+
+  .bl-more-analyses__grid button {
+    min-height: 44px;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    touch-action: manipulation;
+  }
+
+  .bl-mobile-recent {
+    display: block;
+    margin-bottom: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    border-radius: 13px;
+    background: #fff;
+  }
+
+  .bl-mobile-recent h2 {
+    margin: 0;
+    padding: 12px 13px 6px;
+    color: #172033;
+    font-size: 13px;
+  }
+
+  .bl-mobile-recent button {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 13px;
+    border: 0;
+    border-top: 1px solid #eef2f7;
+    background: #fff;
+    color: #172033;
+    text-align: left;
+    touch-action: manipulation;
+  }
+
+  .bl-mobile-recent button > span:nth-child(2) { min-width: 0; }
+  .bl-mobile-recent button strong,
+  .bl-mobile-recent button small { display: block; }
+  .bl-mobile-recent button strong { font-size: 12px; }
+  .bl-mobile-recent button small { margin-top: 2px; color: #7c8da8; font-size: 10px; }
+  .bl-mobile-recent button > span:last-child { color: #64748b; font-size: 23px; }
+
+  .bl-mobile-recent__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 17px;
+    font-weight: 800;
+  }
+  .bl-mobile-recent__icon.is-positive { background: #e8f8ef; color: #16a34a; }
+  .bl-mobile-recent__icon.is-warning { background: #fff1e8; color: #ea580c; }
+}
+
+@media (max-width: 370px) {
+  .bl-hub-tab { font-size: 10px; }
+  .bl-hub-tab__count { display: none; }
+}
+/* DEVNDESPRO: Backlink range bottom sheet */
+.bl-range-select {
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.bl-range-trigger,
+.bl-range-sheet { display: none; }
+
+@media (max-width: 639px) {
+  .bl-range-select { display: none; }
+
+  .bl-range-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 96px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #dbe2ea;
+    border-radius: 9px;
+    background: #fff;
+    color: #475569;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    touch-action: manipulation;
+  }
+
+  .bl-range-trigger__chevron {
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid #64748b;
+    border-bottom: 1.5px solid #64748b;
+    transform: translateY(-2px) rotate(45deg);
+  }
+
+  .bl-range-sheet[open] {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+  }
+
+  .bl-range-sheet::backdrop {
+    background: rgba(15, 23, 42, 0.56);
+    backdrop-filter: blur(1px);
+  }
+
+  .bl-range-sheet__surface {
+    width: 100%;
+    padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+    background: #fff;
+    box-shadow: 0 -12px 34px rgba(15, 23, 42, 0.18);
+    animation: bl-range-sheet-in 180ms ease-out;
+  }
+
+  .bl-range-sheet__handle {
+    width: 38px;
+    height: 4px;
+    margin: 0 auto 8px;
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  .bl-range-sheet__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    border-bottom: 1px solid #eef2f7;
+  }
+
+  .bl-range-sheet__header h2 {
+    margin: 0;
+    color: #172033;
+    font-size: 16px;
+    font-weight: 800;
+  }
+
+  .bl-range-sheet__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f5f9;
+    color: #475569;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    touch-action: manipulation;
+  }
+
+  .bl-range-sheet__options { padding-top: 4px; }
+
+  .bl-range-sheet__option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 56px;
+    padding: 0 4px;
+    border: 0;
+    border-bottom: 1px solid #eef2f7;
+    background: #fff;
+    color: #172033;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 650;
+    text-align: left;
+    touch-action: manipulation;
+  }
+
+  .bl-range-sheet__option:last-child { border-bottom: 0; }
+  .bl-range-sheet__option.is-selected { color: #6d4aff; font-weight: 800; }
+
+  .bl-range-sheet__radio {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: 2px solid #94a3b8;
+    border-radius: 50%;
+  }
+
+  .bl-range-sheet__option.is-selected .bl-range-sheet__radio { border-color: #6d4aff; }
+  .bl-range-sheet__radio i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .bl-range-sheet__option.is-selected .bl-range-sheet__radio i { background: #6d4aff; }
+
+  @keyframes bl-range-sheet-in {
+    from { transform: translateY(20px); opacity: 0.7; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-range-sheet__surface { animation: none; }
+}
+
+/* Clean CSS chevrons — no text or encoding dependency */
+.bl-more-analyses__chevron,
+.bl-mobile-row-chevron {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid #64748b;
+  border-bottom: 2px solid #64748b;
+  transform: rotate(-45deg);
+}
+
+.bl-more-analyses[open] .bl-more-analyses__chevron {
+  transform: rotate(45deg);
+}
+
+.bl-mobile-recent button > .bl-mobile-row-chevron {
+  width: 8px;
+  height: 8px;
+  font-size: 0;
+}
+/* DEVNDESPRO_BACKLINKS_MOBILE_OVERFLOW_FIX_START */
+@media (max-width: 640px) {
+  .bl-wrap,
+  .bl-topbar {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /*
+   * The table has ten filter tabs. On mobile they remain on one line
+   * and can be swiped horizontally without expanding the page.
+   */
+  .bl-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 6px;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .bl-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .bl-tab,
+  .bl-tab-sep {
+    flex: 0 0 auto;
+  }
+
+  .bl-tab {
+    min-width: auto;
+    padding-left: 11px;
+    padding-right: 11px;
+    scroll-snap-align: start;
+  }
+
+  /*
+   * Search and status stay on the first row.
+   * Export buttons move to the second row.
+   */
+  .bl-toolbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(118px, 0.72fr);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .bl-search,
+  .bl-status-filter,
+  .bl-export-btn {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .bl-export-btn {
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .bl-table-scroll {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+/* DEVNDESPRO_BACKLINKS_MOBILE_OVERFLOW_FIX_END */
+/* DEVNDESPRO_ANDROID_UI_CORRECTED_V3 */
+
+.bl-pager-mobile-page {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  /* Top process steps: swipe horizontally */
+  .app-process-topbar__steps {
+    display: block;
+    flex: 1 1 100% !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .app-process-topbar__steps::-webkit-scrollbar,
+  .bl-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-process-topbar__steps > * {
+    width: max-content !important;
+    min-width: max-content !important;
+    max-width: none !important;
+  }
+
+  /* Backlink filter tabs: swipe horizontally */
+  .bl-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    touch-action: pan-x;
+  }
+
+  .bl-tab,
+  .bl-tab-sep {
+    flex: 0 0 auto !important;
+  }
+
+  /* MobileSelect fills its toolbar column */
+  .bl-status-filter {
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100%;
+    min-width: 0;
+    height: 32px;
+    padding: 0;
+  }
+
+  .bl-status-filter .responsive-select__mobile,
+  .bl-status-filter .responsive-select__desktop {
+    box-sizing: border-box;
+    width: 100% !important;
+    height: 32px;
+  }
+
+  /* Compact pagination: arrows with Page X of Y */
+  .bl-pager {
+    gap: 8px;
+  }
+
+  .bl-pager-btns {
+    gap: 6px;
+  }
+
+  .bl-pager-page-number {
+    display: none !important;
+  }
+
+  .bl-pager-mobile-page {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 94px;
+    height: 32px;
+    padding: 0 8px;
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .bl-pager-btn:not(:disabled) {
+    border-color: #cbd5e1;
+    color: var(--text);
+  }
+
+  .bl-pager-btn:disabled {
+    opacity: 0.3;
+  }
+}

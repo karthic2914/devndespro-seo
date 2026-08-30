@@ -161,7 +161,7 @@
 
 /* DEVNDESPRO PROJECT CARD POLISH START */
 
-/* One page scrollbar only Ã¢â‚¬â€ kill any remaining nested project scroll area. */
+/* One page scrollbar only — kill any remaining nested project scroll area. */
 .projects-modern-panel [style*="overflow-y: auto"],
 .projects-modern-panel [style*="overflow-y:auto"],
 .projects-modern-panel [style*="overflowY"],
@@ -173,7 +173,7 @@
   overflow: visible !important;
 }
 
-/* Main project grid Ã¢â‚¬â€ closer to approved mockup. */
+/* Main project grid — closer to approved mockup. */
 .projects-card-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;

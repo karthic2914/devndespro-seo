@@ -1,4 +1,4 @@
-﻿
+
 /* Mobile topbar + hamburger */
 .mobile-topbar {
   display: none;
@@ -24,7 +24,7 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  /* Brand â€” DevnDespro Visibility */
+  /* Brand — DevnDespro Visibility */
   --brand: #6C5CE7;
   --brand-dark: #5647D8;
   --brand-soft: #F2F0FF;

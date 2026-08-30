@@ -197,6 +197,10 @@
   .app-main .card {
     border-radius: 12px;
   }
+
+  .page-back-link {
+    display: none;
+  }
 }
 
 /* DEVNDESPRO SAAS UX END */

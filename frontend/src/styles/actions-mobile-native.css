@@ -1,4 +1,4 @@
-﻿﻿.mobile-action-plan {
+﻿﻿﻿.mobile-action-plan {
   --ma-purple: #6754e8;
   --ma-text: #17233b;
   --ma-muted: #728097;
@@ -569,6 +569,13 @@
 
   .actions-desktop-layout {
     display: none !important;
+  }
+
+  /* Actions always mounts AppProcessTopBar; Keywords never does on
+     mobile. Hide it here, scoped to this page only, so mobile shows
+     one header (MobileActionPlan's own) instead of two stacked ones. */
+  body:has(.mobile-action-plan) .app-process-topbar {
+    display: none;
   }
 }
 

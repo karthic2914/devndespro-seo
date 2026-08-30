@@ -18,31 +18,19 @@ import toast from '../utils/toast'
 import { summarizeBacklinkQuality } from '../utils/backlinkQuality'
 
 const TABS = [
-  { id: 'overview', label: 'Overview' },
-  { id: 'broken', label: 'Broken backlinks' },
-  { id: 'referring', label: 'Referring domains' },
-  { id: 'gap', label: 'Backlink gap' },
+  { id: 'overview', label: 'Overview', mobileLabel: 'Overview' },
+  { id: 'broken', label: 'Broken backlinks', mobileLabel: 'Broken' },
+  { id: 'referring', label: 'Referring domains', mobileLabel: 'Domains' },
+  { id: 'gap', label: 'Backlink gap', mobileLabel: 'Gap' },
 ]
 
 function TabBar({ active, onChange, counts = {} }) {
   return (
-    <div
-      className="bl-hub-tabs"
-      role="tablist"
-      style={{
-        display: 'flex',
-        gap: 6,
-        flexWrap: 'wrap',
-        marginBottom: 14,
-        padding: 4,
-        background: '#F8FAFC',
-        borderRadius: 12,
-        border: '1px solid #E2E8F0',
-      }}
-    >
+    <div className="bl-hub-tabs" role="tablist" aria-label="Backlink views">
       {TABS.map((tab) => {
         const isActive = active === tab.id
         const count = counts[tab.id]
+
         return (
           <button
             className={`bl-hub-tab${isActive ? ' bl-hub-tab--active' : ''}`}
@@ -51,38 +39,16 @@ function TabBar({ active, onChange, counts = {} }) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
-            style={{
-              border: 0,
-              borderRadius: 9,
-              padding: '9px 14px',
-              fontSize: 12,
-              fontWeight: 750,
-              cursor: 'pointer',
-              background: isActive ? '#0B1F36' : 'transparent',
-              color: isActive ? '#fff' : '#475569',
-            }}
           >
-            {tab.label}
-            {count != null ? (
-              <span style={{
-                marginLeft: 7,
-                fontSize: 10,
-                fontWeight: 800,
-                opacity: 0.85,
-                background: isActive ? 'rgba(255,255,255,0.15)' : '#E2E8F0',
-                padding: '2px 6px',
-                borderRadius: 99,
-              }}>
-                {count}
-              </span>
-            ) : null}
+            <span className="bl-hub-tab__desktop">{tab.label}</span>
+            <span className="bl-hub-tab__mobile">{tab.mobileLabel}</span>
+            {count != null ? <span className="bl-hub-tab__count">{count}</span> : null}
           </button>
         )
       })}
     </div>
   )
 }
-
 function BrokenPanel({ backlinks, onFilter }) {
   const broken = useMemo(
     () =>

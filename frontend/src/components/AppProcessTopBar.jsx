@@ -31,13 +31,16 @@ export default function AppProcessTopBar({
         width: '100%',
       }}
     >
-      <div style={{ flex: '1 1 280px', minWidth: 0 }}>
+      <div
+        className="app-process-topbar__steps"
+        style={{ flex: '1 1 280px', minWidth: 0 }}
+      >
         <PageProcessGuide
           compact
           title={null}
           tip={tip}
           steps={steps}
-          style={{ marginBottom: 0, maxWidth: '100%' }}
+          style={{ marginBottom: 0 }}
         />
       </div>
       <div style={{ flex: '0 0 auto', marginLeft: 'auto' }}>

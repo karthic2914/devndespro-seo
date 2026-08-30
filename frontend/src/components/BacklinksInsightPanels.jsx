@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   LineChart,
   Line,
@@ -160,12 +160,32 @@ export default function BacklinksInsightPanels({
   const { user } = useAuth()
   const isAdmin = Number(user?.id) === 1
   const [rangeMonths, setRangeMonths] = useState(12)
+  const [rangeSheetOpen, setRangeSheetOpen] = useState(false)
+  const rangeSheetRef = useRef(null)
+  const rangeTriggerRef = useRef(null)
   const [domainLimit, setDomainLimit] = useState(5)
   const [anchorLimit, setAnchorLimit] = useState(5)
   const [growthLive, setGrowthLive] = useState(null)
   const [growthLoading, setGrowthLoading] = useState(false)
   const [growthMeta, setGrowthMeta] = useState({ source: 'tracked' })
 
+  useEffect(() => {
+    const dialog = rangeSheetRef.current
+    if (!dialog) return undefined
+
+    if (rangeSheetOpen && !dialog.open) {
+      dialog.showModal()
+      document.body.style.overflow = 'hidden'
+    } else if (!rangeSheetOpen && dialog.open) {
+      dialog.close()
+      document.body.style.overflow = ''
+      requestAnimationFrame(() => rangeTriggerRef.current?.focus())
+    }
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [rangeSheetOpen])
   const localGrowth = useMemo(
     () => buildGrowth(backlinks, rangeMonths),
     [backlinks, rangeMonths]
@@ -285,23 +305,77 @@ export default function BacklinksInsightPanels({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <select
+              className="bl-range-select"
               value={rangeMonths}
               onChange={e => setRangeMonths(Number(e.target.value))}
-              style={{
-                height: 30,
-                border: '1px solid #E5E7EB',
-                borderRadius: 7,
-                fontSize: 11,
-                fontWeight: 650,
-                color: '#475569',
-                background: '#fff',
-                padding: '0 8px',
-              }}
+              aria-label="Backlink growth time range"
             >
               <option value={6}>6 months</option>
               <option value={12}>12 months</option>
               <option value={24}>24 months</option>
             </select>
+
+            <button
+              ref={rangeTriggerRef}
+              type="button"
+              className="bl-range-trigger"
+              aria-haspopup="dialog"
+              aria-expanded={rangeSheetOpen}
+              onClick={() => setRangeSheetOpen(true)}
+            >
+              <span>{rangeMonths} months</span>
+              <span className="bl-range-trigger__chevron" aria-hidden="true" />
+            </button>
+
+            <dialog
+              ref={rangeSheetRef}
+              className="bl-range-sheet"
+              aria-labelledby="bl-range-sheet-title"
+              onCancel={(event) => {
+                event.preventDefault()
+                setRangeSheetOpen(false)
+              }}
+              onClick={(event) => {
+                if (event.target === event.currentTarget) setRangeSheetOpen(false)
+              }}
+            >
+              <div className="bl-range-sheet__surface">
+                <div className="bl-range-sheet__handle" aria-hidden="true" />
+                <div className="bl-range-sheet__header">
+                  <h2 id="bl-range-sheet-title">Select time range</h2>
+                  <button
+                    type="button"
+                    className="bl-range-sheet__close"
+                    aria-label="Close time range"
+                    onClick={() => setRangeSheetOpen(false)}
+                  >
+                    X
+                  </button>
+                </div>
+
+                <div className="bl-range-sheet__options" role="radiogroup" aria-label="Time range">
+                  {[6, 12, 24].map(months => {
+                    const selected = rangeMonths === months
+                    return (
+                      <button
+                        key={months}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        className={`bl-range-sheet__option${selected ? ' is-selected' : ''}`}
+                        onClick={() => {
+                          setRangeMonths(months)
+                          setRangeSheetOpen(false)
+                        }}
+                      >
+                        <span>{months} months</span>
+                        <span className="bl-range-sheet__radio" aria-hidden="true"><i /></span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            </dialog>
             {isAdmin && siteId && (
               <button
                 type="button"

@@ -173,7 +173,7 @@ export default function MobileAuditInsights({
     <div className="mais-root">
 
       {/* ================================================
-          PHASE 6 â€” AI VISIBILITY
+          PHASE 6 — AI VISIBILITY
          ================================================ */}
 
       <section className="mais-card">
@@ -234,7 +234,7 @@ export default function MobileAuditInsights({
             <strong>
               {
                 aiSnippetScore ??
-                'â€“'
+                '–'
               }
 
               {aiSnippetScore != null && (
@@ -266,7 +266,7 @@ export default function MobileAuditInsights({
             </span>
 
             <strong>
-              {aeoScore ?? 'â€“'}
+              {aeoScore ?? '–'}
 
               {aeoScore != null && (
                 <small>
@@ -358,7 +358,7 @@ export default function MobileAuditInsights({
 
 
       {/* ================================================
-          PHASE 7 â€” AUTHORITY
+          PHASE 7 — AUTHORITY
          ================================================ */}
 
       <section className="mais-card">
@@ -397,7 +397,7 @@ export default function MobileAuditInsights({
                   : ''
               }
             >
-              â†»
+              ↻
             </span>
 
             {
@@ -429,7 +429,7 @@ export default function MobileAuditInsights({
             <strong>
               {
                 domainRank ??
-                'â€“'
+                '–'
               }
 
               {domainRank != null && (
@@ -463,7 +463,7 @@ export default function MobileAuditInsights({
             <strong>
               {
                 authorityScore ??
-                'â€“'
+                '–'
               }
 
               {authorityScore != null && (
@@ -508,7 +508,7 @@ export default function MobileAuditInsights({
 
 
       {/* ================================================
-          PHASE 7 â€” CRAWL SNAPSHOT
+          PHASE 7 — CRAWL SNAPSHOT
          ================================================ */}
 
       {crawl && (

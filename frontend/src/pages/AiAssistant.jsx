@@ -1,4 +1,4 @@
-﻿import { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -96,7 +96,7 @@ function ChatTab({ siteId }) {
   )
 }
 
-// â”€â”€ AI Visibility Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── AI Visibility Tab ─────────────────────────────────────────────────────────
 function VisibilityTab({ siteId }) {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
@@ -187,7 +187,7 @@ function VisibilityTab({ siteId }) {
   )
 }
 
-// â”€â”€ Link Opportunities Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Link Opportunities Tab ────────────────────────────────────────────────────
 function OpportunitiesTab({ siteId }) {
   const [loading, setLoading] = useState(false)
   const [opps, setOpps] = useState(null)
@@ -254,7 +254,7 @@ function OpportunitiesTab({ siteId }) {
   )
 }
 
-// â”€â”€ Action Plan Tab â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Action Plan Tab ───────────────────────────────────────────────────────────
 function ActionPlanTab({ siteId }) {
   const [loading, setLoading] = useState(false)
   const [tasks, setTasks] = useState(null)
@@ -412,7 +412,7 @@ function ActionPlanTab({ siteId }) {
   )
 }
 
-// â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Main Component ────────────────────────────────────────────────────────────
 export default function AiAssistant() {
   const { siteId } = useParams()
   const [activeTab, setActiveTab] = useState('chat')
