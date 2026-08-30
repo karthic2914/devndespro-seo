@@ -44,3 +44,5 @@ serpapi_test.json
 
 # Local utility scripts
 *.ps1
+
+*.bak
