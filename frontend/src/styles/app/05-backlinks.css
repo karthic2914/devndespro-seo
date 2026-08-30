@@ -2591,3 +2591,47 @@ a.bl-spam-disavow-btn {
     height: 40px;
   }
 }
+
+/* BACKLINKS_DESKTOP_STATUS_CLIP_V11 */
+
+@media (min-width: 701px) {
+  /* Give the dropdown enough usable space inside the Status cell. */
+  .bl-table--compact th:nth-child(6),
+  .bl-table--compact td:nth-child(6) {
+    box-sizing: border-box;
+    width: 120px !important;
+    min-width: 120px;
+    padding-right: 8px !important;
+    padding-left: 8px !important;
+    overflow: visible !important;
+  }
+
+  .bl-table--compact .bl-status-sel.responsive-select {
+    display: block;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 38px;
+    overflow: visible;
+  }
+
+  .bl-table--compact
+    .bl-status-sel
+    > .responsive-select__desktop {
+    display: block !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 38px;
+    padding: 0 30px 0 12px;
+    border: 1px solid #b7dfc6;
+    border-radius: 10px;
+    background-color: #f0fdf4;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: normal;
+    text-align: left;
+    overflow: visible;
+  }
+}
