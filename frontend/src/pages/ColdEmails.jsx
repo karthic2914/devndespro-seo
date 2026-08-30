@@ -320,20 +320,20 @@ export default function ColdEmails() {
 
       <nav className="cex-tabs" aria-label="Cold email sections">
         {[
-          ['prospects', 'Prospects'], ['compose', 'Compose'], ['history', 'History'],
+          ['prospects', 'Drafts'], ['compose', 'Compose'], ['history', 'History'],
         ].map(([id, label]) => <button type="button" key={id} className={activeTab === id ? 'is-active' : ''} aria-selected={activeTab === id} onClick={() => setActiveTab(id)}>{label}</button>)}
       </nav>
 
       {activeTab === 'prospects' && (
         <section className="cex-panel cex-prospect-page">
-          <div className="cex-section-header"><div><h2>Prospects</h2><p>Pending contacts ready to prepare</p></div><span>{pendingRows.length} ready</span></div>
+          <div className="cex-section-header"><div><h2>Drafts</h2><p>Email drafts waiting for review</p></div><span>{pendingRows.length} drafts</span></div>
           {loading ? <div className="cex-empty">Loading prospects...</div> : pendingRows.length === 0 ? (
             <div className="cex-empty"><FontAwesomeIcon icon={faUsers} /><strong>No pending contacts</strong><p>New project drafts will appear here automatically.</p></div>
           ) : <div className="cex-prospect-list">{pendingRows.map(row => (
             <button type="button" key={row.id} className="cex-prospect-row" onClick={() => openDraftInComposer(row)}>
               <span className="cex-avatar">{String(row.name || row.site_name || 'P')[0].toUpperCase()}</span>
               <span><strong>{row.name || row.site_name || 'New prospect'}</strong><small>{row.email || row.website || row.site_url || 'Contact details required'}</small></span>
-              <FontAwesomeIcon icon={faChevronRight} />
+              <span className="cex-prospect-actions"><span className="cex-draft-badge">Draft</span><FontAwesomeIcon icon={faChevronRight} /></span>
             </button>
           ))}</div>}
         </section>
@@ -342,17 +342,18 @@ export default function ColdEmails() {
       {activeTab === 'compose' && (
         <section className="cex-compose-grid">
           <aside className="cex-panel cex-compose-prospects">
-            <div className="cex-section-header"><div><h2>Prospects</h2><p>Ready to contact</p></div><span>{pendingRows.length}</span></div>
+            <div className="cex-section-header"><div><h2>Drafts</h2><p>Waiting for review</p></div><span>{pendingRows.length}</span></div>
             {pendingRows.length === 0 ? <div className="cex-empty is-compact">No pending contacts</div> : pendingRows.map(row => (
               <button type="button" key={row.id} className={`cex-prospect-row ${draftId === row.id ? 'is-selected' : ''}`} onClick={() => openDraftInComposer(row)}>
                 <span className="cex-avatar">{String(row.name || row.site_name || 'P')[0].toUpperCase()}</span>
                 <span><strong>{row.name || row.site_name}</strong><small>{row.email || row.website || 'Add details'}</small></span>
+                <span className="cex-draft-badge">Draft</span>
               </button>
             ))}
           </aside>
 
           <article className="cex-panel cex-composer">
-            <div className="cex-section-header"><div><h2>{composeMode === 'followup' ? 'Compose follow-up' : 'Compose email'}</h2><p>Personalized outreach that is ready to review</p></div><span className="cex-save-state"><FontAwesomeIcon icon={draftState === 'saved' ? faCheck : faClock} />{draftState === 'saved' ? 'Saved' : 'Saving...'}</span></div>
+            <div className="cex-section-header"><div><h2>{composeMode === 'followup' ? 'Compose follow-up' : 'Compose email'}</h2><p>Personalized outreach that is ready to review</p></div><div className="cex-draft-state"><span className="cex-draft-badge">{composeMode === 'followup' ? 'Follow-up' : 'Draft'}</span><span className="cex-save-state"><FontAwesomeIcon icon={draftState === 'saved' ? faCheck : faClock} />{draftState === 'saved' ? 'All changes saved' : 'Saving...'}</span></div></div>
             <div className="cex-fields">
               <label className={formErrors.project ? 'has-error' : ''}>Project
                 <button type="button" className="cex-select-trigger" onClick={() => setProjectSheetOpen(true)}><span>{selectedProject?.name || 'Choose project'}</span><FontAwesomeIcon icon={faChevronDown} /></button>

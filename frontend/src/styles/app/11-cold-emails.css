@@ -97,3 +97,45 @@
   .cex-history-card>summary { grid-template-columns:38px minmax(0,1fr) auto; }.cex-history-card>summary>.cex-status { grid-column:2; width:max-content; }.cex-history-card>summary>svg { grid-column:3; grid-row:1/3; }.cex-history-actions { display:grid; grid-template-columns:1fr 1fr; }.cex-history-actions .is-danger { grid-column:1/-1; }
   .cex-review-layer { align-items:flex-end; padding:0; }.cex-review { max-height:88vh; border-radius:26px 26px 0 0; padding-bottom:calc(18px + env(safe-area-inset-bottom)); }.cex-review footer { display:grid; grid-template-columns:auto 1fr; }
 }
+/* Explicit draft status: desktop, tablet and Android */
+.cex-prospect-actions {
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+  color:#7b89a2;
+}
+.cex-draft-badge {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:max-content;
+  min-height:28px;
+  padding:4px 10px;
+  border:1px solid #ded6ff;
+  border-radius:999px;
+  color:var(--cex-purple);
+  background:var(--cex-purple-soft);
+  font-size:.72rem;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:.01em;
+}
+.cex-draft-state {
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:7px;
+  flex:0 0 auto;
+}
+.cex-draft-state .cex-save-state {
+  padding:0;
+}
+
+@media (max-width:720px) {
+  .cex-prospect-row { grid-template-columns:40px minmax(0,1fr) auto; }
+  .cex-prospect-actions { gap:7px; }
+  .cex-draft-badge { min-height:26px; padding:4px 8px; font-size:.68rem; }
+  .cex-draft-state { gap:5px; }
+  .cex-draft-state .cex-save-state { font-size:.72rem!important; }
+}
