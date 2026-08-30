@@ -423,7 +423,7 @@ async function bumpSiteHealth(siteId, delta) {
   return Number(m[0]?.health) || null
 }
 
-/** Mark done â†’ remove from pending/banner focus and increase site health. */
+/** Mark done ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ remove from pending/banner focus and increase site health. */
 router.put('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
   try {
     const { rows } = await pool.query(
@@ -455,8 +455,8 @@ router.delete('/:siteId/actions/:id', auth, verifySite, async (req, res) => {
 /**
  * Reconcile Action Plan with latest audit:
  * - health = audit score
- * - new issues â†’ pending tasks
- * - fixed issues â†’ auto-complete / remove from banner focus
+ * - new issues ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ pending tasks
+ * - fixed issues ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ auto-complete / remove from banner focus
  */
 router.post('/:siteId/actions/sync-from-audit', auth, verifySite, async (req, res) => {
   try {
@@ -534,7 +534,7 @@ async function discoverCompetitorsFromSiteCrawl(siteUrl, targetDomain) {
 
   return [...found.values()]
     .sort((a, b) => b.hits - a.hits)
-    .slice(0, 8)
+    .slice(0, MAX_AUTO_DISCOVERED_COMPETITORS)
     .map((c) => ({
       name: c.name,
       dr: 0,
@@ -644,7 +644,7 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
     let discovered = []
     let source = 'mixed'
 
-    // 1) Ranking-overlap (try NO + US â€” small markets can return empty)
+    // 1) Ranking-overlap (try NO + US ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â small markets can return empty)
     const authHeader = getDataForSEOAuthSites()
     if (authHeader) {
       for (const locationCode of [2578, 2840]) {
@@ -701,7 +701,7 @@ router.post('/:siteId/competitors/auto-discover', auth, verifySite, async (req, 
       console.warn('Backlink competitors discover skipped:', e.message)
     }
 
-    // NOTE: outbound crawl links are NOT treated as competitors (partners/blogs/tools â‰  rivals)
+    // NOTE: outbound crawl links are NOT treated as competitors (partners/blogs/tools ÃƒÂ¢Ã¢â‚¬Â°Ã‚Â  rivals)
 
     // Dedupe
     const byDomain = new Map()
@@ -744,7 +744,7 @@ Website: ${site.url}
 What we do (must match competitors to this niche):
 ${businessContext}
 
-Task: From the candidates below, keep ONLY genuine direct or close competitors â€” companies that sell the SAME core services to similar customers (e.g. web design, web development, SEO / digital marketing agencies).
+Task: From the candidates below, keep ONLY genuine direct or close competitors ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â companies that sell the SAME core services to similar customers (e.g. web design, web development, SEO / digital marketing agencies).
 
 EXCLUDE:
 - Blogs, personal sites, SaaS tools, directories, job boards, news sites
@@ -770,7 +770,7 @@ Return ONLY valid JSON:
 }
 
 Candidates:
-${candidateList || '(none â€” invent up to 6 real niche competitors instead)'}`
+${candidateList || '(none ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â invent up to ${MAX_AUTO_DISCOVERED_COMPETITORS} real niche competitors instead)'}`
 
       const r = await anthropic.messages.create({
         model: 'claude-sonnet-5',
@@ -804,7 +804,7 @@ ${candidateList || '(none â€” invent up to 6 real niche competitors instead
           }
         })
         .filter(Boolean)
-        .slice(0, 8)
+        .slice(0, MAX_AUTO_DISCOVERED_COMPETITORS)
       if (profiles.length) source = discovered.length ? 'filtered' : 'ai'
     } catch (e) {
       console.error('Competitor niche filter failed:', e.message)
@@ -819,7 +819,7 @@ Business: ${site.name} (${site.url})
 What they do:
 ${businessContext}
 
-List up to 6 REAL direct competitors in the SAME niche (web design / web development / SEO / digital agencies serving similar markets). Prefer real company domains.
+List up to ${MAX_AUTO_DISCOVERED_COMPETITORS} REAL direct competitors in the SAME niche (web design / web development / SEO / digital agencies serving similar markets). Prefer real company domains.
 
 Return ONLY valid JSON:
 {
@@ -860,7 +860,7 @@ Return ONLY valid JSON:
             source: 'ai',
           }))
           .filter((c) => c.name && c.name !== targetDomain)
-          .slice(0, 6)
+          .slice(0, MAX_AUTO_DISCOVERED_COMPETITORS)
 
         // Fill missing summaries from live pages
         const extraBasics = await enrichCompetitorBasics(profiles.map((p) => p.name))
@@ -879,11 +879,11 @@ Return ONLY valid JSON:
     // Last resort: keep top candidates (including weak) so Auto-fill never returns empty
     if (!profiles.length && discovered.length) {
       source = 'labs-fallback'
-      profiles = discovered.slice(0, 6).map((d) => ({
+      profiles = discovered.slice(0, MAX_AUTO_DISCOVERED_COMPETITORS).map((d) => ({
         name: d.name,
         dr: Number(d.dr || 0),
         title: d.title || '',
-        summary: d.summary || 'Competitor candidate from search/backlink data â€” verify niche fit',
+        summary: d.summary || 'Competitor candidate from search/backlink data ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â verify niche fit',
         industry: 'Digital / marketing related (verify)',
         location: '',
         notes: `Auto-fill fallback: ${d.notes || d.source || ''}`.slice(0, 280),
@@ -896,7 +896,7 @@ Return ONLY valid JSON:
     if (!profiles.length) {
       source = 'ai-seed'
       try {
-        const prompt = `Return ONLY JSON with 5 real web design / web development / SEO agency competitor domains for a company like ${site.name} (${targetDomain}), preferably Norway/Scandinavia/Europe if relevant.
+        const prompt = `Return ONLY JSON with up to ${MAX_AUTO_DISCOVERED_COMPETITORS} real web design / web development / SEO agency competitor domains for a company like ${site.name} (${targetDomain}), preferably Norway/Scandinavia/Europe if relevant.
 {"competitors":[{"domain":"x.com","industry":"Web design & SEO agency","summary":"...","location":"...","reason":"..."}]}`
         const r = await anthropic.messages.create({
           model: 'claude-sonnet-5',
@@ -920,7 +920,7 @@ Return ONLY valid JSON:
             source: 'ai',
           }))
           .filter((c) => c.name && c.name !== targetDomain)
-          .slice(0, 5)
+          .slice(0, MAX_AUTO_DISCOVERED_COMPETITORS)
       } catch (e) {
         console.error('AI seed competitors failed:', e.message)
       }
