@@ -1888,3 +1888,475 @@ a.bl-spam-disavow-btn {
     opacity: 0.3;
   }
 }
+
+/* BACKLINKS_FINAL_MOBILE_UI_V6 */
+
+/* Desktop uses only the native desktop element. */
+.bl-status-filter .responsive-select__desktop,
+.bl-status-sel .responsive-select__desktop {
+  display: block;
+  width: 100%;
+}
+
+.bl-status-filter .responsive-select__mobile,
+.bl-status-sel .responsive-select__mobile {
+  display: none;
+}
+
+@media (max-width: 700px) {
+  /* Android uses only MobileSelect bottom-sheet triggers. */
+  .bl-status-filter .responsive-select__desktop,
+  .bl-status-sel .responsive-select__desktop {
+    display: none !important;
+  }
+
+  .bl-status-filter .responsive-select__mobile,
+  .bl-status-sel .responsive-select__mobile {
+    display: flex !important;
+  }
+
+  .bl-status-filter.responsive-select {
+    width: 100%;
+    height: 32px;
+    padding: 0;
+  }
+
+  .bl-status-filter .responsive-select__mobile {
+    min-height: 32px;
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 12px;
+  }
+
+  .bl-status-sel.responsive-select {
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .bl-status-sel .responsive-select__mobile {
+    min-height: 34px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  /* Mobile table becomes complete cards without horizontal scrolling. */
+  .bl-table-scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .bl-table--compact,
+  .bl-table--compact tbody {
+    display: block;
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bl-table--compact thead {
+    display: none !important;
+  }
+
+  .bl-table--compact tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 14px 12px;
+    gap: 14px 12px;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .bl-table--compact tbody td {
+    display: block;
+    box-sizing: border-box;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: visible !important;
+    text-align: left !important;
+  }
+
+  .bl-table--compact .bl-td-domain,
+  .bl-table--compact .bl-td-anchor {
+    grid-column: 1 / -1;
+  }
+
+  /* Every card field receives a visible label. */
+  .bl-table--compact tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 6px;
+    color: #94a3b8;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    line-height: 1.2;
+    text-transform: uppercase;
+  }
+
+  .bl-table--compact .bl-domain-name,
+  .bl-table--compact .bl-page-url,
+  .bl-table--compact .bl-anchor-text,
+  .bl-table--compact .bl-target-url {
+    display: block;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .bl-table--compact .bl-row-actions {
+    justify-content: flex-start;
+  }
+
+  .bl-table--compact .bl-menu-trigger {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* BACKLINKS_PREMIUM_ANDROID_CARDS_V7 */
+
+@media (max-width: 700px) {
+  /*
+   * Android backlink card:
+   * domain and menu at top,
+   * anchor below,
+   * metrics in a compact two-column grid.
+   */
+  .bl-table-scroll {
+    overflow: visible !important;
+    border-radius: 0;
+  }
+
+  .bl-table--compact,
+  .bl-table--compact tbody {
+    display: block;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .bl-table--compact thead {
+    display: none !important;
+  }
+
+  .bl-table--compact tbody tr {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 16px 14px;
+    gap: 16px 14px;
+    border: 1px solid #dfe6ef !important;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 4%);
+    overflow: visible;
+  }
+
+  .bl-table--compact tbody tr.bl-row-good {
+    background: linear-gradient(145deg, #ffffff 0%, #f3fff7 100%);
+    border-color: #d8eee0 !important;
+  }
+
+  .bl-table--compact tbody tr.bl-row-risk {
+    background: linear-gradient(145deg, #ffffff 0%, #fff8f1 100%);
+    border-color: #f5dfca !important;
+  }
+
+  .bl-table--compact tbody tr.bl-row-spam {
+    background: linear-gradient(145deg, #ffffff 0%, #fff5f5 100%);
+    border-color: #f2d3d3 !important;
+  }
+
+  .bl-table--compact tbody td {
+    display: block;
+    box-sizing: border-box;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: visible !important;
+    text-align: left !important;
+  }
+
+  /* Domain and anchor occupy the full card width. */
+  .bl-table--compact .bl-td-domain,
+  .bl-table--compact .bl-td-anchor {
+    grid-column: 1 / -1;
+  }
+
+  /* Leave room beside the domain for the three-dot button. */
+  .bl-table--compact .bl-td-domain {
+    padding-right: 46px !important;
+  }
+
+  /* Compact uppercase field labels. */
+  .bl-table--compact tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 7px;
+    color: #8a9ab1;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+  }
+
+  .bl-table--compact .bl-domain-name {
+    margin-bottom: 4px;
+    color: #17243d;
+    font-size: 14px;
+    font-weight: 750;
+  }
+
+  .bl-table--compact .bl-page-url {
+    color: #71819a;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .bl-table--compact .bl-row-meta {
+    margin-top: 8px;
+  }
+
+  .bl-table--compact .bl-anchor-text {
+    color: #17243d;
+    font-size: 13px;
+    font-weight: 650;
+    line-height: 1.45;
+  }
+
+  .bl-table--compact .bl-target-url {
+    margin-top: 4px;
+    color: #8a9ab1;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .bl-table--compact .bl-domain-name,
+  .bl-table--compact .bl-page-url,
+  .bl-table--compact .bl-anchor-text,
+  .bl-table--compact .bl-target-url {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /*
+   * Move Actions to the top-right.
+   * It no longer takes a grid position at the bottom.
+   */
+  .bl-table--compact .bl-td-actions {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+    z-index: 3;
+    display: block;
+    width: 38px !important;
+    min-width: 38px !important;
+  }
+
+  .bl-table--compact .bl-td-actions::before {
+    display: none !important;
+    content: none !important;
+  }
+
+  .bl-table--compact .bl-row-actions {
+    display: flex;
+    width: auto;
+    justify-content: center;
+  }
+
+  .bl-table--compact .bl-menu-trigger {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #dce4ee;
+    border-radius: 10px;
+    background: #fff;
+    color: #53657d;
+    box-shadow: 0 2px 6px rgb(15 23 42 / 5%);
+  }
+
+  .bl-table--compact .bl-menu-trigger:active,
+  .bl-table--compact .bl-menu-trigger--open {
+    border-color: #8b5cf6;
+    background: #f5f3ff;
+    color: #6d4aff;
+  }
+
+  /* Keep metric values aligned and easy to scan. */
+  .bl-table--compact .bl-td-center {
+    min-height: 50px !important;
+  }
+
+  .bl-table--compact .bl-dr-badge,
+  .bl-table--compact .bl-quality-badge,
+  .bl-table--compact .bl-type-badge {
+    margin-top: 1px;
+  }
+
+  /* Status bottom-sheet trigger fits its grid column. */
+  .bl-table--compact .bl-status-sel {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .bl-table--compact .bl-status-sel .responsive-select__mobile {
+    width: 100%;
+    min-height: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border: 1px solid #cae6d5;
+    border-radius: 9px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  /* Slightly cleaner separation above pagination. */
+  .bl-pager {
+    margin-top: 16px;
+    padding-top: 14px;
+  }
+}
+
+/* BACKLINKS_ACTION_SHEET_AND_SELECT_V8 */
+
+/*
+ * Desktop must show only the real select.
+ * The mobile bottom-sheet button must remain hidden.
+ */
+@media (min-width: 701px) {
+  .bl-status-filter > .responsive-select__desktop,
+  .bl-status-sel > .responsive-select__desktop {
+    display: block !important;
+    width: 100% !important;
+  }
+
+  .bl-status-filter > .responsive-select__mobile,
+  .bl-status-sel > .responsive-select__mobile {
+    display: none !important;
+  }
+}
+
+@media (max-width: 700px) {
+  /*
+   * Android must show only the button that opens MobileSelect.
+   */
+  .bl-status-filter > .responsive-select__desktop,
+  .bl-status-sel > .responsive-select__desktop {
+    display: none !important;
+  }
+
+  .bl-status-filter > .responsive-select__mobile,
+  .bl-status-sel > .responsive-select__mobile {
+    display: flex !important;
+  }
+
+  /*
+   * Three-dot actions become an Android bottom action sheet.
+   * Inline top/left/width values are overridden.
+   */
+  .bl-action-menu,
+  .bl-action-menu--spam {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 13000 !important;
+
+    box-sizing: border-box;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: min(78vh, 650px);
+    margin: 0 !important;
+    padding: 8px 12px max(16px, env(safe-area-inset-bottom));
+
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    border: 0 !important;
+    border-radius: 24px 24px 00 0 !important;
+    background: #fff;
+
+    box-shadow:
+      0 -18px 50px rgb(15 23 42 / 24%),
+      0 0 0 100vmax rgb(15 23 42 / 58%) !important;
+
+    animation: bl-action-sheet-in 220ms ease-out;
+  }
+
+  /* Bottom-sheet drag handle */
+  .bl-action-menu::after,
+  .bl-action-menu--spam::after {
+    content: "";
+    display: block;
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    width: 42px;
+    height: 5px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    transform: translateX(-50%);
+  }
+
+  .bl-action-menu__head {
+    padding-top: 24px;
+  }
+
+  .bl-action-menu__item {
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 58px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .bl-action-menu__item + .bl-action-menu__item {
+    margin-top: 4px;
+  }
+
+  .bl-action-menu__sep {
+    margin: 8px 2px;
+  }
+
+  @keyframes bl-action-sheet-in {
+    from {
+      transform: translateY(100%);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-action-menu,
+  .bl-action-menu--spam {
+    animation: none;
+  }
+}

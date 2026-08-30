@@ -352,19 +352,20 @@ function StatusBadge({ status, id, onChange }) {
     Todo: { cls: 'bl-status--todo' },
   }
   const cfg = map[status] || map.Todo
+
   return (
-    <select
+    <MobileSelect
       value={status}
       onChange={e => onChange(id, e.target.value)}
       className={`bl-status-sel ${cfg.cls}`}
+      label="Update link status"
     >
-      <option>Todo</option>
-      <option>Pending</option>
-      <option>Live</option>
-    </select>
+      <option value="Todo">Todo</option>
+      <option value="Pending">Pending</option>
+      <option value="Live">Live</option>
+    </MobileSelect>
   )
 }
-
 function DrBadge({ dr }) {
   const n = Number(dr || 0)
   let bg = '#fee2e2'
