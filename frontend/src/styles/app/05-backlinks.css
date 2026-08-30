@@ -2360,3 +2360,234 @@ a.bl-spam-disavow-btn {
     animation: none;
   }
 }
+
+/* BACKLINKS_DESKTOP_DROPDOWNS_V9 */
+
+@media (min-width: 701px) {
+  /*
+   * Reset MobileSelect wrappers.
+   * Borders and padding belong to the inner desktop select.
+   */
+  .bl-status-filter.responsive-select,
+  .bl-status-sel.responsive-select {
+    box-sizing: border-box;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0;
+    background: transparent !important;
+    appearance: initial;
+    text-align: initial;
+  }
+
+  /* Toolbar filter dropdown */
+  .bl-status-filter.responsive-select {
+    display: block;
+    width: 142px;
+    height: 40px;
+  }
+
+  .bl-status-filter > .responsive-select__desktop {
+    display: block !important;
+    box-sizing: border-box;
+    width: 100% !important;
+    height: 40px;
+    padding: 0 34px 0 14px;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    color: #334155;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .bl-status-filter > .responsive-select__mobile {
+    display: none !important;
+  }
+
+  /* Status dropdown inside each desktop row */
+  .bl-status-sel.responsive-select {
+    display: inline-block;
+    width: 104px;
+    max-width: 104px;
+    height: 36px;
+  }
+
+  .bl-status-sel > .responsive-select__desktop {
+    display: block !important;
+    box-sizing: border-box;
+    width: 104px !important;
+    max-width: 104px;
+    height: 36px;
+    padding: 0 30px 0 12px;
+    border: 1px solid #cfd8e5;
+    border-radius: 9px;
+    background-color: #f8fafc;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 650;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .bl-status-sel > .responsive-select__mobile {
+    display: none !important;
+  }
+
+  .bl-status-sel.bl-status--live > .responsive-select__desktop {
+    border-color: #b7dfc6;
+    background-color: #f0fdf4;
+    color: #15803d;
+  }
+
+  .bl-status-sel.bl-status--pending > .responsive-select__desktop {
+    border-color: #fde3a7;
+    background-color: #fffbeb;
+    color: #a16207;
+  }
+
+  .bl-status-sel.bl-status--todo > .responsive-select__desktop {
+    border-color: #d8e0ea;
+    background-color: #f8fafc;
+    color: #475569;
+  }
+
+  /* Stable desktop column sizing */
+  .bl-table--compact th:nth-child(6),
+  .bl-table--compact td:nth-child(6) {
+    width: 112px !important;
+    min-width: 112px;
+    text-align: center !important;
+  }
+
+  .bl-table--compact .bl-th-actions,
+  .bl-table--compact .bl-td-actions {
+    width: 64px !important;
+    min-width: 64px;
+    text-align: center !important;
+  }
+
+  .bl-table--compact .bl-row-actions {
+    justify-content: center;
+  }
+
+  /* Reduce unnecessary spacing between toolbar and table count. */
+  .bl-topbar {
+    margin-bottom: 0;
+    padding-bottom: 12px;
+  }
+
+  .bl-count-row {
+    margin-top: 0;
+    padding-top: 12px;
+  }
+}
+
+/* BACKLINKS_DESKTOP_TOOLBAR_V10 */
+
+@media (min-width: 1101px) {
+  /*
+   * Filters remain on the left.
+   * Export actions align to the right.
+   */
+  .bl-toolbar {
+    display: grid;
+    grid-template-columns:
+      minmax(280px, 360px)
+      150px
+      minmax(24px, 1fr)
+      auto
+      auto;
+    align-items: center;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .bl-toolbar .bl-search {
+    grid-column: 1;
+  }
+
+  .bl-toolbar .bl-status-filter {
+    grid-column: 2;
+  }
+
+  .bl-toolbar .bl-export-btn:not(.bl-export-btn--disavow) {
+    grid-column: 4;
+  }
+
+  .bl-toolbar .bl-export-btn--disavow {
+    grid-column: 5;
+  }
+
+  .bl-toolbar .bl-search {
+    box-sizing: border-box;
+    width: 100%;
+    height: 40px;
+    padding: 0 14px;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    background: #f8fafc;
+    font-size: 13px;
+  }
+
+  .bl-toolbar .bl-status-filter.responsive-select {
+    box-sizing: border-box;
+    width: 150px;
+    height: 40px;
+  }
+
+  .bl-toolbar
+    .bl-status-filter
+    > .responsive-select__desktop {
+    box-sizing: border-box;
+    width: 150px !important;
+    height: 40px;
+    padding: 0 34px 0 14px;
+    border: 1px solid #d8e0ea;
+    border-radius: 10px;
+    background-color: #f8fafc;
+    font-size: 13px;
+  }
+
+  .bl-toolbar .bl-export-btn {
+    box-sizing: border-box;
+    width: auto;
+    min-width: 132px;
+    height: 40px;
+    padding: 0 16px;
+    justify-content: center;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 650;
+  }
+
+  .bl-toolbar .bl-export-btn--disavow {
+    min-width: 180px;
+  }
+}
+
+/* Medium desktop and tablet: balanced two-row toolbar. */
+@media (min-width: 701px) and (max-width: 1100px) {
+  .bl-toolbar {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) 150px;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .bl-toolbar .bl-search,
+  .bl-toolbar .bl-status-filter,
+  .bl-toolbar .bl-export-btn {
+    box-sizing: border-box;
+    width: 100%;
+    height: 40px;
+  }
+
+  .bl-toolbar
+    .bl-status-filter
+    > .responsive-select__desktop {
+    width: 100% !important;
+    height: 40px;
+  }
+}
