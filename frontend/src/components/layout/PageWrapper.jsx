@@ -1,4 +1,4 @@
-﻿/**
+﻿﻿﻿/**
  * PageWrapper - wraps every dashboard page
  * Usage:
  *   <PageWrapper title="Keywords" subtitle="Track your search rankings">
@@ -21,7 +21,7 @@ export default function PageWrapper({ title, subtitle, actions, tabs, activeTab,
   return (
     <div style={{ flex: 1, overflow: 'auto', background: '#F3F4F6', minHeight: '100vh', fontFamily: 'inherit' }}>
       {/* Page header */}
-      <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '0 2rem' }}>
+      <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '0 1.5rem' }}>
         <div style={{ maxWidth, margin: '0 auto' }}>
           <div style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -80,7 +80,7 @@ export default function PageWrapper({ title, subtitle, actions, tabs, activeTab,
       </div>
 
       {/* Page content */}
-      <div style={{ maxWidth, margin: '0 auto', padding: '1.5rem 2rem' }}>
+      <div style={{ maxWidth, margin: '0 auto', padding: '1.25rem 1.5rem' }}>
         {children}
       </div>
     </div>

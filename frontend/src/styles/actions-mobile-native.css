@@ -1,11 +1,11 @@
-﻿.mobile-action-plan {
+﻿﻿.mobile-action-plan {
   --ma-purple: #6754e8;
   --ma-text: #17233b;
   --ma-muted: #728097;
   --ma-border: #e2e7f0;
   display: none;
   min-height: 100vh;
-  padding: 14px 14px 110px;
+  padding: 12px 12px calc(86px + env(safe-area-inset-bottom, 0px));
   background: #f7f9fc;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
 }
