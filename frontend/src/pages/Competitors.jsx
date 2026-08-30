@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { App as CapacitorApp } from '@capacitor/app'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faCheck,
@@ -60,17 +61,40 @@ export default function Competitors() {
   useEffect(() => { load() }, [siteId])
 
   useEffect(() => {
-    if (!sheet && !removeTarget) return undefined
     const closeOnEscape = event => {
-      if (event.key === 'Escape') {
-        event.preventDefault()
-        setSheet(null)
-        setRemoveTarget(null)
-      }
+      if (event.key !== 'Escape') return
+
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation?.()
+
+      if (removeTarget) setRemoveTarget(null)
+      else if (sheet) setSheet(null)
+      else if (expandedId) setExpandedId(null)
     }
-    window.addEventListener('keydown', closeOnEscape)
-    return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [sheet, removeTarget])
+
+    window.addEventListener('keydown', closeOnEscape, true)
+    return () => window.removeEventListener('keydown', closeOnEscape, true)
+  }, [sheet, removeTarget, expandedId])
+
+  useEffect(() => {
+    let active = true
+    let backListener
+
+    CapacitorApp.addListener('backButton', () => {
+      if (removeTarget) setRemoveTarget(null)
+      else if (sheet) setSheet(null)
+      else if (expandedId) setExpandedId(null)
+    }).then(listener => {
+      if (active) backListener = listener
+      else listener.remove()
+    })
+
+    return () => {
+      active = false
+      backListener?.remove()
+    }
+  }, [sheet, removeTarget, expandedId])
 
   const openSheet = name => {
     setFormError('')
@@ -148,7 +172,9 @@ export default function Competitors() {
 
   return (
     <div className="competitors-clean fade-in">
-      <AppProcessTopBar steps={COMPETITORS_PAGE_FLOW.map(step => ({
+      <AppProcessTopBar steps={COMPETITORS_PAGE_FLOW
+          .filter(step => ['describe', 'add'].includes(step.id))
+          .map(step => ({
         ...step,
         done: step.id === 'add' ? competitors.length > 0 : step.id === 'describe' ? Boolean(description.trim()) : false,
         active: scrollFlowId === step.id,
