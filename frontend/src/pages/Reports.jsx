@@ -10,7 +10,7 @@ import api from '../utils/api'
 import AppSidebar from '../components/AppSidebar'
 
 const TYPES = {
-  portfolio: { label: 'Portfolio SEO', description: 'Projects, health, keywords, backlinks and recent activity' },
+  complete: { label: 'Complete SEO', description: 'Health, keywords, backlinks and recent activity Â· Recommended' },
   executive: { label: 'Executive summary', description: 'A concise client-ready performance overview' },
   technical: { label: 'Technical overview', description: 'Health score and technical activity summary' },
 }
@@ -47,16 +47,22 @@ export default function Reports() {
   const [reportType, setReportType] = useState('portfolio')
   const [reportName, setReportName] = useState('')
   const [error, setError] = useState('')
+  const [context, setContext] = useState({ isAdmin: false, sites: [] })
+  const [scope, setScope] = useState('site')
+  const [siteId, setSiteId] = useState('')
 
   const load = async () => {
     setLoading(true)
     setError('')
     try {
-      const [summaryResponse, reportsResponse] = await Promise.all([
-        api.get('/reports/summary'), api.get('/reports/list'),
+      const [summaryResponse, reportsResponse, contextResponse] = await Promise.all([
+        api.get('/reports/summary'), api.get('/reports/list'), api.get('/reports/context'),
       ])
       setSummary(summaryResponse.data)
       setReports(Array.isArray(reportsResponse.data) ? reportsResponse.data : [])
+      setContext(contextResponse.data || { isAdmin: false, sites: [] })
+      const firstSite = contextResponse.data?.sites?.[0]?.id
+      if (firstSite) setSiteId(String(firstSite))
     } catch (requestError) {
       setError(requestError.response?.data?.error || 'Could not load reports.')
     } finally {
@@ -73,17 +79,19 @@ export default function Reports() {
   }), [reports, query, status])
 
   const openCreate = () => {
-    setReportName(`SEO Portfolio Report - ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}`)
-    setReportType('portfolio')
+    const selected = context.sites.find(site => String(site.id) === String(siteId))
+    setReportName(`${selected?.name || 'SEO'} Report - ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}`)
+    setReportType('complete')
+    setScope(context.isAdmin ? scope : 'site')
     setCreateOpen(true)
   }
 
   const generate = async () => {
-    if (!reportName.trim()) return
+    if (!reportName.trim() || ((scope === 'site' || !context.isAdmin) && !siteId)) return
     setGenerating(true)
     setError('')
     try {
-      const { data } = await api.post('/reports/generate', { name: reportName.trim(), reportType })
+      const { data } = await api.post('/reports/generate', { name: reportName.trim(), reportType, scope: context.isAdmin ? scope : 'site', siteId: scope === 'site' || !context.isAdmin ? Number(siteId) : null })
       setReports(current => [data, ...current])
       setSummary(current => ({ ...current, reports: Number(current.reports || 0) + 1 }))
       setCreateOpen(false)
@@ -163,8 +171,8 @@ export default function Reports() {
               <div className="reports-list">
                 <div className="reports-list__head"><span>Report</span><span>Type</span><span>Status</span><span>Generated</span><span>Actions</span></div>
                 {filtered.map(report => <article className="reports-row" key={report.id}>
-                  <div className="reports-row__name"><span className="reports-row__icon"><FontAwesomeIcon icon={faChartLine} /></span><div><strong>{report.name}</strong><small>{report.snapshot?.projects || 0} projects Â· {report.snapshot?.keywords || 0} keywords Â· {report.snapshot?.backlinks || 0} backlinks</small></div></div>
-                  <div data-label="Type">{TYPES[report.reportType]?.label || 'Portfolio SEO'}</div>
+                  <div className="reports-row__name"><span className="reports-row__icon"><FontAwesomeIcon icon={faChartLine} /></span><div><strong>{report.name}</strong><small>{report.snapshot?.subject?.name || `${report.snapshot?.projects || 0} projects`} Â· {report.snapshot?.keywords || 0} keywords Â· {report.snapshot?.backlinks || 0} backlinks</small></div></div>
+                  <div data-label="Type">{TYPES[report.reportType]?.label || 'Complete SEO'}</div>
                   <div data-label="Status"><span className="reports-status"><FontAwesomeIcon icon={faCheckCircle} /> Ready</span></div>
                   <div data-label="Generated"><strong>{formatDate(report.createdAt)}</strong></div>
                   <div className="reports-row__actions"><button onClick={() => download(report)} aria-label="Download report"><FontAwesomeIcon icon={faDownload} /></button><button onClick={() => share(report)} aria-label="Share report"><FontAwesomeIcon icon={faShareNodes} /></button><button className="reports-more" onClick={() => setActionsReport(report)} aria-label="More report actions"><FontAwesomeIcon icon={faEllipsisVertical} /></button></div>
@@ -175,9 +183,18 @@ export default function Reports() {
         </main>
       </div>
 
-      {createOpen && <div className="reports-sheet-overlay" onMouseDown={event => event.target === event.currentTarget && setCreateOpen(false)}><section className="reports-sheet" role="dialog" aria-modal="true" aria-label="Generate report"><div className="reports-sheet__handle" /><header><div><h2>Generate report</h2><p>Save a fresh snapshot of your SEO portfolio.</p></div><button onClick={() => setCreateOpen(false)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header><label>Report name<input value={reportName} onChange={event => setReportName(event.target.value)} maxLength={180} /></label><div className="reports-template-grid">{Object.entries(TYPES).map(([value, type]) => <button key={value} className={reportType === value ? 'is-selected' : ''} onClick={() => setReportType(value)}><FontAwesomeIcon icon={value === 'technical' ? faHeartPulse : value === 'executive' ? faFileLines : faChartLine} /><strong>{type.label}</strong><span>{type.description}</span></button>)}</div><button className="reports-primary reports-sheet__submit" disabled={generating || !reportName.trim()} onClick={generate}>{generating ? <><FontAwesomeIcon icon={faSpinner} spin /> Generating...</> : <><FontAwesomeIcon icon={faFileCirclePlus} /> Generate report</>}</button></section></div>}
+      {createOpen && <div className="reports-sheet-overlay"><section className="reports-sheet reports-generate-sheet" role="dialog" aria-modal="true" aria-label="Generate report"><div className="reports-sheet__handle" /><header><div><h2>Generate report</h2><p>{context.isAdmin ? 'Choose one project or create an all-project portfolio snapshot.' : 'Create a secure report from a project you can access.'}</p></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header>
+  {context.isAdmin && <div className="reports-scope"><button type="button" className={scope === 'site' ? 'is-selected' : ''} onClick={() => setScope('site')}>Single project</button><button type="button" className={scope === 'portfolio' ? 'is-selected' : ''} onClick={() => setScope('portfolio')}>All projects</button></div>}
+  {(scope === 'site' || !context.isAdmin) && <label>Project<select value={siteId} onChange={event => setSiteId(event.target.value)}><option value="">Select a project</option>{context.sites.map(site => <option key={site.id} value={site.id}>{site.name} Â· {site.url}</option>)}</select></label>}
+  {!context.isAdmin && <p className="reports-permission-note">Only projects assigned to your account are available.</p>}
+  <label>Report name<input value={reportName} onChange={event => setReportName(event.target.value)} maxLength={180} /></label>
+  <div className="reports-template-grid">{Object.entries(TYPES).map(([value,type]) => <button type="button" key={value} className={reportType === value ? 'is-selected' : ''} onClick={() => setReportType(value)}><FontAwesomeIcon icon={value === 'technical' ? faHeartPulse : value === 'executive' ? faFileLines : faChartLine} /><strong>{type.label}</strong><span>{type.description}</span></button>)}</div>
+  <div className="reports-sheet__footer"><button type="button" className="reports-cancel" onClick={() => setCreateOpen(false)}>Cancel</button><button type="button" className="reports-primary reports-sheet__submit" disabled={generating || !reportName.trim() || ((scope === 'site' || !context.isAdmin) && !siteId)} onClick={generate}>{generating ? <><FontAwesomeIcon icon={faSpinner} spin /> Generating...</> : <><FontAwesomeIcon icon={faFileCirclePlus} /> Generate report</>}</button></div>
+</section></div>}
 
-      {actionsReport && <div className="reports-sheet-overlay" onMouseDown={event => event.target === event.currentTarget && setActionsReport(null)}><section className="reports-sheet reports-actions-sheet" role="dialog" aria-modal="true" aria-label="Report actions"><div className="reports-sheet__handle" /><header><div><h2>{actionsReport.name}</h2><p>Choose an action</p></div><button onClick={() => setActionsReport(null)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header><button onClick={() => download(actionsReport)}><FontAwesomeIcon icon={faDownload} /> Download / print PDF</button><button onClick={() => share(actionsReport)}><FontAwesomeIcon icon={faShareNodes} /> Share summary</button><button className="is-danger" onClick={() => remove(actionsReport)}><FontAwesomeIcon icon={faTrash} /> Delete report</button></section></div>}
+      {actionsReport && <div className="reports-sheet-overlay"><section className="reports-sheet reports-actions-sheet" role="dialog" aria-modal="true" aria-label="Report actions"><div className="reports-sheet__handle" /><header><div><h2>{actionsReport.name}</h2><p>Choose an action</p></div><button onClick={() => setActionsReport(null)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header><button onClick={() => download(actionsReport)}><FontAwesomeIcon icon={faDownload} /> Download / print PDF</button><button onClick={() => share(actionsReport)}><FontAwesomeIcon icon={faShareNodes} /> Share summary</button><button className="is-danger" onClick={() => remove(actionsReport)}><FontAwesomeIcon icon={faTrash} /> Delete report</button></section></div>}
     </div>
   )
 }
+
+

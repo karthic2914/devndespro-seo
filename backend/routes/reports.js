@@ -5,187 +5,126 @@ const router = express.Router()
 
 let schemaPromise
 function ensureReportsSchema() {
-  if (!schemaPromise) {
-    schemaPromise = pool.query(`
-      CREATE TABLE IF NOT EXISTS seo_reports (
-        id BIGSERIAL PRIMARY KEY,
-        user_id BIGINT NOT NULL,
-        name VARCHAR(180) NOT NULL,
-        report_type VARCHAR(40) NOT NULL DEFAULT 'portfolio',
-        status VARCHAR(24) NOT NULL DEFAULT 'ready',
-        snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_seo_reports_user_created
-        ON seo_reports(user_id, created_at DESC);
-    `).catch(error => {
-      schemaPromise = null
-      throw error
-    })
-  }
+  if (!schemaPromise) schemaPromise = pool.query(`
+    CREATE TABLE IF NOT EXISTS seo_reports (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL,
+      name VARCHAR(180) NOT NULL,
+      report_type VARCHAR(40) NOT NULL DEFAULT 'complete',
+      status VARCHAR(24) NOT NULL DEFAULT 'ready',
+      snapshot JSONB NOT NULL DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+    ALTER TABLE seo_reports ADD COLUMN IF NOT EXISTS site_id BIGINT;
+    ALTER TABLE seo_reports ADD COLUMN IF NOT EXISTS scope VARCHAR(20) NOT NULL DEFAULT 'portfolio';
+    CREATE INDEX IF NOT EXISTS idx_seo_reports_user_created ON seo_reports(user_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_seo_reports_site ON seo_reports(site_id);
+  `).catch(error => { schemaPromise = null; throw error })
   return schemaPromise
 }
 
-function getUserId(req) {
-  const value = req.user?.id ?? req.user?.userId ?? req.userId
-  const id = Number(value)
-  return Number.isFinite(id) && id > 0 ? id : null
+const isAdmin = req => Number(req.user?.id) === 1
+const cleanName = (value, fallback) => String(value || fallback).replace(/[<>]/g, '').trim().slice(0, 180)
+
+async function allowedSites(req) {
+  const params = []
+  const access = isAdmin(req) ? '' : 'INNER JOIN site_access sa ON sa.site_id=s.id AND sa.user_id=$1'
+  if (!isAdmin(req)) params.push(req.user.id)
+  const { rows } = await pool.query(`
+    SELECT s.id, s.name, s.url, COALESCE(m.health,0)::int AS health,
+      COALESCE(k.count,0)::int AS "keywordCount", COALESCE(b.count,0)::int AS "backlinkCount"
+    FROM sites s ${access}
+    LEFT JOIN seo_metrics m ON m.site_id=s.id
+    LEFT JOIN (SELECT site_id,COUNT(*)::int count FROM keywords GROUP BY site_id) k ON k.site_id=s.id
+    LEFT JOIN (SELECT site_id,COUNT(*)::int count FROM backlinks GROUP BY site_id) b ON b.site_id=s.id
+    ORDER BY s.name ASC
+  `, params)
+  return rows
 }
 
-function requireUser(req, res) {
-  const userId = getUserId(req)
-  if (!userId) res.status(401).json({ error: 'Authentication required.' })
-  return userId
+async function verifySiteAccess(req, siteId) {
+  const id = Number(siteId)
+  if (!Number.isInteger(id) || id < 1) return null
+  const params = [id]
+  const access = isAdmin(req) ? '' : 'INNER JOIN site_access sa ON sa.site_id=s.id AND sa.user_id=$2'
+  if (!isAdmin(req)) params.push(req.user.id)
+  const { rows } = await pool.query(`SELECT s.id,s.name,s.url FROM sites s ${access} WHERE s.id=$1 LIMIT 1`, params)
+  return rows[0] || null
 }
 
-function cleanName(value, fallback = 'SEO Portfolio Report') {
-  const name = String(value || '').replace(/[<>]/g, '').trim().slice(0, 180)
-  return name || fallback
-}
-
-async function getPortfolioSnapshot(userId) {
-  const [projects, keywords, backlinks, avgHealth, recent] = await Promise.all([
-    pool.query('SELECT COUNT(*) FROM sites WHERE user_id=$1', [userId]),
-    pool.query('SELECT COUNT(*) FROM keywords k JOIN sites s ON s.id=k.site_id WHERE s.user_id=$1', [userId]),
-    pool.query('SELECT COUNT(*) FROM backlinks b JOIN sites s ON s.id=b.site_id WHERE s.user_id=$1', [userId]),
-    pool.query('SELECT AVG(m.health) FROM seo_metrics m JOIN sites s ON s.id=m.site_id WHERE s.user_id=$1', [userId]),
-    pool.query(`
-      SELECT s.name, a.created_at, a.type, a.severity, a.message
-      FROM alerts a JOIN sites s ON a.site_id=s.id
-      WHERE s.user_id=$1 ORDER BY a.created_at DESC LIMIT 10
-    `, [userId]),
-  ])
-  return {
-    projects: Number(projects.rows[0].count),
-    keywords: Number(keywords.rows[0].count),
-    backlinks: Number(backlinks.rows[0].count),
-    avgHealth: avgHealth.rows[0].avg ? Math.round(Number(avgHealth.rows[0].avg)) : 0,
-    recent: recent.rows,
-    generatedAt: new Date().toISOString(),
+async function snapshotFor(req, scope, siteId) {
+  let where = ''
+  let params = []
+  let subject = { name: 'All projects', url: '' }
+  if (scope === 'site') {
+    const site = await verifySiteAccess(req, siteId)
+    if (!site) { const error = new Error('Project not found or access denied.'); error.status = 403; throw error }
+    where = 'WHERE s.id=$1'; params = [site.id]; subject = site
+  } else {
+    if (!isAdmin(req)) { const error = new Error('Only an administrator can generate an all-project report.'); error.status = 403; throw error }
   }
+  const [projects, keywords, backlinks, health, recent] = await Promise.all([
+    pool.query(`SELECT COUNT(*)::int count FROM sites s ${where}`, params),
+    pool.query(`SELECT COUNT(*)::int count FROM keywords x JOIN sites s ON s.id=x.site_id ${where}`, params),
+    pool.query(`SELECT COUNT(*)::int count FROM backlinks x JOIN sites s ON s.id=x.site_id ${where}`, params),
+    pool.query(`SELECT COALESCE(ROUND(AVG(m.health)),0)::int value FROM seo_metrics m JOIN sites s ON s.id=m.site_id ${where}`, params),
+    pool.query(`SELECT s.name,a.created_at,a.type,a.severity,a.message FROM alerts a JOIN sites s ON s.id=a.site_id ${where} ORDER BY a.created_at DESC LIMIT 12`, params),
+  ])
+  return { scope, siteId: scope === 'site' ? Number(siteId) : null, subject,
+    projects: projects.rows[0].count, keywords: keywords.rows[0].count,
+    backlinks: backlinks.rows[0].count, avgHealth: health.rows[0].value,
+    recent: recent.rows, generatedAt: new Date().toISOString() }
 }
 
 router.use(auth)
 
-router.get('/summary', async (req, res) => {
-  const userId = requireUser(req, res)
-  if (!userId) return
-  try {
-    const snapshot = await getPortfolioSnapshot(userId)
-    const reports = await pool.query(
-      'SELECT COUNT(*) FROM seo_reports WHERE user_id=$1', [userId]
-    ).catch(() => ({ rows: [{ count: 0 }] }))
-    res.json({ ...snapshot, reports: Number(reports.rows[0].count) })
-  } catch (error) {
-    console.error('reports/summary error:', error)
-    res.status(500).json({ error: 'Failed to fetch report summary.' })
-  }
+router.get('/context', async (req,res) => {
+  try { res.json({ isAdmin: isAdmin(req), sites: await allowedSites(req) }) }
+  catch (error) { console.error('reports/context:', error); res.status(500).json({ error: 'Failed to load report access.' }) }
 })
 
-router.get('/list', async (req, res) => {
-  const userId = requireUser(req, res)
-  if (!userId) return
+router.get('/summary', async (req,res) => {
   try {
     await ensureReportsSchema()
-    const { rows } = await pool.query(`
-      SELECT id, name, report_type AS "reportType", status, snapshot, created_at AS "createdAt"
-      FROM seo_reports WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100
-    `, [userId])
+    const sites = await allowedSites(req)
+    const reports = await pool.query('SELECT COUNT(*)::int count FROM seo_reports WHERE user_id=$1',[req.user.id])
+    const total = key => sites.reduce((sum,site) => sum + Number(site[key] || 0),0)
+    const scored = sites.filter(site => Number(site.health) > 0)
+    res.json({ reports: reports.rows[0].count, projects: sites.length, keywords: total('keywordCount'),
+      backlinks: total('backlinkCount'), avgHealth: scored.length ? Math.round(total('health')/scored.length) : 0 })
+  } catch (error) { console.error('reports/summary:',error); res.status(500).json({ error:'Failed to fetch report summary.' }) }
+})
+
+router.get('/list', async (req,res) => {
+  try {
+    await ensureReportsSchema()
+    const { rows } = await pool.query(`SELECT id,name,report_type AS "reportType",status,scope,site_id AS "siteId",snapshot,created_at AS "createdAt" FROM seo_reports WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100`,[req.user.id])
     res.json(rows)
-  } catch (error) {
-    console.error('reports/list error:', error)
-    res.status(500).json({ error: 'Failed to load reports.' })
-  }
+  } catch (error) { console.error('reports/list:',error); res.status(500).json({ error:'Failed to load reports.' }) }
 })
 
-router.post('/generate', async (req, res) => {
-  const userId = requireUser(req, res)
-  if (!userId) return
+router.post('/generate', async (req,res) => {
   try {
     await ensureReportsSchema()
-    const snapshot = await getPortfolioSnapshot(userId)
-    const name = cleanName(req.body?.name)
-    const reportType = ['portfolio', 'executive', 'technical'].includes(req.body?.reportType)
-      ? req.body.reportType : 'portfolio'
-    const { rows } = await pool.query(`
-      INSERT INTO seo_reports(user_id, name, report_type, status, snapshot)
-      VALUES($1,$2,$3,'ready',$4::jsonb)
-      RETURNING id, name, report_type AS "reportType", status, snapshot, created_at AS "createdAt"
-    `, [userId, name, reportType, JSON.stringify(snapshot)])
+    const scope = req.body?.scope === 'portfolio' ? 'portfolio' : 'site'
+    const reportType = ['complete','executive','technical'].includes(req.body?.reportType) ? req.body.reportType : 'complete'
+    const snapshot = await snapshotFor(req,scope,req.body?.siteId)
+    const fallback = `${snapshot.subject.name} SEO Report`
+    const name = cleanName(req.body?.name,fallback)
+    const { rows } = await pool.query(`INSERT INTO seo_reports(user_id,site_id,scope,name,report_type,status,snapshot) VALUES($1,$2,$3,$4,$5,'ready',$6::jsonb) RETURNING id,name,report_type AS "reportType",status,scope,site_id AS "siteId",snapshot,created_at AS "createdAt"`,[req.user.id,snapshot.siteId,scope,name,reportType,JSON.stringify(snapshot)])
     res.status(201).json(rows[0])
-  } catch (error) {
-    console.error('reports/generate error:', error)
-    res.status(500).json({ error: 'Failed to generate report.' })
-  }
+  } catch (error) { console.error('reports/generate:',error); res.status(error.status || 500).json({ error:error.status ? error.message : 'Failed to generate report.' }) }
 })
 
-router.get('/:id', async (req, res) => {
-  const userId = requireUser(req, res)
-  if (!userId) return
-  try {
-    await ensureReportsSchema()
-    const { rows } = await pool.query(`
-      SELECT id, name, report_type AS "reportType", status, snapshot, created_at AS "createdAt"
-      FROM seo_reports WHERE id=$1 AND user_id=$2
-    `, [req.params.id, userId])
-    if (!rows[0]) return res.status(404).json({ error: 'Report not found.' })
-    res.json(rows[0])
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to load report.' })
-  }
+router.get('/:id', async (req,res) => {
+  try { await ensureReportsSchema(); const { rows }=await pool.query(`SELECT id,name,report_type AS "reportType",status,scope,site_id AS "siteId",snapshot,created_at AS "createdAt" FROM seo_reports WHERE id=$1 AND user_id=$2`,[req.params.id,req.user.id]); if(!rows[0]) return res.status(404).json({error:'Report not found.'}); res.json(rows[0]) }
+  catch { res.status(500).json({error:'Failed to load report.'}) }
 })
 
-router.delete('/:id', async (req, res) => {
-  const userId = requireUser(req, res)
-  if (!userId) return
-  try {
-    await ensureReportsSchema()
-    const result = await pool.query(
-      'DELETE FROM seo_reports WHERE id=$1 AND user_id=$2', [req.params.id, userId]
-    )
-    if (!result.rowCount) return res.status(404).json({ error: 'Report not found.' })
-    res.status(204).end()
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete report.' })
-  }
+router.delete('/:id', async (req,res) => {
+  try { await ensureReportsSchema(); const result=await pool.query('DELETE FROM seo_reports WHERE id=$1 AND user_id=$2',[req.params.id,req.user.id]); if(!result.rowCount) return res.status(404).json({error:'Report not found.'}); res.status(204).end() }
+  catch { res.status(500).json({error:'Failed to delete report.'}) }
 })
-
-async function trend(req, res, sql, valueKey) {
-  const userId = requireUser(req, res)
-  if (!userId) return
-  try {
-    const result = await pool.query(sql, [userId])
-    res.json({
-      dates: result.rows.map(row => row.date),
-      values: result.rows.map(row => Number(row[valueKey] || 0)),
-    })
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch report trend.' })
-  }
-}
-
-router.get('/trend/health', (req, res) => trend(req, res, `
-  SELECT DATE(m.created_at) AS date, ROUND(AVG(m.health)) AS value
-  FROM seo_metrics m JOIN sites s ON s.id=m.site_id
-  WHERE s.user_id=$1 AND m.created_at > NOW()-INTERVAL '30 days'
-  GROUP BY DATE(m.created_at) ORDER BY DATE(m.created_at)
-`, 'value'))
-
-router.get('/trend/keywords', (req, res) => trend(req, res, `
-  SELECT d::date AS date, COUNT(s.id) AS value
-  FROM generate_series(NOW()-INTERVAL '29 days',NOW(),'1 day') d
-  LEFT JOIN keywords k ON DATE(k.created_at)=d::date
-  LEFT JOIN sites s ON s.id=k.site_id AND s.user_id=$1
-  GROUP BY d ORDER BY d
-`, 'value'))
-
-router.get('/trend/backlinks', (req, res) => trend(req, res, `
-  SELECT d::date AS date, COUNT(s.id) AS value
-  FROM generate_series(NOW()-INTERVAL '29 days',NOW(),'1 day') d
-  LEFT JOIN backlinks b ON DATE(b.created_at)=d::date
-  LEFT JOIN sites s ON s.id=b.site_id AND s.user_id=$1
-  GROUP BY d ORDER BY d
-`, 'value'))
 
 module.exports = router
