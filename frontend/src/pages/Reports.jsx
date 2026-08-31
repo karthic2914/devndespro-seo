@@ -1,172 +1,183 @@
-﻿import { useEffect, useState } from 'react'
-import { API_BASE } from '../utils/api'
-import {
-  Area, AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from 'recharts'
+﻿import { useEffect, useMemo, useState } from 'react'
+import './Reports.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChartLine, faProjectDiagram, faLink, faKey, faClipboardList } from '@fortawesome/free-solid-svg-icons'
-import { Button } from '../components/UI'
+import {
+  faChartLine, faFileCirclePlus, faFileLines, faDownload, faShareNodes,
+  faTrash, faMagnifyingGlass, faEllipsisVertical, faXmark, faCheckCircle,
+  faFolderOpen, faKey, faLink, faHeartPulse, faSpinner,
+} from '@fortawesome/free-solid-svg-icons'
+import api from '../utils/api'
 import AppSidebar from '../components/AppSidebar'
 
+const TYPES = {
+  portfolio: { label: 'Portfolio SEO', description: 'Projects, health, keywords, backlinks and recent activity' },
+  executive: { label: 'Executive summary', description: 'A concise client-ready performance overview' },
+  technical: { label: 'Technical overview', description: 'Health score and technical activity summary' },
+}
+
+const formatDate = value => new Intl.DateTimeFormat('en-GB', {
+  day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+}).format(new Date(value))
+
+function reportHtml(report) {
+  const data = report.snapshot || {}
+  const activity = (data.recent || []).map(item => `
+    <tr><td>${item.name || '-'}</td><td>${item.type || '-'}</td><td>${item.message || '-'}</td></tr>
+  `).join('')
+  return `<!doctype html><html><head><meta charset="utf-8"><title>${report.name}</title><style>
+    body{font-family:Arial,sans-serif;color:#172033;margin:42px}h1{margin-bottom:4px}.muted{color:#718096}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px 0}.stat{border:1px solid #dfe5ef;border-radius:12px;padding:16px}.stat strong{display:block;font-size:26px;margin-top:8px}
+    table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:10px;text-align:left;border-bottom:1px solid #e8edf4;font-size:13px}th{color:#64748b}
+    @media print{button{display:none}}@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}}
+  </style></head><body><h1>${report.name}</h1><div class="muted">${TYPES[report.reportType]?.label || 'SEO report'} Â· Generated ${formatDate(report.createdAt)}</div>
+  <div class="grid"><div class="stat">Projects<strong>${data.projects || 0}</strong></div><div class="stat">Average health<strong>${data.avgHealth || 0}%</strong></div><div class="stat">Keywords<strong>${data.keywords || 0}</strong></div><div class="stat">Backlinks<strong>${data.backlinks || 0}</strong></div></div>
+  <h2>Recent activity</h2><table><thead><tr><th>Project</th><th>Type</th><th>Update</th></tr></thead><tbody>${activity || '<tr><td colspan="3">No recent activity</td></tr>'}</tbody></table>
+  <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250))<\/script></body></html>`
+}
+
 export default function Reports() {
-  const [stats, setStats] = useState({ projects: 0, keywords: 0, backlinks: 0, avgHealth: 0 })
+  const [summary, setSummary] = useState({ projects: 0, keywords: 0, backlinks: 0, avgHealth: 0, reports: 0 })
+  const [reports, setReports] = useState([])
   const [loading, setLoading] = useState(true)
-  const [recent, setRecent] = useState([])
-  const [healthTrend, setHealthTrend] = useState({ dates: [], values: [] })
-  const [keywordTrend, setKeywordTrend] = useState({ dates: [], values: [] })
-  const [backlinkTrend, setBacklinkTrend] = useState({ dates: [], values: [] })
+  const [generating, setGenerating] = useState(false)
+  const [query, setQuery] = useState('')
+  const [status, setStatus] = useState('all')
+  const [createOpen, setCreateOpen] = useState(false)
+  const [actionsReport, setActionsReport] = useState(null)
+  const [reportType, setReportType] = useState('portfolio')
+  const [reportName, setReportName] = useState('')
+  const [error, setError] = useState('')
 
-  useEffect(() => {
+  const load = async () => {
     setLoading(true)
-    Promise.all([
-      fetch(`${API_BASE}/reports/summary`).then(res => res.json()),
-      fetch(`${API_BASE}/reports/health-trend`).then(res => res.json()),
-      fetch(`${API_BASE}/reports/keyword-trend`).then(res => res.json()),
-      fetch(`${API_BASE}/reports/backlink-trend`).then(res => res.json()),
-    ])
-      .then(([summary, health, keywords, backlinks]) => {
-        setStats({
-          projects: summary.projects,
-          keywords: summary.keywords,
-          backlinks: summary.backlinks,
-          avgHealth: summary.avgHealth,
-        })
-        setRecent(Array.isArray(summary.recent) ? summary.recent : [])
-        setHealthTrend(health)
-        setKeywordTrend(keywords)
-        setBacklinkTrend(backlinks)
-        setLoading(false)
-      })
-      .catch(() => setLoading(false))
-  }, [])
+    setError('')
+    try {
+      const [summaryResponse, reportsResponse] = await Promise.all([
+        api.get('/reports/summary'), api.get('/reports/list'),
+      ])
+      setSummary(summaryResponse.data)
+      setReports(Array.isArray(reportsResponse.data) ? reportsResponse.data : [])
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Could not load reports.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-  const toChartData = (trend) =>
-    (trend.dates || []).map((date, i) => ({ date, value: trend.values?.[i] ?? 0 }))
+  useEffect(() => { load() }, [])
 
-  const healthData   = toChartData(healthTrend)
-  const keywordData  = toChartData(keywordTrend)
-  const backlinkData = toChartData(backlinkTrend)
+  const filtered = useMemo(() => reports.filter(report => {
+    const matchesQuery = !query.trim() || report.name.toLowerCase().includes(query.trim().toLowerCase())
+    const matchesStatus = status === 'all' || report.status === status
+    return matchesQuery && matchesStatus
+  }), [reports, query, status])
 
-  const ChartCard = ({ title, data, color }) => (
-    <div style={{ background: '#fff', borderRadius: 12, boxShadow: 'var(--shadow)', padding: 18 }}>
-      <div style={{ fontWeight: 700, marginBottom: 12, fontSize: 14 }}>{title}</div>
-      {data.length === 0 ? (
-        <div style={{ height: 120, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--muted)', fontSize: 13 }}>
-          No data yet
-        </div>
-      ) : (
-        <ResponsiveContainer width="100%" height={140}>
-          <AreaChart data={data} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-            <defs>
-              <linearGradient id={`grad-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color} stopOpacity={0.15} />
-                <stop offset="95%" stopColor={color} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-            <XAxis dataKey="date" tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} tickLine={false} axisLine={false} />
-            <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6, border: '1px solid #E5E7EB' }} labelStyle={{ fontWeight: 600 }} />
-            <Area type="monotone" dataKey="value" stroke={color} strokeWidth={2} fill={`url(#grad-${color.replace('#', '')})`} dot={false} activeDot={{ r: 4 }} />
-          </AreaChart>
-        </ResponsiveContainer>
-      )}
-    </div>
-  )
+  const openCreate = () => {
+    setReportName(`SEO Portfolio Report - ${new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date())}`)
+    setReportType('portfolio')
+    setCreateOpen(true)
+  }
+
+  const generate = async () => {
+    if (!reportName.trim()) return
+    setGenerating(true)
+    setError('')
+    try {
+      const { data } = await api.post('/reports/generate', { name: reportName.trim(), reportType })
+      setReports(current => [data, ...current])
+      setSummary(current => ({ ...current, reports: Number(current.reports || 0) + 1 }))
+      setCreateOpen(false)
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Could not generate report.')
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const download = report => {
+    const popup = window.open('', '_blank')
+    if (!popup) return setError('Allow pop-ups to download the report as PDF.')
+    popup.opener = null
+    popup.document.open()
+    popup.document.write(reportHtml(report))
+    popup.document.close()
+    setActionsReport(null)
+  }
+
+  const share = async report => {
+    const text = `${report.name}\nProjects: ${report.snapshot?.projects || 0} Â· Health: ${report.snapshot?.avgHealth || 0}% Â· Keywords: ${report.snapshot?.keywords || 0} Â· Backlinks: ${report.snapshot?.backlinks || 0}`
+    try {
+      if (navigator.share) await navigator.share({ title: report.name, text })
+      else {
+        await navigator.clipboard.writeText(text)
+        setError('Report summary copied to clipboard.')
+      }
+    } catch (shareError) {
+      if (shareError?.name !== 'AbortError') setError('Could not share this report.')
+    }
+    setActionsReport(null)
+  }
+
+  const remove = async report => {
+    if (!window.confirm(`Delete "${report.name}"?`)) return
+    try {
+      await api.delete(`/reports/${report.id}`)
+      setReports(current => current.filter(item => item.id !== report.id))
+      setSummary(current => ({ ...current, reports: Math.max(0, Number(current.reports || 1) - 1) }))
+    } catch (requestError) {
+      setError(requestError.response?.data?.error || 'Could not delete report.')
+    }
+    setActionsReport(null)
+  }
 
   return (
     <div className="app-shell">
       <AppSidebar />
       <div className="app-main">
-        <div className="topbar">
-          <span className="topbar__title">Reports</span>
-        </div>
-        <div className="page-content fade-in">
-          <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 8 }}>Reports</h1>
-          <p style={{ color: 'var(--muted)', marginBottom: 24 }}>Overview and analytics for all your SEO projects.</p>
+        <div className="topbar"><span className="topbar__title">Reports</span></div>
+        <main className="page-content fade-in reports-page reports-manager">
+          <header className="reports-manager__header">
+            <div><h1>Reports</h1><p>Create, download and share client-ready SEO reports.</p></div>
+            <button type="button" className="reports-primary" onClick={openCreate}><FontAwesomeIcon icon={faFileCirclePlus} /> Generate report</button>
+          </header>
 
-          {/* Quick Actions */}
-          <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
-            <Button variant="primary" onClick={() => window.location.href = '/'}>Add Project</Button>
-            <Button variant="secondary" onClick={() => window.location.href = '/'}>Run Site Audit</Button>
-            <Button variant="secondary" onClick={() => window.print()}>Export Dashboard</Button>
-          </div>
+          {error && <button type="button" className="reports-notice" onClick={() => setError('')}>{error}<FontAwesomeIcon icon={faXmark} /></button>}
 
-          {/* Goal Progress Bars */}
-          <div style={{ display: 'flex', gap: 32, marginBottom: 32 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>Backlink Goal</div>
-              <div style={{ background: '#F3F4F6', borderRadius: 8, height: 16, position: 'relative' }}>
-                <div style={{ width: `${Math.min(100, Math.round((stats.backlinks / 200) * 100))}%`, background: 'linear-gradient(90deg,#FF6B2B,#FFB347)', height: '100%', borderRadius: 8 }} />
-                <div style={{ position: 'absolute', left: 10, top: 0, fontSize: 12, color: '#111', height: '100%', display: 'flex', alignItems: 'center' }}>{stats.backlinks} / 200</div>
-              </div>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, marginBottom: 6 }}>Avg. Health Goal</div>
-              <div style={{ background: '#F3F4F6', borderRadius: 8, height: 16, position: 'relative' }}>
-                <div style={{ width: `${Math.min(100, Math.round((stats.avgHealth / 90) * 100))}%`, background: 'linear-gradient(90deg,#D97706,#FDE68A)', height: '100%', borderRadius: 8 }} />
-                <div style={{ position: 'absolute', left: 10, top: 0, fontSize: 12, color: '#111', height: '100%', display: 'flex', alignItems: 'center' }}>{stats.avgHealth}% / 90%</div>
-              </div>
-            </div>
-          </div>
+          <section className="reports-manager__stats" aria-label="Reports overview">
+            <article><span><FontAwesomeIcon icon={faFileLines} /> Generated reports</span><strong>{loading ? '-' : summary.reports || reports.length}</strong><small>Saved and ready to share</small></article>
+            <article><span><FontAwesomeIcon icon={faFolderOpen} /> Projects</span><strong>{loading ? '-' : summary.projects}</strong><small>Included in portfolio reports</small></article>
+            <article><span><FontAwesomeIcon icon={faKey} /> Tracked keywords</span><strong>{loading ? '-' : summary.keywords}</strong><small>Across your projects</small></article>
+            <article><span><FontAwesomeIcon icon={faHeartPulse} /> Average health</span><strong>{loading ? '-' : `${summary.avgHealth}%`}</strong><small>{summary.backlinks || 0} backlinks monitored</small></article>
+          </section>
 
-          {/* Trend Charts */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 24, marginBottom: 32 }}>
-            <ChartCard title="Avg. Health Trend (30d)" data={healthData}   color="#D97706" />
-            <ChartCard title="Keyword Growth (30d)"    data={keywordData}  color="#16A34A" />
-            <ChartCard title="Backlink Growth (30d)"   data={backlinkData} color="#FF6B2B" />
-          </div>
+          <section className="reports-manager__workspace">
+            <div className="reports-manager__toolbar">
+              <label className="reports-search"><FontAwesomeIcon icon={faMagnifyingGlass} /><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search reports..." /></label>
+              <select value={status} onChange={event => setStatus(event.target.value)} aria-label="Report status"><option value="all">All statuses</option><option value="ready">Ready</option></select>
+            </div>
+            <div className="reports-manager__tabs"><button className="is-active">All reports <span>{reports.length}</span></button><button onClick={openCreate}>Templates <span>3</span></button></div>
 
-          {/* Summary Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 32 }}>
-            <div className="report-card">
-              <FontAwesomeIcon icon={faProjectDiagram} style={{ fontSize: 28, color: '#2563EB', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.projects}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Projects</div>
-            </div>
-            <div className="report-card">
-              <FontAwesomeIcon icon={faKey} style={{ fontSize: 28, color: '#16A34A', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.keywords}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Keywords</div>
-            </div>
-            <div className="report-card">
-              <FontAwesomeIcon icon={faLink} style={{ fontSize: 28, color: '#FF6B2B', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.backlinks}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 13 }}>Total Backlinks</div>
-            </div>
-            <div className="report-card">
-              <FontAwesomeIcon icon={faChartLine} style={{ fontSize: 28, color: '#D97706', marginBottom: 8 }} />
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{loading ? '-' : stats.avgHealth + '%'}</div>
-              <div style={{ color: 'var(--muted)', fontSize: 13 }}>Avg. Health Score</div>
-            </div>
-          </div>
-
-          {/* Recent Activity */}
-          <div style={{ background: '#fff', borderRadius: 12, boxShadow: 'var(--shadow)', padding: 32, minHeight: 220 }}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>
-              <FontAwesomeIcon icon={faClipboardList} style={{ marginRight: 8, color: '#2563EB' }} />
-              Recent Activity & Audits
-            </h2>
-            {loading ? (
-              <div style={{ color: 'var(--muted)', fontSize: 14 }}>Loading...</div>
-            ) : recent.length === 0 ? (
-              <div style={{ color: 'var(--muted)', fontSize: 14 }}>No recent activity to display.</div>
+            {loading ? <div className="reports-empty"><FontAwesomeIcon icon={faSpinner} spin /> Loading reports...</div> : filtered.length === 0 ? (
+              <div className="reports-empty"><FontAwesomeIcon icon={faFileLines} /><h2>{reports.length ? 'No matching reports' : 'Create your first report'}</h2><p>Generate a real snapshot from your current SEO portfolio.</p><button className="reports-primary" onClick={openCreate}>Generate report</button></div>
             ) : (
-              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                {recent.map((item, idx) => (
-                  <li key={idx} style={{ marginBottom: 14, paddingBottom: 10, borderBottom: '1px solid #F3F4F6' }}>
-                    <div style={{ fontWeight: 600, color: '#2563EB', fontSize: 15 }}>{item.name}</div>
-                    <div style={{ fontSize: 13, color: '#6B7280' }}>{item.type} &middot; {item.severity}</div>
-                    <div style={{ fontSize: 14, color: '#111827', margin: '4px 0' }}>{item.message}</div>
-                    <div style={{ fontSize: 12, color: '#9CA3AF' }}>{new Date(item.created_at).toLocaleString()}</div>
-                  </li>
-                ))}
-              </ul>
+              <div className="reports-list">
+                <div className="reports-list__head"><span>Report</span><span>Type</span><span>Status</span><span>Generated</span><span>Actions</span></div>
+                {filtered.map(report => <article className="reports-row" key={report.id}>
+                  <div className="reports-row__name"><span className="reports-row__icon"><FontAwesomeIcon icon={faChartLine} /></span><div><strong>{report.name}</strong><small>{report.snapshot?.projects || 0} projects Â· {report.snapshot?.keywords || 0} keywords Â· {report.snapshot?.backlinks || 0} backlinks</small></div></div>
+                  <div data-label="Type">{TYPES[report.reportType]?.label || 'Portfolio SEO'}</div>
+                  <div data-label="Status"><span className="reports-status"><FontAwesomeIcon icon={faCheckCircle} /> Ready</span></div>
+                  <div data-label="Generated"><strong>{formatDate(report.createdAt)}</strong></div>
+                  <div className="reports-row__actions"><button onClick={() => download(report)} aria-label="Download report"><FontAwesomeIcon icon={faDownload} /></button><button onClick={() => share(report)} aria-label="Share report"><FontAwesomeIcon icon={faShareNodes} /></button><button className="reports-more" onClick={() => setActionsReport(report)} aria-label="More report actions"><FontAwesomeIcon icon={faEllipsisVertical} /></button></div>
+                </article>)}
+              </div>
             )}
-          </div>
-        </div>
+          </section>
+        </main>
       </div>
+
+      {createOpen && <div className="reports-sheet-overlay" onMouseDown={event => event.target === event.currentTarget && setCreateOpen(false)}><section className="reports-sheet" role="dialog" aria-modal="true" aria-label="Generate report"><div className="reports-sheet__handle" /><header><div><h2>Generate report</h2><p>Save a fresh snapshot of your SEO portfolio.</p></div><button onClick={() => setCreateOpen(false)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header><label>Report name<input value={reportName} onChange={event => setReportName(event.target.value)} maxLength={180} /></label><div className="reports-template-grid">{Object.entries(TYPES).map(([value, type]) => <button key={value} className={reportType === value ? 'is-selected' : ''} onClick={() => setReportType(value)}><FontAwesomeIcon icon={value === 'technical' ? faHeartPulse : value === 'executive' ? faFileLines : faChartLine} /><strong>{type.label}</strong><span>{type.description}</span></button>)}</div><button className="reports-primary reports-sheet__submit" disabled={generating || !reportName.trim()} onClick={generate}>{generating ? <><FontAwesomeIcon icon={faSpinner} spin /> Generating...</> : <><FontAwesomeIcon icon={faFileCirclePlus} /> Generate report</>}</button></section></div>}
+
+      {actionsReport && <div className="reports-sheet-overlay" onMouseDown={event => event.target === event.currentTarget && setActionsReport(null)}><section className="reports-sheet reports-actions-sheet" role="dialog" aria-modal="true" aria-label="Report actions"><div className="reports-sheet__handle" /><header><div><h2>{actionsReport.name}</h2><p>Choose an action</p></div><button onClick={() => setActionsReport(null)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header><button onClick={() => download(actionsReport)}><FontAwesomeIcon icon={faDownload} /> Download / print PDF</button><button onClick={() => share(actionsReport)}><FontAwesomeIcon icon={faShareNodes} /> Share summary</button><button className="is-danger" onClick={() => remove(actionsReport)}><FontAwesomeIcon icon={faTrash} /> Delete report</button></section></div>}
     </div>
   )
 }
-
