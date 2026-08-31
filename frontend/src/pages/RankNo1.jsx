@@ -1,4 +1,5 @@
-﻿import { useState, useEffect } from 'react'
+import './RankNo1.css'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -7,12 +8,18 @@ import {
   faChartLine, faLightbulb, faLink, faRotateRight,
 } from '@fortawesome/free-solid-svg-icons'
 import { T, PageHeader } from '../components/UI'
+import MobileSelect from '../components/MobileSelect'
+import CountrySelector from '../components/CountrySelector'
+import { COUNTRIES, DEFAULT_COUNTRY, flagEmoji } from '../utils/countries'
 import api from '../utils/api'
 
 const ENGINES = [
   { value: 'google', label: 'Google' },
   { value: 'bing', label: 'Bing' },
   { value: 'duckduckgo', label: 'DuckDuckGo' },
+  { value: 'yahoo', label: 'Yahoo' },
+  { value: 'baidu', label: 'Baidu' },
+  { value: 'yandex', label: 'Yandex' },
 ]
 
 const DIFF_COLOR = {
@@ -71,6 +78,14 @@ export default function RankNo1() {
   const [data, setData] = useState(null)
   const [error, setError] = useState(null)
   const [keywords, setKeywords] = useState([])
+  const [country, setCountry] = useState(() => {
+    try { return localStorage.getItem(`rank-no1-country-${siteId}`) || DEFAULT_COUNTRY }
+    catch { return DEFAULT_COUNTRY }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem(`rank-no1-country-${siteId}`, country) } catch {}
+  }, [country, siteId])
 
   useEffect(() => {
     api.get(`/sites/${siteId}/keywords`).then(r => setKeywords(r.data)).catch(() => {})
@@ -83,7 +98,7 @@ export default function RankNo1() {
     setError(null)
     setData(null)
     try {
-      const { data: result } = await api.post(`/sites/${siteId}/serp-analysis`, { keyword: kw, engine })
+      const { data: result } = await api.post(`/sites/${siteId}/serp-analysis`, { keyword: kw, engine, country })
       setData(result)
     } catch (e) {
       setError(e.response?.data?.error || 'Analysis failed. Please try again.')
@@ -92,19 +107,20 @@ export default function RankNo1() {
   }
 
   const selectedEngine = ENGINES.find(e => e.value === (data?.engine || engine))?.label || 'Google'
+  const selectedCountryObj = COUNTRIES.find(c => c.code === (data?.country || country)) || COUNTRIES[0]
 
   const diff = data?.plan?.difficulty
   const diffStyle = DIFF_COLOR[diff] || DIFF_COLOR.Medium
 
   return (
-    <div className="fade-in" style={{ maxWidth: 860, margin: '0 auto' }}>
+    <div className="fade-in rank-no1-page">
       <PageHeader
         title="Rank #1 by Search Engine"
         subtitle="See who is on page 1 for any keyword in Google, Bing, or DuckDuckGo - and get a step-by-step plan"
       />
 
       {/* Search bar */}
-      <div style={{
+      <div className="rank-no1-search" style={{
         display: 'flex', gap: 10, marginBottom: 24,
         background: '#fff', border: '1px solid #E5E7EB',
         borderRadius: 14, padding: '10px 12px',
@@ -121,17 +137,19 @@ export default function RankNo1() {
             color: '#111827', background: 'transparent', fontFamily: 'inherit',
           }}
         />
-        <select
+        <MobileSelect
           value={engine}
           onChange={e => setEngine(e.target.value)}
-          style={{
-            border: '1px solid #E5E7EB', borderRadius: 9, padding: '8px 10px',
-            fontSize: 12, color: '#374151', background: '#fff', fontFamily: 'inherit',
-            flexShrink: 0,
-          }}
+          className="rank-no1-engine"
+          label="Search engine"
         >
           {ENGINES.map(e => <option key={e.value} value={e.value}>{e.label}</option>)}
-        </select>
+        </MobileSelect>
+        <CountrySelector
+          value={country}
+          onChange={setCountry}
+          className="rank-no1-country"
+        />
         <button
           onClick={analyze}
           disabled={loading || !keyword.trim()}
@@ -153,11 +171,11 @@ export default function RankNo1() {
 
       {/* Tracked keyword chips */}
       {keywords.length > 0 && !data && !loading && (
-        <div style={{ marginBottom: 24 }}>
+        <div className="rank-no1-keywords-panel" style={{ marginBottom: 24 }}>
           <div style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
             Your Tracked Keywords
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <div className="rank-no1-keyword-list" style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {keywords.map(k => (
               <button
                 key={k.id}
@@ -179,7 +197,7 @@ export default function RankNo1() {
 
       {/* Loading skeleton */}
       {loading && (
-        <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: 24 }}>
+        <div className="rank-no1-loading" style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, padding: 24 }}>
           <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
             <FontAwesomeIcon icon={faCircleNotch} spin style={{ color: T.orange }} />
             Fetching {ENGINES.find(e => e.value === engine)?.label || 'Google'} Page 1 results and generating your ranking plan…
@@ -196,7 +214,7 @@ export default function RankNo1() {
 
       {/* Error */}
       {error && (
-        <div style={{
+        <div className="rank-no1-error" style={{
           background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 12,
           padding: '14px 18px', fontSize: 13, color: '#DC2626', marginBottom: 20,
         }}>
@@ -209,7 +227,7 @@ export default function RankNo1() {
         <>
           {/* Stats row */}
           {data.plan && (
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+            <div className="rank-no1-stats" style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
               <StatPill icon={faChartLine} label="Competing sites on Page 1" value={data.results.length || '10'} accent={T.orange} />
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -228,7 +246,7 @@ export default function RankNo1() {
 
           {/* Quick win banner */}
           {data.plan?.quickWin && (
-            <div style={{
+            <div className="rank-no1-quick-win" style={{
               background: `linear-gradient(135deg, #FFF7ED 0%, #FFFBEB 100%)`,
               border: '1px solid #FED7AA', borderRadius: 12,
               padding: '14px 18px', marginBottom: 20,
@@ -244,17 +262,17 @@ export default function RankNo1() {
             </div>
           )}
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
+          <div className="rank-no1-results-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) minmax(0,1fr)', gap: 16 }}>
 
             {/* Page 1 competitors */}
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, overflow: 'hidden' }}>
+            <div className="rank-no1-result-card rank-no1-competitors" style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, overflow: 'hidden' }}>
               <div style={{
                 padding: '14px 18px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
                 <FontAwesomeIcon icon={faTrophy} style={{ color: '#D97706', fontSize: 14 }} />
                 <span style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>
-                  {selectedEngine} Page 1 - <span style={{ color: T.orange }}>"{data.keyword}"</span>
+                  {flagEmoji(selectedCountryObj.code)} {selectedEngine} · {selectedCountryObj.name} Page 1 - <span style={{ color: T.orange }}>"{data.keyword}"</span>
                 </span>
               </div>
 
@@ -294,7 +312,7 @@ export default function RankNo1() {
             </div>
 
             {/* AI Ranking Plan */}
-            <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div className="rank-no1-result-card rank-no1-plan" style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
               <div style={{
                 padding: '14px 18px', borderBottom: '1px solid #F3F4F6',
                 display: 'flex', alignItems: 'center', gap: 8,
@@ -359,7 +377,7 @@ export default function RankNo1() {
           </div>
 
           {/* Try another keyword */}
-          <div style={{ marginTop: 16, textAlign: 'center' }}>
+          <div className="rank-no1-try-again" style={{ marginTop: 16, textAlign: 'center' }}>
             <button
               onClick={() => { setData(null); setKeyword('') }}
               style={{
