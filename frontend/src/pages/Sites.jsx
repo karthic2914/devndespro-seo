@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -15,6 +15,7 @@ import AppSidebar from '../components/AppSidebar'
 import UsageBar from '../components/UsageBar'
 import SiteFavicon from '../components/SiteFavicon'
 import api, { API_BASE } from "../utils/api"
+import './SitesMobileFilter.css'
 
 const BENCHMARKS = [
   { label: 'Avg. Time to Rank',    value: '3-6 mo', sub: 'new domain',      color: T.orange, icon: faClock },
@@ -74,6 +75,7 @@ export default function Sites() {
   const [selectedIds, setSelectedIds] = useState([])
   const [showAeoBanner, setShowAeoBanner] = useState(() => localStorage.getItem('aeo_banner_dismissed') !== '1')
   const [showSortDropdown, setShowSortDropdown] = useState(false)
+  const sortMenuRef = useRef(null)
   const [summary, setSummary] = useState(null)
   const [search, setSearch] = useState('')
   const [sortCol, setSortCol] = useState('created_at')
@@ -84,6 +86,7 @@ export default function Sites() {
   const [mobileView, setMobileView] = useState('list')
   const [showMobileTop, setShowMobileTop] = useState(false)
   const [mobileActionSite, setMobileActionSite] = useState(null)
+  const [showMobileFilters, setShowMobileFilters] = useState(false)
 
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
@@ -190,11 +193,36 @@ export default function Sites() {
     } catch { toast.error('Failed to approve project') }
   }
 
+  const normalizeProjectSearch = value => String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
+
+  const projectMatchesSearch = (site, value) => {
+    const query = normalizeProjectSearch(value)
+    if (!query) return true
+    return [site?.name, site?.url, site?.domain]
+      .some(field => normalizeProjectSearch(field).includes(query))
+  }
+
+  useEffect(() => {
+    if (!showSortDropdown) return undefined
+    const closeSort = event => {
+      if (event.key === 'Escape') setShowSortDropdown(false)
+      if (event.type === 'pointerdown' && !sortMenuRef.current?.contains(event.target)) {
+        setShowSortDropdown(false)
+      }
+    }
+    document.addEventListener('pointerdown', closeSort)
+    document.addEventListener('keydown', closeSort)
+    return () => {
+      document.removeEventListener('pointerdown', closeSort)
+      document.removeEventListener('keydown', closeSort)
+    }
+  }, [showSortDropdown])
   const filteredSites = safeSites
-    .filter(s => {
-      const q = search.toLowerCase()
-      return s.name?.toLowerCase().includes(q) || s.url?.toLowerCase().includes(q)
-    })
+    .filter(site => projectMatchesSearch(site, search))
     .sort((a, b) => {
       let av = a[sortCol], bv = b[sortCol]
       if (sortCol === 'created_at') { av = new Date(av); bv = new Date(bv) }
@@ -262,21 +290,7 @@ export default function Sites() {
 
   // DEVNDESPRO_MOBILE_PROJECTS_FILTER_FIX_V3
   const mobileFilteredSites = safeSites
-    .filter(site => {
-      const query = search.trim().toLowerCase()
-
-      if (!query) return true
-
-      const name = String(site?.name || '').toLowerCase()
-      const url = String(site?.url || '').toLowerCase()
-      const domain = String(site?.domain || '').toLowerCase()
-
-      return (
-        name.includes(query) ||
-        url.includes(query) ||
-        domain.includes(query)
-      )
-    })
+    .filter(site => projectMatchesSearch(site, search))
     .filter(site => {
       const score = Number(site.health)
 
@@ -811,7 +825,7 @@ export default function Sites() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>
                     Locale: {discoverData.meta?.locale?.locationName || 'United States'}
                     {discoverData.meta?.importedCount != null && (
-                      <> · Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                      <> Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
                     )}
                   </div>
 
@@ -873,10 +887,10 @@ export default function Sites() {
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
                                   <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                                     {item.position ? `#${item.position}` : 'No pos'}
-                                    {' · '}Vol {Number(item.volume || 0).toLocaleString()}
-                                    {' · '}{item.difficulty || 'Medium'}
-                                    {item.opportunity ? ` · ${item.opportunity}` : ''}
-                                    {item.source ? ` · ${item.source}` : ''}
+                                    {' Â· '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {' Â· '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? ` Â· ${item.opportunity}` : ''}
+                                    {item.source ? ` Â· ${item.source}` : ''}
                                   </div>
                                   {bucket.mode === 'how' && item.how && (
                                     <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
@@ -965,16 +979,22 @@ export default function Sites() {
               aria-label="Search projects"
               placeholder="Search projects..."
               value={search}
-              onChange={event => setSearch(event.target.value)}
+              onChange={event => setSearch(event.target.value)} onInput={event => setSearch(event.currentTarget.value)}
             />
             {search ? (
               <button type="button" aria-label="Clear search" onClick={() => setSearch('')}>
                 <FontAwesomeIcon icon={faXmark} />
               </button>
             ) : (
-              <span className="pm-sticky-filter" aria-hidden="true">
+                            <button
+                type="button"
+                className="pm-sticky-filter pm-filter-trigger"
+                aria-label="Open project filters"
+                aria-expanded={showMobileFilters}
+                onClick={() => setShowMobileFilters(true)}
+              >
                 <FontAwesomeIcon icon={faSliders} />
-              </span>
+              </button>
             )}
           </div>
           <section className="pm-heading">
@@ -1011,12 +1031,22 @@ export default function Sites() {
           <section className="pm-controls">
             <div className="pm-search">
               <FontAwesomeIcon icon={faMagnifyingGlass} />
-              <input type="search" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)} />
+              <input type="search" placeholder="Search projects..." value={search} onChange={e => setSearch(e.target.value)} onInput={e => setSearch(e.currentTarget.value)} />
               {search ? (
                 <button type="button" aria-label="Clear search" onClick={() => setSearch('')}>
                   <FontAwesomeIcon icon={faXmark} />
                 </button>
-              ) : <FontAwesomeIcon icon={faSliders} />}
+              ) : (
+                <button
+                  type="button"
+                  className="pm-filter-trigger"
+                  aria-label="Open project filters"
+                  aria-expanded={showMobileFilters}
+                  onClick={() => setShowMobileFilters(true)}
+                >
+                  <FontAwesomeIcon icon={faSliders} />
+                </button>
+              )}
             </div>
 
             <div className="pm-tabs">
@@ -1184,6 +1214,69 @@ export default function Sites() {
             </div>
           )}
         </main>
+
+          {showMobileFilters && (
+            <div className="pm-filter-backdrop" role="presentation">
+              <section
+                className="pm-filter-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="project-filter-title"
+              >
+                <div className="pm-filter-handle" aria-hidden="true" />
+                <header className="pm-filter-header">
+                  <div>
+                    <span>PROJECT VIEW</span>
+                    <h2 id="project-filter-title">Filter & sort</h2>
+                  </div>
+                  <button type="button" aria-label="Close filters" onClick={() => setShowMobileFilters(false)}>
+                    <FontAwesomeIcon icon={faXmark} />
+                  </button>
+                </header>
+
+                <div className="pm-filter-group">
+                  <h3>Project health</h3>
+                  {[
+                    ['all', 'All projects', safeSites.length, 'purple'],
+                    ['attention', 'Needs attention', mobileAttentionCount, 'orange'],
+                    ['healthy', 'Healthy', mobileHealthyCount, 'green'],
+                  ].map(([key, label, count, tone]) => (
+                    <button
+                      type="button"
+                      key={key}
+                      className={`pm-filter-option pm-filter-option--${tone}${mobileFilter === key ? ' is-selected' : ''}`}
+                      aria-pressed={mobileFilter === key}
+                      onClick={() => setMobileFilter(key)}
+                    >
+                      <i aria-hidden="true" />
+                      <span><strong>{label}</strong><small>{count} projects</small></span>
+                      <b>{mobileFilter === key ? <FontAwesomeIcon icon={faCheck} /> : null}</b>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="pm-filter-group">
+                  <h3>Sort order</h3>
+                  <div className="pm-sort-options">
+                    <button
+                      type="button"
+                      className={sortDir === 'desc' ? 'is-selected' : ''}
+                      onClick={() => { setSortCol('created_at'); setSortDir('desc') }}
+                    >Newest first</button>
+                    <button
+                      type="button"
+                      className={sortDir === 'asc' ? 'is-selected' : ''}
+                      onClick={() => { setSortCol('created_at'); setSortDir('asc') }}
+                    >Oldest first</button>
+                  </div>
+                </div>
+
+                <button type="button" className="pm-filter-apply" onClick={() => setShowMobileFilters(false)}>
+                  Show {mobileFilteredSites.length} project{mobileFilteredSites.length === 1 ? '' : 's'}
+                </button>
+              </section>
+            </div>
+          )}
         {/* DEVNDESPRO MOBILE PROJECTS END */}
 
         <div className="page-content projects-desktop-view">
@@ -1317,7 +1410,7 @@ export default function Sites() {
                     type="text"
                     placeholder="Search projects..."
                     value={search}
-                    onChange={e => setSearch(e.target.value)}
+                    onChange={e => setSearch(e.target.value)} onInput={e => setSearch(e.currentTarget.value)}
                     style={{
                       width: '100%', paddingLeft: 30, paddingRight: 40, height: 34,
                       border: '1px solid var(--border)', borderRadius: 6, fontSize: 13,
@@ -1333,11 +1426,11 @@ export default function Sites() {
                       <FontAwesomeIcon icon={faXmark} />
                     </button>
                   )}
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <div ref={sortMenuRef} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', zIndex: 101 }}>
                     <button
                       onClick={() => setShowSortDropdown(v => !v)}
                       style={{
-                        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+                        width: 30, height: 30, display: 'grid', placeItems: 'center',
                         background: showSortDropdown ? 'var(--accent)' : 'none',
                         border: '1px solid var(--border)', borderRadius: 5, cursor: 'pointer',
                         color: showSortDropdown ? '#fff' : 'var(--muted)', fontSize: 12, padding: '3px 7px', lineHeight: 1,
@@ -1348,7 +1441,7 @@ export default function Sites() {
                     </button>
                     {showSortDropdown && (
                       <div style={{
-                        position: 'absolute', right: 0, top: 36, zIndex: 100,
+                        position: 'absolute', right: 0, top: 'calc(100% + 8px)', zIndex: 102,
                         background: '#fff', border: '1px solid var(--border)', borderRadius: 8,
                         boxShadow: '0 4px 16px rgba(0,0,0,0.10)', minWidth: 180, padding: 6,
                       }}>
@@ -1573,6 +1666,8 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
 
 
