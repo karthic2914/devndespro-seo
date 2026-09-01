@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
+﻿import { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useParams, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -9,7 +9,6 @@ import {
   faAlignLeft, faAlignCenter, faAlignRight, faCircleStop, faPaperclip,
 } from '@fortawesome/free-solid-svg-icons'
 import html2canvas from 'html2canvas'
-import * as XLSX from 'xlsx'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { Button, Modal, Input } from '../components/UI'
@@ -1593,6 +1592,35 @@ export default function SiteAudit() {
     return `${safeDomain}-crawled-pages-${date}.${extension}`
   }
 
+  function sanitizeSpreadsheetValue(value) {
+    if (value === null || value === undefined) return ''
+
+    const text = String(value)
+
+    // Prevent spreadsheet formula injection when exported content is opened.
+    return /^[=+\-@\t\r]/.test(text) ? `'${text}` : text
+  }
+
+  function escapeCsvCell(value) {
+    const safeValue = sanitizeSpreadsheetValue(value)
+    return `"${safeValue.replace(/"/g, '""')}"`
+  }
+
+  function downloadAuditExport(blob, filename) {
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+
+    link.href = url
+    link.download = filename
+    link.style.display = 'none'
+
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+  }
+
   function exportCrawledPagesCsv() {
     const rows = getCrawledPageExportRows()
 
@@ -1601,30 +1629,22 @@ export default function SiteAudit() {
       return
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(rows)
-    const csv = XLSX.utils.sheet_to_csv(worksheet)
+    const headers = Object.keys(rows[0])
+    const csvRows = [
+      headers.map(escapeCsvCell).join(','),
+      ...rows.map(row => headers.map(header => escapeCsvCell(row[header])).join(',')),
+    ]
+    const csv = `\uFEFF${csvRows.join('\r\n')}`
 
-    const blob = new Blob(
-      ['\uFEFF' + csv],
-      { type: 'text/csv;charset=utf-8;' }
+    downloadAuditExport(
+      new Blob([csv], { type: 'text/csv;charset=utf-8;' }),
+      getAuditExportName('csv')
     )
-
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-
-    link.href = url
-    link.download = getAuditExportName('csv')
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-
-    URL.revokeObjectURL(url)
 
     showSnackbar('CSV exported successfully', 'success')
   }
 
-  function exportCrawledPagesExcel() {
+  async function exportCrawledPagesExcel() {
     const rows = getCrawledPageExportRows()
 
     if (!rows.length) {
@@ -1632,36 +1652,59 @@ export default function SiteAudit() {
       return
     }
 
-    const worksheet = XLSX.utils.json_to_sheet(rows)
+    try {
+      const excelModule = await import('exceljs')
+      const ExcelJS = excelModule.default || excelModule
+      const workbook = new ExcelJS.Workbook()
+      const worksheet = workbook.addWorksheet('Crawled Pages', {
+        views: [{ state: 'frozen', ySplit: 1 }],
+      })
+      const headers = Object.keys(rows[0])
+      const widths = [7, 9, 55, 45, 65, 45, 55, 12, 18]
 
-    worksheet['!cols'] = [
-      { wch: 7 },
-      { wch: 9 },
-      { wch: 55 },
-      { wch: 45 },
-      { wch: 65 },
-      { wch: 45 },
-      { wch: 55 },
-      { wch: 12 },
-      { wch: 18 },
-    ]
+      worksheet.columns = headers.map((header, index) => ({
+        header,
+        key: header,
+        width: widths[index] || 20,
+      }))
 
-    const workbook = XLSX.utils.book_new()
+      rows.forEach(row => {
+        const safeRow = Object.fromEntries(
+          headers.map(header => [header, sanitizeSpreadsheetValue(row[header])])
+        )
+        worksheet.addRow(safeRow)
+      })
 
-    XLSX.utils.book_append_sheet(
-      workbook,
-      worksheet,
-      'Crawled Pages'
-    )
+      const heading = worksheet.getRow(1)
+      heading.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+      heading.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF6547F5' },
+      }
+      heading.alignment = { vertical: 'middle' }
+      heading.height = 24
+      worksheet.autoFilter = {
+        from: { row: 1, column: 1 },
+        to: { row: 1, column: headers.length },
+      }
 
-    XLSX.writeFile(
-      workbook,
-      getAuditExportName('xlsx')
-    )
+      const buffer = await workbook.xlsx.writeBuffer()
 
-    showSnackbar('Excel exported successfully', 'success')
+      downloadAuditExport(
+        new Blob([buffer], {
+          type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        }),
+        getAuditExportName('xlsx')
+      )
+
+      showSnackbar('Excel exported successfully', 'success')
+    }
+    catch (error) {
+      console.error('Excel export failed:', error)
+      showSnackbar('Could not export Excel file', 'error')
+    }
   }
-
   function exportCrawledPagesPdf() {
     const rows = getCrawledPageExportRows()
 
@@ -3564,4 +3607,5 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
