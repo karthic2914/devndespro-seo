@@ -1,4 +1,4 @@
-/* ==========================================================
+﻿/* ==========================================================
    DEVNDESPRO SEO
    Shared native project navigation
 
@@ -612,4 +612,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Accessible inactive mobile navigation labels */
+@media (max-width: 767px) {
+  .smpn-bottom-nav > button:not(.is-active) > span {
+    color: #475569 !important;
+  }
 }

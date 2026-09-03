@@ -170,8 +170,8 @@ export const Badge = ({ status, variant = 'default', dot, children, style }) => 
     default: { bg: 'var(--dark3)', color: 'var(--text2)' },
     info: { bg: 'var(--blue-dim)', color: 'var(--blue)' },
     success: { bg: 'var(--green-dim)', color: '#166534' },
-    warning: { bg: 'var(--amber-dim)', color: 'var(--amber)' },
-    danger: { bg: 'var(--red-dim)', color: 'var(--red)' },
+    warning: { bg: 'var(--amber-dim)', color: '#92400E' },
+    danger: { bg: 'var(--red-dim)', color: '#991B1B' },
     orange: { bg: 'var(--orange-dim)', color: '#9A3412' },
   }
 
@@ -318,6 +318,7 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
     document.body
   )
 }
+
 
 
 

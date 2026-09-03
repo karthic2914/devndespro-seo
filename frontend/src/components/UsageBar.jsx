@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChartPie } from '@fortawesome/free-solid-svg-icons'
 import api from '../utils/api'
@@ -29,7 +29,7 @@ export default function UsageBar({ compact = false }) {
   const { totals, byProvider, days } = summary
   const providerHint = (byProvider || [])
     .map((p) => `${p.provider}: ${formatUsd(p.costUsd)}`)
-    .join(' · ')
+    .join(' Â· ')
 
   return (
     <div
@@ -38,12 +38,12 @@ export default function UsageBar({ compact = false }) {
       style={{ maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}
     >
       <FontAwesomeIcon icon={faChartPie} className="app-usage-bar__icon" />
-      <span className="app-usage-bar__label">AI usage · last {days}d</span>
+      <span className="app-usage-bar__label">AI usage Â· last {days}d</span>
       <strong className="app-usage-bar__cost">{formatUsd(totals?.costUsd)}</strong>
       <span className="app-usage-bar__meta">
         {totals?.calls || 0} calls
         {(totals?.inputTokens || 0) + (totals?.outputTokens || 0) > 0
-          ? ` · ${(((totals.inputTokens || 0) + (totals.outputTokens || 0)) / 1000).toFixed(1)}k tokens`
+          ? ` Â· ${(((totals.inputTokens || 0) + (totals.outputTokens || 0)) / 1000).toFixed(1)}k tokens`
           : ''}
       </span>
       <style>{`
@@ -81,10 +81,11 @@ export default function UsageBar({ compact = false }) {
           font-weight: 800;
         }
         .app-usage-bar__meta {
-          color: #94A3B8;
+          color: #475569;
           font-weight: 600;
         }
       `}</style>
     </div>
   )
 }
+

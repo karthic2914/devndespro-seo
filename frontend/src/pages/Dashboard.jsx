@@ -33,8 +33,8 @@ import SiteHealthGauge from '../components/SiteHealthGauge'
 
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
-  { label: 'Technical SEO', color: T.blue },
-  { label: 'Content Quality', color: T.amber },
+  { label: 'Technical SEO', color: '#1D4ED8' },
+  { label: 'Content Quality', color: '#92400E' },
   { label: 'Backlink Profile', color: T.red },
   { label: 'Page Speed', color: T.green },
 ]
@@ -971,7 +971,7 @@ export default function Dashboard() {
           <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop scoreKey="gscClicks" />
           <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop scoreKey="impressions" />
           <StatCard label="Avg. Position"    value={gscPosition}       sub={gscSubLabel} icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop scoreKey="avgPosition" />
-          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color={T.amber}  accentTop scoreKey="trackedKeywords" />
+          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color="#92400E"  accentTop scoreKey="trackedKeywords" />
         </div>
 
         {/* Step 1: website fixes first on Overview */}
@@ -1080,7 +1080,7 @@ export default function Dashboard() {
                         {action.text}
                         {Number(action.count) > 1 ? ` (${action.count} pages)` : ''}
                       </div>
-                      <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
+                      <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
                         {action.category || inferCategory(action.text)}
                         {i === 0 ? ' Â· Start here' : ''}
                       </div>
@@ -1635,5 +1635,6 @@ export default function Dashboard() {
     </>
   )
 }
+
 
 

@@ -1082,18 +1082,28 @@ export default function Sites() {
                 : 'Recently updated'
 
               return (
-                <article key={site.id} className="pm-project" role="button" tabIndex={0} onClick={() => enter(site)} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && enter(site)}>
-                  <div className="pm-project-main">
+                <article key={site.id} className="pm-project">
+                  <button
+                    type="button"
+                    className="pm-project-main"
+                    aria-label={`Open project ${site.name}`}
+                    onClick={() => enter(site)}
+                  >
                     <SiteFavicon name={site.name || '?'} url={site.url} size={42} radius={9} />
                     <div className="pm-project-copy">
                       <strong>{site.name}</strong>
                       <span>{dateLabel}{' \u00B7 '}{Number(site.keyword_count || 0).toLocaleString()} keywords</span>
                     </div>
-                  </div>
-                  <div className={`pm-health pm-health--${healthTone}`}>
+                  </button>
+                  <button
+                    type="button"
+                    className={`pm-health pm-health--${healthTone}`}
+                    aria-label={`Open ${site.name}, health ${Number.isFinite(score) ? score : 'not available'}`}
+                    onClick={() => enter(site)}
+                  >
                     <strong>Health {Number.isFinite(score) ? score : '-'}</strong>
                     <span><i />{healthLabel}</span>
-                  </div>
+                  </button>
                   <button type="button" className="pm-more" aria-label={`More actions for ${site.name}`} onClick={e => {
                     e.stopPropagation()
                     setMobileActionSite(site)
@@ -1666,6 +1676,8 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
 
 

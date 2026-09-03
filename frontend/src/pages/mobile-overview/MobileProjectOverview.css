@@ -1,4 +1,4 @@
-.mobile-project-overview {
+﻿.mobile-project-overview {
   display: none;
 }
 
@@ -1678,5 +1678,25 @@
     flex: 0 0 auto;
     color: #64748b;
     font-size: 12px;
+  }
+}
+/* Accessible mobile Overview secondary text */
+@media (max-width: 767px) {
+  .mobile-project-overview .mpo-page-heading p,
+  .mobile-project-overview .mpo-empty-copy,
+  .mobile-project-overview .mpo-metric-card.tone-blue > p,
+  .mobile-project-overview .mpo-metric-card.tone-violet > p {
+    color: #475569 !important;
+  }
+
+  .mobile-project-overview .mpo-health-status.health-needs-work {
+    color: #9A3412 !important;
+  }
+}
+
+/* Accessible mobile priority status */
+@media (max-width: 767px) {
+  .mobile-project-overview .mpo-health-status.health-priority {
+    color: #991B1B !important;
   }
 }

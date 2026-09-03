@@ -1159,3 +1159,48 @@
 }
 /* DEVNDESPRO MOBILE PROJECT ACTION SHEET END */
 
+
+/* Accessible mobile Projects secondary text */
+@media (max-width: 767px) {
+  .pm-kpi-label,
+  .pm-kpi small,
+  .pm-empty {
+    color: #475569 !important;
+  }
+}
+
+/* Accessible mobile project-card controls and status text */
+@media (max-width: 767px) {
+  .pm-project-main,
+  button.pm-health {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .pm-project-main {
+    text-align: left;
+  }
+
+  .pm-project-main:focus-visible,
+  button.pm-health:focus-visible,
+  .pm-more:focus-visible {
+    outline: 2px solid #4F46E5;
+    outline-offset: 2px;
+  }
+
+  .pm-kpi--green strong {
+    color: #047857 !important;
+  }
+
+  .pm-project-copy span,
+  .pm-health > span {
+    color: #475569 !important;
+  }
+
+  .pm-health--low strong {
+    color: #B91C1C !important;
+  }
+}
