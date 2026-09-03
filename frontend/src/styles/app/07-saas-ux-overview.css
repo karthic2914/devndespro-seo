@@ -1,4 +1,4 @@
-/* DEVNDESPRO SAAS UX START */
+﻿/* DEVNDESPRO SAAS UX START */
 
 :root {
   --saas-bg: #f7f8fb;
@@ -145,7 +145,7 @@
 
 .sidebar .nav-item.active {
   background: #FFF2E8;
-  color: #FF6A00;
+  color: #B54708;
   font-weight: 650;
   border-left-color: transparent;
 }
@@ -1043,3 +1043,10 @@ textarea {
   }
 }
 /* DEVNDESPRO FITTED RESPONSIVE HEALTH GAUGE END */
+
+
+/* Accessible Overview statistic labels */
+.app-main .stat-card .stat-card__label,
+.app-main .stat-card .stat-card__label .score-label-with-tip {
+  color: #475569 !important;
+}

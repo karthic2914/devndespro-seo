@@ -1302,3 +1302,28 @@
   }
 
 }
+/* Mobile crawled-page inventory opened from Audit Overview */
+@media (max-width: 767px) {
+  .site-audit-desktop-full-results.is-mobile-crawled-open {
+    display: block !important;
+    padding: 0 !important;
+    margin: 12px 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .site-audit-desktop-full-results.is-mobile-crawled-open > * {
+    display: none !important;
+  }
+
+  .site-audit-desktop-full-results.is-mobile-crawled-open
+    > .site-audit-crawled-pages-wrapper {
+    display: block !important;
+  }
+
+  .site-audit-crawled-pages-wrapper {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+}

@@ -863,7 +863,7 @@ export default function Sites() {
                         </div>
                       </div>
                       {bucket.items.length === 0 ? (
-                        <div style={{ padding: '14px 12px', fontSize: 12, color: '#9CA3AF' }}>No keywords in this bucket yet.</div>
+                        <div style={{ padding: '14px 12px', fontSize: 12, color: '#475569' }}>No keywords in this bucket yet.</div>
                       ) : (
                         <div style={{ maxHeight: 180, overflowY: 'auto' }}>
                           {bucket.items.slice(0, 20).map((item, idx) => {
@@ -1286,7 +1286,7 @@ export default function Sites() {
               <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: '0 0 8px 0' }}>
                 {loading ? '' : `Total projects: ${safeSites.length}`}
               </p>
-              <p style={{ fontSize: 13, color: 'var(--muted)', marginTop: 2 }}>
+              <p style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
                 {loading ? 'Loading...' : `${filteredSites.length} of ${safeSites.length} site${safeSites.length !== 1 ? 's' : ''}`}
               </p>
             </div>
@@ -1369,7 +1369,7 @@ export default function Sites() {
                   return Number.isFinite(score) && score < 60
                 }).length,
                 sub: 'health score below 60',
-                color: '#F97316',
+                color: '#C2410C',
                 icon: BENCHMARKS?.[2]?.icon,
               },
               {
@@ -1539,7 +1539,7 @@ export default function Sites() {
                                   <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap' }}>PENDING</span>
                                 )}
                               </div>
-                                <div style={{ fontSize: 11, color: 'var(--muted)' }}>
+                                <div style={{ fontSize: 11, color: '#475569' }}>
                                   {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
                                 </div>
                               </div>
@@ -1547,7 +1547,7 @@ export default function Sites() {
                             {user?.id === 1 && !selectMode && (
                               <button
                                 onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site, bulk: false }) }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 14, color: '#9CA3AF', flexShrink: 0 }}
+                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 14, color: '#475569', flexShrink: 0 }}
                                 title="Delete project"
                               >
                                 <FontAwesomeIcon icon={faTrash} />
@@ -1556,20 +1556,20 @@ export default function Sites() {
                           </div>
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
                             <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>Health</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#D97706' : site.health != null ? '#DC2626' : '#9CA3AF' }}>{site.health ?? '-'}</div>
+                              <div style={{ fontSize: 10, color: '#475569' }}>Health</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#92400E' : site.health != null ? '#B91C1C' : '#475569' }}>{site.health ?? '-'}</div>
                             </div>
                             <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>Authority</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#D97706' : site.authority_score ? '#DC2626' : '#9CA3AF' }}>{site.authority_score ?? '-'}</div>
+                              <div style={{ fontSize: 10, color: '#475569' }}>Authority</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#92400E' : site.authority_score ? '#B91C1C' : '#475569' }}>{site.authority_score ?? '-'}</div>
                             </div>
                             <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>AI Snippet</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#D97706' : site.ai_snippet_score ? '#DC2626' : '#9CA3AF' }}>{site.ai_snippet_score ?? '-'}</div>
+                              <div style={{ fontSize: 10, color: '#475569' }}>AI Snippet</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#92400E' : site.ai_snippet_score ? '#B91C1C' : '#475569' }}>{site.ai_snippet_score ?? '-'}</div>
                             </div>
                             <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#9CA3AF' }}>AEO</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#D97706' : site.aeo_score ? '#DC2626' : '#9CA3AF' }}>{site.aeo_score ?? '-'}</div>
+                              <div style={{ fontSize: 10, color: '#475569' }}>AEO</div>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#92400E' : site.aeo_score ? '#B91C1C' : '#475569' }}>{site.aeo_score ?? '-'}</div>
                             </div>
                           </div>
                           <div className="projects-card-footer">
@@ -1666,6 +1666,8 @@ export default function Sites() {
     </div>
   )
 }
+
+
 
 
 

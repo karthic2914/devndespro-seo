@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -77,7 +77,7 @@ export default function Layout() {
       })
       .catch(() => {})
 
-    // Same priority as Decision Center: multipage (if real) → latest homepage audit → metrics
+    // Same priority as Decision Center: multipage (if real) â†’ latest homepage audit â†’ metrics
     Promise.all([
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
@@ -148,7 +148,12 @@ export default function Layout() {
 
         <div className="sidebar__header">
           {!collapsed && <Logo size="md" />}
-          <button className="sidebar__collapse-btn" onClick={() => setCollapsed(p => !p)}>
+          <button
+            type="button"
+            className="sidebar__collapse-btn"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setCollapsed(p => !p)}
+          >
             <FontAwesomeIcon icon={collapsed ? faChevronRight : faChevronLeft} />
           </button>
         </div>
@@ -164,11 +169,13 @@ export default function Layout() {
                   <div className="site-card__url">{site.url}</div>
                 </div>
               </div>
-              <button
-                type="button"
-                className="site-card__health"
-                onClick={() => navigate(`/site/${siteId}/audit`)}
-              >
+              <div className="site-card__health-wrap">
+                <button
+                  type="button"
+                  className="site-card__health"
+                  aria-label="Open Site Audit"
+                  onClick={() => navigate(`/site/${siteId}/audit`)}
+                >
                 {(() => {
                   const score = siteHealth != null && Number.isFinite(Number(siteHealth))
                     ? Math.round(Number(siteHealth))
@@ -184,7 +191,7 @@ export default function Layout() {
                       <div className="site-card__health-top">
                         <span className="site-card__health-label score-label-with-tip">
                           Site Health
-                          <ScoreInfoTip scoreKey="siteHealth" asSpan />
+
                         </span>
                         <span className="site-card__health-value" style={{ color: barColor }}>
                           {score != null ? score : '-'}
@@ -200,7 +207,12 @@ export default function Layout() {
                     </>
                   )
                 })()}
-              </button>
+                </button>
+                <ScoreInfoTip
+                  scoreKey="siteHealth"
+                  className="site-card__health-tip"
+                />
+              </div>
             </div>
             <button className="sidebar__back-btn" onClick={() => navigate('/')}>
               <FontAwesomeIcon icon={faArrowLeft} /> All Projects
@@ -317,3 +329,5 @@ export default function Layout() {
     </div>
   )
 }
+
+

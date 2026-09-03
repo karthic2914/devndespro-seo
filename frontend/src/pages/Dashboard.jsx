@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react'
+﻿import { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useParams } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -245,7 +245,7 @@ export default function Dashboard() {
       if (data?.healthDelta) {
         toast.success(
           `Marked fixed. Site Health +${data.healthDelta}` +
-            (data.health != null ? ` → ${data.health}` : '') +
+            (data.health != null ? ` â†’ ${data.health}` : '') +
             (nextUp?.text ? `. Next: ${String(nextUp.text).slice(0, 70)}` : '')
         )
       } else if (nextUp?.text) {
@@ -611,7 +611,7 @@ export default function Dashboard() {
       return
     }
     if (nextAction && !nextAction.id) {
-      // Live audit issue not yet in Action Plan → seed then open plan
+      // Live audit issue not yet in Action Plan â†’ seed then open plan
       try {
         await api.post(`/sites/${siteId}/actions/sync-from-audit`)
       } catch { /* ignore */ }
@@ -743,9 +743,9 @@ export default function Dashboard() {
       <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
-            Overview {site && <span style={{ color: T.muted, fontWeight: 400 }}>- {site.name}</span>}
+            Overview {site && <span style={{ color: '#475569', fontWeight: 400 }}>- {site.name}</span>}
           </h1>
-          <p style={{ fontSize: 12, color: T.muted, marginTop: 2 }}>Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+          <p style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="secondary" size="sm" onClick={loadDashboardData}>
@@ -756,7 +756,15 @@ export default function Dashboard() {
               <FontAwesomeIcon icon={faMagnifyingGlassChart} style={{ marginRight: 6, animation: auditRunning ? 'spin 1s linear infinite' : 'none' }} />
               <span className='btn-label'>{auditRunning ? 'Scanning...' : 'Run Full Audit'}</span>
             </Button>
-            <Button variant="primary" size="sm" onClick={() => setShowAuditMenu(v => !v)} disabled={auditRunning} style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255,255,255,0.3)' }}>
+            <Button
+              variant="primary"
+              size="sm"
+              aria-label="Choose audit type"
+              aria-expanded={showAuditMenu}
+              onClick={() => setShowAuditMenu(v => !v)}
+              disabled={auditRunning}
+              style={{ borderTopLeftRadius: 0, borderBottomLeftRadius: 0, borderLeft: '1px solid rgba(255,255,255,0.3)' }}
+            >
               <FontAwesomeIcon icon={faChevronDown} />
             </Button>
 
@@ -1074,7 +1082,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ fontSize: 11, color: T.muted, marginTop: 2 }}>
                         {action.category || inferCategory(action.text)}
-                        {i === 0 ? ' · Start here' : ''}
+                        {i === 0 ? ' Â· Start here' : ''}
                       </div>
                     </div>
                     <Badge variant={high ? 'danger' : 'warning'}>{impact}</Badge>
@@ -1097,7 +1105,7 @@ export default function Dashboard() {
           ) : (
             <div style={{ padding: '1.25rem 1rem', textAlign: 'center' }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: T.text }}>No open website fixes</div>
-              <div style={{ fontSize: 12, color: T.muted, marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>
                 Run a Site Audit or refresh Action Plan to find new issues.
               </div>
               <Button
@@ -1627,3 +1635,5 @@ export default function Dashboard() {
     </>
   )
 }
+
+

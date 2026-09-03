@@ -84,8 +84,9 @@ export const Logo = ({ size = 'md', variant = 'solid' }) => {
   )
 }
 
-export const Button = ({ children, onClick, type = 'button', variant = 'primary', size = 'md', loading, disabled, fullWidth, style }) => (
+export const Button = ({ children, onClick, type = 'button', variant = 'primary', size = 'md', loading, disabled, fullWidth, style, ...buttonProps }) => (
   <button
+    {...buttonProps}
     type={type}
     onClick={onClick}
     disabled={disabled || loading}
@@ -168,10 +169,10 @@ export const Badge = ({ status, variant = 'default', dot, children, style }) => 
   const variantMap = {
     default: { bg: 'var(--dark3)', color: 'var(--text2)' },
     info: { bg: 'var(--blue-dim)', color: 'var(--blue)' },
-    success: { bg: 'var(--green-dim)', color: 'var(--green)' },
+    success: { bg: 'var(--green-dim)', color: '#166534' },
     warning: { bg: 'var(--amber-dim)', color: 'var(--amber)' },
     danger: { bg: 'var(--red-dim)', color: 'var(--red)' },
-    orange: { bg: 'var(--orange-dim)', color: 'var(--orange)' },
+    orange: { bg: 'var(--orange-dim)', color: '#9A3412' },
   }
 
   const content = children || status
@@ -317,5 +318,8 @@ export const Modal = ({ open, onClose, title, subtitle, children, footer, width 
     document.body
   )
 }
+
+
+
 
 

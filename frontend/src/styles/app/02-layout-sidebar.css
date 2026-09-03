@@ -1,4 +1,4 @@
-
+﻿
 /* -- Logo -- */
 .logo { width: auto; object-fit: contain; display: block; }
 .logo-sm { height: 40px; }
@@ -75,7 +75,18 @@ body:has(.app-shell),
 }
 .site-card__info { overflow: hidden; flex: 1; }
 .site-card__name { font-size: 12px; font-weight: 700; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.site-card__url  { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-card__url  { font-size: 10px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.site-card__health-wrap {
+  position: relative;
+}
+
+.site-card__health-tip {
+  position: absolute;
+  top: 11px;
+  left: 52px;
+  z-index: 1;
+}
 
 /* Compact Site Health under project - no heavy pill/box */
 .site-card__health {
@@ -107,7 +118,7 @@ body:has(.app-shell),
 .site-card__health-label {
   font-size: 10px;
   font-weight: 650;
-  color: #94A3B8;
+  color: #475569;
   letter-spacing: 0.02em;
 }
 .site-card__health-value {
@@ -475,7 +486,7 @@ body:has(.app-shell),
 }
 .user-info  { flex: 1; overflow: hidden; }
 .user-name  { font-size: 12px; font-weight: 600; color: var(--text);  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.user-email { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-email { font-size: 10px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .logout-btn {
   width: 100%; background: var(--dark3); border: 1px solid var(--dark4);
   color: var(--text2); padding: 6px 10px; border-radius: 7px;
@@ -493,4 +504,6 @@ body:has(.app-shell),
   flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 .topbar__title { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+
+
 

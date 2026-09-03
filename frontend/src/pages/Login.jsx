@@ -147,7 +147,7 @@ export default function Login() {
   }
 
   return (
-    <div style={{
+    <div className="login-page" style={{
       minHeight: '100vh',
       background: `linear-gradient(135deg, #FFF4EE 0%, #F3F4F6 50%, #EFF6FF 100%)`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -174,7 +174,7 @@ export default function Login() {
             <div style={{ fontSize: 16, fontWeight: 700, color: T.text, marginBottom: 4 }}>
               Access your account
             </div>
-            <div style={{ fontSize: 13, color: T.muted }}>
+            <div style={{ fontSize: 13, color: '#475569' }}>
               Access is restricted to authorised users only
             </div>
           </div>
@@ -304,3 +304,6 @@ export default function Login() {
     </div>
   )
 }
+
+
+

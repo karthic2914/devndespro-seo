@@ -2681,7 +2681,7 @@ export default function SiteAudit() {
 {multipageStatus === 'complete' && multipageResults && (
         <div
           ref={auditSummaryStickyRef}
-          className="site-audit-desktop-full-results phase2-audit-summary"
+          className={`site-audit-desktop-full-results phase2-audit-summary${showCrawledPages ? ' is-mobile-crawled-open' : ''}`}
           style={{
           background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12,
           padding: '16px 18px', marginBottom: '1rem', boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
@@ -2727,7 +2727,7 @@ export default function SiteAudit() {
 
           {/* Crawled page inventory - collapsed by default */}
           {Array.isArray(multipageResults.pages) && multipageResults.pages.length > 0 && (
-            <div style={{ marginTop: 14 }}>
+            <div className="site-audit-crawled-pages-wrapper" style={{ marginTop: 14 }}>
               <button
                 type="button"
                 onClick={() => setShowCrawledPages(v => !v)}
@@ -3607,5 +3607,6 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
 

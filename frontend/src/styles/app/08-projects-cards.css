@@ -1,4 +1,4 @@
-/* DEVNDESPRO PROJECTS MODERN LIVE START */
+﻿/* DEVNDESPRO PROJECTS MODERN LIVE START */
 
 .projects-modern-kpi-grid {
   gap: 14px !important;
@@ -50,7 +50,7 @@
 
 .projects-modern-kpi-card .bench-card__sub {
   margin-top: 7px !important;
-  color: #94A3B8 !important;
+  color: #64748B !important;
   font-size: 10px !important;
 }
 
@@ -161,7 +161,7 @@
 
 /* DEVNDESPRO PROJECT CARD POLISH START */
 
-/* One page scrollbar only — kill any remaining nested project scroll area. */
+/* One page scrollbar only â€” kill any remaining nested project scroll area. */
 .projects-modern-panel [style*="overflow-y: auto"],
 .projects-modern-panel [style*="overflow-y:auto"],
 .projects-modern-panel [style*="overflowY"],
@@ -173,7 +173,7 @@
   overflow: visible !important;
 }
 
-/* Main project grid — closer to approved mockup. */
+/* Main project grid â€” closer to approved mockup. */
 .projects-card-grid {
   display: grid !important;
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
@@ -1158,3 +1158,4 @@
   }
 }
 /* DEVNDESPRO MOBILE PROJECT ACTION SHEET END */
+
