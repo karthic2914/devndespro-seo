@@ -184,7 +184,7 @@ export default function Layout() {
                   const barColor =
                     score == null ? '#CBD5E1'
                     : score >= 80 ? '#16A34A'
-                    : score >= 60 ? '#EA580C'
+                    : score >= 60 ? '#C2410C'
                     : '#DC2626'
                   return (
                     <>
@@ -329,5 +329,6 @@ export default function Layout() {
     </div>
   )
 }
+
 
 
