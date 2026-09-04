@@ -1471,8 +1471,13 @@ export default function Dashboard() {
                   onClick={() => navigate(`/site/${siteId}/audit`)}
                   style={{
                     whiteSpace: 'nowrap',
-                    minWidth: 96,
+                    minWidth: 104,
                     flexShrink: 0,
+                    background: '#6D4AFF',
+                    color: '#FFFFFF',
+                    border: '1px solid #6D4AFF',
+                    fontWeight: 700,
+                    boxShadow: '0 2px 6px rgba(109, 74, 255, 0.25)',
                   }}
                 >
                   Open Audit
@@ -1635,6 +1640,7 @@ export default function Dashboard() {
     </>
   )
 }
+
 
 
 
