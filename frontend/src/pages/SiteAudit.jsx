@@ -175,8 +175,7 @@ function getSummaryEmailText(lang, tone, auditData, allIssues = []) {
   }
 
   const firstCriticalText = escapeHtml(
-    friendlyIssueLabels[issueKey]?.[lang] ||
-    rawIssueLabel.replaceAll('_', ' ').replaceAll('-', ' ')
+    friendlyIssueLabels[issueKey]?.[lang] || ''
   )
 
   let techScore = '-'
@@ -230,7 +229,7 @@ function getSummaryEmailText(lang, tone, auditData, allIssues = []) {
       warnings === 1 ? 'advarsel' : 'advarsler'
 
     const issueDetail = firstCriticalText
-      ? `<br><br>Et av de viktigste funnene gjelder: <b>${firstCriticalText}</b>.`
+      ? `<br><br>Et av de viktigste funnene er knyttet til <b>${firstCriticalText}</b>.`
       : ''
 
     const priorityText = critical > 0
@@ -276,7 +275,7 @@ Founder &amp; Head of Technology, DevnDespro<br>
     warnings === 1 ? 'warning' : 'warnings'
 
   const issueDetail = firstCriticalText
-    ? `<br><br>One of the most important findings relates to: <b>${firstCriticalText}</b>.`
+    ? `<br><br>One of the most important findings concerns <b>${firstCriticalText}</b>.`
     : ''
 
   const priorityText = critical > 0
@@ -3568,6 +3567,8 @@ export default function SiteAudit() {
     </div>
   )
 }
+
+
 
 
 
