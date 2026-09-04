@@ -245,7 +245,7 @@ export default function Dashboard() {
       if (data?.healthDelta) {
         toast.success(
           `Marked fixed. Site Health +${data.healthDelta}` +
-            (data.health != null ? ` â†’ ${data.health}` : '') +
+            (data.health != null ? ` -> ${data.health}` : '') +
             (nextUp?.text ? `. Next: ${String(nextUp.text).slice(0, 70)}` : '')
         )
       } else if (nextUp?.text) {
@@ -611,7 +611,7 @@ export default function Dashboard() {
       return
     }
     if (nextAction && !nextAction.id) {
-      // Live audit issue not yet in Action Plan â†’ seed then open plan
+      // Live audit issue not yet in Action Plan -> seed then open plan
       try {
         await api.post(`/sites/${siteId}/actions/sync-from-audit`)
       } catch { /* ignore */ }
@@ -1082,7 +1082,7 @@ export default function Dashboard() {
                       </div>
                       <div style={{ fontSize: 11, color: '#475569', marginTop: 2 }}>
                         {action.category || inferCategory(action.text)}
-                        {i === 0 ? ' Â· Start here' : ''}
+                        {i === 0 ? '  |  Start here' : ''}
                       </div>
                     </div>
                     <Badge variant={high ? 'danger' : 'warning'}>{impact}</Badge>
@@ -1635,6 +1635,8 @@ export default function Dashboard() {
     </>
   )
 }
+
+
 
 
 

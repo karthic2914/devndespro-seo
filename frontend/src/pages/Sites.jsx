@@ -825,7 +825,7 @@ export default function Sites() {
                   <div style={{ fontSize: 12, color: '#6B7280' }}>
                     Locale: {discoverData.meta?.locale?.locationName || 'United States'}
                     {discoverData.meta?.importedCount != null && (
-                      <> Â· Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
+                      <>  |  Auto-tracked {discoverData.meta.importedCount} ranking keyword{(discoverData.meta.importedCount === 1) ? '' : 's'}</>
                     )}
                   </div>
 
@@ -887,10 +887,10 @@ export default function Sites() {
                                   <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{item.keyword}</div>
                                   <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
                                     {item.position ? `#${item.position}` : 'No pos'}
-                                    {' Â· '}Vol {Number(item.volume || 0).toLocaleString()}
-                                    {' Â· '}{item.difficulty || 'Medium'}
-                                    {item.opportunity ? ` Â· ${item.opportunity}` : ''}
-                                    {item.source ? ` Â· ${item.source}` : ''}
+                                    {'  |  '}Vol {Number(item.volume || 0).toLocaleString()}
+                                    {'  |  '}{item.difficulty || 'Medium'}
+                                    {item.opportunity ? `  |  ${item.opportunity}` : ''}
+                                    {item.source ? `  |  ${item.source}` : ''}
                                   </div>
                                   {bucket.mode === 'how' && item.how && (
                                     <div style={{ fontSize: 11, color: '#374151', marginTop: 4 }}>{cleanDiscoveryText(item.how)}</div>
@@ -1676,6 +1676,7 @@ export default function Sites() {
     </div>
   )
 }
+
 
 
 

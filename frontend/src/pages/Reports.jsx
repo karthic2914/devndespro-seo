@@ -10,7 +10,7 @@ import api from '../utils/api'
 import AppSidebar from '../components/AppSidebar'
 
 const TYPES = {
-  complete: { label: 'Complete SEO', description: 'Health, keywords, backlinks and recent activity Â· Recommended' },
+  complete: { label: 'Complete SEO', description: 'Health, keywords, backlinks and recent activity  |  Recommended' },
   executive: { label: 'Executive summary', description: 'A concise client-ready performance overview' },
   technical: { label: 'Technical overview', description: 'Health score and technical activity summary' },
 }
@@ -29,7 +29,7 @@ function reportHtml(report) {
     .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:28px 0}.stat{border:1px solid #dfe5ef;border-radius:12px;padding:16px}.stat strong{display:block;font-size:26px;margin-top:8px}
     table{width:100%;border-collapse:collapse;margin-top:16px}th,td{padding:10px;text-align:left;border-bottom:1px solid #e8edf4;font-size:13px}th{color:#64748b}
     @media print{button{display:none}}@media(max-width:700px){.grid{grid-template-columns:1fr 1fr}}
-  </style></head><body><h1>${report.name}</h1><div class="muted">${TYPES[report.reportType]?.label || 'SEO report'} Â· Generated ${formatDate(report.createdAt)}</div>
+  </style></head><body><h1>${report.name}</h1><div class="muted">${TYPES[report.reportType]?.label || 'SEO report'}  |  Generated ${formatDate(report.createdAt)}</div>
   <div class="grid"><div class="stat">Projects<strong>${data.projects || 0}</strong></div><div class="stat">Average health<strong>${data.avgHealth || 0}%</strong></div><div class="stat">Keywords<strong>${data.keywords || 0}</strong></div><div class="stat">Backlinks<strong>${data.backlinks || 0}</strong></div></div>
   <h2>Recent activity</h2><table><thead><tr><th>Project</th><th>Type</th><th>Update</th></tr></thead><tbody>${activity || '<tr><td colspan="3">No recent activity</td></tr>'}</tbody></table>
   <script>window.addEventListener('load',()=>setTimeout(()=>window.print(),250))<\/script></body></html>`
@@ -113,7 +113,7 @@ export default function Reports() {
   }
 
   const share = async report => {
-    const text = `${report.name}\nProjects: ${report.snapshot?.projects || 0} Â· Health: ${report.snapshot?.avgHealth || 0}% Â· Keywords: ${report.snapshot?.keywords || 0} Â· Backlinks: ${report.snapshot?.backlinks || 0}`
+    const text = `${report.name}\nProjects: ${report.snapshot?.projects || 0}  |  Health: ${report.snapshot?.avgHealth || 0}%  |  Keywords: ${report.snapshot?.keywords || 0}  |  Backlinks: ${report.snapshot?.backlinks || 0}`
     try {
       if (navigator.share) await navigator.share({ title: report.name, text })
       else {
@@ -171,7 +171,7 @@ export default function Reports() {
               <div className="reports-list">
                 <div className="reports-list__head"><span>Report</span><span>Type</span><span>Status</span><span>Generated</span><span>Actions</span></div>
                 {filtered.map(report => <article className="reports-row" key={report.id}>
-                  <div className="reports-row__name"><span className="reports-row__icon"><FontAwesomeIcon icon={faChartLine} /></span><div><strong>{report.name}</strong><small>{report.snapshot?.subject?.name || `${report.snapshot?.projects || 0} projects`} Â· {report.snapshot?.keywords || 0} keywords Â· {report.snapshot?.backlinks || 0} backlinks</small></div></div>
+                  <div className="reports-row__name"><span className="reports-row__icon"><FontAwesomeIcon icon={faChartLine} /></span><div><strong>{report.name}</strong><small>{report.snapshot?.subject?.name || `${report.snapshot?.projects || 0} projects`}  |  {report.snapshot?.keywords || 0} keywords  |  {report.snapshot?.backlinks || 0} backlinks</small></div></div>
                   <div data-label="Type">{TYPES[report.reportType]?.label || 'Complete SEO'}</div>
                   <div data-label="Status"><span className="reports-status"><FontAwesomeIcon icon={faCheckCircle} /> Ready</span></div>
                   <div data-label="Generated"><strong>{formatDate(report.createdAt)}</strong></div>
@@ -185,7 +185,7 @@ export default function Reports() {
 
       {createOpen && <div className="reports-sheet-overlay"><section className="reports-sheet reports-generate-sheet" role="dialog" aria-modal="true" aria-label="Generate report"><div className="reports-sheet__handle" /><header><div><h2>Generate report</h2><p>{context.isAdmin ? 'Choose one project or create an all-project portfolio snapshot.' : 'Create a secure report from a project you can access.'}</p></div><button type="button" onClick={() => setCreateOpen(false)} aria-label="Close"><FontAwesomeIcon icon={faXmark} /></button></header>
   {context.isAdmin && <div className="reports-scope"><button type="button" className={scope === 'site' ? 'is-selected' : ''} onClick={() => setScope('site')}>Single project</button><button type="button" className={scope === 'portfolio' ? 'is-selected' : ''} onClick={() => setScope('portfolio')}>All projects</button></div>}
-  {(scope === 'site' || !context.isAdmin) && <label>Project<select value={siteId} onChange={event => setSiteId(event.target.value)}><option value="">Select a project</option>{context.sites.map(site => <option key={site.id} value={site.id}>{site.name} Â· {site.url}</option>)}</select></label>}
+  {(scope === 'site' || !context.isAdmin) && <label>Project<select value={siteId} onChange={event => setSiteId(event.target.value)}><option value="">Select a project</option>{context.sites.map(site => <option key={site.id} value={site.id}>{site.name}  |  {site.url}</option>)}</select></label>}
   {!context.isAdmin && <p className="reports-permission-note">Only projects assigned to your account are available.</p>}
   <label>Report name<input value={reportName} onChange={event => setReportName(event.target.value)} maxLength={180} /></label>
   <div className="reports-template-grid">{Object.entries(TYPES).map(([value,type]) => <button type="button" key={value} className={reportType === value ? 'is-selected' : ''} onClick={() => setReportType(value)}><FontAwesomeIcon icon={value === 'technical' ? faHeartPulse : value === 'executive' ? faFileLines : faChartLine} /><strong>{type.label}</strong><span>{type.description}</span></button>)}</div>
@@ -196,5 +196,6 @@ export default function Reports() {
     </div>
   )
 }
+
 
 

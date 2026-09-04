@@ -29,7 +29,7 @@ export default function UsageBar({ compact = false }) {
   const { totals, byProvider, days } = summary
   const providerHint = (byProvider || [])
     .map((p) => `${p.provider}: ${formatUsd(p.costUsd)}`)
-    .join(' Â· ')
+    .join('  |  ')
 
   return (
     <div
@@ -38,12 +38,12 @@ export default function UsageBar({ compact = false }) {
       style={{ maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}
     >
       <FontAwesomeIcon icon={faChartPie} className="app-usage-bar__icon" />
-      <span className="app-usage-bar__label">AI usage Â· last {days}d</span>
+      <span className="app-usage-bar__label">AI usage  |  last {days}d</span>
       <strong className="app-usage-bar__cost">{formatUsd(totals?.costUsd)}</strong>
       <span className="app-usage-bar__meta">
         {totals?.calls || 0} calls
         {(totals?.inputTokens || 0) + (totals?.outputTokens || 0) > 0
-          ? ` Â· ${(((totals.inputTokens || 0) + (totals.outputTokens || 0)) / 1000).toFixed(1)}k tokens`
+          ? `  |  ${(((totals.inputTokens || 0) + (totals.outputTokens || 0)) / 1000).toFixed(1)}k tokens`
           : ''}
       </span>
       <style>{`
@@ -88,4 +88,5 @@ export default function UsageBar({ compact = false }) {
     </div>
   )
 }
+
 

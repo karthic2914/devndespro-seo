@@ -77,7 +77,7 @@ export default function Layout() {
       })
       .catch(() => {})
 
-    // Same priority as Decision Center: multipage (if real) â†’ latest homepage audit â†’ metrics
+    // Same priority as Decision Center: multipage (if real) -> latest homepage audit -> metrics
     Promise.all([
       api.get(`/sites/${siteId}/audit/multipage-latest`).catch(() => null),
       api.get(`/sites/${siteId}/audit/latest`).catch(() => null),
@@ -329,6 +329,7 @@ export default function Layout() {
     </div>
   )
 }
+
 
 
 
