@@ -247,7 +247,7 @@ Jeg gjennomgikk nylig <b>${displayUrl}</b> ved hjelp av vårt tekniske SEO-verkt
 - Teknisk SEO og sikkerhet: <b>${techScore}/100</b>${techTick}<br>
 - Innholdskvalitet: <b>${contentScore}/100</b>${contentTick}
 
-${issueDetail}<br><br>
+
 
 ${priorityText}<br><br>
 
@@ -293,7 +293,7 @@ I recently reviewed <b>${displayUrl}</b> using our technical SEO platform and fo
 - Technical SEO and security: <b>${techScore}/100</b>${techTick}<br>
 - Content quality: <b>${contentScore}/100</b>${contentTick}
 
-${issueDetail}<br><br>
+
 
 ${priorityText}<br><br>
 
@@ -3567,6 +3567,7 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
 
 
