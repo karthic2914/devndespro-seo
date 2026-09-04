@@ -136,12 +136,47 @@ function getSummaryEmailText(lang, tone, auditData, allIssues = []) {
 
   const firstCriticalIssue = criticalIssues[0]
 
-  const firstCriticalText = escapeHtml(
+  const rawIssueLabel =
     firstCriticalIssue?.title ||
     firstCriticalIssue?.name ||
     firstCriticalIssue?.check ||
     firstCriticalIssue?.message ||
     ''
+
+  const issueKey = String(
+    firstCriticalIssue?.check || rawIssueLabel
+  ).toLowerCase()
+
+  const friendlyIssueLabels = {
+    h1: {
+      en: 'the website’s main page heading (H1)',
+      no: 'nettstedets hovedoverskrift (H1)'
+    },
+    title: {
+      en: 'the page title used in search results',
+      no: 'sidetittelen som vises i søkeresultater'
+    },
+    meta_description: {
+      en: 'the page description used in search results',
+      no: 'sidebeskrivelsen som vises i søkeresultater'
+    },
+    canonical: {
+      en: 'the website’s canonical URL configuration',
+      no: 'nettstedets canonical URL-konfigurasjon'
+    },
+    robots_txt: {
+      en: 'the website’s search-engine crawling instructions',
+      no: 'nettstedets instruksjoner for søkemotorer'
+    },
+    sitemap: {
+      en: 'the website’s XML sitemap',
+      no: 'nettstedets XML-nettstedskart'
+    }
+  }
+
+  const firstCriticalText = escapeHtml(
+    friendlyIssueLabels[issueKey]?.[lang] ||
+    rawIssueLabel.replaceAll('_', ' ').replaceAll('-', ' ')
   )
 
   let techScore = '-'
@@ -3533,6 +3568,7 @@ export default function SiteAudit() {
     </div>
   )
 }
+
 
 
 
