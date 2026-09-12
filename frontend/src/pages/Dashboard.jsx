@@ -1472,9 +1472,9 @@ export default function Dashboard() {
               </div>
               <p className="dash-goal__tip">
                 {healthValue >= 70
-                  ? 'Your next goal is here — keep climbing toward 90+.'
+                  ? 'Your next goal is here. Keep climbing toward 90+.'
                   : pendingCount > 0
-                    ? `Good progress — fix remaining issues to hit 70+.`
+                    ? 'Good progress. Fix remaining issues to hit 70+.'
                     : 'Run a site audit to generate your next health moves.'}
               </p>
             </div>

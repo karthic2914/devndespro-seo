@@ -1540,7 +1540,7 @@ export default function Sites() {
                         const checked = site.updated_at || site.created_at
                         const checkedLabel = checked
                           ? new Date(checked).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
-                          : '—'
+                          : '-'
                         return (
                           <tr key={site.id} onClick={() => selectMode ? toggleSelected(site.id) : enter(site)}>
                             {user?.id === 1 && selectMode ? (
@@ -1562,9 +1562,9 @@ export default function Sites() {
                                 </div>
                               </div>
                             </td>
-                            <td><span className={`dash-score dash-score--${scoreTone(site.health)}`}><i />{Number.isFinite(Number(site.health)) ? site.health : '—'}</span></td>
-                            <td><span className={`dash-score dash-score--${scoreTone(site.ai_snippet_score)}`}>{Number.isFinite(Number(site.ai_snippet_score)) ? site.ai_snippet_score : '—'}</span></td>
-                            <td><span className={`dash-score dash-score--${scoreTone(site.aeo_score)}`}>{Number.isFinite(Number(site.aeo_score)) ? site.aeo_score : '—'}</span></td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.health)}`}><i />{Number.isFinite(Number(site.health)) ? site.health : '-'}</span></td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.ai_snippet_score)}`}>{Number.isFinite(Number(site.ai_snippet_score)) ? site.ai_snippet_score : '-'}</span></td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.aeo_score)}`}>{Number.isFinite(Number(site.aeo_score)) ? site.aeo_score : '-'}</span></td>
                             <td>{Number(site.keyword_count || 0).toLocaleString()}</td>
                             <td>{checkedLabel}</td>
                             <td>
@@ -1593,7 +1593,7 @@ export default function Sites() {
                   {(summary?.avg_ai_snippet ?? 0) >= 70
                     ? 'Goal reached! Target AI Snippet score 90+ next.'
                     : mobileAttentionCount > 0
-                      ? `Good progress — fix remaining AI snippet issues to hit 70+.`
+                      ? 'Good progress. Fix remaining AI snippet issues to hit 70+.'
                       : 'Run site audits and fix AI snippet issues to improve visibility in ChatGPT and Claude.'}
                 </p>
               </div>
