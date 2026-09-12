@@ -1584,7 +1584,6 @@ export default function Sites() {
 
             <aside className="dash-rail">
               <div className="dash-goal">
-                <div className="dash-goal__flag" aria-hidden="true">🏁</div>
                 <div className="dash-goal__label">AI Visibility Goal</div>
                 <div className="dash-goal__nums">
                   {Math.round(summary?.avg_ai_snippet ?? 0)}

@@ -363,13 +363,6 @@
   box-shadow: 0 12px 28px rgba(76, 67, 210, 0.2);
 }
 
-.dash-goal__flag {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  font-size: 22px;
-}
-
 .dash-goal__label {
   margin-bottom: 10px;
   opacity: 0.86;

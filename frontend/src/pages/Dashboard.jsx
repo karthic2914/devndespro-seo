@@ -1465,7 +1465,6 @@ export default function Dashboard() {
           {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             <div className="dash-goal">
-              <div className="dash-goal__flag" aria-hidden="true">🏁</div>
               <div className="dash-goal__label">Site health goal</div>
               <div className="dash-goal__nums">
                 {Math.round(healthValue || 0)}
