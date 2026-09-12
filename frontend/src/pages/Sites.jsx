@@ -18,7 +18,7 @@ import UsageBar from '../components/UsageBar'
 import SiteFavicon from '../components/SiteFavicon'
 import api, { API_BASE } from "../utils/api"
 import './SitesMobileFilter.css'
-import { greetingName, sparkSeries, Sparkline, SeoBot } from '../components/dashboard/DashboardChrome'
+import { greetingName, sparkSeries, Sparkline, InsightMark } from '../components/dashboard/DashboardChrome'
 
 function cleanDiscoveryText(value) {
   if (typeof value !== 'string') return value
@@ -1298,14 +1298,16 @@ export default function Sites() {
             </div>
             <div className="dash-home-insight">
               <div className="dash-home-insight__bubble">
-                <div className="dash-home-insight__kicker">AI-powered insights</div>
-                <div className="dash-home-insight__text">
-                  {mobileAttentionCount > 0
-                    ? `Focus on the ${mobileAttentionCount} site${mobileAttentionCount === 1 ? '' : 's'} that need attention to reach a 70+ health score.`
-                    : 'Your sites are performing well! Keep publishing and tracking the next opportunities.'}
+                <InsightMark />
+                <div>
+                  <div className="dash-home-insight__kicker">AI-powered insights</div>
+                  <div className="dash-home-insight__text">
+                    {mobileAttentionCount > 0
+                      ? `Focus on the ${mobileAttentionCount} site${mobileAttentionCount === 1 ? '' : 's'} that need attention to reach a 70+ health score.`
+                      : 'Your sites are performing well! Keep publishing and tracking the next opportunities.'}
+                  </div>
                 </div>
               </div>
-              <SeoBot />
             </div>
             <label className="dash-home-period">
               <FontAwesomeIcon icon={faCalendarDays} />

@@ -32,10 +32,8 @@ import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import toast from '../utils/toast'
-import MobileProjectOverview from './mobile-overview/MobileProjectOverview'
-
 import SiteHealthGauge from '../components/SiteHealthGauge'
-import { greetingName, sparkSeries, Sparkline, SeoBot } from '../components/dashboard/DashboardChrome'
+import { greetingName, sparkSeries, Sparkline, InsightMark } from '../components/dashboard/DashboardChrome'
 
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
@@ -705,32 +703,7 @@ export default function Dashboard() {
   )
   return (
     <>
-      <MobileProjectOverview
-        site={site}
-        siteId={siteId}
-        healthValue={healthValue}
-        previewAuditScores={previewAuditScores}
-        gscClicks={gscClicks}
-        gscImpressions={gscImpressions}
-        gscPosition={gscPosition}
-        gscSubLabel={gscSubLabel}
-        trackedKeywords={trackedKeywords}
-        overviewRecommendation={overviewRecommendation}
-        nextMoveMeta={nextMoveMeta}
-        nextMoveImpactColor={nextMoveImpactColor}
-        pendingCount={pendingCount}
-        fixItems={fixItems}
-        previewKeywords={previewKeywords}
-        keywords={keywords}
-        auditRunning={auditRunning}
-        onRefresh={loadDashboardData}
-        onRunAudit={handleRunAudit}
-        onRunFullAudit={runFullSiteAudit}
-        canRunFullAudit={canRunFullAudit}
-        onNextMove={handleNextMoveClick}
-        latestAudit={latestAudit}
-        multipageLatest={multipageLatest}
-      />      <div className="desktop-project-overview dash-home" style={{ flex: 1 }}>
+      <div className="desktop-project-overview dash-home" style={{ flex: 1 }}>
       <AppProcessTopBar
         steps={OVERVIEW_PAGE_FLOW.map((s) => ({
           ...s,
@@ -752,10 +725,12 @@ export default function Dashboard() {
         </div>
         <div className="dash-home-insight">
           <div className="dash-home-insight__bubble">
-            <div className="dash-home-insight__kicker">AI-powered insights</div>
-            <div className="dash-home-insight__text">{overviewRecommendation}</div>
+            <InsightMark />
+            <div>
+              <div className="dash-home-insight__kicker">AI-powered insights</div>
+              <div className="dash-home-insight__text">{overviewRecommendation}</div>
+            </div>
           </div>
-          <SeoBot />
         </div>
         <div className="dash-home-period">
           <FontAwesomeIcon icon={faCalendarDays} />

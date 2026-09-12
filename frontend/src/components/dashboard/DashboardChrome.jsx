@@ -1,3 +1,5 @@
+import { useId } from 'react'
+
 export function greetingName(user) {
   const name = String(user?.name || '').trim()
   if (name) return name.split(/\s+/)[0]
@@ -8,53 +10,61 @@ export function greetingName(user) {
 export function sparkSeries(seed, length = 8) {
   const n = Math.abs(Number(seed) || 3)
   return Array.from({ length }, (_, i) => {
-    const wave = Math.sin(n / 9 + i * 0.85) * 10
-    return Math.max(6, 14 + (n % 13) + wave + i * 1.2)
+    const wave = Math.sin(n / 7 + i * 1.15) * 14
+    const bounce = ((n + i * 5) % 11) * 1.8
+    return Math.max(8, 16 + wave + bounce)
   })
 }
 
 export function Sparkline({ values = [], color = '#7C5CFF' }) {
-  const series = values.length ? values : [8, 12, 10, 16, 14, 18, 15, 20]
-  const width = 78
-  const height = 30
+  const rawId = useId().replace(/:/g, '')
+  const series = values.length ? values : [10, 16, 12, 22, 18, 26, 20, 28]
+  const width = 86
+  const height = 38
   const max = Math.max(...series, 1)
-  const min = Math.min(...series, 0)
-  const span = max - min || 1
-  const points = series
-    .map((value, index) => {
-      const x = (index / Math.max(series.length - 1, 1)) * width
-      const y = height - ((value - min) / span) * (height - 6) - 3
-      return `${x.toFixed(1)},${y.toFixed(1)}`
-    })
-    .join(' ')
+  const gap = 3.2
+  const barWidth = (width - gap * (series.length - 1)) / series.length
 
   return (
     <svg className="dash-spark" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <polyline fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" points={points} />
+      <defs>
+        <linearGradient id={`dash-bar-${rawId}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.95" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.22" />
+        </linearGradient>
+      </defs>
+      {series.map((value, index) => {
+        const barHeight = Math.max(5, (value / max) * (height - 2))
+        return (
+          <rect
+            key={index}
+            x={(barWidth + gap) * index}
+            y={height - barHeight}
+            width={barWidth}
+            height={barHeight}
+            rx={2.4}
+            fill={`url(#dash-bar-${rawId})`}
+          />
+        )
+      })}
     </svg>
   )
 }
 
-export function SeoBot({ size = 92 }) {
+export function InsightMark({ size = 36 }) {
   return (
-    <svg
-      className="dash-bot"
-      width={size}
-      height={size}
-      viewBox="0 0 96 96"
-      fill="none"
-      aria-hidden="true"
-    >
-      <circle cx="48" cy="18" r="5" fill="#6D4AFF" />
-      <rect x="46.2" y="8" width="3.6" height="12" rx="1.8" fill="#6D4AFF" />
-      <circle cx="48" cy="52" r="32" fill="#F3F0FF" />
-      <circle cx="48" cy="52" r="28" fill="#FFFFFF" />
-      <rect x="24" y="38" width="48" height="22" rx="11" fill="#2B2118" />
-      <circle cx="38" cy="49" r="5" fill="#FFFFFF" />
-      <circle cx="58" cy="49" r="5" fill="#FFFFFF" />
-      <path d="M40 66c2.4 3.4 13.6 3.4 16 0" stroke="#6D4AFF" strokeWidth="2.4" strokeLinecap="round" />
-      <circle cx="20" cy="54" r="5" fill="#E8E2FF" />
-      <circle cx="76" cy="54" r="5" fill="#E8E2FF" />
-    </svg>
+    <span className="dash-insight-mark" aria-hidden="true">
+      <svg width={size} height={size} viewBox="0 0 36 36" fill="none">
+        <circle cx="18" cy="18" r="18" fill="#F3F0FF" />
+        <path
+          d="M18 9.5l1.15 4.35L23.5 15 19.15 16.15 18 20.5l-1.15-4.35L12.5 15l4.35-1.15L18 9.5z"
+          fill="#6D4AFF"
+        />
+        <path
+          d="M25.2 20.2l.7 2.15 2.15.7-2.15.7-.7 2.15-.7-2.15-2.15-.7 2.15-.7.7-2.15z"
+          fill="#8B74FF"
+        />
+      </svg>
+    </span>
   )
 }

@@ -39,16 +39,18 @@
 
 .dash-home-insight {
   display: flex;
-  align-items: center;
-  gap: 14px;
+  align-items: stretch;
   min-width: 0;
   flex: 1;
-  max-width: 520px;
+  max-width: 460px;
 }
 
 .dash-home-insight__bubble {
-  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   min-width: 0;
+  width: 100%;
   padding: 12px 14px;
   background: #fff;
   border: 1px solid var(--dash-line);
@@ -56,17 +58,10 @@
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
 }
 
-.dash-home-insight__bubble::after {
-  content: '';
-  position: absolute;
-  right: -7px;
-  top: 50%;
-  width: 12px;
-  height: 12px;
-  background: #fff;
-  border-right: 1px solid var(--dash-line);
-  border-bottom: 1px solid var(--dash-line);
-  transform: translateY(-50%) rotate(-45deg);
+.dash-insight-mark {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .dash-home-insight__kicker {
@@ -506,13 +501,58 @@
     flex-direction: column;
   }
 
-  .dash-kpi-grid,
+  .dash-home-hero__copy h1 {
+    font-size: 24px;
+  }
+
+  .dash-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-kpi {
+    min-height: 108px;
+    padding: 14px;
+  }
+
+  .dash-kpi__value {
+    font-size: 24px;
+  }
+
   .dash-actions__grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 
   .dash-table {
     display: block;
     overflow-x: auto;
+  }
+
+  .dash-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* Show the same dashboard on phones / Android app (Capacitor). */
+@media (max-width: 639px) {
+  .projects-desktop-view.dash-home {
+    display: block !important;
+    padding: 16px 14px 96px;
+  }
+
+  .projects-mobile-view {
+    display: none !important;
+  }
+
+  .desktop-project-overview.dash-home {
+    display: block !important;
+  }
+
+  .desktop-project-overview.dash-home .app-process-topbar {
+    display: none;
+  }
+
+  .dash-home-period {
+    align-self: flex-start;
   }
 }
