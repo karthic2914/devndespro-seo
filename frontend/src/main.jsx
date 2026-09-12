@@ -12,6 +12,7 @@ import './styles/app/05-backlinks.css'
 import './styles/app/06-responsive-breakpoints.css'
 import './styles/app/07-saas-ux-overview.css'
 import './styles/app/08-projects-cards.css'
+import './styles/app/13-dashboard-home.css'
 import './responsive.css'
 
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID

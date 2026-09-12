@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import toast from '../utils/toast'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faClock, faBullseye, faPenToSquare, faLink,
-  faPlus, faTag, faGlobe, faHourglassHalf, faXmark, faLightbulb,
+  faBullseye, faPenToSquare, faLink,
+  faPlus, faTag, faGlobe, faHourglassHalf, faXmark,
   faCheck, faArrowRight, faEnvelope, faMagnifyingGlass,
   faChevronUp, faChevronDown, faTrash, faSliders,
   faList, faTableCellsLarge, faEllipsisVertical, faChevronRight,
+  faLayerGroup, faHeartPulse, faTriangleExclamation, faKey,
+  faCalendarDays, faBolt, faFileLines, faChartColumn,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../hooks/useAuth'
 import { Button, Badge, Modal, Input, T } from '../components/UI'
@@ -16,13 +18,7 @@ import UsageBar from '../components/UsageBar'
 import SiteFavicon from '../components/SiteFavicon'
 import api, { API_BASE } from "../utils/api"
 import './SitesMobileFilter.css'
-
-const BENCHMARKS = [
-  { label: 'Avg. Time to Rank',    value: '3-6 mo', sub: 'new domain',      color: T.orange, icon: faClock },
-  { label: 'Target Domain Rating', value: '20+',    sub: 'to compete',       color: T.blue,   icon: faBullseye },
-  { label: 'Min. Blog Length',     value: '1,500+', sub: 'words per post',   color: T.green,  icon: faPenToSquare },
-  { label: 'Dofollow Backlinks',   value: '10-30',  sub: 'to start ranking', color: T.purple, icon: faLink },
-]
+import { greetingName, sparkSeries, Sparkline, SeoBot } from '../components/dashboard/DashboardChrome'
 
 function cleanDiscoveryText(value) {
   if (typeof value !== 'string') return value
@@ -33,8 +29,12 @@ function cleanDiscoveryText(value) {
     .trim()
 }
 
-function SiteAvatar({ name, url }) {
-  return <SiteFavicon name={name} url={url} size={48} radius={8} />
+function scoreTone(value) {
+  const score = Number(value)
+  if (!Number.isFinite(score)) return 'empty'
+  if (score >= 80) return 'good'
+  if (score >= 60) return 'fair'
+  return 'low'
 }
 
 export default function Sites() {
@@ -87,6 +87,7 @@ export default function Sites() {
   const [showMobileTop, setShowMobileTop] = useState(false)
   const [mobileActionSite, setMobileActionSite] = useState(null)
   const [showMobileFilters, setShowMobileFilters] = useState(false)
+  const [period, setPeriod] = useState('30')
 
   const safeSites = Array.isArray(sites) ? sites : []
   const token = localStorage.getItem('seo_token')
@@ -1289,17 +1290,31 @@ export default function Sites() {
           )}
         {/* DEVNDESPRO MOBILE PROJECTS END */}
 
-        <div className="page-content projects-desktop-view">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text)', letterSpacing: '-0.03em' }}>Projects</h1>
-              <p style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: '0 0 8px 0' }}>
-                {loading ? '' : `Total projects: ${safeSites.length}`}
-              </p>
-              <p style={{ fontSize: 13, color: '#475569', marginTop: 2 }}>
-                {loading ? 'Loading...' : `${filteredSites.length} of ${safeSites.length} site${safeSites.length !== 1 ? 's' : ''}`}
-              </p>
+        <div className="page-content projects-desktop-view dash-home">
+          <div className="dash-home-hero">
+            <div className="dash-home-hero__copy">
+              <h1>Welcome back, {greetingName(user)}!</h1>
+              <p>Here is what is happening with your SEO projects today.</p>
             </div>
+            <div className="dash-home-insight">
+              <div className="dash-home-insight__bubble">
+                <div className="dash-home-insight__kicker">AI-powered insights</div>
+                <div className="dash-home-insight__text">
+                  {mobileAttentionCount > 0
+                    ? `Focus on the ${mobileAttentionCount} site${mobileAttentionCount === 1 ? '' : 's'} that need attention to reach a 70+ health score.`
+                    : 'Your sites are performing well! Keep publishing and tracking the next opportunities.'}
+                </div>
+              </div>
+              <SeoBot />
+            </div>
+            <label className="dash-home-period">
+              <FontAwesomeIcon icon={faCalendarDays} />
+              <select value={period} onChange={e => setPeriod(e.target.value)} aria-label="Reporting period">
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </label>
           </div>
 
           {user?.id === 1 && pendingProjects.length > 0 && (
@@ -1349,88 +1364,68 @@ export default function Sites() {
             </div>
           )}
 
-          <div className="grid-4col mb-24 projects-modern-kpi-grid">
+          <div className="dash-kpi-grid">
             {[
               {
-                label: 'TOTAL PROJECTS',
-                value: sites?.length || 0,
+                label: 'Total projects',
+                value: safeSites.length,
                 sub: 'all your websites',
                 color: '#6D4AFF',
-                icon: BENCHMARKS?.[0]?.icon,
+                icon: faLayerGroup,
               },
               {
-                label: 'AVERAGE SITE HEALTH',
-                value: (() => {
-                  const values = (sites || [])
-                    .map(site => Number(site.health))
-                    .filter(Number.isFinite)
-                  return values.length
-                    ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length)
-                    : 0
-                })(),
+                label: 'Average site health',
+                value: mobileAverageHealth,
                 sub: 'across scored projects',
                 color: '#16A34A',
-                icon: BENCHMARKS?.[1]?.icon,
+                icon: faHeartPulse,
               },
               {
-                label: 'NEEDING ATTENTION',
-                value: (sites || []).filter(site => {
-                  const score = Number(site.health)
-                  return Number.isFinite(score) && score < 60
-                }).length,
+                label: 'Needing attention',
+                value: mobileAttentionCount,
                 sub: 'health score below 60',
-                color: '#C2410C',
-                icon: BENCHMARKS?.[2]?.icon,
+                color: '#EA6A3B',
+                icon: faTriangleExclamation,
               },
               {
-                label: 'TRACKED KEYWORDS',
-                value: (sites || []).reduce(
-                  (sum, site) => sum + (Number(site.keyword_count) || 0),
-                  0
-                ),
+                label: 'Tracked keywords',
+                value: mobileKeywordCount,
                 sub: 'across all projects',
                 color: '#2563EB',
-                icon: BENCHMARKS?.[3]?.icon,
+                icon: faKey,
               },
-            ].map(b => (
-              <div key={b.label} className="bench-card projects-modern-kpi-card" style={{ borderTop: `3px solid ${b.color}` }}>
-                <div className="bench-card__header">
-                  <span className="bench-card__icon" style={{ color: b.color }}><FontAwesomeIcon icon={b.icon} /></span>
-                  <span className="bench-card__title">{b.label}</span>
+            ].map(card => (
+              <article key={card.label} className="dash-kpi">
+                <div className="dash-kpi__top">
+                  <span className="dash-kpi__icon" style={{ color: card.color }}>
+                    <FontAwesomeIcon icon={card.icon} />
+                  </span>
+                  <span className="dash-kpi__label">{card.label}</span>
                 </div>
-                <div className="bench-card__value" style={{ color: b.color }}>{b.value}</div>
-                <div className="bench-card__sub">{b.sub}</div>
-              </div>
+                <div className="dash-kpi__row">
+                  <div className="dash-kpi__value">{Number(card.value).toLocaleString()}</div>
+                  <Sparkline values={sparkSeries(card.value)} color={card.color} />
+                </div>
+                <div className="dash-kpi__sub">{card.sub}</div>
+              </article>
             ))}
           </div>
 
-          <div className="grid-sidebar-layout projects-modern-layout">
-            <div className="projects-table projects-modern-panel">
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 14px', borderBottom: '1px solid var(--border)',
-                background: 'var(--surface)',
-              }}>
-                <div style={{ position: 'relative', flex: 1 }}>
-                  <FontAwesomeIcon icon={faMagnifyingGlass} style={{
-                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-                    color: 'var(--muted)', fontSize: 12, pointerEvents: 'none',
-                  }} />
+          <div className="dash-body">
+            <div className="dash-panel">
+              <div className="dash-search">
+                <div className="dash-search__field">
+                  <FontAwesomeIcon icon={faMagnifyingGlass} />
                   <input
                     type="text"
-                    placeholder="Search projects..."
+                    placeholder="Search projects, domains or keywords..."
                     value={search}
-                    onChange={e => setSearch(e.target.value)} onInput={e => setSearch(e.currentTarget.value)}
-                    style={{
-                      width: '100%', paddingLeft: 30, paddingRight: 40, height: 34,
-                      border: '1px solid var(--border)', borderRadius: 6, fontSize: 13,
-                      fontFamily: 'inherit', background: 'var(--bg)', color: 'var(--text)',
-                      outline: 'none', boxSizing: 'border-box',
-                    }}
+                    onChange={e => setSearch(e.target.value)}
+                    onInput={e => setSearch(e.currentTarget.value)}
                   />
                   {search && (
                     <button onClick={() => setSearch('')} style={{
-                      position: 'absolute', right: 36, top: '50%', transform: 'translateY(-50%)',
+                      position: 'absolute', right: 42, top: '50%', transform: 'translateY(-50%)',
                       background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: 12, padding: 2,
                     }}>
                       <FontAwesomeIcon icon={faXmark} />
@@ -1502,7 +1497,15 @@ export default function Sites() {
                 )}
               </div>
             )}
-              <div style={{ padding: '4px 4px 12px', maxHeight: 640, overflowY: 'auto' }}>
+              <div className="dash-table-head">
+                <h2>Your projects <span>({filteredSites.length})</span></h2>
+                {visibleCount < filteredSites.length ? (
+                  <button type="button" className="dash-link" onClick={() => setVisibleCount(filteredSites.length)}>
+                    View all
+                  </button>
+                ) : null}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
                 {loading ? (
                   <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--muted)' }}>
                     <div style={{ fontSize: 24, marginBottom: 8 }}><FontAwesomeIcon icon={faHourglassHalf} /></div>
@@ -1517,158 +1520,125 @@ export default function Sites() {
                   </div>
                 ) : (
                   <>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-                      {filteredSites.slice(0, visibleCount).map((site, idx) => (
-                        <div
-                          key={site.id}
-                          onClick={() => selectMode ? toggleSelected(site.id) : enter(site)}
-                        className="fade-in"
-                          style={{
-                            background: '#fff', border: selectMode && selectedIds.includes(site.id) ? '2px solid var(--accent, #EA6A3B)' : '1px solid var(--dark4)', borderRadius: 12, animationDelay: `ms`, animationFillMode: 'both',
-                            padding: '14px', cursor: 'pointer', transition: 'box-shadow 0.25s ease, transform 0.25s ease', position: 'relative',
-                          }}
-                          onMouseOver={e => { e.currentTarget.style.boxShadow = '0 10px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-4px)' }}
-                          onMouseOut={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
-                        >
-                          {selectMode && (
-                            <input
-                              type="checkbox"
-                              checked={selectedIds.includes(site.id)}
-                              onChange={() => toggleSelected(site.id)}
-                              onClick={e => e.stopPropagation()}
-                              style={{ position: 'absolute', top: 10, right: 10, width: 16, height: 16, cursor: 'pointer' }}
-                            />
-                          )}
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                              <SiteAvatar name={site.name || '?'} url={site.url} />
-                              <div style={{ minWidth: 0 }}>
-                                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                {site.name}
-                                {site.status === 'pending' && (
-                                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 10, background: '#FEF3C7', color: '#92400E', whiteSpace: 'nowrap' }}>PENDING</span>
-                                )}
-                              </div>
-                                <div style={{ fontSize: 11, color: '#475569' }}>
-                                  {new Date(site.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })}
+                    <table className="dash-table">
+                      <thead>
+                        <tr>
+                          {user?.id === 1 && selectMode ? <th /> : null}
+                          <th>Project / Domain</th>
+                          <th>Health</th>
+                          <th>AI Snippet</th>
+                          <th>AEO Score</th>
+                          <th>Keywords</th>
+                          <th>Last checked</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                      {filteredSites.slice(0, visibleCount).map((site) => {
+                        const checked = site.updated_at || site.created_at
+                        const checkedLabel = checked
+                          ? new Date(checked).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' })
+                          : '—'
+                        return (
+                          <tr key={site.id} onClick={() => selectMode ? toggleSelected(site.id) : enter(site)}>
+                            {user?.id === 1 && selectMode ? (
+                              <td>
+                                <input
+                                  type="checkbox"
+                                  checked={selectedIds.includes(site.id)}
+                                  onChange={() => toggleSelected(site.id)}
+                                  onClick={e => e.stopPropagation()}
+                                />
+                              </td>
+                            ) : null}
+                            <td>
+                              <div className="dash-project">
+                                <SiteFavicon name={site.name || '?'} url={site.url} size={36} radius={8} />
+                                <div>
+                                  <strong>{site.name}{site.status === 'pending' ? ' · pending' : ''}</strong>
+                                  <span>{getDomain(site.url)}</span>
                                 </div>
                               </div>
-                            </div>
-                            {user?.id === 1 && !selectMode && (
-                              <button
-                                onClick={e => { e.stopPropagation(); setConfirmDelete({ open: true, site, bulk: false }) }}
-                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, borderRadius: 4, fontSize: 14, color: '#475569', flexShrink: 0 }}
-                                title="Delete project"
-                              >
-                                <FontAwesomeIcon icon={faTrash} />
+                            </td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.health)}`}><i />{Number.isFinite(Number(site.health)) ? site.health : '—'}</span></td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.ai_snippet_score)}`}>{Number.isFinite(Number(site.ai_snippet_score)) ? site.ai_snippet_score : '—'}</span></td>
+                            <td><span className={`dash-score dash-score--${scoreTone(site.aeo_score)}`}>{Number.isFinite(Number(site.aeo_score)) ? site.aeo_score : '—'}</span></td>
+                            <td>{Number(site.keyword_count || 0).toLocaleString()}</td>
+                            <td>{checkedLabel}</td>
+                            <td>
+                              <button type="button" className="dash-open" onClick={(e) => { e.stopPropagation(); enter(site) }}>
+                                Open <FontAwesomeIcon icon={faArrowRight} />
                               </button>
-                            )}
-                          </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 6 }}>
-                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#475569' }}>Health</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.health >= 80 ? '#16A34A' : site.health >= 55 ? '#92400E' : site.health != null ? '#B91C1C' : '#475569' }}>{site.health ?? '-'}</div>
-                            </div>
-                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#475569' }}>Authority</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.authority_score >= 50 ? '#16A34A' : site.authority_score >= 25 ? '#92400E' : site.authority_score ? '#B91C1C' : '#475569' }}>{site.authority_score ?? '-'}</div>
-                            </div>
-                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#475569' }}>AI Snippet</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.ai_snippet_score >= 80 ? '#16A34A' : site.ai_snippet_score >= 55 ? '#92400E' : site.ai_snippet_score ? '#B91C1C' : '#475569' }}>{site.ai_snippet_score ?? '-'}</div>
-                            </div>
-                            <div style={{ background: '#F9FAFB', borderRadius: 8, padding: '6px 8px' }}>
-                              <div style={{ fontSize: 10, color: '#475569' }}>AEO</div>
-                              <div style={{ fontSize: 14, fontWeight: 700, color: site.aeo_score >= 80 ? '#16A34A' : site.aeo_score >= 55 ? '#92400E' : site.aeo_score ? '#B91C1C' : '#475569' }}>{site.aeo_score ?? '-'}</div>
-                            </div>
-                          </div>
-                          <div className="projects-card-footer">
-                            <div className="projects-card-mini-meta">
-                              <span>KW {site.keyword_count ?? 0}</span>
-                              <span>BL {site.backlink_count ?? 0}</span>
-                            </div>
-                            <button
-                              type="button"
-                              className="projects-card-open"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                enter(site)
-                              }}
-                            >
-                              Open <span aria-hidden="true">&rarr;</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    {visibleCount < filteredSites.length && (
-                      <div style={{ textAlign: 'center', padding: '14px 0 4px' }}>
-                        <Button variant="secondary" size="sm" onClick={() => setVisibleCount(v => v + 20)}>
-                          Load more ({filteredSites.length - visibleCount} remaining)
-                        </Button>
-                      </div>
-                    )}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                      </tbody>
+                    </table>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="right-rail projects-modern-rail">
-              <div className="da-goal-card">
-                <div className="da-goal-card__label">
-                  <FontAwesomeIcon icon={faBullseye} />AI Visibility Goal
+            <aside className="dash-rail">
+              <div className="dash-goal">
+                <div className="dash-goal__flag" aria-hidden="true">🏁</div>
+                <div className="dash-goal__label">AI Visibility Goal</div>
+                <div className="dash-goal__nums">
+                  {Math.round(summary?.avg_ai_snippet ?? 0)}
+                  <span>→ 70</span>
                 </div>
-                <div className="da-goal-card__nums">
-                  <span className="da-goal-card__num">{Math.round(summary?.avg_ai_snippet ?? 0)}</span>
-                  <span className="da-goal-card__arrow"><FontAwesomeIcon icon={faArrowRight} /></span>
-                  <span className="da-goal-card__num">70</span>
-                </div>
-                <div className="da-goal-card__bar">
-                  <div className="da-goal-card__fill" style={{ width: `${Math.min(((summary?.max_dr ?? 0) / 20) * 100, 100)}%` }} />
-                </div>
-                <p className="da-goal-card__tip">
-                  {(summary?.avg_ai_snippet ?? 0) >= 70 ? 'Goal reached! Target AI Snippet score 90+ next.'
-                    : (summary?.avg_ai_snippet ?? 0) >= 50 ? 'Good progress - fix remaining AI snippet issues to hit 70+.'
-                    : 'Run site audits and fix AI snippet issues to improve visibility in ChatGPT and AI search.'}
+                <p className="dash-goal__tip">
+                  {(summary?.avg_ai_snippet ?? 0) >= 70
+                    ? 'Goal reached! Target AI Snippet score 90+ next.'
+                    : mobileAttentionCount > 0
+                      ? `Good progress — fix remaining AI snippet issues to hit 70+.`
+                      : 'Run site audits and fix AI snippet issues to improve visibility in ChatGPT and Claude.'}
                 </p>
               </div>
 
-              <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>Setup Checklist</div>
-                  {summary && <Badge variant="orange">{summary.checklist.filter(c => c.done).length}/{summary.checklist.length}</Badge>}
+              <div className="dash-actions">
+                <h3><FontAwesomeIcon icon={faBolt} /> Quick actions</h3>
+                <div className="dash-actions__grid">
+                  <button type="button" className="dash-action" onClick={() => {
+                    const target = safeSites[0]
+                    if (target) navigate(`/site/${target.id}/audit`)
+                    else setShowAdd(true)
+                  }}>
+                    <i><FontAwesomeIcon icon={faMagnifyingGlass} /></i>
+                    Run Site Audit
+                  </button>
+                  <button type="button" className="dash-action" onClick={() => {
+                    const target = safeSites[0]
+                    if (target) navigate(`/site/${target.id}/keywords`)
+                    else setShowAdd(true)
+                  }}>
+                    <i><FontAwesomeIcon icon={faChartColumn} /></i>
+                    Track Keywords
+                  </button>
+                  <button type="button" className="dash-action" onClick={() => navigate('/reports')}>
+                    <i><FontAwesomeIcon icon={faFileLines} /></i>
+                    Generate Report
+                  </button>
+                  <button type="button" className="dash-action" onClick={() => setShowAdd(true)}>
+                    <i><FontAwesomeIcon icon={faPlus} /></i>
+                    Add New Project
+                  </button>
                 </div>
-                <div className="checklist-progress">
-                  <div className="checklist-progress__fill" style={{ width: summary ? `${(summary.checklist.filter(c => c.done).length / summary.checklist.length) * 100}%` : '0%' }} />
-                </div>
-                {(summary?.checklist ?? []).map((item, i) => (
-                  <div key={i} className={`checklist-item checklist-item--${item.done ? 'done' : 'todo'}`}>
-                    <div className={`checklist-check checklist-check--${item.done ? 'done' : 'todo'}`}>
-                      {item.done && <FontAwesomeIcon icon={faCheck} />}
-                    </div>
-                    {item.label}
-                  </div>
-                ))}
               </div>
+            </aside>
+          </div>
 
-              <div className="card">
-                <div className="quick-wins-title">
-                  <FontAwesomeIcon icon={faLightbulb} />SEO Action Queue
-                </div>
-                {(summary?.actions ?? []).map((tip, idx) => (
-                  <div key={tip.title} className="quick-win-row">
-                    <div className="quick-win-row__rank">{idx + 1}</div>
-                    <div className="quick-win-row__content">
-                      <div className="quick-win-row__top">
-                        <div className="quick-win-row__title">{tip.title}</div>
-                        <span className={`quick-win-row__impact quick-win-row__impact--${tip.impact.toLowerCase()}`}>{tip.impact}</span>
-                      </div>
-                      <div className="quick-win-row__desc">{tip.desc}</div>
-                      <div className="quick-win-row__meta">ETA: {tip.eta}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          <div className="dash-cta">
+            <div>
+              <h3>Turn data into higher rankings</h3>
+              <p>Automate SEO tracking, get AI insights, and grow your online presence.</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <span className="dash-cta__note">Add new projects and start tracking today</span>
+              <Button variant="primary" onClick={() => setShowAdd(true)}>
+                <FontAwesomeIcon icon={faPlus} style={{ marginRight: 6 }} /> New Project
+              </Button>
             </div>
           </div>
         </div>

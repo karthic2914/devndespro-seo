@@ -17,6 +17,10 @@ import {
   faChevronDown,
   faChevronUp,
   faBullseye,
+  faCalendarDays,
+  faBolt,
+  faFileLines,
+  faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons'
 import { StatCard, Card, Badge, Button, ProgressBar, SectionLabel, T } from '../components/UI'
 import ScoreInfoTip from '../components/ScoreInfoTip'
@@ -28,8 +32,10 @@ import { BarChart } from '../components/charts/Charts'
 import { useAuth } from '../hooks/useAuth'
 import api from '../utils/api'
 import toast from '../utils/toast'
-import MobileProjectOverview from './mobile-overview/MobileProjectOverview'
+import MobileProjectOverview from './mobile-overview/MobileProjectOverview'
+
 import SiteHealthGauge from '../components/SiteHealthGauge'
+import { greetingName, sparkSeries, Sparkline, SeoBot } from '../components/dashboard/DashboardChrome'
 
 const AUDIT_CATEGORIES = [
   { label: 'On-Page SEO', color: T.orange },
@@ -724,7 +730,7 @@ export default function Dashboard() {
         onNextMove={handleNextMoveClick}
         latestAudit={latestAudit}
         multipageLatest={multipageLatest}
-      />      <div className="desktop-project-overview" style={{ flex: 1 }}>
+      />      <div className="desktop-project-overview dash-home" style={{ flex: 1 }}>
       <AppProcessTopBar
         steps={OVERVIEW_PAGE_FLOW.map((s) => ({
           ...s,
@@ -739,14 +745,26 @@ export default function Dashboard() {
         }))}
       />
 
-      {/* Page header */}
-      <div style={{ background: '#fff', borderBottom: `1px solid ${T.border}`, padding: '1rem 1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div>
-          <h1 style={{ fontSize: 19, fontWeight: 800, color: T.text, letterSpacing: '-0.02em' }}>
-            Overview {site && <span style={{ color: '#475569', fontWeight: 400 }}>- {site.name}</span>}
-          </h1>
-          <p style={{ fontSize: 12, color: '#475569', marginTop: 2 }}>Last updated: {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+      <div className="dash-home-hero" style={{ padding: '1.15rem 1rem 0' }}>
+        <div className="dash-home-hero__copy">
+          <h1>Welcome back, {greetingName(user)}!</h1>
+          <p>{site?.name ? `Here is what is happening with ${site.name} today.` : 'Here is what is happening with your SEO project today.'}</p>
         </div>
+        <div className="dash-home-insight">
+          <div className="dash-home-insight__bubble">
+            <div className="dash-home-insight__kicker">AI-powered insights</div>
+            <div className="dash-home-insight__text">{overviewRecommendation}</div>
+          </div>
+          <SeoBot />
+        </div>
+        <div className="dash-home-period">
+          <FontAwesomeIcon icon={faCalendarDays} />
+          Last 30 days
+        </div>
+      </div>
+
+      {/* Page header */}
+      <div style={{ background: 'transparent', padding: '0.75rem 1rem 0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
         <div style={{ display: 'flex', gap: 8 }}>
           <Button variant="secondary" size="sm" onClick={loadDashboardData}>
             <FontAwesomeIcon icon={faArrowsRotate} style={{ marginRight: 6 }} /><span className='btn-label'>Refresh Data</span>
@@ -829,10 +847,11 @@ export default function Dashboard() {
           {/* Left column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
 
-        {/* Next Best Move */}
+        {/* Next Best Move lives in the welcome insight bubble */}
         <Card
           padding="0"
           style={{
+            display: 'none',
             marginBottom: 0,
             borderRadius: 14,
             overflow: 'hidden',
@@ -965,13 +984,27 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        {/* Top stats row */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, marginBottom: 0 }}>
-          <StatCard label="Site Health"      value={healthValue}       sub="out of 100"             icon={<FontAwesomeIcon icon={faHeartPulse} />}         color={T.orange} accentTop scoreKey="siteHealth" />
-          <StatCard label="GSC Clicks"       value={gscClicks}         sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faHandPointer} />}        color={T.blue}   accentTop scoreKey="gscClicks" />
-          <StatCard label="Impressions"      value={gscImpressions}    sub={gscSubLabel}             icon={<FontAwesomeIcon icon={faEye} />}                color={T.purple} accentTop scoreKey="impressions" />
-          <StatCard label="Avg. Position"    value={gscPosition}       sub={gscSubLabel} icon={<FontAwesomeIcon icon={faLocationDot} />}        color={T.green}  accentTop scoreKey="avgPosition" />
-          <StatCard label="Tracked Keywords" value={trackedKeywords}   sub="in DB"                  icon={<FontAwesomeIcon icon={faKey} />}                color="#92400E"  accentTop scoreKey="trackedKeywords" />
+        <div className="dash-kpi-grid">
+          {[
+            { label: 'Site health', value: healthValue, sub: 'out of 100', color: '#EA6A3B', icon: faHeartPulse },
+            { label: 'GSC clicks', value: gscClicks, sub: gscSubLabel, color: '#2563EB', icon: faHandPointer },
+            { label: 'Needing attention', value: pendingCount, sub: 'open website fixes', color: '#D97706', icon: faTriangleExclamation },
+            { label: 'Tracked keywords', value: trackedKeywords, sub: 'in this project', color: '#6D4AFF', icon: faKey },
+          ].map((card) => (
+            <article key={card.label} className="dash-kpi">
+              <div className="dash-kpi__top">
+                <span className="dash-kpi__icon" style={{ color: card.color }}>
+                  <FontAwesomeIcon icon={card.icon} />
+                </span>
+                <span className="dash-kpi__label">{card.label}</span>
+              </div>
+              <div className="dash-kpi__row">
+                <div className="dash-kpi__value">{Number(card.value || 0).toLocaleString()}</div>
+                <Sparkline values={sparkSeries(card.value)} color={card.color} />
+              </div>
+              <div className="dash-kpi__sub">{card.sub}</div>
+            </article>
+          ))}
         </div>
 
         {/* Step 1: website fixes first on Overview */}
@@ -1456,6 +1489,43 @@ export default function Dashboard() {
 
           {/* Right column */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div className="dash-goal">
+              <div className="dash-goal__flag" aria-hidden="true">🏁</div>
+              <div className="dash-goal__label">Site health goal</div>
+              <div className="dash-goal__nums">
+                {Math.round(healthValue || 0)}
+                <span>→ 70</span>
+              </div>
+              <p className="dash-goal__tip">
+                {healthValue >= 70
+                  ? 'Your next goal is here — keep climbing toward 90+.'
+                  : pendingCount > 0
+                    ? `Good progress — fix remaining issues to hit 70+.`
+                    : 'Run a site audit to generate your next health moves.'}
+              </p>
+            </div>
+
+            <div className="dash-actions">
+              <h3><FontAwesomeIcon icon={faBolt} /> Quick actions</h3>
+              <div className="dash-actions__grid">
+                <button type="button" className="dash-action" onClick={handleRunAudit}>
+                  <i><FontAwesomeIcon icon={faMagnifyingGlassChart} /></i>
+                  Run Site Audit
+                </button>
+                <button type="button" className="dash-action" onClick={() => navigate(`/site/${siteId}/keywords`)}>
+                  <i><FontAwesomeIcon icon={faKey} /></i>
+                  Track Keywords
+                </button>
+                <button type="button" className="dash-action" onClick={() => navigate(`/site/${siteId}/reports`)}>
+                  <i><FontAwesomeIcon icon={faFileLines} /></i>
+                  Generate Report
+                </button>
+                <button type="button" className="dash-action" onClick={handleNextMoveClick}>
+                  <i><FontAwesomeIcon icon={faBullseye} /></i>
+                  {nextMoveButtonLabel}
+                </button>
+              </div>
+            </div>
 
             {/* Health score */}
             <Card padding="1rem">
