@@ -2,7 +2,7 @@ const { pool } = require('../clients')
 
 let schemaReady = false
 
-const PLANS = ['free', 'pro', 'agency']
+const PLANS = ['free', 'starter', 'pro', 'agency']
 
 const PLAN_META = {
   free: {
@@ -18,12 +18,20 @@ const PLAN_META = {
       'Alerts & Integrations',
     ],
   },
+  starter: {
+    id: 'starter',
+    label: 'Starter',
+    blurb: 'Affordable SEO essentials for individual websites.',
+    priceNok: 149,
+    priceLabel: '149 kr/mo',
+    bullets: ['Everything in Free', 'Keyword Pro tools', 'Backlinks'],
+  },
   pro: {
     id: 'pro',
     label: 'Pro',
     blurb: 'Growth tools for link building and AI.',
-    priceNok: 199,
-    priceLabel: '199 kr/mo',
+    priceNok: 299,
+    priceLabel: '299 kr/mo',
     bullets: [
       'Everything in Free',
       'Full AI Visibility (scans, engines, recommendations)',
@@ -36,8 +44,8 @@ const PLAN_META = {
     id: 'agency',
     label: 'Agency',
     blurb: 'Full suite for client and outreach work.',
-    priceNok: 499,
-    priceLabel: '499 kr/mo',
+    priceNok: 699,
+    priceLabel: '699 kr/mo',
     bullets: [
       'Everything in Pro',
       'Cold Email outreach',
@@ -85,13 +93,13 @@ function isAdminUser(user) {
 function canUseBacklinks(user) {
   if (isAdminUser(user)) return true
   const plan = resolvePlan(user)
-  return plan === 'pro' || plan === 'agency' || Boolean(user?.backlinks_enabled) || Boolean(user?.is_paid)
+  return plan === 'starter' || plan === 'pro' || plan === 'agency' || Boolean(user?.backlinks_enabled) || Boolean(user?.is_paid)
 }
 
 function canUseKeywords(user) {
   if (isAdminUser(user)) return true
   const plan = resolvePlan(user)
-  return plan === 'pro' || plan === 'agency' || Boolean(user?.keywords_enabled) || Boolean(user?.is_paid)
+  return plan === 'starter' || plan === 'pro' || plan === 'agency' || Boolean(user?.keywords_enabled) || Boolean(user?.is_paid)
 }
 
 function canUseAiAssistant(user) {
@@ -137,6 +145,16 @@ function flagsForPlan(plan) {
       keywords_enabled: true,
       ai_assistant_enabled: true,
       cold_emails_enabled: true,
+    }
+  }
+  if (p === 'starter') {
+    return {
+      plan: 'starter',
+      is_paid: true,
+      backlinks_enabled: true,
+      keywords_enabled: true,
+      ai_assistant_enabled: false,
+      cold_emails_enabled: false,
     }
   }
   if (p === 'pro') {
