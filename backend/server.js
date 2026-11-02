@@ -23,6 +23,7 @@ const publicFxRouter = require('./routes/publicFx')
 const usageRouter = require('./routes/usage')
 const toolsRouter = require('./routes/tools')
 const { router: billingRouter, handleStripeWebhook } = require('./routes/billing')
+const { handleLemonWebhook } = require('./routes/lemonsqueezy')
 const { wrapAiClients } = require('./utils/wrapAiClients')
 const { ensureAiUsageTable } = require('./utils/aiUsage')
 
@@ -54,6 +55,9 @@ app.post(
   express.raw({ type: 'application/json' }),
   handleStripeWebhook
 )
+
+// Verify Lemon Squeezy's signed raw request before JSON parsing.
+app.post('/api/billing/lemonsqueezy-webhook', express.raw({ type: 'application/json' }), handleLemonWebhook)
 
 app.use(express.json())
 
