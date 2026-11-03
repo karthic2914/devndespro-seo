@@ -20,18 +20,18 @@ const PLAN_META = {
   },
   starter: {
     id: 'starter',
-    label: 'Starter',
+    label: 'Launch',
     blurb: 'Affordable SEO essentials for individual websites.',
-    priceNok: 149,
-    priceLabel: '149 kr/mo',
+    priceNok: 99,
+    priceLabel: '99 kr/mo',
     bullets: ['Everything in Free', 'Keyword Pro tools', 'Backlinks'],
   },
   pro: {
     id: 'pro',
-    label: 'Pro',
+    label: 'Accelerate',
     blurb: 'Growth tools for link building and AI.',
-    priceNok: 299,
-    priceLabel: '299 kr/mo',
+    priceNok: 199,
+    priceLabel: '199 kr/mo',
     bullets: [
       'Everything in Free',
       'Full AI Visibility (scans, engines, recommendations)',
@@ -42,10 +42,10 @@ const PLAN_META = {
   },
   agency: {
     id: 'agency',
-    label: 'Agency',
+    label: 'Command',
     blurb: 'Full suite for client and outreach work.',
-    priceNok: 699,
-    priceLabel: '699 kr/mo',
+    priceNok: 399,
+    priceLabel: '399 kr/mo',
     bullets: [
       'Everything in Pro',
       'Cold Email outreach',
