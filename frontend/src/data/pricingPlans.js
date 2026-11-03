@@ -30,7 +30,7 @@ export const PRICING_PLANS = [
     tagline: 'Clarity to get moving',
     blurb: 'Core site health and visibility basics for founders and small teams.',
     priceNok: 99,
-    stripePlan: null,
+    stripePlan: 'launch',
     accent: '#171923',
     featured: false,
     cta: 'Start with Launch',
