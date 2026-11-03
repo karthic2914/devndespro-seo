@@ -15,7 +15,7 @@ function Get-StripeItems($resource) {
     $all = @()
     $cursor = $null
     do {
-        $url = "https://api.stripe.com/v1/$resource?limit=100"
+        $url = "https://api.stripe.com/v1/${resource}?limit=100"
         if ($cursor) { $url += "&starting_after=$cursor" }
         $page = Invoke-RestMethod -Uri $url -Headers $headers
         $all += @($page.data)
