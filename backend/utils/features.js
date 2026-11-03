@@ -2,7 +2,7 @@ const { pool } = require('../clients')
 
 let schemaReady = false
 
-const PLANS = ['free', 'pro', 'agency']
+const PLANS = ['free', 'launch', 'pro', 'agency']
 
 const PLAN_META = {
   free: {
@@ -16,6 +16,19 @@ const PLAN_META = {
       'Overview & Site Audit',
       'AI Visibility (overall score only)',
       'Alerts & Integrations',
+    ],
+  },
+  launch: {
+    id: 'launch',
+    label: 'Launch',
+    blurb: 'Core SEO tools for one website project.',
+    priceNok: 99,
+    priceLabel: '99 kr/mo',
+    bullets: [
+      '1 website project',
+      'Site Audit and Site Health',
+      'Core keyword tracking',
+      'AI Visibility overall score',
     ],
   },
   pro: {
@@ -36,8 +49,8 @@ const PLAN_META = {
     id: 'agency',
     label: 'Agency',
     blurb: 'Full suite for client and outreach work.',
-    priceNok: 499,
-    priceLabel: '499 kr/mo',
+    priceNok: 399,
+    priceLabel: '399 kr/mo',
     bullets: [
       'Everything in Pro',
       'Cold Email outreach',
@@ -137,6 +150,16 @@ function flagsForPlan(plan) {
       keywords_enabled: true,
       ai_assistant_enabled: true,
       cold_emails_enabled: true,
+    }
+  }
+  if (p === 'launch') {
+    return {
+      plan: 'launch',
+      is_paid: true,
+      backlinks_enabled: false,
+      keywords_enabled: false,
+      ai_assistant_enabled: false,
+      cold_emails_enabled: false,
     }
   }
   if (p === 'pro') {
