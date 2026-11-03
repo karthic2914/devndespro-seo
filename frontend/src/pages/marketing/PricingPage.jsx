@@ -173,12 +173,6 @@ export default function PricingPage() {
     setCheckoutError('')
     const stripePlan = plan.stripePlan
 
-    // Launch / free path: sign in (or go to app if already signed in)
-    if (!stripePlan) {
-      navigate(user ? '/' : '/login')
-      return
-    }
-
     if (authLoading) return
 
     if (!user) {
@@ -408,8 +402,7 @@ export default function PricingPage() {
             ) : null}
 
             <p className="mkt-note">
-              Accelerate and Command open Stripe Checkout when you are signed in. Launch takes you
-              into the workspace. Prices convert from NOK using{' '}
+              Launch, Accelerate and Command open Stripe Checkout when you are signed in. Prices convert from NOK using{' '}
               {ratesStatus === 'live' ? 'live' : 'reference'} rates for {region.label}. Billing is in
               NOK at checkout. *Fair-use limits apply on Command.
             </p>
@@ -435,7 +428,7 @@ export default function PricingPage() {
                 },
                 {
                   q: 'Is this the same as Free / Pro / Agency in the app?',
-                  a: 'Marketing names map to product access levels: Launch (starter), Accelerate (growth / Pro-class), Command (business / Agency-class). Your admin still controls seat access during private beta.',
+                  a: 'Marketing names map to product access levels: Launch (paid starter), Accelerate (Pro-class), Command (Agency-class). A separate Free tier remains available.',
                 },
               ].map((item) => (
                 <details key={item.q}>
