@@ -19,7 +19,9 @@ function amountForPlan(plan) {
   const p = normalizePlan(plan)
   const meta = PLAN_META[p]
   const envOverride =
-    p === 'pro'
+    p === 'launch'
+      ? process.env.STRIPE_PRICE_LAUNCH_NOK
+      : p === 'pro'
       ? process.env.STRIPE_PRICE_PRO_NOK
       : p === 'agency'
       ? process.env.STRIPE_PRICE_AGENCY_NOK
@@ -48,12 +50,12 @@ router.get('/plans', auth, async (req, res) => {
   res.json({
     currency: 'nok',
     checkoutEnabled: Boolean(process.env.STRIPE_SECRET_KEY),
-    plans: ['free', 'pro', 'agency'].map(planPayload),
+    plans: ['free', 'launch', 'pro', 'agency'].map(planPayload),
   })
 })
 
 /**
- * POST /api/billing/checkout { plan: 'pro'|'agency' }
+ * POST /api/billing/checkout { plan: 'launch'|'pro'|'agency' }
  */
 router.post('/checkout', auth, async (req, res) => {
   try {
@@ -66,16 +68,21 @@ router.post('/checkout', auth, async (req, res) => {
     }
 
     const plan = normalizePlan(req.body?.plan)
-    if (plan !== 'pro' && plan !== 'agency') {
-      return res.status(400).json({ error: 'Choose Pro or Agency' })
+    if (!['launch', 'pro', 'agency'].includes(plan)) {
+      return res.status(400).json({ error: 'Choose Launch, Accelerate or Command' })
     }
 
-    const amount = amountForPlan(plan)
-    if (!amount || amount < 1) {
-      return res.status(400).json({ error: 'Invalid plan price' })
+    // Use Stripe catalog prices rather than creating a new product on every checkout.
+    const priceIds = {
+      launch: process.env.STRIPE_PRICE_LAUNCH_ID,
+      pro: process.env.STRIPE_PRICE_PRO_ID,
+      agency: process.env.STRIPE_PRICE_AGENCY_ID,
+    }
+    const priceId = priceIds[plan]
+    if (!priceId || !priceId.startsWith('price_')) {
+      return res.status(503).json({ error: 'Stripe price is not configured for this plan' })
     }
 
-    const label = PLAN_META[plan]?.label || plan
     const userId = String(req.user.id)
     const email = req.user.email || undefined
     const meta = { userId, plan }
@@ -88,25 +95,7 @@ router.post('/checkout', auth, async (req, res) => {
       subscription_data: {
         metadata: meta,
       },
-      // Account has Managed Payments on by default; disable for simple SaaS checkout
-      // unless you configure tax codes / tax collection in Stripe Dashboard.
-      managed_payments: { enabled: false },
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: 'nok',
-            unit_amount: amount * 100,
-            recurring: { interval: 'month' },
-            product_data: {
-              name: `DevnDespro SEO — ${label}`,
-              description: PLAN_META[plan]?.blurb || `${label} plan`,
-              // SaaS / electronically supplied services (required if Managed Payments stays on)
-              tax_code: 'txcd_10103001',
-            },
-          },
-        },
-      ],
+      line_items: [{ quantity: 1, price: priceId }],
       success_url: `${appUrl()}/settings?upgraded=1&plan=${plan}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl()}/settings?checkout=cancel`,
       allow_promotion_codes: true,
@@ -135,8 +124,7 @@ router.post('/confirm-session', auth, async (req, res) => {
     if (!session) return res.status(404).json({ error: 'Session not found' })
 
     const paid =
-      session.payment_status === 'paid' ||
-      session.status === 'complete'
+      session.payment_status === 'paid'
 
     if (!paid) {
       return res.status(402).json({ error: 'Payment not completed yet', status: session.payment_status })
@@ -148,7 +136,7 @@ router.post('/confirm-session', auth, async (req, res) => {
     }
 
     const plan = normalizePlan(session.metadata?.plan || 'pro')
-    if (plan !== 'pro' && plan !== 'agency') {
+    if (!['launch', 'pro', 'agency'].includes(plan)) {
       return res.status(400).json({ error: 'Invalid plan on session' })
     }
 
@@ -173,7 +161,7 @@ router.post('/confirm-session', auth, async (req, res) => {
 async function applyCheckoutSession(session) {
   const userId = Number(session.metadata?.userId || session.client_reference_id || 0)
   const plan = normalizePlan(session.metadata?.plan || 'pro')
-  if (!userId || (plan !== 'pro' && plan !== 'agency')) return null
+  if (!userId || !['launch', 'pro', 'agency'].includes(plan) || session.payment_status !== 'paid') return null
   return setUserPlan(userId, plan, {
     source: 'billing',
     notifyAdmin: true,
@@ -192,15 +180,12 @@ async function handleStripeWebhook(req, res) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET || ''
   let event
 
+  if (!secret) {
+    console.error('STRIPE_WEBHOOK_SECRET is required for signed Stripe events')
+    return res.status(503).send('Webhook not configured')
+  }
   try {
-    if (secret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, secret)
-    } else {
-      event = typeof req.body === 'string' || Buffer.isBuffer(req.body)
-        ? JSON.parse(req.body.toString())
-        : req.body
-      console.warn('STRIPE_WEBHOOK_SECRET missing — parsed body without signature verify')
-    }
+    event = stripe.webhooks.constructEvent(req.body, sig, secret)
   } catch (err) {
     console.error('Stripe webhook signature error:', err.message)
     return res.status(400).send(`Webhook Error: ${err.message}`)
